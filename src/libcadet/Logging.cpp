@@ -11,14 +11,38 @@
 // =============================================================================
 
 #include "Logging.hpp"
+#include "cadet/cadet.h"
 
 #ifndef CADET_LOGGING_DISABLE
 	namespace
 	{
+		class CStyleLogReceiver : public cadet::ILogReceiver
+		{
+		public:
+			CStyleLogReceiver() : _hdlr(nullptr) { }
+			CStyleLogReceiver(cdtLogHandler hdlr) : _hdlr(hdlr) { }
+			virtual ~CStyleLogReceiver() CADET_NOEXCEPT { }
+
+			virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl, const char* lvlStr, const char* message)
+			{
+				_hdlr(file, func, line, static_cast<typename std::underlying_type<cadet::LogLevel>::type>(lvl), lvlStr, message);
+			}
+
+			void handler(cdtLogHandler hdlr) CADET_NOEXCEPT { _hdlr = hdlr; }
+
+		protected:
+			cdtLogHandler _hdlr;
+		};
+
 		/**
 		 * @brief Receiver of all log messages created in the libcadet library
 		 */
 		cadet::ILogReceiver* logReceiver = nullptr;
+
+		/**
+		 * @brief Receiver for C API
+		 */
+		CStyleLogReceiver cApiLogReceiver;
 	}
 
 	template <>
@@ -71,17 +95,26 @@ namespace cadet
 
 extern "C"
 {
-	void cadetSetLogReceiver(cadet::ILogReceiver* const recv)
+	void cdtSetLogReceiver(cdtLogHandler recv)
 	{
-		cadet::setLogReceiver(recv);
+		if (recv)
+		{
+			cApiLogReceiver.handler(recv);
+			cadet::setLogReceiver(&cApiLogReceiver);
+		}
+		else
+		{
+			cApiLogReceiver.handler(nullptr);
+			cadet::setLogReceiver(nullptr);
+		}
 	}
 
-	void cadetSetLogLevel(unsigned int lvl)
+	void cdtSetLogLevel(int lvl)
 	{
 		cadet::setLogLevel(static_cast<cadet::LogLevel>(lvl));
 	}
 
-	unsigned int cadetGetLogLevel()
+	int cdtGetLogLevel()
 	{
 		return static_cast<typename std::underlying_type<cadet::LogLevel>::type>(cadet::getLogLevel());
 	}

@@ -106,6 +106,7 @@ set(LIBCADET_REACTIONMODEL_SOURCES
 set(LIBCADET_SOURCES
 	${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/Logging.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/api/CAPIv1.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/FactoryFuncs.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/ModelBuilderImpl.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/SimulatorImpl.cpp

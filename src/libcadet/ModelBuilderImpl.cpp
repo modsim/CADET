@@ -20,6 +20,9 @@
 #include "model/ModelSystemImpl.hpp"
 #include "CompileTimeConfig.hpp"
 
+#include "LoggingUtils.hpp"
+#include "Logging.hpp"
+
 #include <sstream>
 #include <iomanip>
 
@@ -171,6 +174,7 @@ namespace cadet
 		if (it == _modelCreators.end())
 		{
 			// Model was not found
+			LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
 			return nullptr;
 		}
 
@@ -180,6 +184,7 @@ namespace cadet
 
 		if (!model->configureModelDiscretization(paramProvider, *this) || !model->configure(paramProvider))
 		{
+			LOG(Error) << "Configuration of unit " << uoId << "(" << uoType << ") failed";
 			delete model;
 			return nullptr;
 		}
@@ -193,6 +198,7 @@ namespace cadet
 		if (it == _modelCreators.end())
 		{
 			// Model was not found
+			LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
 			return nullptr;
 		}
 

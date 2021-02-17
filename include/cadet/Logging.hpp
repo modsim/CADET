@@ -165,27 +165,4 @@ namespace cadet
 
 } // namespace cadet
 
-extern "C"
-{
-	/**
-	 * @brief Sets the log receiver replacing any previously set receiver
-	 * @param [in] recv Pointer to ILogReceiver implementation or @c nullptr
-	 */
-	CADET_API void cadetSetLogReceiver(cadet::ILogReceiver* const recv);
-
-	/**
-	 * @brief Sets the log level
-	 * @details All messages on a lower log level (i.e., higher severity or information content)
-	 *          are filtered out.
-	 * @param [in] lvl New log level
-	 */
-	CADET_API void cadetSetLogLevel(unsigned int lvl);
-
-	/**
-	 * @brief Returns the current log level
-	 * @return Current log level
-	 */
-	CADET_API unsigned int cadetGetLogLevel();
-}
-
 #endif  // LIBCADET_LOGGING_HPP_

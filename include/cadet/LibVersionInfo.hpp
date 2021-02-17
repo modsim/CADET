@@ -21,59 +21,6 @@
 #include "cadet/LibExportImport.hpp"
 #include "cadet/cadetCompilerInfo.hpp"
 
-extern "C"
-{
-	/**
-	 * @brief Returns the version string of the libcadet library
-	 * @return Version string
-	 */
-	CADET_API const char* cadetGetLibraryVersion();
-
-	/**
-	 * @brief Returns the git commit hash of the source which was used to build the binaries
-	 * @return Git commit hash as string
-	 */
-	CADET_API const char* cadetGetLibraryCommitHash();
-
-	/**
-	 * @brief Returns the git refspec of the source which was used to build the binaries
-	 * @return Git refspec
-	 */
-	CADET_API const char* cadetGetLibraryBranchRefspec();
-
-	/**
-	 * @brief Returns the versions of the dependencies used for building the binaries
-	 * @details The format is DEPNAME1=VERSION;DEPNAME2=VERSION; where each dependency is
-	 *          terminated by a semicolon.
-	 * @return Dependency versions string
-	 */
-	CADET_API const char* cadetGetLibraryDependencyVersions();
-
-	/**
-	 * @brief Returns the build type (Debug, Release, RelWithDebInfo, RelMinSize)
-	 * @return Build type
-	 */
-	CADET_API const char* cadetGetLibraryBuildType();
-
-	/**
-	 * @brief Returns the compiler including its version used for building the library
-	 * @return Compiler and its version
-	 */
-	CADET_API const char* cadetGetLibraryCompiler();
-
-	/**
-	 * @brief Returns the compiler flags used for building the library
-	 * @return Compiler flags
-	 */
-	CADET_API const char* cadetGetLibraryCompilerFlags();
-
-	/**
-	 * @brief Returns the git refspec of the source which was used to build the binaries
-	 * @return Git refspec
-	 */
-	CADET_API const char* cadetGetLibraryBuildHost();
-}
-
 namespace cadet
 {
 

@@ -1,5 +1,5 @@
 GE Healthcare sponsored development of core-shell beads, multiple particle types, and 2D general rate model
 Sartorius sponsored development of particle geometries
-Bayer AG contributed to bugfixes, initial C API
+Bayer AG contributed to bugfixes, initial C API, initial Python frontend
 
 Follow the lead, become a contributor by sending a pull request or a patch.

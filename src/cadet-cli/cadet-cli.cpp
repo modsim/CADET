@@ -293,8 +293,8 @@ int main(int argc, char** argv)
 
 	// Set LogLevel in library and locally
 	LogReceiver lr;
-	cadetSetLogReceiver(&lr);
-	cadetSetLogLevel(static_cast<typename std::underlying_type<cadet::LogLevel>::type>(logLevel));
+	cadet::setLogReceiver(&lr);
+	cadet::setLogLevel(logLevel);
 	setLocalLogLevel(logLevel);
 
 	// Obtain file extensions for selecting corresponding reader and writer

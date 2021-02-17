@@ -1309,7 +1309,9 @@ namespace cadet
 						IDAGetSensDky(_idaMemBlock, curT, 1, _vecFwdYsDot);
 					}
 					writeSolution(curT);
-					++it;
+					
+					if (writeAtUserTimes)
+						++it;
 
 					// Notify user and check for user abort
 					if (_notification)

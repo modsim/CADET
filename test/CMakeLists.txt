@@ -33,7 +33,9 @@ target_link_libraries(testLogging PRIVATE CADET::CompileOptions)
 
 
 # CATCH unit tests
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Paths.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/Paths.cpp" @ONLY)
+set(LIBCADET_SHARED_LIBFILE "$<TARGET_FILE:libcadet_shared>")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Paths.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/Paths.cpp.in" @ONLY)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" INPUT "${CMAKE_CURRENT_BINARY_DIR}/Paths.cpp.in")
 
 set(TEST_ADDITIONAL_SOURCES "")
 if (ENABLE_GRM_2D)
@@ -50,7 +52,7 @@ add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp Unit
 	ParamDepTests.cpp ParameterDependencies.cpp
 	ModelSystem.cpp
 	BandMatrix.cpp DenseMatrix.cpp SparseMatrix.cpp StringHashing.cpp LogUtils.cpp AD.cpp Subset.cpp Graph.cpp
-	"${CMAKE_CURRENT_BINARY_DIR}/Paths.cpp" "${CMAKE_SOURCE_DIR}/src/io/JsonParameterProvider.cpp"
+	"${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" "${CMAKE_SOURCE_DIR}/src/io/JsonParameterProvider.cpp"
 	${TEST_ADDITIONAL_SOURCES}
 	$<TARGET_OBJECTS:libcadet_object>)
 
@@ -90,6 +92,12 @@ endforeach()
 foreach(_TARGET IN LISTS TEST_NONLINALG_TARGETS)
 	target_link_libraries(${_TARGET} PRIVATE libcadet_nonlinalg_static)
 endforeach()
+
+# ---------------------------------------------------
+
+
+add_executable(testCAPIv1 "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" testCAPIv1.cpp)
+target_include_directories(testCAPIv1 PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ThirdParty/json)
 
 # ---------------------------------------------------
 

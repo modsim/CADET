@@ -14,3 +14,8 @@ const char* getTestDirectory()
 {
 	return "@CMAKE_SOURCE_DIR@/test";
 }
+
+const char* getLibBinaryPath()
+{
+	return "$<TARGET_FILE:libcadet_shared>";
+}

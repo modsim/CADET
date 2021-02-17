@@ -11,6 +11,7 @@
 // =============================================================================
 
 #include "cadet/LibVersionInfo.hpp"
+#include "cadet/cadet.h"
 
 namespace cadet
 {
@@ -67,42 +68,42 @@ namespace cadet
 extern "C"
 {
 	
-	CADET_API const char* cadetGetLibraryVersion()
+	CADET_API const char* cdtGetLibraryVersion()
 	{
 		return cadet::getLibraryVersion();
 	}
 
-	CADET_API const char* cadetGetLibraryCommitHash()
+	CADET_API const char* cdtGetLibraryCommitHash()
 	{
 		return cadet::getLibraryCommitHash();
 	}
 
-	CADET_API const char* cadetGetLibraryBranchRefspec()
+	CADET_API const char* cdtGetLibraryBranchRefspec()
 	{
 		return cadet::getLibraryBranchRefspec();
 	}
 	
-	CADET_API const char* cadetGetLibraryDependencyVersions()
+	CADET_API const char* cdtGetLibraryDependencyVersions()
 	{
 		return cadet::getLibraryDependencyVersions();
 	}
 
-	CADET_API const char* cadetGetLibraryBuildType()
+	CADET_API const char* cdtGetLibraryBuildType()
 	{
 		return cadet::getLibraryBuildType();
 	}
 
-	CADET_API const char* cadetGetLibraryCompiler()
+	CADET_API const char* cdtGetLibraryCompiler()
 	{
 		return cadet::getLibraryCompiler();
 	}
 
-	CADET_API const char* cadetGetLibraryCompilerFlags()
+	CADET_API const char* cdtGetLibraryCompilerFlags()
 	{
 		return cadet::getLibraryCompilerFlags();
 	}
 
-	CADET_API const char* cadetGetLibraryBuildHost()
+	CADET_API const char* cdtGetLibraryBuildHost()
 	{
 		return cadet::getLibraryBuildHost();
 	}

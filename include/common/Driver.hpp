@@ -267,6 +267,8 @@ public:
 
 		// Create and configure model
 		cadet::IModelSystem* model = _builder->createSystem(pp);
+		if (!model)
+			throw InvalidParameterException("Invalid model");
 
 		// Hand model over to simulator
 		_sim->initializeModel(*model);

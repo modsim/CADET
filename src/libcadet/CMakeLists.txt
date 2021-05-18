@@ -123,6 +123,7 @@ set(LIBCADET_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/UnitOperationBase.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/InletModel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/OutletModel.cpp
+    ${CMAKE_SOURCE_DIR}/src/libcadet/model/MixerSplitterModel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/StirredTankModel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithoutPores.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPores.cpp

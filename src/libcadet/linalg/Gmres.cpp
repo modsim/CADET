@@ -17,6 +17,8 @@
 	#include <sundials/sundials_spgmr.h>
 #elif CADET_SUNDIALS_IFACE == 3
 	#include <sunlinsol/sunlinsol_spgmr.h>
+#elif CADET_SUNDIALS_IFACE >= 5
+	#include <sunlinsol/sunlinsol_spgmr.h>
 #endif
 
 #include "SundialsVector.hpp"
@@ -47,6 +49,8 @@ Gmres::Gmres() CADET_NOEXCEPT :
 	_mem(nullptr),
 #elif CADET_SUNDIALS_IFACE == 3
 	_linearSolver(nullptr),
+#elif CADET_SUNDIALS_IFACE >= 5
+	_linearSolver(nullptr),
 #endif
 	_ortho(Orthogonalization::ModifiedGramSchmidt), _maxRestarts(0), _matrixSize(0), _matVecMul(nullptr), _userData(nullptr)
 {
@@ -61,6 +65,9 @@ Gmres::~Gmres() CADET_NOEXCEPT
 	if (_mem)
 		SpgmrFree(_mem);
 #elif CADET_SUNDIALS_IFACE == 3
+	if (_linearSolver)
+		SUNLinSolFree(_linearSolver);
+#elif CADET_SUNDIALS_IFACE >= 5
 	if (_linearSolver)
 		SUNLinSolFree(_linearSolver);
 #endif
@@ -90,6 +97,10 @@ void Gmres::initialize(unsigned int matrixSize, unsigned int maxKrylov, Orthogon
 #elif CADET_SUNDIALS_IFACE == 3
 	_linearSolver = SUNSPGMR(NV_tmpl, PREC_NONE, maxKrylov);
 	SUNLinSolSetATimes(_linearSolver, this, &gmresCallback);
+	SUNLinSolInitialize_SPGMR(_linearSolver);
+#elif CADET_SUNDIALS_IFACE >= 5
+	_linearSolver = SUNLinSol_SPGMR(NV_tmpl, PREC_NONE, maxKrylov);
+	SUNLinSolSetATimes_SPGMR(_linearSolver, this, &gmresCallback);
 	SUNLinSolInitialize_SPGMR(_linearSolver);
 #endif
 
@@ -127,10 +138,21 @@ int Gmres::solve(double tolerance, double const* weight, double const* rhs, doub
 	SUNLinSolSetup(_linearSolver, nullptr);
 	const int flag = SUNLinSolSolve(_linearSolver, nullptr, NV_sol, NV_rhs, tolerance);
 
-#if defined(CADET_DEBUG) || defined(CADET_BENCHMARK_MODE)
-	const int nIter = SUNLinSolNumIters(_linearSolver);
-	const double resNorm = SUNLinSolResNorm(_linearSolver);
-#endif
+	#if defined(CADET_DEBUG) || defined(CADET_BENCHMARK_MODE)
+		const int nIter = SUNLinSolNumIters(_linearSolver);
+		const double resNorm = SUNLinSolResNorm(_linearSolver);
+	#endif
+#elif CADET_SUNDIALS_IFACE >= 5
+	SUNLinSol_SPGMRSetGSType(_linearSolver, gsType);
+	SUNLinSol_SPGMRSetMaxRestarts(_linearSolver, _maxRestarts);
+	SUNLinSolSetScalingVectors(_linearSolver, NV_weight, NV_weight);
+	SUNLinSolSetup(_linearSolver, nullptr);
+	const int flag = SUNLinSolSolve(_linearSolver, nullptr, NV_sol, NV_rhs, tolerance);
+
+	#if defined(CADET_DEBUG) || defined(CADET_BENCHMARK_MODE)
+		const int nIter = SUNLinSolNumIters(_linearSolver);
+		const double resNorm = SUNLinSolResNorm(_linearSolver);
+	#endif
 #endif
 
 	// Free NVector memory space
@@ -166,6 +188,35 @@ int Gmres::solve(double tolerance, double const* weight, double const* rhs, doub
 		}
 	}
 #elif CADET_SUNDIALS_IFACE == 3
+	const char* Gmres::getReturnFlagName(int flag) const CADET_NOEXCEPT
+	{
+		switch (flag)
+		{
+		case 0: return "SUNLS_SUCCESS";             // successful/converged
+
+		case -1: return "SUNLS_MEM_NULL";           // mem argument is NULL
+		case -2: return "SUNLS_ILL_INPUT";          // illegal function input
+		case -3: return "SUNLS_MEM_FAIL";           // failed memory access
+		case -4: return "SUNLS_ATIMES_FAIL_UNREC";  // atimes unrecoverable failure
+		case -5: return "SUNLS_PSET_FAIL_UNREC";    // pset unrecoverable failure
+		case -6: return "SUNLS_PSOLVE_FAIL_UNREC";  // psolve unrecoverable failure
+		case -7: return "SUNLS_PACKAGE_FAIL_UNREC"; // external package unrec. fail
+		case -8: return "SUNLS_GS_FAIL";            // Gram-Schmidt failure
+		case -9: return "SUNLS_QRSOL_FAIL";         // QRsol found singular R
+
+		case 1: return "SUNLS_RES_REDUCED";         // nonconv. solve, resid reduced
+		case 2: return "SUNLS_CONV_FAIL";           // nonconvergent solve
+		case 3: return "SUNLS_ATIMES_FAIL_REC";     // atimes failed recoverably
+		case 4: return "SUNLS_PSET_FAIL_REC";       // pset failed recoverably
+		case 5: return "SUNLS_PSOLVE_FAIL_REC";     // psolve failed recoverably
+		case 6: return "SUNLS_PACKAGE_FAIL_REC";    // external package recov. fail
+		case 7: return "SUNLS_QRFACT_FAIL";         // QRfact found singular matrix
+		case 8: return "SUNLS_LUFACT_FAIL";         // LUfact found singular matrix
+
+		default: return "NO_VALID_FLAG";
+		}
+	}
+#elif CADET_SUNDIALS_IFACE >= 5
 	const char* Gmres::getReturnFlagName(int flag) const CADET_NOEXCEPT
 	{
 		switch (flag)

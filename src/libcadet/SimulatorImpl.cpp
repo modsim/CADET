@@ -20,7 +20,12 @@
 #include "SimulationTypes.hpp"
 
 #include <idas/idas.h>
-#include <idas/idas_impl.h>
+#if CADET_SUNDIALS_IFACE >= 5
+	#include <idas/idas_ls.h>
+	#include <sundials/sundials_matrix.h>
+	#include <sunmatrix/sunmatrix_dense.h>
+#endif
+
 #include "SundialsVector.hpp"
 
 #include <vector>
@@ -301,21 +306,6 @@ namespace cadet
 */
 
 	/**
-	* @brief IDAS wrapper function to call the model's linearSolve() method
-	*/
-	int linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector y, N_Vector yDot, N_Vector res)
-	{
-		cadet::Simulator* const sim = static_cast<cadet::Simulator*>(IDA_mem->ida_lmem);
-		const double t = IDA_mem->ida_tn;
-		const double alpha = IDA_mem->ida_cj;
-		const double tol = IDA_mem->ida_epsNewt;
-
-		LOG(Trace) << "==> Solve at t = " << t << " alpha = " << alpha << " tol = " << tol;
-
-		return sim->_model->linearSolve(t, alpha, tol, NVEC_DATA(rhs), NVEC_DATA(weight), cadet::ConstSimulationState{NVEC_DATA(y), NVEC_DATA(yDot)});
-	}
-
-	/**
 	* @brief IDAS wrapper function to call the model's residualSensFwd() method
 	*/
 	int residualSensWrapper(int ns, double t, N_Vector y, N_Vector yDot, N_Vector res, 
@@ -340,6 +330,94 @@ namespace cadet
 			sensY, sensYdot, sensRes, sim->_vecADres, NVEC_DATA(tmp1), NVEC_DATA(tmp2), NVEC_DATA(tmp3));
 	}
 
+#if CADET_SUNDIALS_IFACE >= 5
+
+	SUNLinearSolver_ID linearSolverGetId(SUNLinearSolver)
+	{
+		return SUNLINEARSOLVER_CUSTOM;
+	}
+
+	SUNLinearSolver_Type linearSolverGetType(SUNLinearSolver)
+	{
+		return SUNLINEARSOLVER_ITERATIVE;
+//		return SUNLINEARSOLVER_DIRECT;
+	}
+
+	int linearSolverInitialize(SUNLinearSolver)
+	{
+		return 0;
+	}
+
+	int linearSolverSetup(SUNLinearSolver, SUNMatrix)
+	{
+		return 0;
+	}
+
+	int linearSolverSetATimes(SUNLinearSolver, void*, ATimesFn)
+	{
+		return 0;
+	}
+
+	int linearSolverNumIters(SUNLinearSolver)
+	{
+		return 1;
+	}
+
+	N_Vector linearSolverResidual(SUNLinearSolver)
+	{
+		return nullptr;
+	}
+
+	int linearSolverJacobian(double t, double c_j, N_Vector y, N_Vector yp, N_Vector r, SUNMatrix Jac, void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+	{
+		return 0;
+	}
+
+	int linearSolverSolve(SUNLinearSolver ls, SUNMatrix, N_Vector x, N_Vector rhs, double tol)
+	{
+//	int linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector y, N_Vector yDot, N_Vector res)
+		cadet::Simulator* const sim = static_cast<cadet::Simulator*>(ls->content);
+
+		double t;
+		double alpha;
+		N_Vector y;
+		N_Vector yDot;
+		N_Vector unused1;
+		N_Vector unused2;
+		N_Vector unused3;
+		void* unused4;
+		IDAGetNonlinearSystemData(sim->_idaMemBlock, &t, &unused1, &unused2, &y, &yDot, &unused3, &alpha, &unused4);
+//		const double alpha = IDA_mem->a_epsNewt;
+		LOG(Trace) << "==> Solve at t = " << t << " alpha = " << alpha << " tol = " << tol;
+
+		return sim->_model->linearSolve(t, alpha, tol, NVEC_DATA(rhs), NVEC_DATA(sim->_linearSolverWeight), cadet::ConstSimulationState{NVEC_DATA(y), NVEC_DATA(yDot)});
+	}
+
+	int linearSolverSetScalingVectors(SUNLinearSolver ls, N_Vector weight, N_Vector)
+	{
+		cadet::Simulator* const sim = static_cast<cadet::Simulator*>(ls->content);
+		sim->_linearSolverWeight = weight;
+		return 0;
+	}
+
+#else
+
+	/**
+	* @brief IDAS wrapper function to call the model's linearSolve() method
+	*/
+	int linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector y, N_Vector yDot, N_Vector res)
+	{
+		cadet::Simulator* const sim = static_cast<cadet::Simulator*>(IDA_mem->ida_lmem);
+		const double t = IDA_mem->ida_tn;
+		const double alpha = IDA_mem->ida_cj;
+		const double tol = IDA_mem->ida_epsNewt;
+
+		LOG(Trace) << "==> Solve at t = " << t << " alpha = " << alpha << " tol = " << tol;
+
+		return sim->_model->linearSolve(t, alpha, tol, NVEC_DATA(rhs), NVEC_DATA(weight), cadet::ConstSimulationState{NVEC_DATA(y), NVEC_DATA(yDot)});
+	}
+#endif
+
 	Simulator::Simulator() : _model(nullptr), _solRecorder(nullptr), _idaMemBlock(nullptr), _vecStateY(nullptr), 
 		_vecStateYdot(nullptr), _vecFwdYs(nullptr), _vecFwdYsDot(nullptr),
 		_relTolS(1.0e-9), _absTol(1, 1.0e-12), _relTol(1.0e-9), _initStepSize(1, 1.0e-6), _maxSteps(10000), _maxStepSize(0.0),
@@ -347,6 +425,9 @@ namespace cadet
 		_maxNewtonIterSens(3), _curSec(0), _skipConsistencyStateY(false), _skipConsistencySensitivity(false),
 		_consistentInitMode(ConsistentInitialization::Full), _consistentInitModeSens(ConsistentInitialization::Full),
 		_vecADres(nullptr), _vecADy(nullptr), _lastIntTime(0.0), _notification(nullptr)
+#if CADET_SUNDIALS_IFACE >= 5
+		, _linearSolver(nullptr)
+#endif
 	{
 #if defined(ACTIVE_SFAD) || defined(ACTIVE_SETFAD)
 		LOG(Debug) << "Resetting AD directions from " << ad::getDirections() << " to default " << ad::getMaxDirections();
@@ -378,6 +459,11 @@ namespace cadet
 
 		if (_idaMemBlock)
 			IDAFree(&_idaMemBlock);
+
+#if CADET_SUNDIALS_IFACE >= 5
+		if (_linearSolver)
+			SUNLinSolFreeEmpty(_linearSolver);
+#endif
 	}
 
 	void Simulator::initializeModel(IModelSystem& model)
@@ -442,6 +528,7 @@ namespace cadet
 		IDASetMaxConvFails(_idaMemBlock, _maxConvTestFail);
 		IDASetSensMaxNonlinIters(_idaMemBlock, _maxNewtonIterSens);
 
+#if CADET_SUNDIALS_IFACE <= 3
 		// Specify the linear solver.
 		IDAMem IDA_mem = static_cast<IDAMem>(_idaMemBlock);
 
@@ -453,8 +540,30 @@ namespace cadet
 		IDA_mem->ida_lfree          = nullptr;
 //		IDA_mem->ida_efun           = &weightWrapper;
 //		IDA_mem->ida_user_efun      = 1;
+#endif
 #if CADET_SUNDIALS_IFACE <= 2
 		IDA_mem->ida_setupNonNull   = false;
+#endif
+
+#if CADET_SUNDIALS_IFACE >= 5
+
+		_linearSolver = SUNLinSolNewEmpty();
+		_linearSolver->content = this;
+		_linearSolver->ops->gettype = linearSolverGetType;
+		_linearSolver->ops->initialize = linearSolverInitialize;
+		_linearSolver->ops->getid = linearSolverGetId;
+		_linearSolver->ops->setup = linearSolverSetup;
+		_linearSolver->ops->solve = linearSolverSolve;
+		_linearSolver->ops->setatimes = linearSolverSetATimes;
+		_linearSolver->ops->numiters = linearSolverNumIters;
+		_linearSolver->ops->resid = linearSolverResidual;
+		_linearSolver->ops->setscalingvectors = linearSolverSetScalingVectors;
+
+//		IDASetLinearSolver(_idaMemBlock, _linearSolver, SUNDenseMatrix(1,1));
+//		IDASetJacFn(_idaMemBlock, linearSolverJacobian);
+		IDASetLinearSolver(_idaMemBlock, _linearSolver, nullptr);
+
+//		IDASetLinearSolutionScaling(_idaMemBlock, SUNFALSE);
 #endif
 
 		// Attach user data structure

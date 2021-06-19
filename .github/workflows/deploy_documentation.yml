@@ -1,0 +1,14 @@
+name: "Trigger for dispatching CADET-Website"
+on: push
+
+jobs:
+  dispatch_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit repository_dispatch
+        uses: mvasigh/dispatch-action@main
+        with:
+          token: ${{ secrets.DISPATCH_DOCS }}
+          repo: CADET-Website
+          owner: modsim
+          event_type: build_docs

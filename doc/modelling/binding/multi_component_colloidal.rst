@@ -30,7 +30,7 @@ For the screening term :math:`\kappa`, the following equation is used.
 
     \kappa = \frac{10^{9}}{\kappa_f c_{0}^{\kappa_{ef}} + \kappa{c}}.
 
-:math:`κ_{c}`, :math:`κ_{ef}`, and :math:`κ_{f}`, are constants and :math:`c_{0}` is the total ionic strength.
+:math:`\kappa_{c}`, :math:`\kappa_{ef}`, and :math:`\kappa_{f}`, are constants and :math:`c_{0}` is the total ionic strength.
 
 The terms for protein-resin interaction, :math:`K_{e,i}`, and protein-protein interaction, :math:`b_{pp,i}`, are varied as function of ionic strength (:math:`c_0`) and pH (:math:`c_1`): 
 

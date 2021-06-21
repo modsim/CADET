@@ -35,7 +35,7 @@ Multi Component Colloidal
 ``COL_KAPPA_FACT``
    Screening term factor
 
-**Unit:** :math:`nm(mM)^{-1}` [please check units! Use SI (1/m) if possible! @schmoelder]
+**Unit:** :math:`nm \cdot mM^{-1}`
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1
@@ -44,7 +44,7 @@ Multi Component Colloidal
 ``COL_KAPPA_CONST``
    Screening term constant
 
-**Unit:** :math:`nm` [please check units! Use SI (m) if possible! @schmoelder]
+**Unit:** :math:`nm`
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1
@@ -107,28 +107,28 @@ Multi Component Colloidal
 ===================  =========================  =========================================
 
 ``COL_BPP_SALT_POWFACT``
-  BPP constant power factor term for salt
+   BPP constant power factor term for salt
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** NTOTALBND
 ===================  =========================  =========================================
 
 ``COL_BPP_SALT_EXPFACT``
-  BPP constant exponent factor term for salt
+   BPP constant exponent factor term for salt
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** NTOTALBND
 ===================  =========================  =========================================
 
 ``COL_BPP_SALT_EXPARGMUL``
-  BPP constant exponent multiplier term for salt
+   BPP constant exponent multiplier term for salt
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** NTOTALBND
 ===================  =========================  =========================================
 
 ``COL_RADIUS``
-  Protein radius
+   Protein radius
 
 **Unit:** :math:`m`
 
@@ -137,7 +137,7 @@ Multi Component Colloidal
 ===================  =========================  =========================================
 
 ``COL_KKIN``
-  Adsorption kinetics
+   Adsorption rate constants in state-major ordering
 
 **Unit:** :math:`s^{-1}`
 
@@ -146,14 +146,14 @@ Multi Component Colloidal
 ===================  =========================  =========================================
 
 ``COL_LINEAR_THRESHOLD``
-  Linear threshold
+   Linear threshold
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1
 ===================  =========================  =========================================
 
 ``COL_USE_PH``
-  Selects if pH is included in the model or not: 1 = yes, 0 = no.
+   Selects if pH is included in the model or not: 1 = yes, 0 = no.
 
 ===================  =========================  =========================================
 **Type:** int        **Range:** :math:`{0,1}`   **Length:** 1

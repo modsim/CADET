@@ -146,7 +146,7 @@ Multi Component Colloidal
 ===================  =========================  =========================================
 
 ``COL_LINEAR_THRESHOLD``
-   Linear threshold
+   Threshold concentration for switching to linear implementation
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1

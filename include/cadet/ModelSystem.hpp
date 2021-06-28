@@ -109,6 +109,7 @@ public:
 	virtual IModel* getUnitOperationModel(unsigned int unitOpIdx) = 0;
 	virtual IModel const* getUnitOperationModel(unsigned int unitOpIdx) const = 0;
 
+
 	/**
 	 * @brief Returns the number of unit operation models in the system
 	 * @return Number of unit operation models in the system
@@ -161,6 +162,16 @@ public:
 	 * @param [in] extFun External function object to be removed
 	 */
 	virtual void removeExternalFunction(IExternalFunction const* extFun) = 0;
+
+
+	/**
+	 * @brief Return the index and length of state vector relavant to each unit operation
+	 * @details This function returns starting index and stride of the last_state_vector
+	 *			related to each unit operation. This will faciliate the user to read
+	 *			the state vector in a more efficient manner.
+	 */
+	virtual const unsigned int* getModelSlice() const CADET_NOEXCEPT=0;
+	//virtual IModel* getModelSlice(std::vector<int> index_stride) = 0;
 
 #ifdef CADET_BENCHMARK_MODE
 	/**

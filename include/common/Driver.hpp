@@ -18,6 +18,7 @@
 #ifndef CADET_DRIVER_HPP_
 #define CADET_DRIVER_HPP_
 
+#include<iostream>
 #include <string>
 #include <vector>
 #include <iomanip>
@@ -26,7 +27,6 @@
 #include "cadet/cadet.hpp"
 
 #include "common/SolutionRecorderImpl.hpp"
-
 
 namespace cadet
 {
@@ -194,7 +194,7 @@ void readSensitivityInitialState(ParamProvider_t& pp, const char* prefix, std::v
 class Driver
 {
 public:
-	Driver() : _sim(nullptr), _builder(nullptr), _storage(nullptr), _writeLastState(false), _writeLastStateSens(false)
+	Driver() : _sim(nullptr), _builder(nullptr), _storage(nullptr), _writeLastState(false), _writeLastStateSens(false), _writeLastStateUnit(false),_flag(1000,false)
 	{
 		_builder = cadetCreateModelBuilder();
 	}
@@ -273,16 +273,25 @@ public:
 		_sim->setSectionTimes(secTimes, secCont);
 
 		// Specify initial values
-		if (pp.exists("INIT_STATE_Y") && pp.exists("INIT_STATE_YDOT"))
+		if (pp.exists("INIT_STATE_Y"))
 		{
 			const std::vector<double> initY = pp.getDoubleArray("INIT_STATE_Y");
-			const std::vector<double> initYdot = pp.getDoubleArray("INIT_STATE_YDOT");
-			if (initY.size() >= _sim->numDofs())
+			if (initY.size() != _sim->numDofs())
 			{
-				if (initYdot.size() >= _sim->numDofs())
-					_sim->applyInitialCondition(initY.data(), initYdot.data());
-				else
-					_sim->applyInitialCondition(initY.data());
+				throw InvalidParameterException("Length of INIT_STATE_Y should be equal to NDOF");
+			}
+			if (pp.exists("INIT_STATE_YDOT"))
+			{
+				const std::vector<double> initYdot = pp.getDoubleArray("INIT_STATE_YDOT");
+				if (initYdot.size() != _sim->numDofs())
+				{
+					throw InvalidParameterException("Length of INIT_STATE_YDOT should be equal to NDOF");
+				}
+				_sim->applyInitialCondition(initY.data(), initYdot.data());
+			}
+			else
+			{
+				_sim->applyInitialCondition(initY.data());
 			}
 		}
 		else
@@ -458,6 +467,24 @@ public:
 		else
 			_writeLastState = false;
 
+		// Adding a new output variable
+		std::ostringstream oss;
+		for (int i = 0; i <= _sim->model()->maxUnitOperationId(); ++i)
+		{
+			oss.str("");
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+			pp.pushScope(oss.str());
+			if (pp.exists("WRITE_SOLUTION_LAST_UNIT"))
+			{
+				_writeLastStateUnit = pp.getBool("WRITE_SOLUTION_LAST_UNIT");
+				_flag[i] = true;
+			}
+				
+			else
+				_writeLastStateUnit = false;
+			pp.popScope();
+		}
+
 		if (pp.exists("WRITE_SENS_LAST"))
 			_writeLastStateSens = pp.getBool("WRITE_SENS_LAST");
 		else
@@ -524,9 +551,79 @@ public:
 			double const* const lastYdot = _sim->getLastSolutionDerivative(len);
 
 			writer.vector("LAST_STATE_Y", len, lastY);
-			writer.vector("LAST_STATE_YDOT", len, lastYdot);
+			writer.vector("LAST_STATE_YDOT", len, lastYdot); 
 		}
 
+		/*Implementatoin of writing last state Y and YDot for each unit operation*/
+
+		for (int i = 0; i <= _sim->model()->maxUnitOperationId(); ++i)
+		{
+			std::ostringstream oss;
+			oss.str("");
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+			writer.pushGroup("solution");
+			writer.pushGroup(oss.str());
+			if (_flag[i] == true)
+			{
+				unsigned int len = 0;
+				double const* const lastY = _sim->getLastSolution(len);
+				double const* const lastYdot = _sim->getLastSolutionDerivative(len);
+
+				const unsigned int* index_stride = _sim->model()->getModelSlice();
+				int count;
+				std::vector<double> dataVecTemp;
+				std::vector<double> lastYdotTemp;
+				count = 0;
+				for (int j = index_stride[i]; j < index_stride[i + 1]; j++)
+				{
+					dataVecTemp.insert(dataVecTemp.begin() + count, lastY[j]);
+					lastYdotTemp.insert(lastYdotTemp.begin() + count, lastYdot[j]);
+					count++;
+				}
+
+				writer.template vector<double>("LAST_STATE_Y", dataVecTemp.size(), dataVecTemp.data());
+				writer.template vector<double>("LAST_STATE_YDOT", lastYdotTemp.size(), lastYdotTemp.data());
+			}
+			writer.popGroup();
+			writer.popGroup();
+		}
+
+		/*if(_writeLastStateUnit)
+		{
+			unsigned int len = 0;
+			double const* const lastY = _sim->getLastSolution(len);
+			double const* const lastYdot = _sim->getLastSolutionDerivative(len);
+
+			std::vector<int> index_stride = _sim->model()->getModelSlice();
+			int count;
+
+			
+			std::ostringstream oss;
+			for (int i=0; i<=_sim->model()->maxUnitOperationId();++i)
+			{
+				std::vector<double> dataVecTemp;
+				std::vector<double> lastYdotTemp;
+				count = 0;
+				for (int j = index_stride[2*i]; j < index_stride[2*i+1]; j++)
+				{
+					dataVecTemp.insert(dataVecTemp.begin() + count, lastY[j]);
+					lastYdotTemp.insert(lastYdotTemp.begin() + count, lastYdot[j]);
+					count++;
+				}
+
+				oss.str("");
+				oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+
+				writer.pushGroup("LAST_STATE");
+				writer.pushGroup(oss.str());
+				writer.template vector<double>("LAST_STATE_Y", dataVecTemp.size(), dataVecTemp.data());
+				writer.template vector<double>("LAST_STATE_YDOT", lastYdotTemp.size(), lastYdotTemp.data());
+				writer.popGroup();
+				writer.popGroup();
+
+			}
+		}*/
+		// here it ends: Jazib
 		if (_writeLastStateSens)
 		{
 
@@ -590,6 +687,7 @@ public:
 	inline cadet::IModelSystem* model() const { return _sim->model(); }
 
 	inline void setWriteLastState(bool writeLastState) CADET_NOEXCEPT { _writeLastState = writeLastState; }
+	inline void setWriteLastStateUnit(bool writeLastStateUnit) CADET_NOEXCEPT { _writeLastStateUnit = writeLastStateUnit; }
 	inline void setWriteLastStateSens(bool writeLastState) CADET_NOEXCEPT { _writeLastStateSens = writeLastState; }
 	inline void setWriteSolutionTimes(bool solTimes) CADET_NOEXCEPT
 	{
@@ -606,6 +704,8 @@ protected:
 	cadet::InternalStorageSystemRecorder* _storage; //!< Storage for results
 
 	bool _writeLastState;
+	bool _writeLastStateUnit;
+	std::vector<bool> _flag;
 	bool _writeLastStateSens;
 
 	/**

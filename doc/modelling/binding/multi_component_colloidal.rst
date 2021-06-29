@@ -53,7 +53,7 @@ The terms for protein-resin interaction, :math:`K_{e,i}`, and protein-protein in
 where :math:`k_{a-e}`, :math:`b_{a-e}` are fitting constants. 
 
 
-If the surface concentration is close to zero, the model switches to a linear implementation:
+Because the model becomes mathematically singular at zero concentration, the original equation is replaced by its mathematical limit below a threshold concentration.
 
 .. math::
 

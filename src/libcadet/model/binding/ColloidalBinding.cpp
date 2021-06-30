@@ -251,7 +251,7 @@ protected:
 		}
 		else
 		{
-			const CpStateParamType kappa = 1e9 / (pow(cpSalt, static_cast<ParamType>(p->kappaExp)) * static_cast<ParamType>(p->kappaFact) + static_cast<ParamType>(p->kappaConst));
+			const CpStateParamType kappa = pow(cpSalt, static_cast<ParamType>(p->kappaExp)) * static_cast<ParamType>(p->kappaFact) + static_cast<ParamType>(p->kappaConst);
 			const StateParamType R = sqrt(_rFactor * static_cast<ParamType>(p->phi) / qSum);
 			const StateParamType Sfactor = static_cast<ParamType>(p->cordNum) * 0.125 / qSum * (3.0 / R + kappa);
 
@@ -373,8 +373,8 @@ protected:
 		else
 		{
 			const double kappa_denom = pow(cpSalt, static_cast<double>(p->kappaExp)) * static_cast<double>(p->kappaFact) + static_cast<double>(p->kappaConst);
-			const double kappa = 1e9 / kappa_denom;
-			const double kappa_dSalt = -1e9 / sqr(kappa_denom) * pow(cpSalt, static_cast<double>(p->kappaExp) - 1.0) * static_cast<double>(p->kappaExp) * static_cast<double>(p->kappaFact);
+			const double kappa = kappa_denom;
+			const double kappa_dSalt = -sqr(kappa_denom) * pow(cpSalt, static_cast<double>(p->kappaExp) - 1.0) * static_cast<double>(p->kappaExp) * static_cast<double>(p->kappaFact);
 			const double R = sqrt(_rFactor * static_cast<double>(p->phi) / qSum);
 			const double R_dq = -0.5 * R / qSum;
 			const double Sfactor = static_cast<double>(p->cordNum) * 0.125 / qSum * (3.0 / R + kappa);

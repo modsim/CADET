@@ -35,7 +35,7 @@ Multi Component Colloidal
 ``COL_KAPPA_FACT``
    Screening term factor
 
-**Unit:** :math:`nm \cdot mM^{-1}`
+**Unit:** :math:`m \cdot mM^{-1}`
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1
@@ -44,7 +44,7 @@ Multi Component Colloidal
 ``COL_KAPPA_CONST``
    Screening term constant
 
-**Unit:** :math:`nm`
+**Unit:** :math:`m`
 
 ===================  =========================  =========================================
 **Type:** double     **Range:** :math:`\ge 0`   **Length:** 1

@@ -34,7 +34,7 @@ where :math:`\phi` is the phase ratio (surface area/solid phase volume), and wit
 
 The screening term :math:`\kappa` is a Debye parameter based on the ideal colloidal phase behavior of the protein.
 In the case of ion exchange chromatography, this is the inverse of the Debye length.
-For other interaction mechanisms, this term can be used in general to describe protein-protein interaction terms:
+For other interaction mechanisms, this term can also be used to describe protein-protein interactionsin general:
 
 .. math::
 
@@ -50,7 +50,7 @@ Also the terms for protein-resin interaction, :math:`K_{e,i}`, and protein-prote
     ln \left( K_{e, i} \right) &= k_{a,i} c_{p, 0}^{-k_{b,i}} + k_{c,i} exp \left( k_{d,i} c_{p,0} \right)  \\
     b_{pp,i} &= b_{a,i} c_{p,0}^{b_{b,i}} + b_{c,i} exp \left( b_{d,i} c_{p,0} \right),
 
-Optionally, they can also be varied as a function of the pH, represented by the second component (non-binding pseudo component, :math:`c_{p,1}`).
+Optionally, they can also be varied as a function of the pH, then represented by the second component (non-binding pseudo component, :math:`c_{p,1}`).
 
 .. math::
 

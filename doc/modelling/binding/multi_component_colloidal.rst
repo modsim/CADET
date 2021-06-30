@@ -12,7 +12,7 @@ Since these are long-ranged, they are assumed to be primarily electrostatic for 
 .. math::
 
     \frac{{dq}_{i}}{dt} = &k_{kin,i} \left( c_{p,i} - q_{i} \cdot \exp \left[ \frac{n}{4 q_{tot}} \sum_{j=0}^{N_{bound}} {q_{j} \sqrt{b_{pp,i}}} b_{pp,j} \cdot \frac{r_{i} + r_{j}}{2R} \exp \left( \right. \right. \right. \\
-    &\left. \left. \left. - \kappa \left[ R - \left( r_{i} + r_{j} \right) \right] \cdot \left( 3 + \kappa R \right) \right) - ln K_{e,i} \right] \right) \\
+    &\left. \left. \left. - \kappa \left[ R - \left( r_{i} + r_{j} \right) \right] \cdot \left( 3 + \kappa R \right) \right) - ln \left(K_{e,i} \right) \right] \right) \\
     &\qquad \qquad i = 0, \dots, N_{comp} - 1, 
 
 where :math:`n` is the coordination number describing the two-dimensional lattice agreement of protein molecules on the resin surface (:math:`n=6` for hexagonal arrangement).
@@ -41,13 +41,20 @@ For other interaction mechanisms, this term can be used in general to describe p
     \kappa = \frac{10^{9}}{\kappa_f c_{p,0}^{\kappa_{ef}} + \kappa_{c}}.
 
 :math:`\kappa_{c}`, :math:`\kappa_{ef}`, and :math:`\kappa_{f}` are fitting constants which can be used to custom define the protein-protein interaction behavior based on additives in the mobile phase.
-:math:`c_{p,0}` is the total ionic strength, represented by the first component.
+:math:`c_{p,0}` is the total ionic strength, represented by the first component (non-binding pseudo component).
 
-The terms for protein-resin interaction, :math:`K_{e,i}`, and protein-protein interaction, :math:`b_{pp,i}`, are varied as a function of the ionic strength (first component, :math:`c_{p,0}`) and pH (second component, :math:`c_{p,1}`). Both (pseudo) components are assumed to be non-binding:
+Also the terms for protein-resin interaction, :math:`K_{e,i}`, and protein-protein interaction, :math:`b_{pp,i}`, are varied as a function of the ionic strength.
 
 .. math::
 
-    ln K_{e, i} &= c_{p,1}^{k_{e,i}} \left( k_{a,i} c_{p, 0}^{-k_{b,i}} + k_{c,i} exp \left( k_{d,i} c_{p,0} \right) \right) \\
+    ln \left( K_{e, i} \right) &= k_{a,i} c_{p, 0}^{-k_{b,i}} + k_{c,i} exp \left( k_{d,i} c_{p,0} \right)  \\
+    b_{pp,i} &= b_{a,i} c_{p,0}^{b_{b,i}} + b_{c,i} exp \left( b_{d,i} c_{p,0} \right),
+
+Optionally, they can also be varied as a function of the pH, represented by the second component (non-binding pseudo component, :math:`c_{p,1}`).
+
+.. math::
+
+    ln \left( K_{e, i} \right) &= c_{p,1}^{k_{e,i}} \left( k_{a,i} c_{p, 0}^{-k_{b,i}} + k_{c,i} exp \left( k_{d,i} c_{p,0} \right) \right) \\
     b_{pp,i} &= c_{p,1}^{b_{e,i}} \left( b_{a,i} c_{p,0}^{b_{b,i}} + b_{c,i} exp \left( b_{d,i} c_{p,0} \right) \right),
 
 where :math:`k_{a-e}`, :math:`b_{a-e}` are fitting constants. 
@@ -57,7 +64,7 @@ Because the model becomes mathematically singular at zero concentration, the ori
 
 .. math::
 
-    \frac{{dq}_{i}}{dt} = k_{kin,i} \left(c_{p,i} - q_{i} \cdot \exp \left[ - ln K_{e,i} \right] \right).
+    \frac{{dq}_{i}}{dt} = k_{kin,i} \left(c_{p,i} - q_{i} \cdot \exp \left[ - ln \left( K_{e,i} \right) \right] \right).
 
 
 

@@ -214,7 +214,11 @@ The models also differ in whether a mobile phase modifier (e.g., salt) is suppor
      - ✓
      - ✓
      - ✓
-
+   * - :ref:`multi_component_colloidal_model`
+     - ✓
+     - ✓
+     - ✓
+     - ×
 
 .. toctree::
     :hidden:

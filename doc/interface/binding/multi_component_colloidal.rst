@@ -156,6 +156,6 @@ Multi Component Colloidal
    Selects if pH is included in the model or not: 1 = yes, 0 = no.
 
 ===================  =========================  =========================================
-**Type:** int        **Range:** :math:`{0,1}`   **Length:** 1
+**Type:** int        **Range:** {0,1}           **Length:** 1
 ===================  =========================  =========================================
 

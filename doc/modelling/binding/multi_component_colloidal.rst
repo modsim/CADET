@@ -23,9 +23,9 @@ For the surface coverage factor :math:`R`, the following equation is used:
 
 .. math::
 
-    R = \sqrt{\frac{2 \phi}{6.023 \cdot 10^{23} \cdot \sqrt{3} \cdot q_{tot}}},
+    R = \sqrt{\frac{2 \phi}{N_{A} \cdot 10^{23} \cdot \sqrt{3} \cdot q_{tot}}},
 
-where :math:`\phi` is the phase ratio (surface area/solid phase volume), and with
+where :math:`\phi` is the phase ratio (surface area/solid phase volume), :math:`N_{A}` is Avogadro's number, and with
 
 .. math::
 
@@ -34,7 +34,7 @@ where :math:`\phi` is the phase ratio (surface area/solid phase volume), and wit
 
 The screening term :math:`\kappa` is a Debye parameter based on the ideal colloidal phase behavior of the protein.
 In the case of ion exchange chromatography, this is the inverse of the Debye length.
-For other interaction mechanisms, this term can also be used to describe protein-protein interactionsin general:
+For other interaction mechanisms, this term can also be used to describe protein-protein interactions in general:
 
 .. math::
 

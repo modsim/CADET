@@ -31,6 +31,8 @@ extensions = [
     'sphinx_sitemap',
     'sphinxcontrib.bibtex',
     'sphinx_multiversion',
+    'breathe',
+    'exhale',
 ]
 
 # Bibliography
@@ -42,6 +44,28 @@ smv_tag_whitelist = r'^v\d+\.\d+\.\d+$'     # Include tags like "v2.1.1"
 smv_branch_whitelist = r"^master$"          # Only use master branch
 smv_remote_whitelist = r"^origin$"          # Use branches from remote origin
 smv_outputdir_format = '{ref.name}'         # Use the branch/tag name
+
+# Setup the breathe extension
+breathe_projects = {
+    "CADET": "./doxyoutput/xml"
+}
+breathe_default_project = "CADET"
+
+# Setup the exhale extension
+exhale_args = {
+    # These arguments are required
+    "containmentFolder":     "./api",
+    "rootFileName":          "library_root.rst",
+    "rootFileTitle":         "Library API",
+    "doxygenStripFromPath":  "..",
+    # Suggested optional arguments
+    "createTreeView":        True,
+    # TIP: if using the sphinx-bootstrap-theme, you need
+    # "treeViewIsBootstrap": True,
+    "exhaleExecutesDoxygen": True,
+    "exhaleDoxygenStdin":    "INPUT = ../include",
+    "verboseBuild": True,
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

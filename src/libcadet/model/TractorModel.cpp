@@ -324,10 +324,10 @@ constexpr double SurfVolRatioSphere = 3.0;
 constexpr double SurfVolRatioCylinder = 2.0;
 constexpr double SurfVolRatioSlab = 1.0;
 
-int schurComplementMultiplierGRM2D(void* userData, double const* x, double* z)
+int schurComplementMultiplierTractor(void* userData, double const* x, double* z)
 {
-	TractorModel* const grm = static_cast<TractorModel*>(userData);
-	return grm->schurComplementMatrixVector(x, z);
+	TractorModel* const trac = static_cast<TractorModel*>(userData);
+	return trac->schurComplementMatrixVector(x, z);
 }
 
 
@@ -556,7 +556,7 @@ bool TractorModel::configureModelDiscretization(IParameterProvider& paramProvide
 
 	// Initialize and configure GMRES for solving the Schur-complement
 	_gmres.initialize(_disc.nCol * _disc.nRad * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
-	_gmres.matrixVectorMultiplier(&schurComplementMultiplierGRM2D, this);
+	_gmres.matrixVectorMultiplier(&schurComplementMultiplierTractor, this);
 	_schurSafety = paramProvider.getDouble("SCHUR_SAFETY");
 
 	// Allocate space for initial conditions
@@ -1139,7 +1139,7 @@ void TractorModel::extractJacobianFromAD(active const* const adRes, unsigned int
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel2D::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
+void TractorModel::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
 {
 	Indexer idxr(_disc);
 
@@ -2450,10 +2450,10 @@ bool TractorModel::setSensitiveParameter(const ParameterId& pId, unsigned int ad
 	return result;
 }
 
-void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerTractorModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
 {
 	models[TractorModel::identifier()] = [](UnitOpIdx uoId) { return new TractorModel(uoId); };
-	models["GRM2D"] = [](UnitOpIdx uoId) { return new TractorModel(uoId); };
+	models["TRACTOR"] = [](UnitOpIdx uoId) { return new TractorModel(uoId); };
 }
 
 }  // namespace model

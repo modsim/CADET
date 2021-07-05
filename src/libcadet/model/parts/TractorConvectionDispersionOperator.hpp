@@ -15,8 +15,8 @@
  * Defines the 2D convection dispersion transport operator.
  */
 
-#ifndef LIBCADET_2DCONVECTIONDISPERSIONOPERATOR_HPP_
-#define LIBCADET_2DCONVECTIONDISPERSIONOPERATOR_HPP_
+#ifndef LIBCADET_TRACTORDISPERSIONOPERATOR_HPP_
+#define LIBCADET_TRACTORDISPERSIONOPERATOR_HPP_
 
 #include "ParamIdUtil.hpp"
 #include "AutoDiff.hpp"

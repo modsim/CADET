@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/parts/TwoDimensionalConvectionDispersionOperator.hpp"
+#include "model/parts/TractorConvectionDispersionOperator.hpp"
 #include "cadet/Exceptions.hpp"
 
 #include "Stencil.hpp"

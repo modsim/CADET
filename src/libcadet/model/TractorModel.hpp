@@ -21,7 +21,7 @@
 #include "model/UnitOperationBase.hpp"
 #include "cadet/StrongTypes.hpp"
 #include "cadet/SolutionExporter.hpp"
-#include "model/parts/TwoDimensionalConvectionDispersionOperator.hpp"
+#include "model/parts/TractorConvectionDispersionOperator.hpp"
 #include "AutoDiff.hpp"
 #include "linalg/SparseMatrix.hpp"
 #include "linalg/BandMatrix.hpp"
@@ -83,8 +83,8 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
-	static const char* identifier() { return "GENERAL_RATE_MODEL_2D"; }
-	virtual const char* unitOperationName() const CADET_NOEXCEPT { return "GENERAL_RATE_MODEL_2D"; }
+	static const char* identifier() { return "TRACTOR"; }
+	virtual const char* unitOperationName() const CADET_NOEXCEPT { return "TRACTOR"; }
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
@@ -347,7 +347,7 @@ protected:
 	BENCH_TIMER(_timerGmres)
 
 	// Wrapper for calling the corresponding function in GeneralRateModel class
-	friend int schurComplementMultiplierGRM2D(void* userData, double const* x, double* z);
+	friend int schurComplementMultiplierTractor(void* userData, double const* x, double* z);
 
 	class Indexer
 	{

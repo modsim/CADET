@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/GeneralRateModel2D.hpp"
+#include "model/TractorModel.hpp"
 #include "BindingModelFactory.hpp"
 #include "ParamReaderHelper.hpp"
 #include "ParamReaderScopes.hpp"
@@ -326,19 +326,19 @@ constexpr double SurfVolRatioSlab = 1.0;
 
 int schurComplementMultiplierGRM2D(void* userData, double const* x, double* z)
 {
-	GeneralRateModel2D* const grm = static_cast<GeneralRateModel2D*>(userData);
+	TractorModel* const grm = static_cast<TractorModel*>(userData);
 	return grm->schurComplementMatrixVector(x, z);
 }
 
 
-GeneralRateModel2D::GeneralRateModel2D(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
+TractorModel::TractorModel(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
 	_dynReactionBulk(nullptr), _jacP(nullptr), _jacPdisc(nullptr), _jacPF(nullptr), _jacFP(nullptr), _jacInlet(),
 	_analyticJac(true), _jacobianAdDirs(0), _factorizeJacobian(false), _tempState(nullptr),
 	_initC(0), _singleRadiusInitC(true), _initCp(0), _singleRadiusInitCp(true), _initQ(0), _singleRadiusInitQ(true), _initState(0), _initStateDot(0)
 {
 }
 
-GeneralRateModel2D::~GeneralRateModel2D() CADET_NOEXCEPT
+TractorModel::~TractorModel() CADET_NOEXCEPT
 {
 	delete[] _tempState;
 
@@ -359,7 +359,7 @@ GeneralRateModel2D::~GeneralRateModel2D() CADET_NOEXCEPT
 	delete[] _disc.nBoundBeforeType;
 }
 
-unsigned int GeneralRateModel2D::numDofs() const CADET_NOEXCEPT
+unsigned int TractorModel::numDofs() const CADET_NOEXCEPT
 {
 	// Column bulk DOFs: nCol * nComp * nRad
 	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
@@ -369,7 +369,7 @@ unsigned int GeneralRateModel2D::numDofs() const CADET_NOEXCEPT
 	return _disc.nCol * _disc.nRad * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp * _disc.nRad;
 }
 
-unsigned int GeneralRateModel2D::numPureDofs() const CADET_NOEXCEPT
+unsigned int TractorModel::numPureDofs() const CADET_NOEXCEPT
 {
 	// Column bulk DOFs: nCol * nComp * nRad
 	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
@@ -379,7 +379,7 @@ unsigned int GeneralRateModel2D::numPureDofs() const CADET_NOEXCEPT
 }
 
 
-bool GeneralRateModel2D::usesAD() const CADET_NOEXCEPT
+bool TractorModel::usesAD() const CADET_NOEXCEPT
 {
 #ifdef CADET_CHECK_ANALYTIC_JACOBIAN
 	// We always need AD if we want to check the analytical Jacobian
@@ -390,7 +390,7 @@ bool GeneralRateModel2D::usesAD() const CADET_NOEXCEPT
 #endif
 }
 
-bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool TractorModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
@@ -711,7 +711,7 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	return transportSuccess && bindingConfSuccess && reactionConfSuccess;
 }
 
-bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
+bool TractorModel::configure(IParameterProvider& paramProvider)
 {
 	_parameters.clear();
 
@@ -948,7 +948,7 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 }
 
 
-unsigned int GeneralRateModel2D::threadLocalMemorySize() const CADET_NOEXCEPT
+unsigned int TractorModel::threadLocalMemorySize() const CADET_NOEXCEPT
 {
 	LinearMemorySizer lms;
 
@@ -991,7 +991,7 @@ unsigned int GeneralRateModel2D::threadLocalMemorySize() const CADET_NOEXCEPT
 	return lms.bufferSize();
 }
 
-unsigned int GeneralRateModel2D::numAdDirsForJacobian() const CADET_NOEXCEPT
+unsigned int TractorModel::numAdDirsForJacobian() const CADET_NOEXCEPT
 {
 	// We need as many directions as the highest bandwidth of the diagonal blocks:
 	// The bandwidth of the column block depends on the size of the WENO stencil, whereas
@@ -1007,7 +1007,7 @@ unsigned int GeneralRateModel2D::numAdDirsForJacobian() const CADET_NOEXCEPT
 	return maxStride;
 }
 
-void GeneralRateModel2D::useAnalyticJacobian(const bool analyticJac)
+void TractorModel::useAnalyticJacobian(const bool analyticJac)
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	_analyticJac = analyticJac;
@@ -1022,7 +1022,7 @@ void GeneralRateModel2D::useAnalyticJacobian(const bool analyticJac)
 #endif
 }
 
-void GeneralRateModel2D::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
+void TractorModel::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
 	// Setup flux Jacobian blocks at the beginning of the simulation or in case of
 	// section dependent film or particle diffusion coefficients
@@ -1061,26 +1061,26 @@ void GeneralRateModel2D::notifyDiscontinuousSectionTransition(double t, unsigned
 	}
 }
 
-void GeneralRateModel2D::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
+void TractorModel::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 {
 	_convDispOp.setFlowRates(in, out);
 }
 
-void GeneralRateModel2D::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
+void TractorModel::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
 {
 	Exporter expr(_disc, *this, solution);
 	recorder.beginUnitOperation(_unitOpIdx, *this, expr);
 	recorder.endUnitOperation();
 }
 
-void GeneralRateModel2D::reportSolutionStructure(ISolutionRecorder& recorder) const
+void TractorModel::reportSolutionStructure(ISolutionRecorder& recorder) const
 {
 	Exporter expr(_disc, *this, nullptr);
 	recorder.unitOperationStructure(_unitOpIdx, *this, expr);
 }
 
 
-unsigned int GeneralRateModel2D::requiredADdirs() const CADET_NOEXCEPT
+unsigned int TractorModel::requiredADdirs() const CADET_NOEXCEPT
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	return _jacobianAdDirs;
@@ -1090,7 +1090,7 @@ unsigned int GeneralRateModel2D::requiredADdirs() const CADET_NOEXCEPT
 #endif
 }
 
-void GeneralRateModel2D::prepareADvectors(const AdJacobianParams& adJac) const
+void TractorModel::prepareADvectors(const AdJacobianParams& adJac) const
 {
 	// Early out if AD is disabled
 	if (!adJac.adY)
@@ -1116,7 +1116,7 @@ void GeneralRateModel2D::prepareADvectors(const AdJacobianParams& adJac) const
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel2D::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
+void TractorModel::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
 {
 	Indexer idxr(_disc);
 
@@ -1161,7 +1161,7 @@ void GeneralRateModel2D::checkAnalyticJacobianAgainstAd(active const* const adRe
 
 #endif
 
-int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1169,7 +1169,7 @@ int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimul
 	return residualImpl<double, double, double, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, res, threadLocalMem);
 }
 
-int GeneralRateModel2D::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1177,7 +1177,7 @@ int GeneralRateModel2D::residualWithJacobian(const SimulationTime& simTime, cons
 	return residual(simTime, simState, res, adJac, threadLocalMem, true, false);
 }
 
-int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
+int TractorModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
 	const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem, bool updateJacobian, bool paramSensitivity)
 {
 	if (updateJacobian)
@@ -1280,7 +1280,7 @@ int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimul
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_START(_timerResidualPar);
 
@@ -1314,7 +1314,7 @@ int GeneralRateModel2D::residualImpl(double t, unsigned int secIdx, StateType co
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	_convDispOp.residual(t, secIdx, yBase, yDotBase, resBase, wantJac, typename ParamSens<ParamType>::enabled());
 	if (!_dynReactionBulk || (_dynReactionBulk->numReactionsLiquid() == 0))
@@ -1347,7 +1347,7 @@ int GeneralRateModel2D::residualBulk(double t, unsigned int secIdx, StateType co
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	Indexer idxr(_disc);
 
@@ -1562,7 +1562,7 @@ int GeneralRateModel2D::residualParticle(double t, unsigned int parType, unsigne
 }
 
 template <typename StateType, typename ResidualType, typename ParamType>
-int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
+int TractorModel::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
 {
 	Indexer idxr(_disc);
 
@@ -1709,7 +1709,7 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
  * @param [in] t Current time
  * @param [in] secIdx Index of the current section
  */
-void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
+void TractorModel::assembleOffdiagJac(double t, unsigned int secIdx)
 {
 	// Clear matrices for new assembly
 	_jacCF.clear();
@@ -1850,7 +1850,7 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 	_discParFlux.destroy<double>();
 }
 
-int GeneralRateModel2D::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -1859,7 +1859,7 @@ int GeneralRateModel2D::residualSensFwdWithJacobian(const SimulationTime& simTim
 	return residual(simTime, simState, nullptr, adJac, threadLocalMem, true, true);
 }
 
-int GeneralRateModel2D::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
+int TractorModel::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -1867,7 +1867,7 @@ int GeneralRateModel2D::residualSensFwdAdOnly(const SimulationTime& simTime, con
 	return residualImpl<double, active, active, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, adRes, threadLocalMem);
 }
 
-int GeneralRateModel2D::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
+int TractorModel::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
 	const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes,
 	double* const tmp1, double* const tmp2, double* const tmp3)
 {
@@ -1921,7 +1921,7 @@ int GeneralRateModel2D::residualSensFwdCombine(const SimulationTime& simTime, co
  * @param [in] beta Factor @f$ \beta @f$ in front of @f$ z @f$
  * @param [in,out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
+void TractorModel::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
 {
 	Indexer idxr(_disc);
 
@@ -1985,7 +1985,7 @@ void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, con
  * @param [in] sDot Vector @f$ x @f$ that is transformed by the Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$
  * @param [out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel2D::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
+void TractorModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
 {
 	Indexer idxr(_disc);
 
@@ -2028,7 +2028,7 @@ void GeneralRateModel2D::multiplyWithDerivativeJacobian(const SimulationTime& si
 	std::fill_n(ret, _disc.nComp * _disc.nRad, 0.0);
 }
 
-void GeneralRateModel2D::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
+void TractorModel::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
 {
 	for (IBindingModel* bm : _binding)
 	{
@@ -2037,7 +2037,7 @@ void GeneralRateModel2D::setExternalFunctions(IExternalFunction** extFuns, unsig
 	}
 }
 
-unsigned int GeneralRateModel2D::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int TractorModel::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Inlets are duplicated so need to be accounted for
 	if (static_cast<double>(_convDispOp.currentVelocity(port)) >= 0.0)
@@ -2048,23 +2048,23 @@ unsigned int GeneralRateModel2D::localOutletComponentIndex(unsigned int port) co
 		return _disc.nComp * _disc.nRad + _disc.nComp * port;
 }
 
-unsigned int GeneralRateModel2D::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int TractorModel::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Always 0 due to dedicated inlet DOFs
 	return _disc.nComp * port;
 }
 
-unsigned int GeneralRateModel2D::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int TractorModel::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-unsigned int GeneralRateModel2D::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int TractorModel::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-void GeneralRateModel2D::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
+void TractorModel::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
 {
 	// @todo Write this function
 }
@@ -2072,7 +2072,7 @@ void GeneralRateModel2D::expandErrorTol(double const* errorSpec, unsigned int er
 /**
  * @brief Computes equidistant radial nodes in the beads
  */
-void GeneralRateModel2D::setEquidistantRadialDisc(unsigned int parType)
+void TractorModel::setEquidistantRadialDisc(unsigned int parType)
 {
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
@@ -2135,7 +2135,7 @@ void GeneralRateModel2D::setEquidistantRadialDisc(unsigned int parType)
 /**
  * @brief Computes the radial nodes in the beads in such a way that all shells have the same volume
  */
-void GeneralRateModel2D::setEquivolumeRadialDisc(unsigned int parType)
+void TractorModel::setEquivolumeRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2217,7 +2217,7 @@ void GeneralRateModel2D::setEquivolumeRadialDisc(unsigned int parType)
  * @brief Computes all helper quantities for radial bead discretization from given radial cell boundaries
  * @details Calculates surface areas per volume for every shell and the radial shell centers.
  */
-void GeneralRateModel2D::setUserdefinedRadialDisc(unsigned int parType)
+void TractorModel::setUserdefinedRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2283,7 +2283,7 @@ void GeneralRateModel2D::setUserdefinedRadialDisc(unsigned int parType)
 	}
 }
 
-void GeneralRateModel2D::updateRadialDisc()
+void TractorModel::updateRadialDisc()
 {
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
 	{
@@ -2296,7 +2296,7 @@ void GeneralRateModel2D::updateRadialDisc()
 	}
 }
 
-bool GeneralRateModel2D::setParameter(const ParameterId& pId, double value)
+bool TractorModel::setParameter(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2336,7 +2336,7 @@ bool GeneralRateModel2D::setParameter(const ParameterId& pId, double value)
 	return result;
 }
 
-void GeneralRateModel2D::setSensitiveParameterValue(const ParameterId& pId, double value)
+void TractorModel::setSensitiveParameterValue(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2371,7 +2371,7 @@ void GeneralRateModel2D::setSensitiveParameterValue(const ParameterId& pId, doub
 		updateRadialDisc();
 }
 
-bool GeneralRateModel2D::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
+bool TractorModel::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2452,8 +2452,8 @@ bool GeneralRateModel2D::setSensitiveParameter(const ParameterId& pId, unsigned 
 
 void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
 {
-	models[GeneralRateModel2D::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModel2D(uoId); };
-	models["GRM2D"] = [](UnitOpIdx uoId) { return new GeneralRateModel2D(uoId); };
+	models[TractorModel::identifier()] = [](UnitOpIdx uoId) { return new TractorModel(uoId); };
+	models["GRM2D"] = [](UnitOpIdx uoId) { return new TractorModel(uoId); };
 }
 
 }  // namespace model

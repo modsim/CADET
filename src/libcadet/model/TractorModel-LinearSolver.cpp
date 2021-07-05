@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/GeneralRateModel2D.hpp"
+#include "model/TractorModel.hpp"
 #include "model/BindingModel.hpp"
 #include "model/parts/BindingCellKernel.hpp"
 #include "linalg/DenseMatrix.hpp"
@@ -109,7 +109,7 @@ namespace model
  * @param [in] simState State of the simulation (state vector and its time derivatives) at which the Jacobian is evaluated
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int GeneralRateModel2D::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
+int TractorModel::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
 	const ConstSimulationState& simState)
 {
 	BENCH_SCOPE(_timerLinearSolve);
@@ -375,7 +375,7 @@ int GeneralRateModel2D::linearSolve(double t, double alpha, double outerTol, dou
  * @param [out] z Result of the matrix-vector multiplication
  * @return @c 0 if successful, any other value in case of failure
  */
-int GeneralRateModel2D::schurComplementMatrixVector(double const* x, double* z) const
+int TractorModel::schurComplementMatrixVector(double const* x, double* z) const
 {
 	BENCH_SCOPE(_timerMatVec);
 
@@ -484,7 +484,7 @@ int GeneralRateModel2D::schurComplementMatrixVector(double const* x, double* z) 
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] idxr Indexer
  */
-void GeneralRateModel2D::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
+void TractorModel::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
 {
 	linalg::FactorizableBandMatrix& fbm = _jacPdisc[_disc.nCol * _disc.nRad * parType + pblk];
 	const linalg::BandMatrix& bm = _jacP[_disc.nCol * _disc.nRad * parType + pblk];
@@ -511,7 +511,7 @@ void GeneralRateModel2D::assembleDiscretizedJacobianParticleBlock(unsigned int p
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] parType Index of the particle type
  */
-void GeneralRateModel2D::addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
+void TractorModel::addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
 {
 	parts::cell::addTimeDerivativeToJacobianParticleShell<linalg::FactorizableBandMatrix::RowIterator, true>(jac, alpha, static_cast<double>(_parPorosity[parType]), _disc.nComp, _disc.nBound + _disc.nComp * parType,
 		_poreAccessFactor.data() + _disc.nComp * parType, _disc.strideBound[parType], _disc.boundOffset + _disc.nComp * parType, _binding[parType]->reactionQuasiStationarity());

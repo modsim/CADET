@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2021: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the 2D general rate model (GRM).
  */
 
@@ -46,7 +46,7 @@ class IDynamicReactionModel;
 /**
  * @brief General rate model of liquid column chromatography with 2D bulk volume (radially symmetric)
  * @details See @cite Guiochon2006, @cite Gu1995, @cite Felinger2004
- * 
+ *
  * @f[\begin{align}
 	\frac{\partial c_i}{\partial t} &= - u \frac{\partial c_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c_i}{\partial z^2} - \frac{1 - \varepsilon_c}{\varepsilon_c} \frac{3}{r_p} j_{f,i} \\
 	\frac{\partial c_{p,i}}{\partial t} + \frac{1 - \varepsilon_p}{\varepsilon_p} \frac{\partial q_{i}}{\partial t} &= D_{p,i} \left( \frac{\partial^2 c_{p,i}}{\partial r^2} + \frac{2}{r} \frac{\partial c_{p,i}}{\partial r} \right) + D_{s,i} \frac{1 - \varepsilon_p}{\varepsilon_p} \left( \frac{\partial^2 q_{i}}{\partial r^2} + \frac{2}{r} \frac{\partial q_{i}}{\partial r} \right) \\
@@ -64,12 +64,12 @@ u c_{\text{in},i}(t) &= u c_i(t,0) - D_{\text{ax},i} \frac{\partial c_i}{\partia
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), @cite Puttmann2013 @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
-class GeneralRateModel2D : public UnitOperationBase
+class TractorModel : public UnitOperationBase
 {
 public:
 
-	GeneralRateModel2D(UnitOpIdx unitOpIdx);
-	virtual ~GeneralRateModel2D() CADET_NOEXCEPT;
+	TractorModel(UnitOpIdx unitOpIdx);
+	virtual ~TractorModel() CADET_NOEXCEPT;
 
 	virtual unsigned int numDofs() const CADET_NOEXCEPT;
 	virtual unsigned int numPureDofs() const CADET_NOEXCEPT;
@@ -101,8 +101,8 @@ public:
 	virtual int residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem);
 	virtual int residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem);
 
-	virtual int residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState, 
-		const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes, 
+	virtual int residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
+		const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes,
 		double* const tmp1, double* const tmp2, double* const tmp3);
 
 	virtual int linearSolve(double t, double alpha, double tol, double* const rhs, double const* const weight,
@@ -219,7 +219,7 @@ protected:
 
 	int schurComplementMatrixVector(double const* x, double* z) const;
 	void assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr);
-	
+
 	void setEquidistantRadialDisc(unsigned int parType);
 	void setEquivolumeRadialDisc(unsigned int parType);
 	void setUserdefinedRadialDisc(unsigned int parType);
@@ -227,7 +227,7 @@ protected:
 
 	void addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType);
 	void solveForFluxes(double* const vecState, const Indexer& idxr) const;
-	
+
 	unsigned int numAdDirsForJacobian() const CADET_NOEXCEPT;
 
 	int multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue);
@@ -403,8 +403,8 @@ protected:
 	{
 	public:
 
-		Exporter(const Discretization& disc, const GeneralRateModel2D& model, double const* data) : _disc(disc), _idx(disc), _model(model), _data(data) { }
-		Exporter(const Discretization&& disc, const GeneralRateModel2D& model, double const* data) = delete;
+		Exporter(const Discretization& disc, const TractorModel& model, double const* data) : _disc(disc), _idx(disc), _model(model), _data(data) { }
+		Exporter(const Discretization&& disc, const TractorModel& model, double const* data) = delete;
 
 		virtual bool hasParticleFlux() const CADET_NOEXCEPT { return true; }
 		virtual bool hasParticleMobilePhase() const CADET_NOEXCEPT { return true; }
@@ -494,7 +494,7 @@ protected:
 	protected:
 		const Discretization& _disc;
 		const Indexer _idx;
-		const GeneralRateModel2D& _model;
+		const TractorModel& _model;
 		double const* const _data;
 
 		const std::array<StateOrdering, 3> _concentrationOrdering = { { StateOrdering::AxialCell, StateOrdering::RadialCell, StateOrdering::Component } };

@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/GeneralRateModel2D.hpp"
+#include "model/TractorModel.hpp"
 #include "model/BindingModel.hpp"
 #include "linalg/DenseMatrix.hpp"
 #include "linalg/BandMatrix.hpp"
@@ -38,7 +38,7 @@ namespace cadet
 namespace model
 {
 
-int GeneralRateModel2D::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
+int TractorModel::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (pId.name == hashString("INIT_C") && (pId.section == SectionIndep) && (pId.boundState == BoundStateIndep) && (pId.particleType == ParTypeIndep) && (pId.component != CompIndep))
 	{
@@ -179,7 +179,7 @@ int GeneralRateModel2D::multiplexInitialConditions(const cadet::ParameterId& pId
 	return 0;
 }
 
-int GeneralRateModel2D::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
+int TractorModel::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
 {
 	if (pId.name == hashString("INIT_C") && (pId.section == SectionIndep) && (pId.boundState == BoundStateIndep) && (pId.particleType == ParTypeIndep) && (pId.component != CompIndep))
 	{
@@ -340,7 +340,7 @@ int GeneralRateModel2D::multiplexInitialConditions(const cadet::ParameterId& pId
 	return 0;
 }
 
-void GeneralRateModel2D::applyInitialCondition(const SimulationState& simState) const
+void TractorModel::applyInitialCondition(const SimulationState& simState) const
 {
 	Indexer idxr(_disc);
 
@@ -401,7 +401,7 @@ void GeneralRateModel2D::applyInitialCondition(const SimulationState& simState) 
 	}
 }
 
-void GeneralRateModel2D::readInitialCondition(IParameterProvider& paramProvider)
+void TractorModel::readInitialCondition(IParameterProvider& paramProvider)
 {
 	_initState.clear();
 	_initStateDot.clear();
@@ -583,7 +583,7 @@ void GeneralRateModel2D::readInitialCondition(IParameterProvider& paramProvider)
  * @param [in] errorTol Error tolerance for algebraic equations
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel2D::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+void TractorModel::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -937,7 +937,7 @@ void GeneralRateModel2D::consistentInitialState(const SimulationTime& simTime, d
  * @param [in] vecStateY Consistently initialized state vector
  * @param [in,out] vecStateYdot On entry, residual without taking time derivatives into account. On exit, consistent state time derivatives.
  */
-void GeneralRateModel2D::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
+void TractorModel::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -1092,7 +1092,7 @@ void GeneralRateModel2D::consistentInitialTimeDerivative(const SimulationTime& s
  * @param [in,out] adJac Jacobian information for AD (AD vectors for residual and state, direction offset)
  * @param [in] errorTol Error tolerance for algebraic equations
  */
-void GeneralRateModel2D::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+void TractorModel::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
 		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
@@ -1152,7 +1152,7 @@ void GeneralRateModel2D::leanConsistentInitialState(const SimulationTime& simTim
  * @param [in,out] vecStateYdot On entry, inconsistent state time derivatives. On exit, partially consistent state time derivatives.
  * @param [in] res On entry, residual without taking time derivatives into account. The data is overwritten during execution of the function.
  */
-void GeneralRateModel2D::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
+void TractorModel::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
 		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
@@ -1188,7 +1188,7 @@ void GeneralRateModel2D::leanConsistentInitialTimeDerivative(double t, double co
 	solveForFluxes(vecStateYdot, idxr);
 }
 
-void GeneralRateModel2D::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
+void TractorModel::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
 {
 	Indexer idxr(_disc);
 	for (std::size_t param = 0; param < vecSensY.size(); ++param)
@@ -1288,7 +1288,7 @@ void GeneralRateModel2D::initializeSensitivityStates(const std::vector<double*>&
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel2D::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+void TractorModel::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
@@ -1516,7 +1516,7 @@ void GeneralRateModel2D::consistentInitialSensitivity(const SimulationTime& simT
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel2D::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+void TractorModel::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
@@ -1573,7 +1573,7 @@ void GeneralRateModel2D::leanConsistentInitialSensitivity(const SimulationTime& 
  *                 on exit the solution @f$ j_f. @f$
  * @param [in] idxr Indexer
  */
-void GeneralRateModel2D::solveForFluxes(double* const vecState, const Indexer& idxr) const
+void TractorModel::solveForFluxes(double* const vecState, const Indexer& idxr) const
 {
 	// We have j_f - k_f * (c - c_p) == 0
 	// Thus, jacFC contains -k_f and jacFP +k_f.

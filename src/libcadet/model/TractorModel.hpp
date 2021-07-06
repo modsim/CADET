@@ -87,7 +87,7 @@ public:
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return "TRACTOR"; }
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
-	virtual bool configureTractorModel(IParameterProvider& paramProvider, IConfigHelper& helper); //Defining a new function to read the parameters
+	virtual bool configureTractorModel(IParameterProvider& paramProvider); //Defining a new function to read the parameters
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 

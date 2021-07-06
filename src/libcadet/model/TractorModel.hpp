@@ -278,7 +278,7 @@ protected:
 	};
 
 	Discretization _disc; //!< Discretization info
-	TractorParameters _parameters; //!< Tractor model parameters interface
+	TractorParameters _Tractorparameters; //!< Tractor model parameters interface
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
 	parts::TwoDimensionalConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport

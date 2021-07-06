@@ -394,9 +394,9 @@ bool  TractorModel::configureTractorModel(IParameterProvider& paramProvider)
 	// ==== Read tractor model parameters
 
 	//matrix entries and decay terms vectors will read the tractor model paramters provided by the user
-	_parameters.Matrix_Entries = paramProvider.getDoubleArray("TO_BE_DECIDED"); //Name of the variable is yet to be decided
+	_Tractorparameters.Matrix_Entries = paramProvider.getDoubleArray("TO_BE_DECIDED"); //Name of the variable is yet to be decided
 
-	_parameters.Decay_terms = paramProvider.getDoubleArray("DECAY_ENTRIES"); //Name of the variable is yet to be decided
+	_Tractorparameters.Decay_terms = paramProvider.getDoubleArray("DECAY_ENTRIES"); //Name of the variable is yet to be decided
 }
 
 bool TractorModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)

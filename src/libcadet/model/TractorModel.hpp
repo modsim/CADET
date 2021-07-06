@@ -87,6 +87,7 @@ public:
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return "TRACTOR"; }
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureTractorModel(IParameterProvider& paramProvider, IConfigHelper& helper); //Defining a new function to read the parameters
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -252,6 +253,12 @@ protected:
 		unsigned int* nBoundBeforeType; //!< Array with number of bound states before a particle type (cumulative sum of strideBound)
 	};
 
+	struct TractorParameters
+	{
+		std::vector<double> Matrix_Entries; //!< Defining a vector to store the A matrix entries
+		std::vector<double> Decay_terms; //!< Defining a vector to store decay terms
+	};
+
 	enum class ParticleDiscretizationMode : int
 	{
 		/**
@@ -271,6 +278,7 @@ protected:
 	};
 
 	Discretization _disc; //!< Discretization info
+	TractorParameters _parameters; //!< Tractor model parameters interface
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
 	parts::TwoDimensionalConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport

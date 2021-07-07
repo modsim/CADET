@@ -1121,46 +1121,33 @@ void TractorConvectionDispersionOperator::setSparsityPattern()
 	for (unsigned int i = 0; i < _nRad; ++i)
 		cadet::model::parts::convdisp::sparsityPattern(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nRad, static_cast<double>(_curVelocity[i]), _weno);
 
-    //TODO: Tractor add sparsity pattern for non-adjacent transport
-
 	// Handle radial dispersion
 	if (_nRad > 1)
 	{
 		for (unsigned int col = 0; col < _nCol; ++col)
 		{
+			// Axial column element
 			const unsigned int idxColBlock = col * _nRad * _nComp;
 			
-			// Connecting all radial cells for tractor
-			for (unsigned int rad = 0; rad < _nRad ; ++rad)
+			// Connecting from all compartments (orig) to all compartments (dest)
+			for (unsigned int rad_orig = 0; rad_orig < _nRad ; ++rad_orig)
 			{
-				const unsigned int idxColRadBlock = idxColBlock + rad * _nComp;
-				for (unsigned int comp = 0; comp < _nComp; ++comp)
+				const unsigned int idxColRadBlock_orig = idxColBlock + rad_orig * _nComp;
+				
+				for (unsigned int rad_dest = 0; rad_dest < _nRad ; ++rad_dest)
 				{
-					const unsigned int idxCur = idxColRadBlock + comp;
-					pattern.add(idxCur, idxCur + _nComp);
-					pattern.add(idxCur, idxCur - _nComp);
-				}
-			}
+					const unsigned int idxColRadBlock_dest = idxColBlock + rad_dest * _nComp;
 
-			// First and last cell have only one term
-			for (unsigned int comp = 0; comp < _nComp; ++comp)
-			{
-				// Radial cell 1
-				pattern.add(idxColBlock + comp, idxColBlock + comp + _nComp);
+					// Don't connect compartments with themselves
+					if (idxColRadBlock_dest == idxColRadBlock_orig)
+						continue;
 
-				// Radial cell nRad - 1
-				pattern.add(idxColBlock + (_nRad - 1) * _nComp + comp, idxColBlock + comp + (_nRad - 2) * _nComp);
-			}
-
-			// Middle cells have two terms
-			for (unsigned int rad = 1; rad < _nRad - 1; ++rad)
-			{
-				const unsigned int idxColRadBlock = idxColBlock + rad * _nComp;
-				for (unsigned int comp = 0; comp < _nComp; ++comp)
-				{
-					const unsigned int idxCur = idxColRadBlock + comp;
-					pattern.add(idxCur, idxCur + _nComp);
-					pattern.add(idxCur, idxCur - _nComp);
+					for (unsigned int comp = 0; comp < _nComp; ++comp)
+					{
+						const unsigned int idxCur_orig = idxColRadBlock_orig + comp;
+						const unsigned int idxCur_dest = idxColRadBlock_dest + comp;
+						pattern.add(idxCur_orig, idxCur_dest);
+					}
 				}
 			}
 		}

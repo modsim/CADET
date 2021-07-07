@@ -60,12 +60,12 @@ u c_{\text{in},i}(t) &= u c_i(t,0,\rho) - D_{\text{ax},i}(\rho) \frac{\partial c
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), and @cite Puttmann2013, @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
-class TwoDimensionalConvectionDispersionOperator
+class TractorConvectionDispersionOperator
 {
 public:
 
-	TwoDimensionalConvectionDispersionOperator();
-	~TwoDimensionalConvectionDispersionOperator() CADET_NOEXCEPT;
+	TractorConvectionDispersionOperator();
+	~TractorConvectionDispersionOperator() CADET_NOEXCEPT;
 
 	void setFlowRates(int compartment, const active& in, const active& out) CADET_NOEXCEPT;
 	void setFlowRates(active const* in, active const* out) CADET_NOEXCEPT;
@@ -182,4 +182,4 @@ protected:
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_2DCONVECTIONDISPERSIONOPERATOR_HPP_
+#endif  // LIBCADET_TRACTORMODELCONVECTIONDISPERSIONOPERATOR_HPP_

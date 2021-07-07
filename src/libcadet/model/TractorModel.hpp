@@ -15,8 +15,8 @@
  * Defines the 2D general rate model (GRM).
  */
 
-#ifndef LIBCADET_GENERALRATEMODEL2D_HPP_
-#define LIBCADET_GENERALRATEMODEL2D_HPP_
+#ifndef LIBCADET_TRACTORMODEL_HPP_
+#define LIBCADET_TRACTORMODEL_HPP_
 
 #include "model/UnitOperationBase.hpp"
 #include "cadet/StrongTypes.hpp"
@@ -281,7 +281,7 @@ protected:
 	TractorParameters _Tractorparameters; //!< Tractor model parameters interface
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::TwoDimensionalConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	parts::TractorConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
 
 	linalg::BandMatrix* _jacP; //!< Particle jacobian diagonal blocks (all of them)

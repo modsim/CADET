@@ -394,9 +394,10 @@ bool  TractorModel::configureTractorModel(IParameterProvider& paramProvider)
 	// ==== Read tractor model parameters
 
 	//matrix entries and decay terms vectors will read the tractor model paramters provided by the user
-	_Tractorparameters.Matrix_Entries = paramProvider.getDoubleArray("TO_BE_DECIDED"); //Name of the variable is yet to be decided
-
-	_Tractorparameters.Decay_terms = paramProvider.getDoubleArray("DECAY_ENTRIES"); //Name of the variable is yet to be decided
+	const std::vector<double> Matrix_Entries = paramProvider.getDoubleArray("EXCHANGE_MATRIX"); //Name of the variable is yet to be decided
+	
+	if (Matrix_Entries.size() != _disc.nRad*_disc.nRad)
+		throw InvalidParameterException("Field EXCHANGE_MATRIX contains too few elements (EXCHANGE_MATRIX = " + std::to_string(_disc.nRad * _disc.nRad) + " required)");
 }
 
 bool TractorModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)

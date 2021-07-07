@@ -255,8 +255,8 @@ protected:
 
 	struct TractorParameters
 	{
-		std::vector<double> Matrix_Entries; //!< Defining a vector to store the A matrix entries
-		std::vector<double> Decay_terms; //!< Defining a vector to store decay terms
+		unsigned double* Matrix_Entries; //!< Defining a vector to store the A matrix entries
+		unsigned double* Decay_terms; //!< Defining a vector to store decay terms
 	};
 
 	enum class ParticleDiscretizationMode : int

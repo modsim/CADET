@@ -46,6 +46,29 @@ This can be achieved by a (nonlinear) parameter transform
         F\left( k_{\text{eq},i}, k_{d,i} \right) = \begin{pmatrix} k_{\text{eq},i} k_{d,i} \\ k_{d,i} \end{pmatrix} \text{ with Jacobian } J_F\left( k_{\text{eq},i}, k_{d,i} \right) = \begin{pmatrix} k_{d,i} & k_{\text{eq},i} \\ 0 & 1 \end{pmatrix}.
     \end{aligned}
 
+
+.. _ldf_model:
+
+Linear Driving Force (LDF)
+---------------------------
+
+A quantitative description of an actual separation process requires the simultaneous solution of the diffusion equation and the bulk material balances, for which no analytical solutions exist. It is therefore computationally convenient to approximate adsorption rate by a time-independent expression given as:
+
+.. math::
+    \begin{aligned}
+        \frac{\mathrm{d} q_i}{\mathrm{d} t} = k_{kkin_{,i}}\left(q - q^*\right) && i = 0, \dots, N_{\text{comp}} - 1.
+    \end{aligned}
+
+where :math:`q` and :math:`q^*` are the adsorbed-phase concentration in equilibrium with the bulk phase concentration and adsorbed-phase concentration averaged over the entire bulk volume respectively. While, :math:`k_{kkin}` is the linear driving force coefficient :cite:`Alpay1992`. 
+
+In case of rapid equllibrium :math:`\left(\frac{dq}{dt}=0\right)`, following relationship holds:
+
+.. math::
+    \begin{aligned}
+        q = q^*
+    \end{aligned} 
+
+
 .. _reference_concentrations:
 
 Reference concentrations
@@ -140,6 +163,11 @@ The models also differ in whether a mobile phase modifier (e.g., salt) is suppor
      - External function
      - Multi-state
    * - :ref:`linear_model`
+     - ×
+     - ×
+     - ✓
+     - ×
+   * - :ref:`freundlich_ldf_model`
      - ×
      - ×
      - ✓

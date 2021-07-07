@@ -3,11 +3,11 @@
 Freundlich LDF
 ~~~~~~~~~~~~~~~
 
-A Freundlich LDF isotherm model is based on the linear driving force approaximation (see section :ref:`ldf_model`). It is formulated on empirical basis :cite:`Benedikt2019` :cite:`Singh2016`, and it is given as:
+A Freundlich LDF isotherm model is based on the linear driving force approximation (see section :ref:`ldf_model`). It is formulated on empirical basis :cite:`Benedikt2019` :cite:`Singh2016`, and it is given as:
 
 .. math::
 	\begin{aligned} 
-		\frac{\mathrm{d} q_i}{\mathrm{d} t} =  k_{kkin_{,i}} k_{F,i}c_{p,i}^{\frac{1}{n}} - k_{kkin_{,i}}q_{i} && i = 0, \dots, N_{\text{comp}} - 1.
+		q^*_i=  k_{kkin_{,i}} k_{F,i}c_{p,i}^{\frac{1}{n}}  && i = 0, \dots, N_{\text{comp}} - 1.
 	\end{aligned}
 
 No interaction between the components is considered when the model has multiple components. 
@@ -16,7 +16,7 @@ One of the limitation of this isotherm is the first order Jacobian :math:`\left(
 .. math::
 
 	\begin{aligned} 
-		q = \alpha_0+\alpha_1 c+\alpha_2 c_p^2  
+		q^* = \alpha_0+\alpha_1 c+\alpha_2 c_p^2  
 	\end{aligned}
 	
 	\begin{aligned} 

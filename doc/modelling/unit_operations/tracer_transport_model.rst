@@ -70,7 +70,7 @@ Python Interface
     e_{21} & \ddots & & \vdots\\
     \vdots & & \ddots & e_{(N-1)N}\\
     e_{N1} & \dots & e_{N(N-1)} & 0 
-    \end{bmatrix}-    
+    \end{bmatrix}    
 
 - FLUX_VECTOR: Vector with all flux rates :math:`v_N` of each comparment.
   

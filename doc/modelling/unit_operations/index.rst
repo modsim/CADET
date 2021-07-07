@@ -60,6 +60,7 @@ Moreover, the pseudo unit operations :ref:`inlet_model`, and :ref:`outlet_model`
     lumped_rate_model_without_pores
     lumped_rate_model_with_pores
     2d_general_rate_model
+    tracer_transport_model
     cstr
     inlet
     outlet

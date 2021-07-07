@@ -3,18 +3,21 @@
 Tracer Transport model 
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The Tracer Transport model in CADET is based on the class of mechanistical compartment models introduced by Jonas Bühler et al. 2013. 
+The Tracer Transport model in CADET is based on the class of mechanistical compartment models introduced by Jonas Bühler et al. 2013 [1]_. 
 Its purpose is the determination of transport parameters from PET (positron emission tomography) or MRI (magnetic resonance imgaing) based tracer transport studies.
 For that the model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments and storage of tracer in compartments.
 
+The model class consists of :math:`N` one-dimensional spatially parallel comparments (see :numref:`fig-model-class`). 
+In each comparment tracer can be transported with flux velocities :math:`v_i` while undergoing axial diffusion. 
+Between each compartment exchange of the tracer can take place. The exchange rates :math:`e_{ij}` specify the lateral exchange between to compartments :math:`i` and :math:`j`.
 
+.. _fig-model-class:
+.. figure:: tracer_transport_model_class.png
 
-.. figure:: tracer_transport_model.png
+    Illustration of the tracer transport model class and relevant parameters. 
+    Figure taken from Jonas Bühler et al. 2013 [1]_.
 
-    The model class consists of :math:`N` one-dimensional spatially parallel comparments. 
-    In each comparment tracer can be transported with flux velocities :math:`v_i` while undergoing axial diffusion. 
-    Between each compartment exchange of the tracer can take place. The exchange rates :math:`e_{ij}` specify the lateral exchange between to compartments :math:`i` and :math:`j`.
-
+    
 
 The model class is defined by a system of partial differential equations:
 
@@ -52,10 +55,10 @@ The model class is defined by a system of partial differential equations:
     \end{bmatrix}
 
 
-The velocities as well as the exchange rates can be zero. A chart of all resulting valid models of the model family can be found in Bühler et al. 2013.
+The velocities as well as the exchange rates can be zero. A chart of all resulting valid models of the model family can be found in Bühler et al. 2013 [1]_.
 
 Python Interface 
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 (This section will probably be moved to doc/interface)
 
 - EXCHANGE_MATRIX: Matrix containing all exchange rates :math:`e_{ij}` between the compartments. 
@@ -70,8 +73,22 @@ Python Interface
     \end{bmatrix}-    
 
 - FLUX_VECTOR: Vector with all flux rates :math:`v_N` of each comparment.
-- DECAY_RATE: The material specific value for the radioactive tracer. 
   
+  
+.. [1] 
+Jonas Bühler, Eric von Lieres, Gregor Huber,
+A class of compartmental models for long-distance tracer transport in plants,
+Journal of Theoretical Biology,
+Volume 341,
+2014,
+Pages 131-142,
+ISSN 0022-5193,
+License Number 5103570248093,
+License date Jul 07 2021,
+https://doi.org/10.1016/j.jtbi.2013.09.023.
+(https://www.sciencedirect.com/science/article/pii/S0022519313004530)
+
+
 
 
 

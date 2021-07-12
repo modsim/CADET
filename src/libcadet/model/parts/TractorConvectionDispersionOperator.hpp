@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2021: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the 2D convection dispersion transport operator.
  */
 
@@ -44,7 +44,7 @@ namespace parts
 /**
  * @brief 2D Convection dispersion transport operator
  * @details Implements the equation
- * 
+ *
  * @f[\begin{align}
 	\frac{\partial c_i}{\partial t} &= - u \frac{\partial c_i}{\partial z} + D_{\text{ax},i}(\rho) \frac{\partial^2 c_i}{\partial z^2} + \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho D_{\rho} \frac{\partial c_i}{\partial \rho} \right) \\
 \end{align} @f]
@@ -156,7 +156,7 @@ protected:
 	std::vector<active> _radialCenters; //!< Center of each radial compartment
 //	std::vector<active> _radialCentroids; //!< Center of mass of each radial compartment
 	RadialDiscretizationMode _radialDiscretizationMode;
-	std::vector<active> _crossSections; //!< Cross section area of each compartment 
+	std::vector<active> _crossSections; //!< Cross section area of each compartment
 
 	std::vector<active> _colPorosities; //!< Bulk porosity for each compartment
 	bool _singlePorosity; //!< Determines whether only one porosity for all compartments is given
@@ -168,6 +168,8 @@ protected:
 	std::vector<active> _velocity; //!< Interstitial velocity parameter
 	std::vector<active> _curVelocity; //!< Current interstitial velocity \f$ u \f$
 	bool _singleVelocity; //!< Determines whether only one velocity for all compartments is given
+
+    std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the Tracer Transport (Tractor) model
 
 	ArrayPool _stencilMemory; //!< Provides memory for the stencil
 	double* _wenoDerivatives; //!< Holds derivatives of the WENO scheme

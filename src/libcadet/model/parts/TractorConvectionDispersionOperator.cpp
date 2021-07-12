@@ -749,6 +749,7 @@ bool TractorConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IParame
 	_colLength = paramProvider.getDouble("COL_LENGTH");
 	_colRadius = paramProvider.getDouble("COL_RADIUS");
 	readScalarParameterOrArray(_colPorosities, paramProvider, "COL_POROSITY", 1);
+	readParameterMatrix(_exchangeMatrix, paramProvider, "EXCHANGE_MATRIX", _nRad * _nRad, 1);
 
 	if ((_colPorosities.size() != 1) && (_colPorosities.size() != _nRad))
 		throw InvalidParameterException("Number of elements in field COL_POROSITY is neither 1 nor NRAD (" + std::to_string(_nRad) + ")");
@@ -1019,7 +1020,6 @@ int TractorConvectionDispersionOperator::residualImpl(double t, unsigned int sec
 	}
 
 	// Handle radial dispersion
-    // TODO: Tractor
 	if (cadet_unlikely(_nRad <= 1))
 		return 0;
 
@@ -1103,6 +1103,77 @@ int TractorConvectionDispersionOperator::residualImpl(double t, unsigned int sec
 		}
 	}
 
+	if (cadet_unlikely(_nRad <= 1))
+		return 0;
+
+
+    // TODO: Calculate diagonal entries???
+    /* std::vector<active> diagonals = sum_rows(_exchangeMatrix); */
+    // diagonals = (_nRad, nComp)
+
+    // NOTE: Tractor flux implementation
+	for (unsigned int col = 0; col < _nCol; ++col)
+	{
+		const unsigned int offsetColBlock = col * _nRad * _nComp;
+		ResidualType* const resColBlock = res + offsetC + offsetColBlock;
+		StateType const* const yColBlock = y + offsetC + offsetColBlock;
+
+		for (unsigned int rad_orig = 0; rad_orig < _nRad; ++rad_orig)
+		{
+
+			const unsigned int offsetToRadOrigBlock = rad_orig * _nComp;
+			const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
+			ResidualType* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
+			StateType const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
+
+
+            for (unsigned int rad_dest = 0; rad_dest < _nRad; ++rad_dest)
+            {
+
+                const unsigned int offsetToRadDestBlock = rad_dest * _nComp;
+                const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
+                /* ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock; */
+                StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
+
+                for (unsigned int comp = 0; comp < _nComp; ++comp)
+                {
+                    const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
+                    const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
+                    StateType const* const yCur_orig = yColRadOrigBlock + comp;
+                    StateType const* const yCur_dest = yColRadDestBlock + comp;
+
+                    ResidualType* const resCur_orig = resColRadOrigBlock + comp;
+
+
+                    // NOTE: Tractor implementation follows
+
+                    /*     // TODO: What do we do with diagonal entries? */
+                    /* if (rad_dest == rad_orig) */
+                    /* { */
+                    /*     const ParamType diag = static_cast<ParamType>(diagonals[rad_orig * _nRad + comp]); */
+                    /*     *resCur_orig -=  diag ; */
+                    /* } */
+                    /* else */
+                    /* { */
+                        // TODO: Look at actual flux equations
+                        const ParamType exchange_orig_dest_comp = static_cast<ParamType>(_exchangeMatrix[rad_orig * _nRad + rad_dest * _nRad + _nComp ]);
+                        *resCur_orig +=  exchange_orig_dest_comp * (yCur_orig[0] - yCur_dest[0]);
+                    /* } */
+
+                    // TODO: @Sam, please check this
+                    if (wantJac)
+                    {
+                        _jacC.centered(offsetCur_orig, 0) += static_cast<double>(exchange_orig_dest_comp);
+                        _jacC.centered(offsetCur_orig, offsetCur_dest) -= static_cast<double>(exchange_orig_dest_comp);
+                    }
+
+                }
+
+            }
+
+		}
+	}
+
 	return 0;
 }
 
@@ -1128,12 +1199,12 @@ void TractorConvectionDispersionOperator::setSparsityPattern()
 		{
 			// Axial column element
 			const unsigned int idxColBlock = col * _nRad * _nComp;
-			
+
 			// Connecting from all compartments (orig) to all compartments (dest)
 			for (unsigned int rad_orig = 0; rad_orig < _nRad ; ++rad_orig)
 			{
 				const unsigned int idxColRadBlock_orig = idxColBlock + rad_orig * _nComp;
-				
+
 				for (unsigned int rad_dest = 0; rad_dest < _nRad ; ++rad_dest)
 				{
 					const unsigned int idxColRadBlock_dest = idxColBlock + rad_dest * _nComp;

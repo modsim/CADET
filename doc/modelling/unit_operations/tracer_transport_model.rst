@@ -61,7 +61,7 @@ Python Interface
 ^^^^^^^^^^^^^^^^
 (This section will probably be moved to doc/interface)
 
-- EXCHANGE_MATRIX: Matrix containing all exchange rates :math:`e_{ij}` between the compartments. 
+- EXCHANGE_RATES: Ordered list containing all exchange rates :math:`e_{ij}` between the compartments. 
 
 .. math::
     
@@ -71,8 +71,6 @@ Python Interface
     \vdots & & \ddots & e_{(N-1)N}\\
     e_{N1} & \dots & e_{N(N-1)} & 0 
     \end{bmatrix}    
-
-- FLUX_VECTOR: Vector with all flux rates :math:`v_N` of each comparment.
   
   
 .. [1] 

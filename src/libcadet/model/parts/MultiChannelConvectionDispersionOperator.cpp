@@ -39,17 +39,10 @@
 namespace
 {
 
-<<<<<<< HEAD
 cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters, std::vector<cadet::active>& values, const std::string& name, unsigned int nComp, unsigned int nChannel, cadet::UnitOpIdx uoi)
 {
 	cadet::model::MultiplexMode mode = cadet::model::MultiplexMode::Independent;
 	readParameterMatrix(values, paramProvider, name, nComp * nChannel, 1);
-=======
-cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters, std::vector<cadet::active>& values, const std::string& name, unsigned int nComp, unsigned int nRad, cadet::UnitOpIdx uoi)
-{
-	cadet::model::MultiplexMode mode = cadet::model::MultiplexMode::Independent;
-	readParameterMatrix(values, paramProvider, name, nComp * nRad, 1);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	unsigned int nSec = 1;
 	if (paramProvider.exists(name + "_MULTIPLEX"))
 	{
@@ -63,13 +56,8 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 1)
 		{
 			mode = cadet::model::MultiplexMode::Radial;
-<<<<<<< HEAD
 			if (values.size() != nChannel)
 				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nChannel) + ")");
-=======
-			if (values.size() != nRad)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nRad) + ")");
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 		else if (modeConfig == 2)
 		{
@@ -80,13 +68,8 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 3)
 		{
 			mode = cadet::model::MultiplexMode::ComponentRadial;
-<<<<<<< HEAD
 			if (values.size() != nComp * nChannel)
 				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nComp * nChannel) + ")");
-=======
-			if (values.size() != nComp * nRad)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nComp * nRad) + ")");
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 		else if (modeConfig == 4)
 		{
@@ -96,17 +79,10 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 5)
 		{
 			mode = cadet::model::MultiplexMode::RadialSection;
-<<<<<<< HEAD
 			if (values.size() % nChannel != 0)
 				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NCHANNEL (" + std::to_string(nChannel) + ")");
 
 			nSec = values.size() / nChannel;
-=======
-			if (values.size() % nRad != 0)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NRAD (" + std::to_string(nRad) + ")");
-
-			nSec = values.size() / nRad;
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 		else if (modeConfig == 6)
 		{
@@ -119,17 +95,10 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 7)
 		{
 			mode = cadet::model::MultiplexMode::ComponentRadialSection;
-<<<<<<< HEAD
 			if (values.size() % (nComp * nChannel) != 0)
 				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NCOMP * NCHANNEL (" + std::to_string(nComp * nChannel) + ")");
 
 			nSec = values.size() / (nComp * nChannel);
-=======
-			if (values.size() % (nComp * nRad) != 0)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NCOMP * NRAD (" + std::to_string(nComp * nRad) + ")");
-
-			nSec = values.size() / (nComp * nRad);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 	}
 	else
@@ -138,22 +107,15 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 			mode = cadet::model::MultiplexMode::Independent;
 		else if (values.size() == nComp)
 			mode = cadet::model::MultiplexMode::Component;
-<<<<<<< HEAD
 		else if (values.size() == nChannel)
 			mode = cadet::model::MultiplexMode::Radial;
 		else if (values.size() == nChannel * nComp)
-=======
-		else if (values.size() == nRad)
-			mode = cadet::model::MultiplexMode::Radial;
-		else if (values.size() == nRad * nComp)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			mode = cadet::model::MultiplexMode::ComponentRadial;
 		else if (values.size() % nComp == 0)
 		{
 			mode = cadet::model::MultiplexMode::ComponentSection;
 			nSec = values.size() / nComp;
 		}
-<<<<<<< HEAD
 		else if (values.size() % nChannel == 0)
 		{
 			mode = cadet::model::MultiplexMode::RadialSection;
@@ -163,17 +125,6 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		{
 			mode = cadet::model::MultiplexMode::ComponentRadialSection;
 			nSec = values.size() / (nComp * nChannel);
-=======
-		else if (values.size() % nRad == 0)
-		{
-			mode = cadet::model::MultiplexMode::RadialSection;
-			nSec = values.size() / nRad;
-		}
-		else if (values.size() % (nRad * nComp) == 0)
-		{
-			mode = cadet::model::MultiplexMode::ComponentRadialSection;
-			nSec = values.size() / (nComp * nRad);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 		else
 			throw cadet::InvalidParameterException("Could not infer multiplex mode of field " + name + ", set " + name + "_MULTIPLEX or change number of elements");
@@ -187,42 +138,24 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		case cadet::model::MultiplexMode::Independent:
 		case cadet::model::MultiplexMode::Section:
 			{
-<<<<<<< HEAD
 				std::vector<cadet::active> p(nComp * nChannel * nSec);
 				for (unsigned int s = 0; s < nSec; ++s)
 					std::fill(p.begin() + s * nChannel * nComp, p.begin() + (s+1) * nChannel * nComp, values[s]);
-=======
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int s = 0; s < nSec; ++s)
-					std::fill(p.begin() + s * nRad * nComp, p.begin() + (s+1) * nRad * nComp, values[s]);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				values = std::move(p);
 
 				for (unsigned int s = 0; s < nSec; ++s)
-<<<<<<< HEAD
 					parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Independent) ? cadet::SectionIndep : s)] = &values[s * nChannel * nComp];
-=======
-					parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Independent) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp];
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			}
 			break;
 		case cadet::model::MultiplexMode::Component:
 		case cadet::model::MultiplexMode::ComponentSection:
 			{
-<<<<<<< HEAD
 				std::vector<cadet::active> p(nComp * nChannel * nSec);
 				for (unsigned int s = 0; s < nSec; ++s)
 				{
 					for (unsigned int i = 0; i < nComp; ++i)
 						std::copy(values.begin() + s * nComp, values.begin() + (s+1) * nComp, p.begin() + i * nComp + s * nComp * nChannel);
-=======
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int s = 0; s < nSec; ++s)
-				{
-					for (unsigned int i = 0; i < nComp; ++i)
-						std::copy(values.begin() + s * nComp, values.begin() + (s+1) * nComp, p.begin() + i * nComp + s * nComp * nRad);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 				}
 
 				values = std::move(p);
@@ -230,47 +163,29 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 				for (unsigned int s = 0; s < nSec; ++s)
 				{
 					for (unsigned int i = 0; i < nComp; ++i)
-<<<<<<< HEAD
 						parameters[cadet::makeParamId(nameHash, uoi, i, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Component) ? cadet::SectionIndep : s)] = &values[s * nChannel * nComp + i];
-=======
-						parameters[cadet::makeParamId(nameHash, uoi, i, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Component) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp + i];
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 				}
 			}
 			break;
 		case cadet::model::MultiplexMode::Radial:
 		case cadet::model::MultiplexMode::RadialSection:
 			{
-<<<<<<< HEAD
 				std::vector<cadet::active> p(nComp * nChannel * nSec);
 				for (unsigned int i = 0; i < nChannel * nSec; ++i)
-=======
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int i = 0; i < nRad * nSec; ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 					std::fill(p.begin() + i * nComp, p.begin() + (i+1) * nComp, values[i]);
 
 				values = std::move(p);
 
 				for (unsigned int s = 0; s < nSec; ++s)
 				{
-<<<<<<< HEAD
 					for (unsigned int i = 0; i < nChannel; ++i)
 						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Radial) ? cadet::SectionIndep : s)] = &values[s * nChannel * nComp + i * nComp];
-=======
-					for (unsigned int i = 0; i < nRad; ++i)
-						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Radial) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp + i * nComp];
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 				}
 			}
 			break;
 		case cadet::model::MultiplexMode::ComponentRadial:
 		case cadet::model::MultiplexMode::ComponentRadialSection:
-<<<<<<< HEAD
 			cadet::registerParam3DArray(parameters, values, [=](bool multi, unsigned int sec, unsigned int compartment, unsigned int comp) { return cadet::makeParamId(nameHash, uoi, comp, compartment, cadet::BoundStateIndep, cadet::ReactionIndep, multi ? sec : cadet::SectionIndep); }, nComp, nChannel);
-=======
-			cadet::registerParam3DArray(parameters, values, [=](bool multi, unsigned int sec, unsigned int compartment, unsigned int comp) { return cadet::makeParamId(nameHash, uoi, comp, compartment, cadet::BoundStateIndep, cadet::ReactionIndep, multi ? sec : cadet::SectionIndep); }, nComp, nRad);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			break;
 		case cadet::model::MultiplexMode::Axial:
 		case cadet::model::MultiplexMode::AxialRadial:
@@ -284,11 +199,7 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 	return mode;
 }
 
-<<<<<<< HEAD
 bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nChannel, double value, std::unordered_set<cadet::active*> const* sensParams)
-=======
-bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nRad, double value, std::unordered_set<cadet::active*> const* sensParams)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 {
 	if (pId.name != nameHash)
 		return false;
@@ -315,19 +226,11 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nComp * nChannel]))
 					return false;
 
 				for (unsigned int i = 0; i < nComp * nChannel; ++i)
 					data[i + pId.section * nComp * nChannel].setValue(value);
-=======
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nComp * nRad]))
-					return false;
-
-				for (unsigned int i = 0; i < nComp * nRad; ++i)
-					data[i + pId.section * nComp * nRad].setValue(value);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -340,11 +243,7 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.component]))
 					return false;
 
-<<<<<<< HEAD
 				for (unsigned int i = 0; i < nChannel; ++i)
-=======
-				for (unsigned int i = 0; i < nRad; ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 					data[i * nComp + pId.component].setValue(value);
 
 				return true;
@@ -355,19 +254,11 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.section * nComp * nChannel]))
 					return false;
 
 				for (unsigned int i = 0; i < nChannel; ++i)
 					data[i * nComp + pId.component + pId.section * nComp * nChannel].setValue(value);
-=======
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.section * nComp * nRad]))
-					return false;
-
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component + pId.section * nComp * nRad].setValue(value);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -391,19 +282,11 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp + pId.section * nComp * nChannel]))
 					return false;
 
 				for (unsigned int i = 0; i < nComp; ++i)
 					data[i + pId.particleType * nComp + pId.section * nComp * nChannel].setValue(value);
-=======
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp + pId.section * nComp * nRad]))
-					return false;
-
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -426,17 +309,10 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp + pId.section * nComp * nChannel]))
 					return false;
 
 				data[pId.component + pId.particleType * nComp + pId.section * nComp * nChannel].setValue(value);
-=======
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]))
-					return false;
-
-				data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -452,11 +328,7 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 	return false;
 }
 
-<<<<<<< HEAD
 bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nChannel, unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
-=======
-bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nRad, unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 {
 	if (pId.name != nameHash)
 		return false;
@@ -482,17 +354,10 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				sensParams.insert(&data[pId.section * nComp * nChannel]);
 
 				for (unsigned int i = 0; i < nComp * nChannel; ++i)
 					data[i + pId.section * nComp * nChannel].setADValue(adDirection, adValue);
-=======
-				sensParams.insert(&data[pId.section * nComp * nRad]);
-
-				for (unsigned int i = 0; i < nComp * nRad; ++i)
-					data[i + pId.section * nComp * nRad].setADValue(adDirection, adValue);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -504,11 +369,7 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 
 				sensParams.insert(&data[pId.component]);
 
-<<<<<<< HEAD
 				for (unsigned int i = 0; i < nChannel; ++i)
-=======
-				for (unsigned int i = 0; i < nRad; ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 					data[i * nComp + pId.component].setADValue(adDirection, adValue);
 
 				return true;
@@ -519,17 +380,10 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				sensParams.insert(&data[pId.component + pId.section * nComp * nChannel]);
 
 				for (unsigned int i = 0; i < nChannel; ++i)
 					data[i * nComp + pId.component + pId.section * nComp * nChannel].setADValue(adDirection, adValue);
-=======
-				sensParams.insert(&data[pId.component + pId.section * nComp * nRad]);
-
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component + pId.section * nComp * nRad].setADValue(adDirection, adValue);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -552,17 +406,10 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				sensParams.insert(&data[pId.particleType * nComp + pId.section * nComp * nChannel]);
 
 				for (unsigned int i = 0; i < nComp; ++i)
 					data[i + pId.particleType * nComp + pId.section * nComp * nChannel].setADValue(adDirection, adValue);
-=======
-				sensParams.insert(&data[pId.particleType * nComp + pId.section * nComp * nRad]);
-
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -584,15 +431,9 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-<<<<<<< HEAD
 				sensParams.insert(&data[pId.component + pId.particleType * nComp + pId.section * nComp * nChannel]);
 
 				data[pId.component + pId.particleType * nComp + pId.section * nComp * nChannel].setADValue(adDirection, adValue);
-=======
-				sensParams.insert(&data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]);
-
-				data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 				return true;
 			}
@@ -625,11 +466,7 @@ public:
 
 	virtual ~LinearSolver() CADET_NOEXCEPT { }
 
-<<<<<<< HEAD
 	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nChannel, const Weno& weno) = 0;
-=======
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno) = 0;
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	virtual void setSparsityPattern(const cadet::linalg::SparsityPattern& pattern) = 0;
 	virtual void assembleDiscretizedJacobian(double alpha) = 0;
 	virtual bool factorize() = 0;
@@ -645,19 +482,11 @@ public:
 	GmresSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
 	virtual ~GmresSolver() CADET_NOEXCEPT { }
 
-<<<<<<< HEAD
 	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nChannel, const Weno& weno)
 	{
 		_gmres.initialize(nCol * nComp * nChannel, 0, linalg::toOrthogonalization(1), 0);
 		_gmres.matrixVectorMultiplier(&matrixMultiplierMultiChannelCDO, this);
 		_cache.resize(nCol * nComp * nChannel, 0.0);
-=======
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
-	{
-		_gmres.initialize(nCol * nComp * nRad, 0, linalg::toOrthogonalization(1), 0);
-		_gmres.matrixVectorMultiplier(&matrixMultiplierMultiChannelCDO, this);
-		_cache.resize(nCol * nComp * nRad, 0.0);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 		return true;
 	}
@@ -715,11 +544,7 @@ int matrixMultiplierMultiChannelCDO(void* userData, double const* x, double* z)
 		SparseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
 		virtual ~SparseDirectSolver() CADET_NOEXCEPT { }
 
-<<<<<<< HEAD
 		virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nChannel, const Weno& weno)
-=======
-		virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		{
 			return true;
 		}
@@ -763,38 +588,23 @@ public:
 	DenseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
 	virtual ~DenseDirectSolver() CADET_NOEXCEPT { }
 
-<<<<<<< HEAD
 	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nChannel, const Weno& weno)
-=======
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	{
 		// Note that we have to increase the lower bandwidth by 1 because the WENO stencil is applied to the
 		// right cell face (lower + 1 + upper) and to the left cell face (shift the stencil by -1 because influx of cell i
 		// is outflux of cell i-1)
 		// We also have to make sure that there's at least one sub and super diagonal for the dispersion term
-<<<<<<< HEAD
 		const unsigned int lb = std::max(weno.lowerBandwidth() + 1u, 1u) * nComp * nChannel;
 
 		// We have to make sure that there's at least one sub and super diagonal for the dispersion term
 		const unsigned int ub = std::max(weno.upperBandwidth(), 1u) * nComp * nChannel;
-=======
-		const unsigned int lb = std::max(weno.lowerBandwidth() + 1u, 1u) * nComp * nRad;
-
-		// We have to make sure that there's at least one sub and super diagonal for the dispersion term
-		const unsigned int ub = std::max(weno.upperBandwidth(), 1u) * nComp * nRad;
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 		// When flow direction is changed, the bandwidths of the Jacobian swap.
 		// Hence, we have to reserve memory such that the swapped Jacobian can fit into the matrix.
 		const unsigned int mb = std::max(lb, ub);
 
 		// Allocate matrices such that bandwidths can be switched (backwards flow support)
-<<<<<<< HEAD
 		_jacCdisc.resize(nCol * nComp * nChannel, mb, mb);
-=======
-		_jacCdisc.resize(nCol * nComp * nRad, mb, mb);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		return true;
 	}
 
@@ -844,10 +654,14 @@ protected:
  * @brief Creates a MultiChannelConvectionDispersionOperator
  */
 <<<<<<< HEAD
+<<<<<<< HEAD
 MultiChannelConvectionDispersionOperator::MultiChannelConvectionDispersionOperator() : _dir(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()),
 =======
 MultiChannelConvectionDispersionOperator::MultiChannelConvectionDispersionOperator() : _colPorosities(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()),
 >>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
+=======
+MultiChannelConvectionDispersionOperator::MultiChannelConvectionDispersionOperator() : _colPorosities(0), _dir(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()),
+>>>>>>> 611830f9 (implement fix for flow direction in case of dynamic flow rates)
 	_wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _linearSolver(nullptr)
 {
 }
@@ -1105,6 +919,8 @@ bool MultiChannelConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IP
 =======
 		registerParam2DArray(parameters, _velocity, [=](bool multi, unsigned int sec, unsigned int compartment) { return makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, compartment, BoundStateIndep, ReactionIndep, multi ? sec : SectionIndep); }, _nRad);
 
+	_dir = std::vector<int>(_nRad, 1);
+
 	_axialDispersionMode = readAndRegisterMultiplexParam(paramProvider, parameters, _axialDispersion, "COL_DISPERSION", _nComp, _nRad, unitOpIdx);
 
 	// Add parameters to map
@@ -1136,6 +952,7 @@ bool MultiChannelConvectionDispersionOperator::notifyDiscontinuousSectionTransit
 		// _curVelocity has already been set to the network flow rate in setFlowRates()
 		// the direction of the flow (i.e., sign of _curVelocity) is given by _velocity
 <<<<<<< HEAD
+<<<<<<< HEAD
 		active const* const dirNew = getSectionDependentSlice(_velocity, _nChannel, secIdx);
 
 		for (unsigned int i = 0; i < _nChannel; ++i)
@@ -1166,15 +983,27 @@ bool MultiChannelConvectionDispersionOperator::notifyDiscontinuousSectionTransit
 				}
 			}
 		}
+=======
+		active const* const dirNew = getSectionDependentSlice(_velocity, _nRad, secIdx);
+>>>>>>> 611830f9 (implement fix for flow direction in case of dynamic flow rates)
 
 		for (unsigned int i = 0; i < _nRad; ++i)
 		{
-			if (dirs[i] < 0.0)
-				_curVelocity[i] *= -1.0;
+			const int newDir = (dirNew[i] >= 0) ? 1 : -1;
+			if (_dir[i] * newDir < 0)
+			{
+				hasChanged = true;
+				_curVelocity[i] *= -1;
+			}
+			_dir[i] = newDir;
 		}
 	}
 
+<<<<<<< HEAD
 >>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
+=======
+
+>>>>>>> 611830f9 (implement fix for flow direction in case of dynamic flow rates)
 	// Change the sparsity pattern if necessary
 	if ((secIdx == 0) || hasChanged)
 		setSparsityPattern();
@@ -1192,10 +1021,14 @@ bool MultiChannelConvectionDispersionOperator::notifyDiscontinuousSectionTransit
 void MultiChannelConvectionDispersionOperator::setFlowRates(int compartment, const active& in, const active& out) CADET_NOEXCEPT
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	_curVelocity[compartment] = _dir[compartment] * in / (_crossSections[compartment]);
 =======
 	_curVelocity[compartment] = in / (_crossSections[compartment] * _colPorosities[compartment]);
 >>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
+=======
+	_curVelocity[compartment] = _dir[compartment] * in / (_crossSections[compartment] * _colPorosities[compartment]);
+>>>>>>> 611830f9 (implement fix for flow direction in case of dynamic flow rates)
 }
 
 void MultiChannelConvectionDispersionOperator::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT

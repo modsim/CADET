@@ -85,19 +85,9 @@ public:
 	bool setSensitiveParameterValue(const std::unordered_set<active*>& sensParams, const ParameterId& id, double value);
 
 	inline const active& columnLength() const CADET_NOEXCEPT { return _colLength; }
-<<<<<<< HEAD
 	inline const active& currentVelocity(int idx) const CADET_NOEXCEPT { return _curVelocity[idx]; }
 	inline const active& crossSection(int idx) const CADET_NOEXCEPT { return _crossSections[idx]; }
 	inline active const* crossSections() const CADET_NOEXCEPT { return _crossSections.data(); }
-=======
-	inline const active& columnRadius() const CADET_NOEXCEPT { return _colRadius; }
-	inline const active& currentVelocity(int idx) const CADET_NOEXCEPT { return _curVelocity[idx]; }
-	inline const active& columnPorosity(int idx) const CADET_NOEXCEPT { return _colPorosities[idx]; }
-	inline const active& crossSection(int idx) const CADET_NOEXCEPT { return _crossSections[idx]; }
-	inline active const* crossSections() const CADET_NOEXCEPT { return _crossSections.data(); }
-	inline active const* radialCenters() const CADET_NOEXCEPT { return _radialCenters.data(); }
-	inline active const* radialEdges() const CADET_NOEXCEPT { return _radialEdges.data(); }
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	inline bool isCurrentFlowForward(int idx) const CADET_NOEXCEPT { return _curVelocity[idx] >= 0.0; }
 	const active& axialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT;
 	const active& radialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT;
@@ -147,38 +137,19 @@ protected:
 
 	unsigned int _nComp; //!< Number of components
 	unsigned int _nCol; //!< Number of axial cells
-<<<<<<< HEAD
 	unsigned int _nChannel; //!< Number of channels
 	bool _hasDynamicReactions; //!< Determines whether the model has dynamic reactions (only relevant for sparsity pattern)
 
 	active _colLength; //!< Column length \f$ L \f$
 	std::vector<active> _crossSections; //!< Cross section area of each compartment
 
-=======
-	unsigned int _nRad; //!< Number of radial cells
-	bool _hasDynamicReactions; //!< Determines whether the model has dynamic reactions (only relevant for sparsity pattern)
-
-	active _colLength; //!< Column length \f$ L \f$
-	active _colRadius; //!< Column radius \f$ r_c \f$
-	std::vector<active> _radialEdges; //!< Boundaries of the radial compartments
-	std::vector<active> _radialCenters; //!< Center of each radial compartment
-	RadialDiscretizationMode _radialDiscretizationMode;
-	std::vector<active> _crossSections; //!< Cross section area of each compartment
-
-	std::vector<active> _colPorosities; //!< Bulk porosity for each compartment
-	bool _singlePorosity; //!< Determines whether only one porosity for all compartments is given
-
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	std::vector<active> _axialDispersion; //!< Axial dispersion coefficient \f$ D_{\text{ax}} \f$
 	MultiplexMode _axialDispersionMode; //!< Multiplex mode of the axial dispersion
 	std::vector<active> _radialDispersion; //!< Radial dispersion coefficient \f$ D_{\rho} \f$
 	MultiplexMode _radialDispersionMode; //!< Multiplex mode of the radial dispersion
 	std::vector<active> _velocity; //!< Interstitial velocity parameter
 	std::vector<active> _curVelocity; //!< Current interstitial velocity \f$ u \f$
-<<<<<<< HEAD
 	std::vector<int> _dir; //!< Current flow direction 
-=======
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	bool _singleVelocity; //!< Determines whether only one velocity for all compartments is given
 
     std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the linear inter-channel transport

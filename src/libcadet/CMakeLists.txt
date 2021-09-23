@@ -178,6 +178,10 @@ if (ENABLE_GRM_2D)
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D-LinearSolver.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D-InitialConditions.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/MultiChannelConvectionDispersionOperator.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-LinearSolver.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-InitialConditions.cpp
 	)
 
 	if (NOT SUPERLU_FOUND)

@@ -29,7 +29,6 @@ The model class is defined by a system of partial differential equations:
 
 - :math:`\boldsymbol{\rho}=({\rho}_1 \dots {\rho}_N)^T` is the tracer density within each channel :math:`N` at position :math:`x` and time :math:`t`.
 - The coupling matrix :math:`A` contains exchange rates :math:`e_{ij}` describing the lateral tracer transport from channel :math:`i` to channel :math:`j`. All diagonal elements :math:`e_{ii}` in the first term are zero indicating there is no tracer exchange of one channel with itself. The second term ensures mass conservation and removes exchanged tracer from each channel respectively, by subtracting the sum of all exchange rates of a row (and therefore channel) from the diagonal. The third term describes the decay of a radioactive tracer at a tracer specific rate :math:`\lambda`.
-
 .. math::
 
     A=\begin{bmatrix}
@@ -39,17 +38,6 @@ The model class is defined by a system of partial differential equations:
     e_{N1} & \dots & e_{N(N-1)} & 0
     \end{bmatrix}-   
     \begin{bmatrix}
-    {\sum_{k=1}^{N} e_{1k}} &  & 0 \\
-     & \ddots & \\
-     0 &  & {\sum_{k=1}^{N} e_{Nk}}
-    \end{bmatrix}-
-    \lambda {I}
-
-- The diagonal matrix :math:`V` contains the flux velocities :math:`v_{i}` for each channel.
-
-.. math::
-
-    V=\begin{bmatrix}
     v_1 &  & 0 \\
      & \ddots & \\
      0 &  & v_N

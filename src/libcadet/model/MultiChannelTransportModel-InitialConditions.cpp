@@ -34,11 +34,7 @@ int MultiChannelTransportModel::multiplexInitialConditions(const cadet::Paramete
 		if ((pId.reaction == ReactionIndep) && _singleRadiusInitC)
 		{
 			_sensParams.insert(&_initC[pId.component]);
-<<<<<<< HEAD
 			for (unsigned int r = 0; r < _disc.nChannel; ++r)
-=======
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 				_initC[r * _disc.nComp + pId.component].setADValue(adDirection, adValue);
 
 			return 1;
@@ -67,11 +63,7 @@ int MultiChannelTransportModel::multiplexInitialConditions(const cadet::Paramete
 			if (checkSens && !contains(_sensParams, &_initC[pId.component]))
 				return -1;
 
-<<<<<<< HEAD
 			for (unsigned int r = 0; r < _disc.nChannel; ++r)
-=======
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 				_initC[r * _disc.nComp + pId.component].setValue(val);
 
 			return 1;
@@ -118,19 +110,11 @@ void MultiChannelTransportModel::applyInitialCondition(const SimulationState& si
 	for (unsigned int col = 0; col < _disc.nCol; ++col)
 	{
 		// Loop over radial cells
-<<<<<<< HEAD
 		for (unsigned int rad = 0; rad < _disc.nChannel; ++rad)
 		{
 			// Loop over components in cell
 			for (unsigned comp = 0; comp < _disc.nComp; ++comp)
 				stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideChannelCell() + comp * idxr.strideColComp()] = static_cast<double>(_initC[comp + rad * _disc.nComp]);
-=======
-		for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
-		{
-			// Loop over components in cell
-			for (unsigned comp = 0; comp < _disc.nComp; ++comp)
-				stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideColRadialCell() + comp * idxr.strideColComp()] = static_cast<double>(_initC[comp + rad * _disc.nComp]);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		}
 	}
 }
@@ -153,7 +137,6 @@ void MultiChannelTransportModel::readInitialCondition(IParameterProvider& paramP
 	}
 
 	const std::vector<double> initC = paramProvider.getDoubleArray("INIT_C");
-<<<<<<< HEAD
 	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.nChannel);
 
 	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.nChannel) && !_singleRadiusInitC))
@@ -164,18 +147,6 @@ void MultiChannelTransportModel::readInitialCondition(IParameterProvider& paramP
 	else
 	{
 		for (unsigned int r = 0; r < _disc.nChannel; ++r)
-=======
-	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.nRad);
-
-	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.nRad) && !_singleRadiusInitC))
-		throw InvalidParameterException("INIT_C does not contain enough values for all components (and radial zones)");
-
-	if (!_singleRadiusInitC)
-		ad::copyToAd(initC.data(), _initC.data(), _disc.nComp * _disc.nRad);
-	else
-	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			ad::copyToAd(initC.data(), _initC.data() + r * _disc.nComp, _disc.nComp);
 	}
 }
@@ -409,11 +380,7 @@ void MultiChannelTransportModel::leanConsistentInitialTimeDerivative(double t, d
 	// instead of the *negative* one. Fortunately, we are dealing with linear systems,
 	// which means that we can just negate the solution.
 	double* const yDotSlice = vecStateYdot + idxr.offsetC();
-<<<<<<< HEAD
 	for (unsigned int i = 0; i < _disc.nCol * _disc.nChannel * _disc.nComp; ++i)
-=======
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad * _disc.nComp; ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		yDotSlice[i] = -resSlice[i];
 }
 
@@ -428,19 +395,11 @@ void MultiChannelTransportModel::initializeSensitivityStates(const std::vector<d
 		for (unsigned int col = 0; col < _disc.nCol; ++col)
 		{
 			// Loop over radial cells
-<<<<<<< HEAD
 			for (unsigned int rad = 0; rad < _disc.nChannel; ++rad)
 			{
 				// Loop over components in cell
 				for (unsigned comp = 0; comp < _disc.nComp; ++comp)
 					stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideChannelCell() + comp * idxr.strideColComp()] = _initC[comp + rad * _disc.nComp].getADValue(param);
-=======
-			for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
-			{
-				// Loop over components in cell
-				for (unsigned comp = 0; comp < _disc.nComp; ++comp)
-					stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideColRadialCell() + comp * idxr.strideColComp()] = _initC[comp + rad * _disc.nComp].getADValue(param);
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			}
 		}
 	}
@@ -512,11 +471,7 @@ void MultiChannelTransportModel::consistentInitialSensitivity(const SimulationTi
 		double* const sensYdot = vecSensYdot[param];
 
 		// Copy parameter derivative dF / dp from AD and negate it
-<<<<<<< HEAD
 		for (unsigned int i = _disc.nComp * _disc.nChannel; i < numDofs(); ++i)
-=======
-		for (unsigned int i = _disc.nComp * _disc.nRad; i < numDofs(); ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			sensYdot[i] = -adRes[i].getADValue(param);
 
 		// Step 1: Solve algebraic equations
@@ -595,11 +550,7 @@ void MultiChannelTransportModel::leanConsistentInitialSensitivity(const Simulati
 
 		// Copy parameter derivative from AD to tempState and negate it
 		// We need to use _tempState in order to keep sensYdot unchanged at this point
-<<<<<<< HEAD
 		for (unsigned int i = 0; i < numDofs(); ++i)
-=======
-		for (int i = 0; i < numDofs(); ++i)
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 			_tempState[i] = -adRes[i].getADValue(param);
 
 		// Step 2: Compute the correct time derivative of the state vector

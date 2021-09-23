@@ -160,6 +160,7 @@ protected:
 	MultiplexMode _radialDispersionMode; //!< Multiplex mode of the radial dispersion
 	std::vector<active> _velocity; //!< Interstitial velocity parameter
 	std::vector<active> _curVelocity; //!< Current interstitial velocity \f$ u \f$
+	std::vector<int> _dir; //!< Current flow direction 
 	bool _singleVelocity; //!< Determines whether only one velocity for all compartments is given
 
     std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the linear inter-channel transport

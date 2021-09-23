@@ -1034,14 +1034,14 @@ int MultiChannelConvectionDispersionOperator::residualImpl(double t, unsigned in
                 const unsigned int offsetToRadDestBlock = rad_dest * _nComp;
                 const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
                 ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
-                StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
+                // StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
 
                 for (unsigned int comp = 0; comp < _nComp; ++comp)
                 {
                     const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
                     const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
                     StateType const* const yCur_orig = yColRadOrigBlock + comp;
-                    StateType const* const yCur_dest = yColRadDestBlock + comp;
+                    // StateType const* const yCur_dest = yColRadDestBlock + comp;
                     ResidualType* const resCur_orig = resColRadOrigBlock + comp;
                     ResidualType* const resCur_dest = resColRadDestBlock + comp;
 

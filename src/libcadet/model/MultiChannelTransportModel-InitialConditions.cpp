@@ -550,7 +550,7 @@ void MultiChannelTransportModel::leanConsistentInitialSensitivity(const Simulati
 
 		// Copy parameter derivative from AD to tempState and negate it
 		// We need to use _tempState in order to keep sensYdot unchanged at this point
-		for (int i = 0; i < numDofs(); ++i)
+		for (unsigned int i = 0; i < numDofs(); ++i)
 			_tempState[i] = -adRes[i].getADValue(param);
 
 		// Step 2: Compute the correct time derivative of the state vector

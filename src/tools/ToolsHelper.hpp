@@ -75,6 +75,14 @@ inline void parseUnitType(std::string& unitType)
 		unitType = "GENERAL_RATE_MODEL_2D";
 }
 
+inline void parseUnitType(std::string& unitType, bool radialFlow)
+{
+	parseUnitType(unitType);
+	
+	if (radialFlow)
+		unitType = "RADIAL_" + unitType;
+}
+
 inline void addSensitivitiyParserToCmdLine(TCLAP::CmdLine& cmd, std::vector<std::string>& sensitivities)
 {
 	cmd >> (new TCLAP::MultiArg<std::string>("S", "sens", 

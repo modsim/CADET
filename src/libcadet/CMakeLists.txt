@@ -133,14 +133,11 @@ set(LIBCADET_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/StirredTankModel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithoutPores.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPores.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPores-LinearSolver.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPores-InitialConditions.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel-LinearSolver.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel-InitialConditions.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/ParameterMultiplexing.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/ConvectionDispersionOperator.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/ConvectionDispersionKernel.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/AxialConvectionDispersionKernel.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/RadialConvectionDispersionKernel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ReactionModelBase.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/BindingModelBase.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/inlet/PiecewiseCubicPoly.cpp
@@ -149,6 +146,8 @@ set(LIBCADET_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/ParameterDependenceBase.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/LiquidSaltSolidParameterDependence.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/DummyParameterDependence.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/IdentityParameterDependence.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/PowerLawParameterDependence.cpp
 )
 
 # LIBCADET_NONLINALG_SOURCES holds all source files for LIBCADET_NONLINALG target

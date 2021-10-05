@@ -38,7 +38,8 @@ namespace cadet
 namespace model
 {
 
-int LumpedRateModelWithPores::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
+template <typename ConvDispOperator>
+int LumpedRateModelWithPores<ConvDispOperator>::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (_singleBinding)
 	{
@@ -81,7 +82,8 @@ int LumpedRateModelWithPores::multiplexInitialConditions(const cadet::ParameterI
 	return 0;
 }
 
-int LumpedRateModelWithPores::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
+template <typename ConvDispOperator>
+int LumpedRateModelWithPores<ConvDispOperator>::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
 {
 	if (_singleBinding)
 	{
@@ -132,7 +134,8 @@ int LumpedRateModelWithPores::multiplexInitialConditions(const cadet::ParameterI
 	return 0;
 }
 
-void LumpedRateModelWithPores::applyInitialCondition(const SimulationState& simState) const
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::applyInitialCondition(const SimulationState& simState) const
 {
 	Indexer idxr(_disc);
 
@@ -182,7 +185,8 @@ void LumpedRateModelWithPores::applyInitialCondition(const SimulationState& simS
 	}
 }
 
-void LumpedRateModelWithPores::readInitialCondition(IParameterProvider& paramProvider)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::readInitialCondition(IParameterProvider& paramProvider)
 {
 	_initState.clear();
 	_initStateDot.clear();
@@ -296,7 +300,8 @@ void LumpedRateModelWithPores::readInitialCondition(IParameterProvider& paramPro
  * @param [in] errorTol Error tolerance for algebraic equations
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void LumpedRateModelWithPores::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -643,7 +648,8 @@ void LumpedRateModelWithPores::consistentInitialState(const SimulationTime& simT
  * @param [in] vecStateY Consistently initialized state vector
  * @param [in,out] vecStateYdot On entry, residual without taking time derivatives into account. On exit, consistent state time derivatives.
  */
-void LumpedRateModelWithPores::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -789,7 +795,8 @@ void LumpedRateModelWithPores::consistentInitialTimeDerivative(const SimulationT
  * @param [in,out] adJac Jacobian information for AD (AD vectors for residual and state, direction offset)
  * @param [in] errorTol Error tolerance for algebraic equations
  */
-void LumpedRateModelWithPores::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -846,7 +853,8 @@ void LumpedRateModelWithPores::leanConsistentInitialState(const SimulationTime& 
  * @param [in,out] vecStateYdot On entry, inconsistent state time derivatives. On exit, partially consistent state time derivatives.
  * @param [in] res On entry, residual without taking time derivatives into account. The data is overwritten during execution of the function.
  */
-void LumpedRateModelWithPores::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -879,7 +887,8 @@ void LumpedRateModelWithPores::leanConsistentInitialTimeDerivative(double t, dou
 	solveForFluxes(vecStateYdot, idxr);
 }
 
-void LumpedRateModelWithPores::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
 {
 	Indexer idxr(_disc);
 	for (std::size_t param = 0; param < vecSensY.size(); ++param)
@@ -968,7 +977,8 @@ void LumpedRateModelWithPores::initializeSensitivityStates(const std::vector<dou
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void LumpedRateModelWithPores::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
@@ -1189,7 +1199,8 @@ void LumpedRateModelWithPores::consistentInitialSensitivity(const SimulationTime
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void LumpedRateModelWithPores::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
@@ -1243,7 +1254,8 @@ void LumpedRateModelWithPores::leanConsistentInitialSensitivity(const Simulation
  *                 on exit the solution @f$ j_f. @f$
  * @param [in] idxr Indexer
  */
-void LumpedRateModelWithPores::solveForFluxes(double* const vecState, const Indexer& idxr)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::solveForFluxes(double* const vecState, const Indexer& idxr)
 {
 	// We have j_f - k_f * (c - c_p) == 0
 	// Thus, jacFC contains -k_f and jacFP +k_f.

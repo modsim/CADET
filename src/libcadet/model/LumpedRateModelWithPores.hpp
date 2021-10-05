@@ -35,6 +35,24 @@
 
 #include "Benchmark.hpp"
 
+namespace
+{
+	template <typename Operator>
+	struct LumpedRateModelWithPoresName { };
+
+	template <>
+	struct LumpedRateModelWithPoresName<cadet::model::parts::AxialConvectionDispersionOperator>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "LUMPED_RATE_MODEL_WITH_PORES"; }
+	};
+
+	template <>
+	struct LumpedRateModelWithPoresName<cadet::model::parts::RadialConvectionDispersionOperator>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "RADIAL_LUMPED_RATE_MODEL_WITH_PORES"; }
+	};
+}
+
 namespace cadet
 {
 
@@ -62,6 +80,7 @@ u c_{\text{in},i}(t) &= u c_i(t,0) - D_{\text{ax},i} \frac{\partial c_i}{\partia
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), @cite Puttmann2013 @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
+template <typename ConvDispOperator>
 class LumpedRateModelWithPores : public UnitOperationBase
 {
 public:
@@ -81,10 +100,10 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return 1; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
-	static const char* identifier() { return "LUMPED_RATE_MODEL_WITH_PORES"; }
+	static const char* identifier() CADET_NOEXCEPT { return LumpedRateModelWithPoresName<ConvDispOperator>::identifier(); }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -243,8 +262,9 @@ protected:
 	Discretization _disc; //!< Discretization info
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::ConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	ConvDispOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
+	IParameterParameterDependence* _filmDiffDep; //!< Film diffusion dependency on local velocity
 
 	std::vector<linalg::BandMatrix> _jacP; //!< Particle jacobian diagonal blocks (all of them for each particle type)
 	std::vector<linalg::FactorizableBandMatrix> _jacPdisc; //!< Particle jacobian diagonal blocks (all of them for each particle type) with time derivatives from BDF method
@@ -299,6 +319,7 @@ protected:
 	BENCH_TIMER(_timerGmres)
 
 	// Wrapper for calling the corresponding function in GeneralRateModel class
+	template <typename Op_t>
 	friend int schurComplementMultiplierLRMPores(void* userData, double const* x, double* z);
 
 	class Indexer
@@ -400,9 +421,8 @@ protected:
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{
-			const double h = static_cast<double>(_model._convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
 			for (unsigned int i = 0; i < _disc.nCol; ++i)
-				coords[i] = (i + 0.5) * h;
+				coords[i] = _model._convDispOp.cellCenter(i);
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }
@@ -419,6 +439,9 @@ protected:
 		double const* const _data;
 	};
 };
+
+extern template class LumpedRateModelWithPores<parts::AxialConvectionDispersionOperator>;
+extern template class LumpedRateModelWithPores<parts::RadialConvectionDispersionOperator>;
 
 } // namespace model
 } // namespace cadet

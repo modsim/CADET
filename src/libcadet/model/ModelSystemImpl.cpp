@@ -444,7 +444,7 @@ void ModelSystem::allocateSuperStructMatrices()
 	}
 }
 
-bool ModelSystem::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool ModelSystem::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	// Discretizations of unit operation models are already configured
 	rebuildInternalDataStructures();

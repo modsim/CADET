@@ -35,6 +35,24 @@
 
 #include "Benchmark.hpp"
 
+namespace
+{
+	template <typename Operator>
+	struct GeneralRateModelName { };
+
+	template <>
+	struct GeneralRateModelName<cadet::model::parts::AxialConvectionDispersionOperator>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "GENERAL_RATE_MODEL"; }
+	};
+
+	template <>
+	struct GeneralRateModelName<cadet::model::parts::RadialConvectionDispersionOperator>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "RADIAL_GENERAL_RATE_MODEL"; }
+	};
+}
+
 namespace cadet
 {
 
@@ -50,7 +68,7 @@ namespace parts
 }
 
 class IDynamicReactionModel;
-class IParameterDependence;
+class IParameterStateDependence;
 
 /**
  * @brief General rate model of liquid column chromatography
@@ -73,6 +91,7 @@ u c_{\text{in},i}(t) &= u c_i(t,0) - D_{\text{ax},i} \frac{\partial c_i}{\partia
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), @cite Puttmann2013 @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
+template <typename ConvDispOperator>
 class GeneralRateModel : public UnitOperationBase
 {
 public:
@@ -92,10 +111,10 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return 1; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
-	static const char* identifier() { return "GENERAL_RATE_MODEL"; }
+	static const char* identifier() { return GeneralRateModelName<ConvDispOperator>::identifier(); }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -293,7 +312,7 @@ protected:
 	std::vector<bool> _hasSurfaceDiffusion; //!< Determines whether surface diffusion is present in each particle type
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::ConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	ConvDispOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
 
 	linalg::BandMatrix* _jacP; //!< Particle jacobian diagonal blocks (all of them)
@@ -327,7 +346,7 @@ protected:
 	MultiplexMode _parSurfDiffusionMode;
 	std::vector<active> _poreAccessFactor; //!< Pore accessibility factor \f$ F_{\text{acc}} \f$
 	MultiplexMode _poreAccessFactorMode;
-	std::vector<IParameterDependence*> _parDepSurfDiffusion; //!< Parameter dependencies for particle surface diffusion
+	std::vector<IParameterStateDependence*> _parDepSurfDiffusion; //!< Parameter dependencies for particle surface diffusion
 	bool _singleParDepSurfDiffusion; //!< Determines whether a single parameter dependence for particle surface diffusion is used
 	bool _hasParDepSurfDiffusion; //!< Determines whether particle surface diffusion parameter dependencies are present
 
@@ -368,6 +387,7 @@ protected:
 	BENCH_TIMER(_timerGmres)
 
 	// Wrapper for calling the corresponding function in GeneralRateModel class
+	template <typename Op_t>
 	friend int schurComplementMultiplierGRM(void* userData, double const* x, double* z);
 
 	class Indexer
@@ -476,9 +496,8 @@ protected:
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{
-			const double h = static_cast<double>(_model._convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
 			for (unsigned int i = 0; i < _disc.nCol; ++i)
-				coords[i] = (i + 0.5) * h;
+				coords[i] = _model._convDispOp.cellCenter(i);
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }
@@ -497,6 +516,9 @@ protected:
 		double const* const _data;
 	};
 };
+
+extern template class GeneralRateModel<parts::AxialConvectionDispersionOperator>;
+extern template class GeneralRateModel<parts::RadialConvectionDispersionOperator>;
 
 } // namespace model
 } // namespace cadet

@@ -70,21 +70,12 @@ public:
 	virtual UnitOpIdx unitOperationId() const CADET_NOEXCEPT { return _unitOpIdx; }
 	virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 	virtual void setFlowRates(active const* in, active const* out) CADET_NOEXCEPT;
-<<<<<<< HEAD
 	virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
 	static const char* identifier() { return "MULTI_CHANNEL_TRANSPORT"; }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
-=======
-	virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
-
-	static const char* identifier() { return "MULTI_CHANNEL_TRANSPORT"; }
-	virtual const char* unitOperationName() const CADET_NOEXCEPT { return "MULTI_CHANNEL_TRANSPORT"; }
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
@@ -204,11 +195,7 @@ protected:
 	{
 		unsigned int nComp; //!< Number of components
 		unsigned int nCol; //!< Number of column cells
-<<<<<<< HEAD
 		unsigned int nChannel; //!< Number of channels
-=======
-		unsigned int nRad; //!< Number of radial cells
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	};
 
 	Discretization _disc; //!< Discretization info
@@ -242,34 +229,20 @@ protected:
 		Indexer(const Discretization& disc) : _disc(disc) { }
 
 		// Strides
-<<<<<<< HEAD
 		inline int strideColAxialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp) * static_cast<int>(_disc.nChannel); }
 		inline int strideChannelCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp); }
 		inline int strideColComp() const CADET_NOEXCEPT { return 1; }
 
 		// Offsets
 		inline int offsetC() const CADET_NOEXCEPT { return _disc.nComp * _disc.nChannel; }
-=======
-		inline int strideColAxialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp) * static_cast<int>(_disc.nRad); }
-		inline int strideColRadialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp); }
-		inline int strideColComp() const CADET_NOEXCEPT { return 1; }
-
-		// Offsets
-		inline int offsetC() const CADET_NOEXCEPT { return _disc.nComp * _disc.nRad; }
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 		// Return pointer to first element of state variable in state vector
 		template <typename real_t> inline real_t* c(real_t* const data) const { return data + offsetC(); }
 		template <typename real_t> inline real_t const* c(real_t const* const data) const { return data + offsetC(); }
 
 		// Return specific variable in state vector
-<<<<<<< HEAD
 		template <typename real_t> inline real_t& c(real_t* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideChannelCell()]; }
 		template <typename real_t> inline const real_t& c(real_t const* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideChannelCell()]; }
-=======
-		template <typename real_t> inline real_t& c(real_t* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideColRadialCell()]; }
-		template <typename real_t> inline const real_t& c(real_t const* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideColRadialCell()]; }
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 	protected:
 		const Discretization& _disc;
@@ -288,7 +261,6 @@ protected:
 		virtual bool hasVolume() const CADET_NOEXCEPT { return false; }
 
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
-<<<<<<< HEAD
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }
 		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return _disc.nChannel; }
 		virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
@@ -318,74 +290,10 @@ protected:
 		virtual int writeOutlet(double* buffer) const;
 
 		virtual int writePrimaryCoordinates(double* coords) const
-=======
-		virtual unsigned int numAxialCells() const CADET_NOEXCEPT { return _disc.nCol; }
-		virtual unsigned int numRadialCells() const CADET_NOEXCEPT { return _disc.nRad; }
-		virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-		virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-		virtual unsigned int numParticleTypes() const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numParticleShells(unsigned int parType) const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numBoundStates(unsigned int parType) const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numBulkDofs() const CADET_NOEXCEPT { return _disc.nComp * _disc.nCol * _disc.nRad; }
-		virtual unsigned int numParticleMobilePhaseDofs(unsigned int parType) const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numSolidPhaseDofs(unsigned int parType) const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numFluxDofs() const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numVolumeDofs() const CADET_NOEXCEPT { return 0; }
-
-		virtual double const* concentration() const { return _idx.c(_data); }
-		virtual double const* flux() const { return nullptr; }
-		virtual double const* particleMobilePhase(unsigned int parType) const { return nullptr; }
-		virtual double const* solidPhase(unsigned int parType) const { return nullptr; }
-		virtual double const* volume() const { return nullptr; }
-		virtual double const* inlet(unsigned int port, unsigned int& stride) const
-		{
-			stride = _idx.strideColComp();
-			return _data + port * _disc.nComp;
-		}
-		virtual double const* outlet(unsigned int port, unsigned int& stride) const
-		{
-			stride = _idx.strideColComp();
-			if (_model._convDispOp.currentVelocity(port) >= 0)
-				return &_idx.c(_data, _disc.nCol - 1, port, 0);
-			else
-				return &_idx.c(_data, 0, port, 0);
-		}
-
-		virtual StateOrdering const* concentrationOrdering(unsigned int& len) const
-		{
-			len = _concentrationOrdering.size();
-			return _concentrationOrdering.data();
-		}
-
-		virtual StateOrdering const* fluxOrdering(unsigned int& len) const
-		{
-			len = 0;
-			return nullptr;
-		}
-
-		virtual StateOrdering const* mobilePhaseOrdering(unsigned int& len) const
-		{
-			len = 0;
-			return nullptr;
-		}
-
-		virtual StateOrdering const* solidPhaseOrdering(unsigned int& len) const
-		{
-			len = 0;
-			return nullptr;
-		}
-
-		virtual unsigned int bulkMobilePhaseStride() const { return _idx.strideColRadialCell(); }
-		virtual unsigned int particleMobilePhaseStride(unsigned int parType) const { return 0; }
-		virtual unsigned int solidPhaseStride(unsigned int parType) const { return 0; }
-
-		virtual void axialCoordinates(double* coords) const
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 		{
 			const double h = static_cast<double>(_model._convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
 			for (unsigned int i = 0; i < _disc.nCol; ++i)
 				coords[i] = (i + 0.5) * h;
-<<<<<<< HEAD
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const
@@ -395,29 +303,12 @@ protected:
 			return _disc.nChannel;
 		}
 		virtual int writeParticleCoordinates(unsigned int parType, double* coords) const { return 0; }
-=======
-		}
-		virtual void radialCoordinates(double* coords) const
-		{
-			active const* const rc = _model._convDispOp.radialCenters();
-			for (unsigned int i = 0; i < _disc.nRad; ++i)
-				coords[i] = static_cast<double>(rc[i]);
-		}
-		virtual void particleCoordinates(unsigned int parType, double* coords) const
-		{
-		}
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 
 	protected:
 		const Discretization& _disc;
 		const Indexer _idx;
 		const MultiChannelTransportModel& _model;
 		double const* const _data;
-<<<<<<< HEAD
-=======
-
-		const std::array<StateOrdering, 3> _concentrationOrdering = { { StateOrdering::AxialCell, StateOrdering::RadialCell, StateOrdering::Component } };
->>>>>>> 5dff5fb7 (Cleanup commits by squashing all changes)
 	};
 };
 

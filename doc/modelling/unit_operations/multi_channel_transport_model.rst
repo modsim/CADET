@@ -72,3 +72,4 @@ A chart of all resulting valid models of the model family can be found in Bühle
 
 FixMe: Ideally add an example from another field.
 
+For information on model parameters see :ref:`multi_channel_transport_model_config`.

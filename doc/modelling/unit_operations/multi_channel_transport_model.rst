@@ -60,6 +60,7 @@ A chart of all resulting valid models of the model family can be found in Bühle
 
 The cross-section area :math:`A_N` is individually specified for each channel (see :numref:`fig-variable-areas`). The MCT is agnostic to the shape of these cross sections, while their ratio determines the distribution of the volumetric flow.
 
+FixMe: Ideally add an example from another field.
 
 .. _fig-variable-areas:
 .. figure:: mct_variable_areas.png

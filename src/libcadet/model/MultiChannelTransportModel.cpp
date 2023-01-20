@@ -922,6 +922,51 @@ bool MultiChannelTransportModel::setSensitiveParameter(const ParameterId& pId, u
 	return UnitOperationBase::setSensitiveParameter(pId, adDirection, adValue);
 }
 
+
+int MultiChannelTransportModel::Exporter::writeMobilePhase(double* buffer) const
+{
+	const int blockSize = numMobilePhaseDofs();
+	std::copy_n(_idx.c(_data), blockSize, buffer);
+	return blockSize;
+}
+
+int MultiChannelTransportModel::Exporter::writeInlet(unsigned int port, double* buffer) const
+{
+	cadet_assert(port < _disc.nRad);
+	std::copy_n(_data + port * _disc.nComp, _disc.nComp, buffer);
+	return _disc.nComp;
+}
+
+int MultiChannelTransportModel::Exporter::writeInlet(double* buffer) const
+{
+	std::copy_n(_data, _disc.nComp * _disc.nRad, buffer);
+	return _disc.nComp * _disc.nRad;
+}
+
+int MultiChannelTransportModel::Exporter::writeOutlet(unsigned int port, double* buffer) const
+{
+	cadet_assert(port < _disc.nRad);
+
+	if (_model._convDispOp.currentVelocity(port) >= 0)
+		std::copy_n(&_idx.c(_data, _disc.nCol - 1, port, 0), _disc.nComp, buffer);
+	else
+		std::copy_n(&_idx.c(_data, 0, port, 0), _disc.nComp, buffer);
+
+	return _disc.nComp;
+}
+
+int MultiChannelTransportModel::Exporter::writeOutlet(double* buffer) const
+{
+	for (int i = 0; i < _disc.nRad; ++i)
+	{
+		writeOutlet(i, buffer);
+		buffer += _disc.nComp;
+	}
+	return _disc.nComp * _disc.nRad;
+}
+
+
+
 void registerMultiChannelTransportModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
 {
 	models[MultiChannelTransportModel::identifier()] = [](UnitOpIdx uoId) { return new MultiChannelTransportModel(uoId); };

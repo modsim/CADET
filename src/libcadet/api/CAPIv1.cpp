@@ -21,6 +21,13 @@
 
 #include "common/Driver.hpp"
 
+
+#define CADET_XSTR(a) #a
+#define CADET_STR(a) CADET_XSTR(a)
+
+#define CADET_COMMA ,
+
+
 extern "C"
 {
 	struct cdtDriver
@@ -406,7 +413,7 @@ namespace v1
 		return cdtOK;
 	}
 
-	cdtResult getNParTypes(cdtDriver* drv, int unitOpId, int* nParTypes)
+	cdtResult getNumParTypes(cdtDriver* drv, int unitOpId, int* nParTypes)
 	{
 		Driver* const realDrv = drv->driver;
 		if (!realDrv)
@@ -432,17 +439,22 @@ namespace v1
 		return cdtOK;
 	}
 
-	cdtResult getSolutionInlet(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
+
+	InternalStorageUnitOpRecorder* getUnitRecorder(cdtDriver* drv, int unitOpId, double const** time, int* nTime, cdtResult& retCode)
 	{
 		Driver* const realDrv = drv->driver;
 		if (!realDrv)
-			return cdtErrorInvalidInputs;
+		{
+			retCode = cdtErrorInvalidInputs;
+			return nullptr;
+		}
 
 		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
 		if (!sysRec)
 		{
 			LOG(Error) << "System solution recorder not available";
-			return cdtError;
+			retCode = cdtError;
+			return nullptr;
 		}
 
 		if (nTime)
@@ -454,1160 +466,220 @@ namespace v1
 		if (!unitRec)
 		{
 			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
+			retCode = cdtErrorInvalidInputs;
+			return nullptr;
 		}
-
-		if (!unitRec->solutionConfig().storeInlet)
-		{
-			LOG(Error) << "Inlet of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numInletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->inlet();
-
-		return cdtOK;
+		return unitRec;
 	}
 
-	cdtResult getSolutionOutlet(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
+
+	#define CADET_API_GET_INLET_OUTLET(TYPE, NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##TYPE(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nPort, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+	\
+			if (!unitRec->REC_CONFIG().store##TYPE) \
+			{ \
+				LOG(Error) << CADET_STR(TYPE)" of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+	\
+			if (nPort) \
+				*nPort = unitRec->num##TYPE##Ports(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+	\
+			return cdtOK; \
+		}
+
+
+	CADET_API_GET_INLET_OUTLET(Inlet, Solution, solutionConfig, inlet,,)
+	CADET_API_GET_INLET_OUTLET(Inlet, Sensitivity, sensitivityConfig, sensInlet, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_INLET_OUTLET(Outlet, Solution, solutionConfig, outlet,,)
+	CADET_API_GET_INLET_OUTLET(Outlet, Sensitivity, sensitivityConfig, sensOutlet, CADET_COMMA int sensIdx, sensIdx )
+
+	CADET_API_GET_INLET_OUTLET(Inlet, SolutionDerivative, solutionDotConfig, inletDot,,)
+	CADET_API_GET_INLET_OUTLET(Inlet, SensitivityDerivative, sensitivityDotConfig, sensInletDot, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_INLET_OUTLET(Outlet, SolutionDerivative, solutionDotConfig, outletDot,,)
+	CADET_API_GET_INLET_OUTLET(Outlet, SensitivityDerivative, sensitivityDotConfig, sensOutletDot, CADET_COMMA int sensIdx, sensIdx )
+
+
+	#define CADET_API_GET_BULK(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Bulk(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeBulk) \
+			{ \
+				LOG(Error) << "Bulk of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_BULK(Solution, solutionConfig, bulk,,)
+	CADET_API_GET_BULK(Sensitivity, sensitivityConfig, sensBulk, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_BULK(SolutionDerivative, solutionDotConfig, bulkDot,,)
+	CADET_API_GET_BULK(SensitivityDerivative, sensitivityDotConfig, sensBulkDot, CADET_COMMA int sensIdx, sensIdx )
+
+
+	#define CADET_API_GET_PARTICLE(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Particle(cdtDriver* drv, int unitOpId SENS_IDX_SIG, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeParticle) \
+			{ \
+				LOG(Error) << "Particle of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+		\
+			if (nParShells) \
+				*nParShells = unitRec->numParticleShells(parType); \
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX parType); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_PARTICLE(Solution, solutionConfig, particle,,)
+	CADET_API_GET_PARTICLE(Sensitivity, sensitivityConfig, sensParticle, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+	CADET_API_GET_PARTICLE(SolutionDerivative, solutionDotConfig, particleDot,,)
+	CADET_API_GET_PARTICLE(SensitivityDerivative, sensitivityDotConfig, sensParticleDot, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+
+
+	#define CADET_API_GET_SOLID(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Solid(cdtDriver* drv, int unitOpId SENS_IDX_SIG, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeOutlet) \
+			{ \
+				LOG(Error) << "Solid of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+		\
+			if (nParShells) \
+				*nParShells = unitRec->numParticleShells(parType); \
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nBound) \
+				*nBound = unitRec->numBoundStates(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX parType ); \
+		\
+			return cdtOK; \
+		}
+
+
+	CADET_API_GET_SOLID(Solution, solutionConfig, solid,,)
+	CADET_API_GET_SOLID(Sensitivity, sensitivityConfig, sensSolid, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+	CADET_API_GET_SOLID(SolutionDerivative, solutionDotConfig, solidDot,,)
+	CADET_API_GET_SOLID(SensitivityDerivative, sensitivityDotConfig, sensSolidDot, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+
+
+	#define CADET_API_GET_FLUX(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Flux(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParType, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeFlux) \
+			{ \
+				LOG(Error) << "Flux of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nParType) \
+				*nParType = unitRec->numParticleTypes(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_FLUX(Solution, solutionConfig, flux,,)
+	CADET_API_GET_FLUX(Sensitivity, sensitivityConfig, sensFlux, CADET_COMMA int sensIdx, sensIdx)
+	CADET_API_GET_FLUX(SolutionDerivative, solutionDotConfig, fluxDot,,)
+	CADET_API_GET_FLUX(SensitivityDerivative, sensitivityDotConfig, sensFluxDot, CADET_COMMA int sensIdx, sensIdx)
+
+
+
+	#define CADET_API_GET_VOLUME(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Volume(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeVolume) \
+			{ \
+				LOG(Error) << "Volume of unit " << unitOpId << " not recorded"; \
+				return cdtError; \
+			} \
+		\
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_VOLUME(Solution, solutionConfig, volume,,)
+	CADET_API_GET_VOLUME(Sensitivity, sensitivityConfig, sensVolume, CADET_COMMA int sensIdx, sensIdx)
+	CADET_API_GET_VOLUME(SolutionDerivative, solutionDotConfig, volumeDot,,)
+	CADET_API_GET_VOLUME(SensitivityDerivative, sensitivityDotConfig, sensVolumeDot, CADET_COMMA int sensIdx, sensIdx)
+
+
+	cdtResult isWriteSensDotVolume(cdtDriver* drv, int unitOpId, int idx, int* isStored)
 	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
 		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
+			return retCode;
 
-		if (!unitRec->solutionConfig().storeOutlet)
-		{
-			LOG(Error) << "Outlet of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numOutletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->outlet();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionBulk(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeBulk)
-		{
-			LOG(Error) << "Bulk of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->bulk();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionParticle(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeParticle)
-		{
-			LOG(Error) << "Particle of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->particle(parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionSolid(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeOutlet)
-		{
-			LOG(Error) << "Solid of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nBound)
-			*nBound = unitRec->numBoundStates();
-		if (data)
-			*data = unitRec->solid(parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionFlux(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeFlux)
-		{
-			LOG(Error) << "Flux of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->flux();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionVolume(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeVolume)
-		{
-			LOG(Error) << "Volume of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (data)
-			*data = unitRec->volume();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeInlet(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeInlet)
-		{
-			LOG(Error) << "Inlet derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numInletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->inletDot();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeOutlet(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Outlet derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numOutletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->outletDot();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeBulk(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeBulk)
-		{
-			LOG(Error) << "Bulk derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->bulkDot();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeParticle(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeParticle)
-		{
-			LOG(Error) << "Particle derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->particleDot(parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeSolid(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeSolid)
-		{
-			LOG(Error) << "Solid derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nBound)
-			*nBound = unitRec->numBoundStates();
-		if (data)
-			*data = unitRec->solidDot(parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeFlux(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeFlux)
-		{
-			LOG(Error) << "Flux derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->fluxDot();
-
-		return cdtOK;
-	}
-
-	cdtResult getSolutionDerivativeVolume(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeVolume)
-		{
-			LOG(Error) << "Volume derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (data)
-			*data = unitRec->volumeDot();
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityInlet(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeInlet)
-		{
-			LOG(Error) << "Inlet of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numInletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensInlet(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityOutlet(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeOutlet)
-		{
-			LOG(Error) << "Outlet of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numOutletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensOutlet(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityBulk(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeBulk)
-		{
-			LOG(Error) << "Bulk of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensBulk(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityParticle(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeParticle)
-		{
-			LOG(Error) << "Particle of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensParticle(idx,  parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivitySolid(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeSolid)
-		{
-			LOG(Error) << "Solid of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nBound)
-			*nBound = unitRec->numBoundStates();
-		if (data)
-			*data = unitRec->sensSolid(idx, parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityFlux(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeFlux)
-		{
-			LOG(Error) << "Flux of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensFlux(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityVolume(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->sensitivityConfig().storeVolume)
-		{
-			LOG(Error) << "Volume of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (data)
-			*data = unitRec->sensVolume(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeInlet(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeInlet)
-		{
-			LOG(Error) << "Inlet derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numInletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensInletDot(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeOutlet(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Outlet derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numOutletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensOutletDot(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeBulk(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Bulk derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensBulkDot(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeParticle(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Particle derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensParticleDot(idx, parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeSolid(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Solid derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nParShells)
-			*nParShells = unitRec->numParticleShells(parType);
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nBound)
-			*nBound = unitRec->numBoundStates();
-		if (data)
-			*data = unitRec->sensSolidDot(idx, parType);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeFlux(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Flux derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nAxialCells)
-			*nAxialCells = unitRec->numAxialCells();
-		if (nRadialCells)
-			*nRadialCells = unitRec->numRadialCells();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->sensFluxDot(idx);
-
-		return cdtOK;
-	}
-
-	cdtResult getSensitivityDerivativeVolume(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime)
-	{
-		Driver* const realDrv = drv->driver;
-		if (!realDrv)
-			return cdtErrorInvalidInputs;
-
-		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
-		if (!sysRec)
-		{
-			LOG(Error) << "System solution recorder not available";
-			return cdtError;
-		}
-
-		if (nTime)
-			*nTime = sysRec->numDataPoints();
-		if (time)
-			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionDotConfig().storeOutlet)
-		{
-			LOG(Error) << "Volume derivative of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (data)
-			*data = unitRec->sensVolumeDot(idx);
+		if (isStored)
+			*isStored = unitRec->solutionDotConfig().storeVolume;
 
 		return cdtOK;
 	}
@@ -1630,7 +702,7 @@ extern "C"
 		ptr->createDriver = &cadet::api::v1::createDriver;
 		ptr->deleteDriver = &cadet::api::v1::deleteDriver;
 		ptr->runSimulation = &cadet::api::v1::runSimulation;
-		ptr->getNParTypes = &cadet::api::v1::getNParTypes;
+		ptr->getNumParTypes = &cadet::api::v1::getNumParTypes;
 		ptr->getSolutionInlet = &cadet::api::v1::getSolutionInlet;
 		ptr->getSolutionOutlet = &cadet::api::v1::getSolutionOutlet;
 		ptr->getSolutionBulk = &cadet::api::v1::getSolutionBulk;
@@ -1663,3 +735,4 @@ extern "C"
 	}
 
 }
+

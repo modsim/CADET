@@ -391,7 +391,7 @@ extern "C"
 		 * @param [in] idx Sensitivity ID
 		 * @param [out] nParTypes Number of particle types
 		 */
-		cdtResult (*getNParTypes)(cdtDriver* drv, int unitOpId, int* nParTypes);
+		cdtResult (*getNumParTypes)(cdtDriver* drv, int unitOpId, int* nParTypes);
 
 		/**
 		 * @brief Returns the solution of the last simulation at unit inlet
@@ -481,9 +481,10 @@ extern "C"
 		 * @param [out] nTime Number of time points
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParticleTypes Number of particle types
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionFlux)(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSolutionFlux)(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParticleTypes, int* nComp);
 
 		/**
 		 * @brief Returns the solution of the last simulation of the unit volume
@@ -584,9 +585,10 @@ extern "C"
 		 * @param [out] nTime Number of time points
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParticleTypes Number of particle types
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionDerivativeFlux)(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSolutionDerivativeFlux)(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParticleTypes, int* nComp);
 
 		/**
 		 * @brief Returns the solution derivative of the last simulation of the unit volume
@@ -692,9 +694,10 @@ extern "C"
 		 * @param [out] nTime Number of time points
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParticleTypes Number of particle types
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivityFlux)(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSensitivityFlux)(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParticleTypes, int* nComp);
 
 		/**
 		 * @brief Returns the parameter sensitivity of the last simulation of the unit volume
@@ -802,9 +805,10 @@ extern "C"
 		 * @param [out] nTime Number of time points
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParticleTypes Number of particle types
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivityDerivativeFlux)(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSensitivityDerivativeFlux)(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParticleTypes, int* nComp);
 
 		/**
 		 * @brief Returns the parameter sensitivity derivative of the last simulation of the unit volume

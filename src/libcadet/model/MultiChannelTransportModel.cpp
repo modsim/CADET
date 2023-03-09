@@ -40,7 +40,7 @@
 namespace
 {
 
-cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters, std::vector<cadet::active>& values, const std::string& name, unsigned int nAxial, unsigned int nRad, unsigned int nParType, cadet::UnitOpIdx uoi)
+cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters, std::vector<cadet::active>& values, const std::string& name, unsigned int nAxial, unsigned int nChannel, unsigned int nParType, cadet::UnitOpIdx uoi)
 {
 	cadet::model::MultiplexMode mode = cadet::model::MultiplexMode::Independent;
 	readScalarParameterOrArray(values, paramProvider, name, 1);
@@ -56,8 +56,8 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 1)
 		{
 			mode = cadet::model::MultiplexMode::Radial;
-			if (values.size() != nRad * nParType)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nRad * nParType) + ")");
+			if (values.size() != nChannel * nParType)
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nChannel * nParType) + ")");
 		}
 		else if (modeConfig == 2)
 		{
@@ -68,19 +68,19 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		else if (modeConfig == 3)
 		{
 			mode = cadet::model::MultiplexMode::AxialRadial;
-			if (values.size() != nAxial * nRad * nParType)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nAxial * nRad * nParType) + ")");
+			if (values.size() != nAxial * nChannel * nParType)
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nAxial * nChannel * nParType) + ")");
 		}
 	}
 	else
 	{
 		if (values.size() == nParType)
 			mode = cadet::model::MultiplexMode::Independent;
-		else if (values.size() == nRad * nParType)
+		else if (values.size() == nChannel * nParType)
 			mode = cadet::model::MultiplexMode::Radial;
 		else if (values.size() == nAxial * nParType)
 			mode = cadet::model::MultiplexMode::Axial;
-		else if (values.size() == nRad * nAxial * nParType)
+		else if (values.size() == nChannel * nAxial * nParType)
 			mode = cadet::model::MultiplexMode::AxialRadial;
 		else
 			throw cadet::InvalidParameterException("Could not infer multiplex mode of field " + name + ", set " + name + "_MULTIPLEX or change number of elements");
@@ -91,8 +91,8 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 	{
 		case cadet::model::MultiplexMode::Independent:
 			{
-				std::vector<cadet::active> p(nAxial * nRad * nParType);
-				for (unsigned int s = 0; s < nAxial * nRad; ++s)
+				std::vector<cadet::active> p(nAxial * nChannel * nParType);
+				for (unsigned int s = 0; s < nAxial * nChannel; ++s)
 					std::copy(values.begin(), values.end(), p.begin() + s * nParType);
 
 				values = std::move(p);
@@ -103,13 +103,13 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 			break;
 		case cadet::model::MultiplexMode::Radial:
 			{
-				std::vector<cadet::active> p(nAxial * nRad * nParType);
+				std::vector<cadet::active> p(nAxial * nChannel * nParType);
 				for (unsigned int s = 0; s < nAxial; ++s)
-					std::copy(values.begin(), values.end(), p.begin() + s * nParType * nRad);
+					std::copy(values.begin(), values.end(), p.begin() + s * nParType * nChannel);
 
 				values = std::move(p);
 
-				for (unsigned int s = 0; s < nRad; ++s)
+				for (unsigned int s = 0; s < nChannel; ++s)
 				{
 					for (unsigned int i = 0; i < nParType; ++i)
 						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, s, cadet::SectionIndep)] = &values[s * nParType + i];
@@ -118,11 +118,11 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 			break;
 		case cadet::model::MultiplexMode::Axial:
 			{
-				std::vector<cadet::active> p(nAxial * nRad * nParType);
+				std::vector<cadet::active> p(nAxial * nChannel * nParType);
 				for (unsigned int i = 0; i < nAxial; ++i)
 				{
-					for (unsigned int j = 0; j < nRad; ++j)
-						std::copy(values.begin() + i * nParType, values.begin() + (i+1) * nParType, p.begin() + i * nRad * nParType + j * nParType);
+					for (unsigned int j = 0; j < nChannel; ++j)
+						std::copy(values.begin() + i * nParType, values.begin() + (i+1) * nParType, p.begin() + i * nChannel * nParType + j * nParType);
 				}
 
 				values = std::move(p);
@@ -130,12 +130,12 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 				for (unsigned int s = 0; s < nAxial; ++s)
 				{
 					for (unsigned int i = 0; i < nParType; ++i)
-						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep, s)] = &values[s * nParType * nRad + i];
+						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep, s)] = &values[s * nParType * nChannel + i];
 				}
 			}
 			break;
 		case cadet::model::MultiplexMode::AxialRadial:
-			cadet::registerParam3DArray(parameters, values, [=](bool multi, unsigned int ax, unsigned int rad, unsigned int pt) { return cadet::makeParamId(nameHash, uoi, cadet::CompIndep, pt, cadet::BoundStateIndep, rad, ax); }, nParType, nRad);
+			cadet::registerParam3DArray(parameters, values, [=](bool multi, unsigned int ax, unsigned int rad, unsigned int pt) { return cadet::makeParamId(nameHash, uoi, cadet::CompIndep, pt, cadet::BoundStateIndep, rad, ax); }, nParType, nChannel);
 			break;
 		case cadet::model::MultiplexMode::RadialSection:
 		case cadet::model::MultiplexMode::Component:
@@ -153,7 +153,7 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 	return mode;
 }
 
-bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nAxial, unsigned int nRad, unsigned int nParType, double value, std::unordered_set<cadet::active*> const* sensParams)
+bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nAxial, unsigned int nChannel, unsigned int nParType, double value, std::unordered_set<cadet::active*> const* sensParams)
 {
 	if (pId.name != nameHash)
 		return false;
@@ -169,7 +169,7 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 				if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType]))
 					return false;
 
-				for (unsigned int i = 0; i < nAxial * nRad; ++i)
+				for (unsigned int i = 0; i < nAxial * nChannel; ++i)
 					data[i * nParType + pId.particleType].setValue(value);
 
 				return true;
@@ -184,7 +184,7 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					return false;
 
 				for (unsigned int i = 0; i < nAxial; ++i)
-					data[i * nRad * nParType + pId.reaction * nParType + pId.particleType].setValue(value);
+					data[i * nChannel * nParType + pId.reaction * nParType + pId.particleType].setValue(value);
 
 				return true;
 			}
@@ -194,11 +194,11 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nParType * nRad + pId.particleType]))
+				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nParType * nChannel + pId.particleType]))
 					return false;
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[pId.section * nParType * nRad + i * nParType + pId.particleType].setValue(value);
+				for (unsigned int i = 0; i < nChannel; ++i)
+					data[pId.section * nParType * nChannel + i * nParType + pId.particleType].setValue(value);
 
 				return true;
 			}
@@ -208,10 +208,10 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 					|| (pId.reaction == cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nParType * nRad + pId.reaction * nParType + pId.particleType]))
+				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nParType * nChannel + pId.reaction * nParType + pId.particleType]))
 					return false;
 
-				data[pId.section * nParType * nRad + pId.reaction * nParType + pId.particleType].setValue(value);
+				data[pId.section * nParType * nChannel + pId.reaction * nParType + pId.particleType].setValue(value);
 
 				return true;
 			}
@@ -231,7 +231,7 @@ bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash na
 	return false;
 }
 
-bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nAxial, unsigned int nRad, unsigned int nParType, unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
+bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nAxial, unsigned int nChannel, unsigned int nParType, unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
 {
 	if (pId.name != nameHash)
 		return false;
@@ -246,7 +246,7 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 
 				sensParams.insert(&data[pId.particleType]);
 
-				for (unsigned int i = 0; i < nAxial * nRad; ++i)
+				for (unsigned int i = 0; i < nAxial * nChannel; ++i)
 					data[i * nParType + pId.particleType].setADValue(adDirection, adValue);
 
 				return true;
@@ -260,7 +260,7 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 				sensParams.insert(&data[pId.reaction * nParType + pId.particleType]);
 
 				for (unsigned int i = 0; i < nAxial; ++i)
-					data[i * nRad * nParType + pId.reaction * nParType + pId.particleType].setADValue(adDirection, adValue);
+					data[i * nChannel * nParType + pId.reaction * nParType + pId.particleType].setADValue(adDirection, adValue);
 
 				return true;
 			}
@@ -270,10 +270,10 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-				sensParams.insert(&data[pId.section * nParType * nRad + pId.particleType]);
+				sensParams.insert(&data[pId.section * nParType * nChannel + pId.particleType]);
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[pId.section * nParType * nRad + i * nParType + pId.particleType].setADValue(adDirection, adValue);
+				for (unsigned int i = 0; i < nChannel; ++i)
+					data[pId.section * nParType * nChannel + i * nParType + pId.particleType].setADValue(adDirection, adValue);
 
 				return true;
 			}
@@ -283,8 +283,8 @@ bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameH
 					|| (pId.reaction == cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
 					return false;
 
-				sensParams.insert(&data[pId.section * nParType * nRad + pId.reaction * nParType + pId.particleType]);
-				data[pId.section * nParType * nRad + pId.reaction * nParType + pId.particleType].setADValue(adDirection, adValue);
+				sensParams.insert(&data[pId.section * nParType * nChannel + pId.reaction * nParType + pId.particleType]);
+				data[pId.section * nParType * nChannel + pId.reaction * nParType + pId.particleType].setADValue(adDirection, adValue);
 
 				return true;
 			}
@@ -329,15 +329,15 @@ MultiChannelTransportModel::~MultiChannelTransportModel() CADET_NOEXCEPT
 
 unsigned int MultiChannelTransportModel::numDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp * nRad
-	// Inlet DOFs: nComp * nRad
-	return _disc.nCol * _disc.nRad * _disc.nComp + _disc.nComp * _disc.nRad;
+	// Column bulk DOFs: nCol * nComp * nChannel
+	// Inlet DOFs: nComp * nChannel
+	return _disc.nCol * _disc.nChannel * _disc.nComp + _disc.nComp * _disc.nChannel;
 }
 
 unsigned int MultiChannelTransportModel::numPureDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp * nRad
-	return _disc.nCol * _disc.nRad * _disc.nComp;
+	// Column bulk DOFs: nCol * nComp * nChannel
+	return _disc.nCol * _disc.nChannel * _disc.nComp;
 }
 
 
@@ -360,7 +360,7 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 	paramProvider.pushScope("discretization");
 
 	_disc.nCol = paramProvider.getInt("NCOL");
-	_disc.nRad = paramProvider.getInt("NRAD");
+	_disc.nChannel = paramProvider.getInt("NCHANNEL");
 
 	// Determine whether analytic Jacobian should be used but don't set it right now.
 	// We need to setup Jacobian matrices first.
@@ -371,7 +371,7 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 #endif
 
 	// Allocate space for initial conditions
-	_initC.resize(_disc.nComp * _disc.nRad);
+	_initC.resize(_disc.nComp * _disc.nChannel);
 
 	// Create nonlinear solver for consistent initialization
 	configureNonlinearSolver(paramProvider);
@@ -381,7 +381,7 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 	// Allocate memory
 	Indexer idxr(_disc);
 
-	_jacInlet.resize(_disc.nComp * _disc.nRad);
+	_jacInlet.resize(_disc.nComp * _disc.nChannel);
 
 	// Set whether analytic Jacobian is used
 	useAnalyticJacobian(analyticJac);
@@ -406,7 +406,7 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 			paramProvider.popScope();
 	}
 
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nCol, _disc.nRad, _dynReactionBulk);
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nCol, _disc.nChannel, _dynReactionBulk);
 
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
@@ -424,7 +424,7 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 
 	// Register initial conditions parameters
 	registerParam1DArray(_parameters, _initC, [=](bool multi, unsigned int comp) { return makeParamId(hashString("INIT_C"), _unitOpIdx, comp, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
-	if (_disc.nRad > 1)
+	if (_disc.nChannel > 1)
 		registerParam2DArray(_parameters, _initC, [=](bool multi, unsigned int rad, unsigned int comp) { return makeParamId(hashString("INIT_C"), _unitOpIdx, comp, ParTypeIndep, BoundStateIndep, rad, SectionIndep); }, _disc.nComp);
 
 	// Reconfigure reaction model
@@ -488,7 +488,7 @@ void MultiChannelTransportModel::notifyDiscontinuousSectionTransition(double t, 
 	// Setup the matrix connecting inlet DOFs to first column cells
 	_jacInlet.clear();
 
-	for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+	for (unsigned int rad = 0; rad < _disc.nChannel; ++rad)
 	{
 		const double f = _convDispOp.inletFactor(secIdx, rad);
 		if (_convDispOp.currentVelocity(rad) >= 0.0)
@@ -497,7 +497,7 @@ void MultiChannelTransportModel::notifyDiscontinuousSectionTransition(double t, 
 
 			// Place entries for inlet DOF to first axial cell conversion
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				_jacInlet.addElement(comp * idxr.strideColComp() + rad * idxr.strideColRadialCell(), comp, f);
+				_jacInlet.addElement(comp * idxr.strideColComp() + rad * idxr.strideChannelCell(), comp, f);
 		}
 		else
 		{
@@ -506,7 +506,7 @@ void MultiChannelTransportModel::notifyDiscontinuousSectionTransition(double t, 
 			// Place entries for inlet DOF to last column cell conversion
 			const unsigned int offset = (_disc.nCol - 1) * idxr.strideColAxialCell();
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				_jacInlet.addElement(offset + comp * idxr.strideColComp() + rad * idxr.strideColRadialCell(), comp, f);
+				_jacInlet.addElement(offset + comp * idxr.strideColComp() + rad * idxr.strideChannelCell(), comp, f);
 		}
 	}
 }
@@ -692,7 +692,7 @@ template <typename StateType, typename ResidualType, typename ParamType, bool wa
 int MultiChannelTransportModel::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	// Handle inlet DOFs, which are simply copied to res
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.nChannel; ++i)
 	{
 		res[i] = y[i];
 	}
@@ -708,20 +708,19 @@ int MultiChannelTransportModel::residualImpl(double t, unsigned int secIdx, Stat
 	ResidualType* resC = res + idxr.offsetC();
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
-	for (unsigned int colCell = 0; colCell < _disc.nCol * _disc.nRad; ++colCell, yC += idxr.strideColRadialCell(), resC += idxr.strideColRadialCell())
+	for (unsigned int colCell = 0; colCell < _disc.nCol * _disc.nChannel; ++colCell, yC += idxr.strideChannelCell(), resC += idxr.strideChannelCell())
 	{
-		const unsigned int axialCell = colCell / _disc.nRad;
-		const unsigned int radialCell = colCell % _disc.nRad;
-		const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
+		const unsigned int axialCell = colCell / _disc.nChannel;
+		const unsigned int channelCell = colCell % _disc.nChannel;
 		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.nCol);
 
-		const ColumnPosition colPos{z, r, 0.0};
+		const ColumnPosition colPos{z, static_cast<double>(channelCell), 0.0};
 		_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, yC, resC, -1.0, tlmAlloc);
 
 		if (wantJac)
 		{
 			// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(yC), -1.0, _convDispOp.jacobian().row(colCell * idxr.strideColRadialCell()), tlmAlloc);
+			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(yC), -1.0, _convDispOp.jacobian().row(colCell * idxr.strideChannelCell()), tlmAlloc);
 		}
 	}
 
@@ -804,7 +803,7 @@ void MultiChannelTransportModel::multiplyWithJacobian(const SimulationTime& simT
 	Indexer idxr(_disc);
 
 	// Handle identity matrix of inlet DOFs
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.nChannel; ++i)
 	{
 		ret[i] = alpha * yS[i] + beta * ret[i];
 	}
@@ -829,7 +828,7 @@ void MultiChannelTransportModel::multiplyWithDerivativeJacobian(const Simulation
 	_convDispOp.multiplyWithDerivativeJacobian(simTime, sDot, ret);
 
 	// Handle inlet DOFs (all algebraic)
-	std::fill_n(ret, _disc.nComp * _disc.nRad, 0.0);
+	std::fill_n(ret, _disc.nComp * _disc.nChannel, 0.0);
 }
 
 void MultiChannelTransportModel::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
@@ -841,10 +840,10 @@ unsigned int MultiChannelTransportModel::localOutletComponentIndex(unsigned int 
 	// Inlets are duplicated so need to be accounted for
 	if (static_cast<double>(_convDispOp.currentVelocity(port)) >= 0.0)
 		// Forward Flow: outlet is last cell
-		return _disc.nComp * _disc.nRad + (_disc.nCol - 1) * _disc.nComp * _disc.nRad + port * _disc.nComp;
+		return _disc.nComp * _disc.nChannel + (_disc.nCol - 1) * _disc.nComp * _disc.nChannel + port * _disc.nComp;
 	else
 		// Backward flow: Outlet is first cell
-		return _disc.nComp * _disc.nRad + _disc.nComp * port;
+		return _disc.nComp * _disc.nChannel + _disc.nComp * port;
 }
 
 unsigned int MultiChannelTransportModel::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
@@ -932,20 +931,20 @@ int MultiChannelTransportModel::Exporter::writeMobilePhase(double* buffer) const
 
 int MultiChannelTransportModel::Exporter::writeInlet(unsigned int port, double* buffer) const
 {
-	cadet_assert(port < _disc.nRad);
+	cadet_assert(port < _disc.nChannel);
 	std::copy_n(_data + port * _disc.nComp, _disc.nComp, buffer);
 	return _disc.nComp;
 }
 
 int MultiChannelTransportModel::Exporter::writeInlet(double* buffer) const
 {
-	std::copy_n(_data, _disc.nComp * _disc.nRad, buffer);
-	return _disc.nComp * _disc.nRad;
+	std::copy_n(_data, _disc.nComp * _disc.nChannel, buffer);
+	return _disc.nComp * _disc.nChannel;
 }
 
 int MultiChannelTransportModel::Exporter::writeOutlet(unsigned int port, double* buffer) const
 {
-	cadet_assert(port < _disc.nRad);
+	cadet_assert(port < _disc.nChannel);
 
 	if (_model._convDispOp.currentVelocity(port) >= 0)
 		std::copy_n(&_idx.c(_data, _disc.nCol - 1, port, 0), _disc.nComp, buffer);
@@ -957,12 +956,12 @@ int MultiChannelTransportModel::Exporter::writeOutlet(unsigned int port, double*
 
 int MultiChannelTransportModel::Exporter::writeOutlet(double* buffer) const
 {
-	for (int i = 0; i < _disc.nRad; ++i)
+	for (int i = 0; i < _disc.nChannel; ++i)
 	{
 		writeOutlet(i, buffer);
 		buffer += _disc.nComp;
 	}
-	return _disc.nComp * _disc.nRad;
+	return _disc.nComp * _disc.nChannel;
 }
 
 

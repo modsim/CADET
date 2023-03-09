@@ -70,8 +70,8 @@ public:
 	virtual UnitOpIdx unitOperationId() const CADET_NOEXCEPT { return _unitOpIdx; }
 	virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 	virtual void setFlowRates(active const* in, active const* out) CADET_NOEXCEPT;
-	virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
+	virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
+	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
 	static const char* identifier() { return "MULTI_CHANNEL_TRANSPORT"; }
@@ -195,7 +195,7 @@ protected:
 	{
 		unsigned int nComp; //!< Number of components
 		unsigned int nCol; //!< Number of column cells
-		unsigned int nRad; //!< Number of radial cells
+		unsigned int nChannel; //!< Number of channels
 	};
 
 	Discretization _disc; //!< Discretization info
@@ -229,20 +229,20 @@ protected:
 		Indexer(const Discretization& disc) : _disc(disc) { }
 
 		// Strides
-		inline int strideColAxialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp) * static_cast<int>(_disc.nRad); }
-		inline int strideColRadialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp); }
+		inline int strideColAxialCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp) * static_cast<int>(_disc.nChannel); }
+		inline int strideChannelCell() const CADET_NOEXCEPT { return static_cast<int>(_disc.nComp); }
 		inline int strideColComp() const CADET_NOEXCEPT { return 1; }
 
 		// Offsets
-		inline int offsetC() const CADET_NOEXCEPT { return _disc.nComp * _disc.nRad; }
+		inline int offsetC() const CADET_NOEXCEPT { return _disc.nComp * _disc.nChannel; }
 
 		// Return pointer to first element of state variable in state vector
 		template <typename real_t> inline real_t* c(real_t* const data) const { return data + offsetC(); }
 		template <typename real_t> inline real_t const* c(real_t const* const data) const { return data + offsetC(); }
 
 		// Return specific variable in state vector
-		template <typename real_t> inline real_t& c(real_t* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideColRadialCell()]; }
-		template <typename real_t> inline const real_t& c(real_t const* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideColRadialCell()]; }
+		template <typename real_t> inline real_t& c(real_t* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideChannelCell()]; }
+		template <typename real_t> inline const real_t& c(real_t const* const data, unsigned int col, unsigned int rad, unsigned int comp) const { return data[offsetC() + comp + col * strideColAxialCell() + rad * strideChannelCell()]; }
 
 	protected:
 		const Discretization& _disc;
@@ -262,13 +262,13 @@ protected:
 
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }
-		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return _disc.nRad; }
-		virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
-		virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nRad; }
+		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return _disc.nChannel; }
+		virtual unsigned int numInletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
+		virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return _disc.nChannel; }
 		virtual unsigned int numParticleTypes() const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numParticleShells(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numBoundStates(unsigned int parType) const CADET_NOEXCEPT { return 0; }
-		virtual unsigned int numMobilePhaseDofs() const CADET_NOEXCEPT { return _disc.nComp * _disc.nCol * _disc.nRad; }
+		virtual unsigned int numMobilePhaseDofs() const CADET_NOEXCEPT { return _disc.nComp * _disc.nCol * _disc.nChannel; }
 		virtual unsigned int numParticleMobilePhaseDofs(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numParticleMobilePhaseDofs() const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numSolidPhaseDofs(unsigned int parType) const CADET_NOEXCEPT { return 0; }
@@ -298,10 +298,9 @@ protected:
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const
 		{
-			active const* const rc = _model._convDispOp.radialCenters();
-			for (unsigned int i = 0; i < _disc.nRad; ++i)
-				coords[i] = static_cast<double>(rc[i]);
-			return _disc.nRad;
+			for (unsigned int i = 0; i < _disc.nChannel; ++i)
+				coords[i] = static_cast<double>(i);
+			return _disc.nChannel;
 		}
 		virtual int writeParticleCoordinates(unsigned int parType, double* coords) const { return 0; }
 

@@ -34,7 +34,7 @@ int MultiChannelTransportModel::multiplexInitialConditions(const cadet::Paramete
 		if ((pId.reaction == ReactionIndep) && _singleRadiusInitC)
 		{
 			_sensParams.insert(&_initC[pId.component]);
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.nChannel; ++r)
 				_initC[r * _disc.nComp + pId.component].setADValue(adDirection, adValue);
 
 			return 1;
@@ -63,7 +63,7 @@ int MultiChannelTransportModel::multiplexInitialConditions(const cadet::Paramete
 			if (checkSens && !contains(_sensParams, &_initC[pId.component]))
 				return -1;
 
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.nChannel; ++r)
 				_initC[r * _disc.nComp + pId.component].setValue(val);
 
 			return 1;
@@ -110,11 +110,11 @@ void MultiChannelTransportModel::applyInitialCondition(const SimulationState& si
 	for (unsigned int col = 0; col < _disc.nCol; ++col)
 	{
 		// Loop over radial cells
-		for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+		for (unsigned int rad = 0; rad < _disc.nChannel; ++rad)
 		{
 			// Loop over components in cell
 			for (unsigned comp = 0; comp < _disc.nComp; ++comp)
-				stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideColRadialCell() + comp * idxr.strideColComp()] = static_cast<double>(_initC[comp + rad * _disc.nComp]);
+				stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideChannelCell() + comp * idxr.strideColComp()] = static_cast<double>(_initC[comp + rad * _disc.nComp]);
 		}
 	}
 }
@@ -137,16 +137,16 @@ void MultiChannelTransportModel::readInitialCondition(IParameterProvider& paramP
 	}
 
 	const std::vector<double> initC = paramProvider.getDoubleArray("INIT_C");
-	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.nRad);
+	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.nChannel);
 
-	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.nRad) && !_singleRadiusInitC))
+	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.nChannel) && !_singleRadiusInitC))
 		throw InvalidParameterException("INIT_C does not contain enough values for all components (and radial zones)");
 
 	if (!_singleRadiusInitC)
-		ad::copyToAd(initC.data(), _initC.data(), _disc.nComp * _disc.nRad);
+		ad::copyToAd(initC.data(), _initC.data(), _disc.nComp * _disc.nChannel);
 	else
 	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
+		for (unsigned int r = 0; r < _disc.nChannel; ++r)
 			ad::copyToAd(initC.data(), _initC.data() + r * _disc.nComp, _disc.nComp);
 	}
 }
@@ -380,7 +380,7 @@ void MultiChannelTransportModel::leanConsistentInitialTimeDerivative(double t, d
 	// instead of the *negative* one. Fortunately, we are dealing with linear systems,
 	// which means that we can just negate the solution.
 	double* const yDotSlice = vecStateYdot + idxr.offsetC();
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad * _disc.nComp; ++i)
+	for (unsigned int i = 0; i < _disc.nCol * _disc.nChannel * _disc.nComp; ++i)
 		yDotSlice[i] = -resSlice[i];
 }
 
@@ -395,11 +395,11 @@ void MultiChannelTransportModel::initializeSensitivityStates(const std::vector<d
 		for (unsigned int col = 0; col < _disc.nCol; ++col)
 		{
 			// Loop over radial cells
-			for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+			for (unsigned int rad = 0; rad < _disc.nChannel; ++rad)
 			{
 				// Loop over components in cell
 				for (unsigned comp = 0; comp < _disc.nComp; ++comp)
-					stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideColRadialCell() + comp * idxr.strideColComp()] = _initC[comp + rad * _disc.nComp].getADValue(param);
+					stateYbulk[col * idxr.strideColAxialCell() + rad * idxr.strideChannelCell() + comp * idxr.strideColComp()] = _initC[comp + rad * _disc.nComp].getADValue(param);
 			}
 		}
 	}
@@ -471,7 +471,7 @@ void MultiChannelTransportModel::consistentInitialSensitivity(const SimulationTi
 		double* const sensYdot = vecSensYdot[param];
 
 		// Copy parameter derivative dF / dp from AD and negate it
-		for (unsigned int i = _disc.nComp * _disc.nRad; i < numDofs(); ++i)
+		for (unsigned int i = _disc.nComp * _disc.nChannel; i < numDofs(); ++i)
 			sensYdot[i] = -adRes[i].getADValue(param);
 
 		// Step 1: Solve algebraic equations

@@ -16,8 +16,6 @@
 
 #include "model/LumpedRateModelWithPoresDG.hpp"
 #include "model/BindingModel.hpp"
-#include "linalg/DenseMatrix.hpp"
-#include "linalg/BandMatrix.hpp"
 #include "AdUtils.hpp"
 
 #include <algorithm>
@@ -119,7 +117,6 @@ int LumpedRateModelWithPoresDG::linearSolve(double t, double alpha, double outer
 		assembleDiscretizedGlobalJacobian(alpha, idxr);
 
 		_globalSolver.factorize(_globalJacDisc);
-		//_bulkSolver.compute(_jacCdisc);
 
 		if (cadet_unlikely(_globalSolver.info() != Eigen::Success)) {
 			LOG(Error) << "Factorize() failed";
@@ -127,24 +124,7 @@ int LumpedRateModelWithPoresDG::linearSolve(double t, double alpha, double outer
 
 		// Do not factorize again at next call without changed Jacobians
 		_factorizeJacobian = false;
-	} // if (_factorizeJacobian)
-
-	//if (_globalJacDisc.toDense().isApprox(_FDjac.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()), 1e-12)) {
-	//	//std::cout << "ana. inlet:\n" << std::fixed << std::setprecision(3) << _jacInlet << std::endl;
-	//	//std::cout << "FD inlet:\n" << _FDjac.block(0, 0, _disc.nComp + idxr.strideColCell(), _disc.nComp) << std::endl;
-	//	//std::cout << "ana. Jac:\n" << _globalJacDisc.toDense() << std::endl;
-	//	//std::cout << "FD Jac:\n" << _FDjac.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()) << std::endl;
-	//	//std::cout << "vgl Jac:\n" << _FDjac.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()) - _globalJacDisc.toDense() << std::endl;
-	//	std::cout << "jacobian correct" << std::endl;
-	//}
-	//else {
-	//	std::cout << "ana. inlet:\n" << std::fixed << std::setprecision(3) << _jacInlet << std::endl;
-	//	std::cout << "FD inlet:\n" << _FDjac.block(0, 0, _disc.nComp + idxr.strideColCell(), _disc.nComp) << std::endl;
-	//	std::cout << "ana. Jac:\n" << _globalJacDisc.toDense() << std::endl;
-	//	std::cout << "FD Jac:\n" << _FDjac.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()) << std::endl;
-	//	std::cout << "vgl Jac:\n" << _FDjac.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()) - _globalJacDisc.toDense()  << std::endl;
-	//	std::cout << "jacobian incorrect" << std::endl;
-	//}
+	}
 
 	// ====== Step 1.5: Solve J c_uo = b_uo - A * c_in = b_uo - A*b_in
 
@@ -152,7 +132,7 @@ int LumpedRateModelWithPoresDG::linearSolve(double t, double alpha, double outer
 
 	// Handle inlet DOFs:
 	// Inlet at z = 0 for forward flow, at z = L for backward flow.
-	unsigned int offInlet = (_disc.velocity >= 0.0) ? 0 : (_disc.nCol - 1u) * idxr.strideColCell();
+	unsigned int offInlet = (_convDispOp.forwardFlow()) ? 0 : (_disc.nCol - 1u) * idxr.strideColCell();
 
 	for (int comp = 0; comp < _disc.nComp; comp++) {
 		for (int node = 0; node < (_disc.exactInt ? _disc.nNodes : 1); node++) {
@@ -191,14 +171,11 @@ int LumpedRateModelWithPoresDG::linearSolve(double t, double alpha, double outer
  */
 void LumpedRateModelWithPoresDG::assembleDiscretizedGlobalJacobian(double alpha, Indexer idxr) {
 
-	double* vPtr = _globalJacDisc.valuePtr();
-	for (int k = 0; k < _globalJacDisc.nonZeros(); k++) {
-		*vPtr = 0.0;
-		vPtr++;
-	}
+	// set to static (per section) jacobian
+	_globalJacDisc = _globalJac;
 
 	// add time derivative to bulk jacobian
-	addTimeDerBulkJacobian(alpha, idxr);
+	_convDispOp.addTimeDerivativeToJacobian(alpha, _globalJacDisc);
 
 	// Add time derivatives to particle shells
 	for (unsigned int parType = 0; parType < _disc.nParType; parType++) {
@@ -209,10 +186,6 @@ void LumpedRateModelWithPoresDG::assembleDiscretizedGlobalJacobian(double alpha,
 			addTimeDerivativeToJacobianParticleBlock(jac, idxr, alpha, parType);
 		}
 	}
-
-	// add static (per section) jacobian
-	_globalJacDisc += _globalJac;
-
 }
 
 /**

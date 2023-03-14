@@ -402,7 +402,7 @@ endif()
 
 set(EIGEN_TARGET "")
 if (ENABLE_DG)
-	find_package(Eigen3 3.3)
+	find_package(Eigen3 3.4)
 
 	# Disable DG if Eigen is not present
 	if (NOT TARGET Eigen3::Eigen)

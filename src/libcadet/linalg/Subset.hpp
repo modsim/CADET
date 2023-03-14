@@ -25,6 +25,8 @@
 #include "linalg/BandMatrix.hpp"
 
 #include <algorithm>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 namespace cadet
 {
@@ -506,6 +508,74 @@ namespace linalg
 					continue;
 
 				ptrDest[idx] = ptrSrc[c];
+				++idx;
+			}
+
+			ptrDest += dest.stride();
+		}
+	}
+
+	/**
+	 * @brief Copies a subset of a given Eigen matrix into this matrix
+	 * @details Copies a submatrix indentified by row and column masks from a given source in banded
+	 *          storage into a destination matrix. The submatrix has to fully fit into the destination
+	 *          matrix and is placed in the top left corner. The rest of the matrix is left unchanged.
+	 * @param [in] mat Source matrix in banded storage format
+	 * @param [in] rowMask Mask array for rows
+	 * @param [in] colMask Mask array for columns
+	 * @param [in] rowOffset Offset to the first row to copy
+	 * @param [in] diagOffset Offset to the first diagonal to copy
+	 * @param [in] dest Destination matrix in dense storage format
+	 */
+	inline void copyMatrixSubset(const Eigen::MatrixXd& src, const ConstMaskArray& rowMask, const ConstMaskArray& colMask, int rowOffset, int colOffset, detail::DenseMatrixBase& dest)
+	{
+		cadet_assert(dest.rows() >= numMaskActive(rowMask));
+		cadet_assert(dest.columns() >= numMaskActive(colMask));
+		cadet_assert(src.rows() >= rowMask.len);
+		cadet_assert(src.cols() >= colMask.len);
+
+		double const* ptrSrc = src.data() + rowOffset * src.cols() + colOffset;
+		double* ptrDest = dest.data();
+		for (int r = 0; r < rowMask.len; ++r, ptrSrc+=src.cols())
+		{
+			if (!rowMask.mask[r])
+				continue;
+
+			int idx = 0;
+			for (int c = 0; c < colMask.len; ++c)
+			{
+				if (!colMask.mask[c])
+					continue;
+
+				ptrDest[idx] = ptrSrc[c];
+				++idx;
+			}
+
+			ptrDest += dest.stride();
+		}
+	}
+	inline void copyMatrixSubset(const Eigen::SparseMatrix<double, Eigen::RowMajor>& src, const ConstMaskArray& rowMask, const ConstMaskArray& colMask, int rowOffset, int colOffset, detail::DenseMatrixBase& dest)
+	{
+		cadet_assert(dest.rows() >= numMaskActive(rowMask));
+		cadet_assert(dest.columns() >= numMaskActive(colMask));
+		cadet_assert(src.rows() >= rowMask.len);
+		cadet_assert(src.cols() >= colMask.len);
+
+		double* ptrDest = dest.data();
+
+		for (int r = 0; r < rowMask.len; ++r)
+		{
+			if (!rowMask.mask[r])
+				continue;
+
+			int idx = 0;
+			for (int c = 0; c < colMask.len; ++c)
+			{
+				if (!colMask.mask[c])
+					continue;
+
+				ptrDest[idx] = src.coeff(rowOffset + r, colOffset + c);
+
 				++idx;
 			}
 

@@ -84,16 +84,6 @@ Multi Channel Transport model (MCT)
    **Type:** double  **Range:** :math:`> 0`  **Length:** 1
    ================  ======================  =============
    
-``COL_RADIUS``
-
-   Column radius
-
-   **Unit:** :math:`\mathrm{m}`
-   
-   ================  ======================  =============
-   **Type:** double  **Range:** :math:`> 0`  **Length:** 1
-   ================  ======================  =============
-   
 ``VELOCITY``
 
    Velocity

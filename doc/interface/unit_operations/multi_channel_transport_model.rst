@@ -94,38 +94,11 @@ Multi Channel Transport model (MCT)
    **Type:** double  **Range:** :math:`> 0`  **Length:** 1
    ================  ======================  =============
    
-``COL_POROSITY``
+``VELOCITY``
 
-   Column porosity, either constant (length is 1) or for each radial zone (length is :math:`\texttt{NRAD}`).  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the radial zone when specifying parameter sensitivities.
-   
-   ================  ========================  =====================================
-   **Type:** double  **Range:** :math:`(0,1]`  **Length:** :math:`1 / \texttt{NRAD}`
-   ================  ========================  =====================================
-   
-``FILM_DIFFUSION``
-
-   Film diffusion coefficients for each component of each particle type
+   Velocity
 
    **Unit:** :math:`\mathrm{m}\,\mathrm{s}^{-1}`
-   
-   ================  =========================  =======================================================
-   **Type:** double  **Range:** :math:`\geq 0`  **Length:** see :math:`\texttt{FILM_DIFFUSION_MULTIPLEX}`
-   ================  =========================  =======================================================
-   
-``FILM_DIFFUSION_MULTIPLEX``
-
-   Multiplexing mode of :math:`\texttt{FILM_DIFFUSION}`. Determines whether :math:`\texttt{FILM_DIFFUSION}` is treated as component-, type-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of :math:`\texttt{FILM_DIFFUSION}`.  Valid modes are: 
-
-  0. Component-dependent, type-independent, section-independent; length of :math:`\texttt{FILM_DIFFUSION}` is :math:`\texttt{NCOMP}` 
-  1. Component-dependent, type-independent, section-dependent; length of :math:`\texttt{FILM_DIFFUSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NSEC}`; ordering is section-major 
-  2. Component-dependent, type-dependent, section-independent; length of :math:`\texttt{FILM_DIFFUSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NPARTYPE}`; ordering is type-major 
-  3. Component-dependent, type-dependent, section-dependent; length of :math:`\texttt{FILM_DIFFUSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NPARTYPE} \cdot \texttt{NSEC}`; ordering is section-type-major 
-   
-   =============  ===================================  =============
-   **Type:** int  **Range:** :math:`\{0, \dots, 3 \}`  **Length:** 1
-   =============  ===================================  =============
-   
-``VELOCITY``
 
    Indicates flow direction in each radial zone (forward if value is positive, backward if value is negative), see Section :ref:`MUOPGRMflow2D`).  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the radial cell when specifying parameter sensitivities.
    
@@ -148,6 +121,10 @@ Multi Channel Transport model (MCT)
 
 ``EXCHANGE_MATRIX``
 
+   Exchange matrix
+
+   **Unit:** :math:`\mathrm{s}^{-1}`
+
    Ordered list containing all exchange rates :math:`e_{ij}` from compartment :math:`i` to :math:`j` based on the exchange matrix :math:`E`. One row after the other is noted in the list. 
 
    .. math::
@@ -160,7 +137,7 @@ Multi Channel Transport model (MCT)
     \end{bmatrix}    
 
    ================  ========================  ===============================================
-   **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\texttt{NRAD}*\texttt{NRAD}`
+   **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\texttt{NCHANNEL}*\texttt{NCHANNEL}`
    ================  ========================  ===============================================
 
 ``NCOL``
@@ -171,31 +148,26 @@ Multi Channel Transport model (MCT)
    **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
    =============  =========================  =============
    
-``NRAD``
+``NCHANNEL``
 
-   Number of radial column discretization cells
+   Number of channels :math:`ij` 
    
    =============  =========================  =============
    **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
    =============  =========================  =============
       
-``RADIAL_DISC_TYPE``
-
-   Specifies the radial discretization scheme. Valid values are :math:`\texttt{EQUIDISTANT}`, :math:`\texttt{EQUIVOLUME}`, and :math:`\texttt{USER_DEFINED}`.
    
-   ================  =============
-   **Type:** string  **Length:** 1
-   ================  =============
-   
-``RADIAL_COMPARTMENTS``
+``CHANNEL_CROSS_SECTION_AREAS``
 
-   Coordinates for the radial compartment boundaries (ignored if :math:`\texttt{RADIAL_DISC_TYPE} \neq \texttt{USER_DEFINED}`). The coordinates are absolute and have to include the endpoints 0 and :math:`\texttt{COLUMN_RADIUS}`. The values are expected in ascending order (i.e., 0 is the first and :math:`\texttt{COLUMN_RADIUS}` the last value in the array).
+   Cross section areas
 
-   **Unit:** :math:`\mathrm{m}`
+   **Unit:** :math:`\mathrm{m}^{2}`
+
+   Defines the cross section area of each channel
    
-   ================  =============================================  ====================================
-   **Type:** double  **Range:** :math:`[0,\texttt{COLUMN_RADIUS}]`  **Length:** :math:`\texttt{NRAD} + 1`
-   ================  =============================================  ====================================
+   ================  ====================== ======================================
+   **Type:** double  **Range:** :math:`> 0`  **Length:** :math:`\texttt{NCHANNEL}`
+   ================  ====================== ======================================
    
 ``USE_ANALYTIC_JACOBIAN``
 
@@ -209,14 +181,14 @@ Multi Channel Transport model (MCT)
 
    Linear solver used for the sparse column bulk block. This field is optional, the best available method is selected (i.e., sparse direct solver if possible).  Valid values are: 
 
-  \.exttt{DENSE}] Converts the sparse matrix into a banded matrix and uses regular LAPACK. Slow and memory intensive, but always available. 
-  \.exttt{UMFPACK}] Uses the UMFPACK sparse direct solver (LU decomposition) from SuiteSparse. Fast, but has to be enabled when compiling and requires UMFPACK library. 
-  \.exttt{SUPERLU}] Uses the SuperLU sparse direct solver (LU decomposition). Fast, but has to be enabled when compiling and requires SuperLU library. 
+  - :math:`\texttt{DENSE}` Converts the sparse matrix into a banded matrix and uses regular LAPACK. Slow and memory intensive, but always available. 
+  - :math:`\texttt{UMFPACK}` Uses the UMFPACK sparse direct solver (LU decomposition) from SuiteSparse. Fast, but has to be enabled when compiling and requires UMFPACK library. 
+  - :math:`\texttt{SUPERLU}` Uses the SuperLU sparse direct solver (LU decomposition). Fast, but has to be enabled when compiling and requires SuperLU library. 
    
    ================  =======================================================================  =============
    **Type:** string  **Range:** :math:`\{\texttt{DENSE},\texttt{UMFPACK},\texttt{SUPERLU}\}`  **Length:** 1
    ================  =======================================================================  =============
-   
+
 ``RECONSTRUCTION``
 
    Type of reconstruction method for fluxes

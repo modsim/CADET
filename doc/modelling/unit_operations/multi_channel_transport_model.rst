@@ -57,6 +57,10 @@ The model class is defined by a system of partial differential equations:
 All parameters can be zero to exclude the respective mechanism from the model.
 A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`BUHLER2014131`.
 
+By default...
+
+For each channel a seperate cross section area :math:`A_N` can be defined (see :numref:`fig-variable-areas`). 
+
 
 The cross-section area :math:`A_N` is individually specified for each channel (see :numref:`fig-variable-areas`). The MCT is agnostic to the shape of these cross sections, while their ratio determines the distribution of the volumetric flow.
 

@@ -1,19 +1,18 @@
 .. _multi_channel_transport_model:
 
-Multi Channel Transport model (MCT) 
+Multi Channel Transport model (MCT model) 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Multi Channel Transport (MCT) model in CADET is based on a class of compartment models introduced by Jonas Bühler et al. :cite:`BUHLER2014131`.
 This model class was originally developed in the field of plant science.
 There it is used to determine transport and storage parameters of radioactive labelled tracer molecules from positron emission tomography (PET) or magnetic resonance imaging (MRI) based experimental data.
-The model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments, hereinafter called channels and storage of tracer in channels.
+The model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments and storage of tracer in compartment. In the MCT context these compartments are also referred to as channels.
 Here, the axial direction is represents the length of the stem of the plant and the lateral dimension its cross section.
 The MCT model naturally describes other biological and technical processes, such as cross flow filtration or extraction, in particular when combined with chemical reactions.
 
 The model class consists of :math:`N` one-dimensional spatially parallel channels (see :numref:`fig-model-class`).
 In each channel tracer can be transported with flux velocities :math:`v_i` while undergoing axial diffusion: :math:`d_i`.
 Tracer can be laterally exchanged between any pair of channels :math:`i` and :math:`j` with rate constant :math:`e_{ij}`.
-For each channel a seperate cross section area :math:`A_N` can be defined (see :numref:`fig-variable-areas`).
 
 .. _fig-model-class:
 .. figure:: multi_channel_transport_model_class.png
@@ -68,6 +67,10 @@ The model class is defined by a system of partial differential equations:
 
 All parameters can be zero to exclude the respective mechanism from the model.
 A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`BUHLER2014131`.
+
+By default...
+
+For each channel a seperate cross section area :math:`A_N` can be defined (see :numref:`fig-variable-areas`). 
 
 
 .. _fig-variable-areas:

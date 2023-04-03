@@ -1,6 +1,6 @@
 .. _multi_channel_transport_model_config:
 
-Multi Channel Transport model (MCT) 
+Multi Channel Transport model (MCT model) 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``UNIT_TYPE``

@@ -8,7 +8,8 @@ This model class was originally developed in the field of plant science.
 There it is used to determine transport and storage parameters of radioactive labelled tracer molecules from positron emission tomography (PET) or magnetic resonance imaging (MRI) based experimental data.
 The model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments and storage of tracer in compartment. In the MCT context these compartments are also referred to as channels.
 Here, the axial direction is represents the length of the stem of the plant and the lateral dimension its cross section.
-The MCT model naturally describes other biological and technical processes, such as cross flow filtration or extraction, in particular when combined with chemical reactions.
+
+Naturally, the MCT model describes other biological and technical processes outside of the field of plant science and also supports the modelling of chemical reactions. This makes the MCT model eligible to cover a wide scope of extraction and filtration processes, as they occur in as liquid-liquid chromatography (LLC), also called countercurrent chromatography. LLC is usually used to separate components in a mixture based on their interactions with two immiscible phases of a biphasic solvent system :cite:`MORLEY2020460479`. Here, the phase containing the sample, called the mobile phase, is passed through a column containing the stationary phase. In context of the MCT model, the stationary and mobile phases of the solvent system as well as their different transport properties are represented by the channels, while different reaction models are available to model phase interactions. The current model build only covers operating modes, in which parameters such as velocities, exchange and reaction rates are kept linear.   
 
 The model class consists of :math:`N` one-dimensional spatially parallel channels (see :numref:`fig-model-class`).
 In each channel tracer can be transported with flux velocities :math:`v_i` while undergoing axial diffusion: :math:`d_i`.
@@ -68,9 +69,7 @@ The model class is defined by a system of partial differential equations:
 All parameters can be zero to exclude the respective mechanism from the model.
 A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`BUHLER2014131`.
 
-By default...
-
-For each channel a seperate cross section area :math:`A_N` can be defined (see :numref:`fig-variable-areas`). 
+By default, the cross-section areas of the channels are defined as equal in size. Alternatively, the cross-section area :math:`A_N` can be defined individually for each channel. (see :numref:`fig-variable-areas`). 
 
 
 .. _fig-variable-areas:
@@ -78,7 +77,5 @@ For each channel a seperate cross section area :math:`A_N` can be defined (see :
 
     Scheme of exemplary channels with different cross section areas and arbitrary exchange between channels.
 
-
-FixMe: Ideally add an example from another field.
 
 For information on model parameters see :ref:`multi_channel_transport_model_config`.

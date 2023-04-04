@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Interface specifications &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/index.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction" href="introduction.html" />
+    <link rel="prev" title="Simulation" href="../simulation/index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Interface specifications</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_group.html">Input Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="interface-specifications">
+<span id="file-format"></span><h1>Interface specifications<a class="headerlink" href="#interface-specifications" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">The CADET framework is designed to work on a file format structured into groups and datasets.
+This concept may be implemented by different file formats.
+At the moment, CADET natively supports HDF5 and XML as file formats.
+The choice is not limited to those two formats but can be extended as needed.
+In this section the general layout and structure of the file format is described.</p>
+<aside class="topic">
+<p class="topic-title">File format versions</p>
+<p class="linemarker linemarker-14">The file format may change and evolve over time as new features are added to the simulator.
+This manual describes the most recent file format version that is also set as default value in <code class="docutils literal notranslate"><span class="pre">/meta/FILE_FORMAT</span></code> (see Tab. <a class="reference internal" href="meta_group.html#ffmeta"><span class="std std-ref">Meta Group</span></a>).
+The simulator assumes that the input file uses the most recent format version and does not update old files to the current standard.</p>
+</aside>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#global-structure">Global structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#notation-and-identifiers">Notation and identifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#ordering-of-multi-dimensional-data">Ordering of multi dimensional data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#section-dependent-model-parameters">Section dependent model parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="input_group.html">Input Group</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="system.html">System of unit operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model">Group /input/model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model-connections">Group /input/model/connections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model-connections-switch-xxx">Group /input/model/connections/switch_XXX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model-external-source-xxx-extfun-type-linear-interp-data">Group /input/model/external/source_XXX - EXTFUN_TYPE = LINEAR_INTERP_DATA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model-external-source-xxx-extfun-type-piecewise-cubic-poly">Group /input/model/external/source_XXX - EXTFUN_TYPE = PIECEWISE_CUBIC_POLY</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html#group-input-model-solver">Group /input/model/solver</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/inlet.html">Inlet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/outlet.html">Outlet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/general_rate_model.html">General Rate Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_with_pores.html">Lumped rate model with pores</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_without_pores.html">Lumped Rate Model Without Pores</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/2d_general_rate_model.html">Two dimensional general rate model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/cstr.html">Continuous stirred tank reactor model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="binding/index.html">Binding models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html#externally-dependent-binding-models">Externally dependent binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html#non-binding-components">Non-binding components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html#multiple-particle-types">Multiple particle types</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="reactions.html">Reaction models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html#externally-dependent-reaction-models">Externally dependent reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html#multiple-particle-types">Multiple particle types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html#group-input-model-unit-xxx-reaction-reaction-model-mass-action-law">Group /input/model/unit_XXX/reaction - REACTION_MODEL = MASS_ACTION_LAW</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flux_reconstruction.html#group-input-model-unit-xxx-discretization-weno-weno-parameters">Group /input/model/unit_XXX/discretization/weno - WENO Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="consistent_initialization.html">Nonlinear solver for consistent initialization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="consistent_initialization.html#group-input-model-unit-xxx-discretization-consistency-solver-nonlinear-consistency-solver-paramters">Group /input/model/unit_XXX/discretization/consistency_solver - Nonlinear consistency solver paramters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="return_data.html">Return data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html#group-input-return">Group /input/return</a></li>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html#group-input-return-unit-xxx">Group /input/return/unit_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html#group-input-sensitivity">Group /input/sensitivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html#group-input-sensitivity-param-xxx">Group /input/sensitivity/param_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="solver.html">Solver Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="solver.html#group-input-solver">Group /input/solver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solver.html#group-solver-time-integrator">Group /solver/time_integrator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solver.html#group-solver-sections">Group /solver/sections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="output_group.html">Output Group</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html#group-output">Group /output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html#group-output-solution">Group /output/solution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html#group-output-solution-unit-xxx">Group /output/solution/unit_XXX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html#group-output-sensitivity-param-xxx-unit-yyy">Group /output/sensitivity/param_XXX/unit_YYY</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html#output-coordinates-unit-xxx">/output/coordinates/unit_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</div>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

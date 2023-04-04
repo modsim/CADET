@@ -1,0 +1,440 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>CADET Introduction &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/getting_started/tutorials/breakthrough.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Modelling" href="../../modelling/index.html" />
+    <link rel="prev" title="Build for OSX" href="../build_osx.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Getting started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">CADET Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#preliminary-steps">0. Preliminary Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-the-model">1. Setting Up the Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-time-sections-and-connections">2. Setting up Time Sections and Connections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-the-simulator-and-running-the-simulation">3. Setting Up the Simulator and Running the Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-the-results">4. Plotting the Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercises">Exercises</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="cadet-introduction">
+<h1>CADET Introduction<a class="headerlink" href="#cadet-introduction" title="Permalink to this heading">¶</a></h1>
+<dl class="simple">
+<dt>Performing a forward simulation comprises several steps:</dt><dd><ul class="simple">
+<li><p class="linemarker linemarker-5">Setting up the model including all parameters and discretization options</p></li>
+<li><p class="linemarker linemarker-6">Defining sections and switches</p></li>
+<li><p class="linemarker linemarker-7">Setting up the simulator and actually running the simulation</p></li>
+<li><p class="linemarker linemarker-8">Evaluating results (e.g., plotting)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="linemarker linemarker-10">In this tutorial, we will build a simple forward simulation with a breakthrough of one component using the following system:</p>
+<figure class="align-default">
+<img alt="../../_images/breakthrough_system.png" src="../../_images/breakthrough_system.png" />
+</figure>
+<p class="linemarker linemarker-14">For this purpose, we use <a class="reference internal" href="../installation.html#cadet-python"><span class="std std-ref">CADET-Python</span></a>, a file based frontend for CADET.
+CADET still must be downloaded (or built from source) as explained in the <a class="reference internal" href="../installation.html#installation"><span class="std std-ref">installation guide</span></a>.
+The Python frontend almost exactly maps to the documented <a class="reference internal" href="../../interface/index.html#file-format"><span class="std std-ref">CADET file format</span></a> except that all dataset names are lowercase.
+This simplifies using the frontend.
+The package includes a <code class="docutils literal notranslate"><span class="pre">Cadet</span></code> class which serves as a generic HDF5 frontend.</p>
+<p class="linemarker linemarker-20">As an example, we consider setting the external porosity for the column model (<code class="docutils literal notranslate"><span class="pre">unit_001</span></code>).
+From <a class="reference internal" href="../../interface/unit_operations/general_rate_model.html#general-rate-model-config"><span class="std std-ref">file format</span></a>, the path for this is <code class="docutils literal notranslate"><span class="pre">/input/model/unit_001/COL_POROSITY</span></code>.
+In the Python frontend, this becomes:</p>
+<div class="highlight-Python3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim</span> <span class="o">=</span> <span class="n">Cadet</span><span class="p">()</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">col_porosity</span> <span class="o">=</span> <span class="mf">0.33</span>
+</pre></div>
+</div>
+<section id="preliminary-steps">
+<h2>0. Preliminary Steps<a class="headerlink" href="#preliminary-steps" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-32">First, we need to import some libraries and specify the location of the <code class="docutils literal notranslate"><span class="pre">cadet-cli</span></code> executable (core simulator).
+It is located in the <code class="docutils literal notranslate"><span class="pre">bin</span></code> folder where CADET was installed.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">from</span> <span class="nn">cadet</span> <span class="kn">import</span> <span class="n">Cadet</span>
+<span class="n">Cadet</span><span class="o">.</span><span class="n">cadet_path</span> <span class="o">=</span> <span class="s1">&#39;/path/to/cadet-cli&#39;</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-39">To create the model and specify its parameters, we create an instance of the <code class="docutils literal notranslate"><span class="pre">Cadet</span></code> class.
+In the <code class="docutils literal notranslate"><span class="pre">root</span></code> attribute of this object, the parameter structure is defined as described in the <a class="reference internal" href="../../interface/introduction.html#ffintroduction"><span class="std std-ref">file format reference</span></a>.
+It is implemented as a <code class="docutils literal notranslate"><span class="pre">Dict</span></code> of the <a class="reference external" href="https://github.com/mewwts/addict"><code class="docutils literal notranslate"><span class="pre">addict</span></code> package</a>.
+This allows for creating arbitrary nested dictionaries using dot-notation.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p class="linemarker linemarker-47">Note, that the <code class="docutils literal notranslate"><span class="pre">Cadet</span></code> class does not provide any sanity checks.
+If parameters are misspelled or have the wrong dimensions, they are simply ignored.
+This can cause problems later on, when the simulator is run.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Cadet</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="setting-up-the-model">
+<h2>1. Setting Up the Model<a class="headerlink" href="#setting-up-the-model" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-58">Although the order of the parameter specification does not matter, it is reasonable to first specify the number of unit operations before we select the models and define the parameters.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nunits</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-63">The available models are listed in the <a class="reference internal" href="../../modelling/unit_operations/index.html#unit-operation-models"><span class="std std-ref">unit operation chapter</span></a>.
+The units of the different parameters and quantities are given in the corresponding <a class="reference internal" href="../../interface/unit_operations/index.html#unit-operation-config"><span class="std std-ref">file format</span></a> of the respective unit operation.</p>
+<section id="inlet-model">
+<h3>Inlet Model<a class="headerlink" href="#inlet-model" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-69">In CADET, the <code class="docutils literal notranslate"><span class="pre">INLET</span></code> pseudo unit operation serves as a source for the system and is used to create arbitary concentration profiles as boundary conditions.
+First, we define an <code class="docutils literal notranslate"><span class="pre">INLET</span></code> as the first unit operation by adding the field <code class="docutils literal notranslate"><span class="pre">unit_000</span></code> in the <code class="docutils literal notranslate"><span class="pre">/input/model/</span></code> group.
+The concentration profile is described using a piecewise cubic polynomial (cubic spline in the continuous case) for each component, where the pieces are given by the time sections.
+Later, we will define the polynomials, when we look at time sections.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">unit_type</span> <span class="o">=</span> <span class="s1">&#39;INLET&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">ncomp</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">inlet_type</span> <span class="o">=</span> <span class="s1">&#39;PIECEWISE_CUBIC_POLY&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="general-rate-model">
+<h3>General Rate Model<a class="headerlink" href="#general-rate-model" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-80">We now add a second unit operation, the column model.
+For the <a class="reference internal" href="../../modelling/unit_operations/general_rate_model.html#general-rate-model-model"><span class="std std-ref">general rate model model</span></a>, we set the <code class="docutils literal notranslate"><span class="pre">unit_type</span></code> parameter of the corresponding unit operation model to <code class="docutils literal notranslate"><span class="pre">GENERAL_RATE_MODEL</span></code>.
+In this group, we set the parameters related to transport and column geometry.
+For a more detailed description of the parameters and their units, see the <a class="reference internal" href="../../interface/unit_operations/general_rate_model.html#general-rate-model-config"><span class="std std-ref">corresponding file format</span></a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">unit_type</span> <span class="o">=</span> <span class="s1">&#39;GENERAL_RATE_MODEL&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">ncomp</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1">## Geometry</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">col_length</span> <span class="o">=</span> <span class="mf">0.1</span>                <span class="c1"># m</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">cross_section_area</span> <span class="o">=</span> <span class="mf">0.01</span>       <span class="c1"># m</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">col_porosity</span> <span class="o">=</span> <span class="mf">0.37</span>             <span class="c1"># -</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">par_porosity</span> <span class="o">=</span> <span class="mf">0.33</span>             <span class="c1"># -</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">par_radius</span> <span class="o">=</span> <span class="mf">1e-6</span>               <span class="c1"># m</span>
+                                                                
+<span class="c1">## Transport</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">col_dispersion</span> <span class="o">=</span> <span class="mf">1e-8</span>           <span class="c1"># m^2 / s (interstitial volume)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">film_diffusion</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e-5</span><span class="p">]</span>         <span class="c1"># m / s</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">par_diffusion</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e-10</span><span class="p">,]</span>        <span class="c1"># m^2 / s (mobile phase)  </span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">par_surfdiffusion</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>      <span class="c1"># m^2 / s (solid phase)</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-88">Note that film, particle, and surface diffusion are all component-specific, that is, they are vectors of length <code class="docutils literal notranslate"><span class="pre">n_components</span></code>.</p>
+<section id="adsorption-model">
+<h4>Adsorption Model<a class="headerlink" href="#adsorption-model" title="Permalink to this heading">¶</a></h4>
+<p class="linemarker linemarker-93">Every column model can be equipped with an adsorption model.
+The available models are listed in the <a class="reference internal" href="../../modelling/binding/index.html#binding-models"><span class="std std-ref">binding model chapter</span></a>.</p>
+<p class="linemarker linemarker-96">For the <a class="reference internal" href="../../modelling/binding/multi_component_langmuir.html#multi-component-langmuir-model"><span class="std std-ref">Langmuir model</span></a>, we set the <code class="docutils literal notranslate"><span class="pre">adsorption_model</span></code> parameter of the corresponding unit operation model to <code class="docutils literal notranslate"><span class="pre">MULTI_COMPONENT_LANGMUIR</span></code>.
+Then, we decide if we want to use the <a class="reference internal" href="../../modelling/binding/index.html#binding-models"><span class="std std-ref">rapid-equilibrium assumption</span></a> in the binding model (<code class="docutils literal notranslate"><span class="pre">is_kinetic</span> <span class="pre">=</span> <span class="pre">False</span></code>), which is not the case here (dynamic binding).
+Finally, the parameters of the binding model have to be set for each component (they are vectors of length <code class="docutils literal notranslate"><span class="pre">n_components</span></code>).
+They are described in the <a class="reference internal" href="../../interface/binding/multi_component_langmuir.html#multi-component-langmuir-config"><span class="std std-ref">corresponding file format specification</span></a>.
+In case of the Langmuir model, we have to specify the parameters <code class="docutils literal notranslate"><span class="pre">kA</span></code>, <code class="docutils literal notranslate"><span class="pre">kD</span></code>, and <code class="docutils literal notranslate"><span class="pre">qMAX</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">adsorption_model</span> <span class="o">=</span> <span class="s1">&#39;MULTI_COMPONENT_LANGMUIR&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">adsorption</span><span class="o">.</span><span class="n">is_kinetic</span> <span class="o">=</span> <span class="kc">True</span>    <span class="c1"># Kinetic binding</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">adsorption</span><span class="o">.</span><span class="n">mcl_ka</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,]</span>      <span class="c1"># m^3 / (mol * s)   (mobile phase)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">adsorption</span><span class="o">.</span><span class="n">mcl_kd</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,]</span>      <span class="c1"># 1 / s (desorption)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">adsorption</span><span class="o">.</span><span class="n">mcl_qmax</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">,]</span>  <span class="c1"># mol / m^3   (solid phase)</span>
+</pre></div>
+</div>
+</section>
+<section id="initial-conditions">
+<h4>Initial Conditions<a class="headerlink" href="#initial-conditions" title="Permalink to this heading">¶</a></h4>
+<p class="linemarker linemarker-108">Next, we specify the initial conditions (concentration of the components in the mobile and stationary phases) for the column.
+These concentrations are entered as vectors, where each entry gives the concentration for the corresponding component.
+In this example, we start with an empty column.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">init_c</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">init_q</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>
+</pre></div>
+</div>
+</section>
+<section id="setting-up-the-discretization">
+<h4>Setting up the Discretization<a class="headerlink" href="#setting-up-the-discretization" title="Permalink to this heading">¶</a></h4>
+<p class="linemarker linemarker-118">There are several options for adapting the spatial discretization of the PDE model.
+However, the two most important ones are the number of grid cells in the column (axial direction) and the particles, which are also set in this example.
+We choose <code class="docutils literal notranslate"><span class="pre">20</span></code> axial cells in the column <code class="docutils literal notranslate"><span class="pre">ncol</span></code> and <code class="docutils literal notranslate"><span class="pre">5</span></code> radial cells in the particle <code class="docutils literal notranslate"><span class="pre">npar</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p class="linemarker linemarker-122">These are rather low values to make the examples run faster, since they are only for educational purposes.
+In practice, much higher values are expected (say 100-200 axial cells and 16-32 particle cells).
+Note that the WENO scheme, which handles the advection, drastically reduces the required amount of cells compared to an upwind scheme.</p>
+</div>
+<p class="linemarker linemarker-126">Moreover, we have to specify the number of bound states for each component.
+Finally, we set some other options for the discretization, which usually do not need to be changed.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">### Grid cells</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">ncol</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">npar</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1">### Bound states</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">nbound</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1">### Other options</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">par_disc_type</span> <span class="o">=</span> <span class="s1">&#39;EQUIDISTANT_PAR&#39;</span>    
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">use_analytic_jacobian</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">reconstruction</span> <span class="o">=</span> <span class="s1">&#39;WENO&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">gs_type</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">max_krylov</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">max_restarts</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">schur_safety</span> <span class="o">=</span> <span class="mf">1.0e-8</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">weno</span><span class="o">.</span><span class="n">boundary_model</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">weno</span><span class="o">.</span><span class="n">weno_eps</span> <span class="o">=</span> <span class="mf">1e-10</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">discretization</span><span class="o">.</span><span class="n">weno</span><span class="o">.</span><span class="n">weno_order</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="outlet-model">
+<h3>Outlet Model<a class="headerlink" href="#outlet-model" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-135">The <code class="docutils literal notranslate"><span class="pre">OUTLET</span></code> is another pseudo unit operation that serves as sink for the system.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-137">In this case, the outlet unit is actually not required. We could use the outlet concentration signal of the column model instead.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_002</span><span class="o">.</span><span class="n">unit_type</span> <span class="o">=</span> <span class="s1">&#39;OUTLET&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_002</span><span class="o">.</span><span class="n">ncomp</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="setting-up-time-sections-and-connections">
+<h2>2. Setting up Time Sections and Connections<a class="headerlink" href="#setting-up-time-sections-and-connections" title="Permalink to this heading">¶</a></h2>
+<section id="time-sections">
+<h3>Time Sections<a class="headerlink" href="#time-sections" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-149"><a class="reference internal" href="../../simulation/index.html#simtimesectionstransitions"><span class="std std-ref">Time sections</span></a> are used to specify changes of parameter values during the simulation.
+A section typically corresponds to an operating step (load, wash, elute etc.), but can also be used to indicate changes in connectivity, or even discontinuities of <a class="reference internal" href="../../interface/introduction.html#section-dependent-parameters"><span class="std std-ref">model parameters</span></a>.</p>
+<p class="linemarker linemarker-152">In the <code class="docutils literal notranslate"><span class="pre">/input/solver/sections/</span></code> group, <code class="docutils literal notranslate"><span class="pre">nsec</span></code> denotes the number of sections.
+The start and end times of a section are given in the <code class="docutils literal notranslate"><span class="pre">section_times</span></code> vector.
+It should always start at <code class="docutils literal notranslate"><span class="pre">0.0</span></code> and contains <code class="docutils literal notranslate"><span class="pre">nsec</span> <span class="pre">+</span> <span class="pre">1</span></code> values, that is, the <code class="docutils literal notranslate"><span class="pre">i</span></code>th section goes from <code class="docutils literal notranslate"><span class="pre">section_times[i]</span></code> to <code class="docutils literal notranslate"><span class="pre">section_times[i+1]</span></code>.</p>
+<p class="linemarker linemarker-156">The <code class="docutils literal notranslate"><span class="pre">section_continuity</span></code> indicates whether a transition from one section to the next is continuous in both the inlet and the parameters.
+It has <code class="docutils literal notranslate"><span class="pre">nsec</span> <span class="pre">-</span> <span class="pre">1</span></code> number of values, since there is one transition less than there are sections.
+The continuity is used in CADET’s time integrator, which needs to decide whether to restart on entering a new section.
+If the transition is continuous, the time integrator can try to step over the transition without restarting, thus saving some computation time (since the restart is costly).
+If you are unsure about the continuity, just leave it at <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">nsec</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">section_times</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,]</span>   <span class="c1"># s</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">section_continuity</span> <span class="o">=</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-165">As mentioned earlier, we now define the <code class="docutils literal notranslate"><span class="pre">INLET</span></code> profile using a piecewise cubic polynomial.
+On each section <span class="math notranslate nohighlight">\([ t_i, t_{i+1} ]\)</span> a cubic polynomial <span class="math notranslate nohighlight">\(p_i\)</span> is defined:</p>
+<div class="math notranslate nohighlight">
+\[p_i( t ) = d * (t - t_i)^3 + c * (t - t_i)^2 + b * (t - t_i) + a,\]</div>
+<p class="linemarker linemarker-172">where the coefficients of the polynomial are <code class="docutils literal notranslate"><span class="pre">const_coeff</span></code> (a), <code class="docutils literal notranslate"><span class="pre">lin_coeff</span></code> (b), <code class="docutils literal notranslate"><span class="pre">quad_coeff</span></code> (c), and <code class="docutils literal notranslate"><span class="pre">cube_coeff</span></code> (d).
+Note that the constant coefficient <code class="docutils literal notranslate"><span class="pre">const_coeff</span></code> determines the starting concentration on each section.
+The stopping concentration is given by <span class="math notranslate nohighlight">\(p_i( t_{i+1} )\)</span> or <span class="math notranslate nohighlight">\(p_{i+1}( t_{i+1} )\)</span> in case of a continuous profile.</p>
+<p class="linemarker linemarker-176">In this example, which has only one section, we define its coefficients by adding the field <code class="docutils literal notranslate"><span class="pre">sec_000</span></code> to the inlet unit (<code class="docutils literal notranslate"><span class="pre">unit_000</span></code>).
+Since the column should be constantly fed with <span class="math notranslate nohighlight">\(1.0 \cdot 10^{-3} mol / m^3\)</span>, we set <code class="docutils literal notranslate"><span class="pre">const_coeff</span></code> to <code class="docutils literal notranslate"><span class="pre">[1.0e-3]</span></code> and all other cofficients to <code class="docutils literal notranslate"><span class="pre">[0.0]</span></code>.
+Note that for more components, a vector of coefficients needs to be specified.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">sec_000</span><span class="o">.</span><span class="n">const_coeff</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0e-3</span><span class="p">,]</span> <span class="c1"># mol / m^3</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">sec_000</span><span class="o">.</span><span class="n">lin_coeff</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">sec_000</span><span class="o">.</span><span class="n">quad_coeff</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">sec_000</span><span class="o">.</span><span class="n">cube_coeff</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,]</span>
+</pre></div>
+</div>
+</section>
+<section id="system-connectivity">
+<h3>System Connectivity<a class="headerlink" href="#system-connectivity" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-186">In order to specify the <a class="reference internal" href="../../modelling/networks.html#networks"><span class="std std-ref">connectivity of the network</span></a>, we have to provide a list of connections.
+CADET requires that we append all connections to a long vector (i.e., if each connection is a row in a matrix, CADET wants this matrix in row-major storage).
+Moreover, we have to specify the section in which the specified connectivity should be applied.</p>
+<p class="linemarker linemarker-190">The elements of a connection are (in order):</p>
+<blockquote>
+<div><p class="linemarker linemarker-192"><code class="docutils literal notranslate"><span class="pre">[UnitOpID</span> <span class="pre">from,</span> <span class="pre">UnitOpID</span> <span class="pre">to,</span> <span class="pre">Component</span> <span class="pre">from,</span> <span class="pre">Component</span> <span class="pre">to,</span> <span class="pre">Volumetric</span> <span class="pre">flow</span> <span class="pre">rate]</span></code></p>
+</div></blockquote>
+<p class="linemarker linemarker-194">Usually, <code class="docutils literal notranslate"><span class="pre">Component</span> <span class="pre">from</span></code> and <code class="docutils literal notranslate"><span class="pre">Component</span> <span class="pre">to</span></code> can be set to <code class="docutils literal notranslate"><span class="pre">-1</span></code>, which will connect all components from the origin and destination unit operations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-196">Since CADET version 4.1, the flow rates can also be defined with piecewise cubic polynomials.
+Also, for the 2D General rate model inlet ports need to be speciefied.
+For more information on the parameters, see the <a class="reference internal" href="../../interface/system.html#ffmodelsystemconnections"><span class="std std-ref">file format specification</span></a>.</p>
+</div>
+<p class="linemarker linemarker-200">In this case, we connect all components of <code class="docutils literal notranslate"><span class="pre">unit_000</span></code> to <code class="docutils literal notranslate"><span class="pre">unit_001</span></code>, and from <code class="docutils literal notranslate"><span class="pre">unit_001</span></code> to <code class="docutils literal notranslate"><span class="pre">unit_002</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connections</span><span class="o">.</span><span class="n">nswitches</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connections</span><span class="o">.</span><span class="n">switch_000</span><span class="o">.</span><span class="n">section</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connections</span><span class="o">.</span><span class="n">switch_000</span><span class="o">.</span><span class="n">connections</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">60</span><span class="o">/</span><span class="mf">1e6</span><span class="p">,</span>  <span class="c1"># [unit_000, unit_001, all components, all components, Q/ m^3*s^-1 </span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">60</span><span class="o">/</span><span class="mf">1e6</span><span class="p">]</span>  <span class="c1"># [unit_001, unit_002, all components, all components, Q/ m^3*s^-1 </span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-205">Since the flow in the column models is incompressible, the total entering flow rate must equal the total outgoing flow rate.
+This restriction does not apply to a <a class="reference internal" href="../../modelling/unit_operations/cstr.html#cstr-model"><span class="std std-ref">CSTR model</span></a>, because it has a variable volume.</p>
+</div>
+</section>
+</section>
+<section id="setting-up-the-simulator-and-running-the-simulation">
+<h2>3. Setting Up the Simulator and Running the Simulation<a class="headerlink" href="#setting-up-the-simulator-and-running-the-simulation" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-211">Before we can start the simulation, we have to specify some settings for the simulator.</p>
+<p class="linemarker linemarker-213">First, we set some options for the solver and the time integrator.
+Usually, these only need to be adapted in special cases.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">gs_type</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">max_krylov</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">max_restarts</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">schur_safety</span> <span class="o">=</span> <span class="mf">1e-8</span>
+
+<span class="c1"># Number of cores for parallel simulation</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">nthreads</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Tolerances for the time integrator</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">time_integrator</span><span class="o">.</span><span class="n">abstol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">time_integrator</span><span class="o">.</span><span class="n">algtol</span> <span class="o">=</span> <span class="mf">1e-10</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">time_integrator</span><span class="o">.</span><span class="n">reltol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">time_integrator</span><span class="o">.</span><span class="n">init_step_size</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">time_integrator</span><span class="o">.</span><span class="n">max_steps</span> <span class="o">=</span> <span class="mi">1000000</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-219">Of these options, the most interesting ones are <code class="docutils literal notranslate"><span class="pre">time_integrator.abstol</span></code> and <code class="docutils literal notranslate"><span class="pre">time_integrator.reltol</span></code>, which control the errors during time integration, and <code class="docutils literal notranslate"><span class="pre">nthreads</span></code>, which sets the number of CPU cores CADET is allowed to use.</p>
+<p class="linemarker linemarker-221">Second, we have to specify which results we want CADET to return.
+For this, we have to specify the <code class="docutils literal notranslate"><span class="pre">/input/return/</span></code> group.
+For more information, see the <a class="reference internal" href="../../interface/return_data.html#return"><span class="std std-ref">file format specification</span></a>.</p>
+<p class="linemarker linemarker-227">In this example, we want to write the concentration profile of the inlet and outlet of each unit operation.
+In addition, we are interested in the concentration in the interstitial volume (bulk volume) of the column.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Return data</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split_components_data</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split_ports_data</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">write_solution_bulk</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">write_solution_inlet</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_000</span><span class="o">.</span><span class="n">write_solution_outlet</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Copy settings to the other unit operations</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_001</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_000</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_002</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;return&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unit_000</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-233">Finally, we have to set the time points at which we want to evaluate the solution.
+Note that the end time must not exceed the last section time specified in the model.
+If the time points are not set explicitly, the time integrator outputs the solution at arbitrary time points between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">section_times[-1]</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution times</span>
+<span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">user_solution_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">1001</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="linemarker linemarker-240">The last remaining step is to actually run the simulation.
+For this, we have to specify a filename, save the configuration to <code class="docutils literal notranslate"><span class="pre">H5</span></code>-format and call call the <code class="docutils literal notranslate"><span class="pre">model</span></code>’s <code class="docutils literal notranslate"><span class="pre">run()</span></code> function.
+We check if the simulation has completed successfully and load the results.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;model.h5&#39;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulation completed successfully&quot;</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>   
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Simulation failed&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="plotting-the-results">
+<h2>4. Plotting the Results<a class="headerlink" href="#plotting-the-results" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-250">The data is stored in the <code class="docutils literal notranslate"><span class="pre">/output/</span></code> group of the <code class="docutils literal notranslate"><span class="pre">Cadet</span></code> object.
+The structure and format of the data is described in the <a class="reference internal" href="../../interface/output_group.html#ffoutput"><span class="std std-ref">file format specification</span></a>.
+Finally, we plot the concentration signal at the outlet of the column.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+<span class="n">time</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">solution_times</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">unit_001</span><span class="o">.</span><span class="n">solution_outlet</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="o">/</span><span class="mi">60</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;$time~/~min$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;$Outlet~concentration~/~mol \cdot m^{-3} $&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/breakthrough_chromatogram.png" src="../../_images/breakthrough_chromatogram.png" />
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p class="linemarker linemarker-263">Add a second inlet section from <code class="docutils literal notranslate"><span class="pre">10000</span></code> to <code class="docutils literal notranslate"><span class="pre">40000</span></code> seconds in which no sample is fed into the column (rectangular pulse).</p></li>
+<li><p class="linemarker linemarker-264">Increase the length of the column and the flow rate.</p></li>
+<li><p class="linemarker linemarker-265">Increase the desorption coefficient <code class="docutils literal notranslate"><span class="pre">MCL_KD</span></code>.</p></li>
+<li><p class="linemarker linemarker-266">Add a second component.</p></li>
+<li><p class="linemarker linemarker-267">Plot the concentration profile of the <code class="docutils literal notranslate"><span class="pre">INLET</span></code> unit operation</p></li>
+</ul>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/getting_started/tutorials/breakthrough.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,544 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Lumped rate model with pores &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/unit_operations/lumped_rate_model_with_pores.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Lumped Rate Model Without Pores" href="lumped_rate_model_without_pores.html" />
+    <link rel="prev" title="General Rate Model" href="general_rate_model.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System of unit operations</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="lumped-rate-model-with-pores">
+<span id="lumpded-rate-model-with-pores-config"></span><h1>Lumped rate model with pores<a class="headerlink" href="#lumped-rate-model-with-pores" title="Permalink to this heading">¶</a></h1>
+<section id="group-input-model-unit-xxx-unit-type-lumped-rate-model-with-pores">
+<h2>Group /input/model/unit_XXX - UNIT_TYPE = LUMPED_RATE_MODEL_WITH_PORES<a class="headerlink" href="#group-input-model-unit-xxx-unit-type-lumped-rate-model-with-pores" title="Permalink to this heading">¶</a></h2>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">UNIT_TYPE</span></code></dt><dd><p class="linemarker linemarker-11">Specifies the type of unit operation model</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-14"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-14"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{LUMPED_RATE_MODEL_WITH_PORES}\)</span></p></td>
+<td><p class="linemarker linemarker-14"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NCOMP</span></code></dt><dd><p class="linemarker linemarker-18">Number of chemical components in the chromatographic medium</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-21"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-21"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-21"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ADSORPTION_MODEL</span></code></dt><dd><p class="linemarker linemarker-25">Specifies the type of binding model of each particle type (or of all particle types if length is <span class="math notranslate nohighlight">\(1\)</span>)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-28"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-28"><strong>Range:</strong> See Section <a class="reference internal" href="../binding/index.html#ffadsorption"><span class="std std-ref">Binding models</span></a></p></td>
+<td><p class="linemarker linemarker-28"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ADSORPTION_MODEL_MULTIPLEX</span></code></dt><dd><p class="linemarker linemarker-32">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL}\)</span>. If set to <span class="math notranslate nohighlight">\(0\)</span>, each particle type has a different binding model and the length of <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NPARTYPE}\)</span>. If set to <span class="math notranslate nohighlight">\(1\)</span>, all particle types share the same binding model and the length of <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL}\)</span> is <span class="math notranslate nohighlight">\(1\)</span>.  This field is optional and inferred from the length of <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL}\)</span> if left out.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-35"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-35"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-35"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REACTION_MODEL_BULK</span></code></dt><dd><p class="linemarker linemarker-39">Specifies the type of reaction model of the bulk volume. The model is configured in the subgroup <span class="math notranslate nohighlight">\(\texttt{reaction_bulk}\)</span>.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-42"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-42"><strong>Range:</strong> See <a class="reference internal" href="../reactions.html#ffreaction"><span class="std std-ref">Reaction models</span></a></p></td>
+<td><p class="linemarker linemarker-42"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REACTION_MODEL_PARTICLES</span></code></dt><dd><p class="linemarker linemarker-46">Specifies the type of reaction model of each particle type (or of all particle types if length is <span class="math notranslate nohighlight">\(1\)</span>). The model is configured in the subgroup <span class="math notranslate nohighlight">\(\texttt{reaction_particle}\)</span>, or <span class="math notranslate nohighlight">\(\texttt{reaction_particle_XXX}\)</span> in case of disabled multiplexing.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-49"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-49"><strong>Range:</strong> See Section <a class="reference internal" href="../reactions.html#ffreaction"><span class="std std-ref">Reaction models</span></a></p></td>
+<td><p class="linemarker linemarker-49"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1\)</span> / <span class="math notranslate nohighlight">\(\texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REACTION_MODEL_PARTICLES_MULTIPLEX</span></code></dt><dd><p class="linemarker linemarker-53">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{REACTION_MODEL_PARTICLES}\)</span>. If set to <span class="math notranslate nohighlight">\(0\)</span>, each particle type has a different reaction model and the length of <span class="math notranslate nohighlight">\(\texttt{REACTION_MODEL_PARTICLES}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NPARTYPE}\)</span>. If set to <span class="math notranslate nohighlight">\(1\)</span>, all particle types share the same reaction model and the length of <span class="math notranslate nohighlight">\(\texttt{REACTION_MODEL_PARTICLES}\)</span> is <span class="math notranslate nohighlight">\(1\)</span>.  This field is optional and inferred from the length of <span class="math notranslate nohighlight">\(\texttt{REACTION_MODEL_PARTICLES}\)</span> if left out.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-56"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-56"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-56"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INIT_C</span></code></dt><dd><p class="linemarker linemarker-60">Initial concentrations for each component in the bulk mobile phase</p>
+<p class="linemarker linemarker-62"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}_{\mathrm{IV}}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-65"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-65"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-65"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INIT_CP</span></code></dt><dd><p class="linemarker linemarker-69">Initial concentrations for each component in the bead liquid phase (optional, <span class="math notranslate nohighlight">\(\texttt{INIT_C}\)</span> is used if left out). The length of this field can be <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span> (same values for each particle type) or <span class="math notranslate nohighlight">\(\texttt{NPARTYPE} \cdot \texttt{NCOMP}\)</span>  Values for each particle type can only be given when <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL_MULTIPLEX}\)</span> is <span class="math notranslate nohighlight">\(0\)</span>. The ordering is type-major.</p>
+<p class="linemarker linemarker-71"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}_{\mathrm{MP}}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-74"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-74"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-74"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP} / \texttt{NPARTYPE} \cdot \texttt{NCOMP}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INIT_Q</span></code></dt><dd><p class="linemarker linemarker-78">Initial concentrations for each bound state of each component in the bead solid phase. If <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL_MULTIPLEX}\)</span> is <span class="math notranslate nohighlight">\(0\)</span>, values for each particle type are required in type-component-major ordering (length is <span class="math notranslate nohighlight">\(\texttt{NTOTALBND}\)</span>). If <span class="math notranslate nohighlight">\(\texttt{ADSORPTION_MODEL_MULTIPLEX}\)</span> is <span class="math notranslate nohighlight">\(1\)</span>, values for one particle type are required in component-major ordering (length is <span class="math notranslate nohighlight">\(\sum_{i = 0}^{\texttt{NCOMP} - 1} \texttt{NBND}_i\)</span>).</p>
+<p class="linemarker linemarker-80"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}_{\mathrm{SP}}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-83"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-83"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INIT_STATE</span></code></dt><dd><p class="linemarker linemarker-87">Full state vector for initialization (optional, <span class="math notranslate nohighlight">\(\texttt{INIT_C}\)</span>, <span class="math notranslate nohighlight">\(\texttt{INIT_CP}\)</span>, and <span class="math notranslate nohighlight">\(\texttt{INIT_Q}\)</span> will be ignored; if length is <span class="math notranslate nohighlight">\(2\texttt{NDOF}\)</span>, then the second half is used for time derivatives)</p>
+<p class="linemarker linemarker-89"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(various\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-92"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-92"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-92"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF} / 2\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION</span></code></dt><dd><p class="linemarker linemarker-96">Axial dispersion coefficient</p>
+<p class="linemarker linemarker-98"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}_{\mathrm{IV}}^{2}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-101"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-101"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-101"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION_MULTIPLEX</span></code></dt><dd><blockquote>
+<div><p class="linemarker linemarker-105">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is treated as component- and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-107">Component-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(1\)</span></p></li>
+<li><p class="linemarker linemarker-108">Component-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></li>
+<li><p class="linemarker linemarker-109">Component-independent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NSEC}\)</span></p></li>
+<li><p class="linemarker linemarker-110">Component-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-113"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-113"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 3 \}\)</span></p></td>
+<td><p class="linemarker linemarker-113"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COL_LENGTH</span></code></dt><dd><p class="linemarker linemarker-117">Column length</p>
+<p class="linemarker linemarker-119"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-122"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-122"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-122"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p class="linemarker linemarker-125"><code class="docutils literal notranslate"><span class="pre">COL_POROSITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-127">Column porosity</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-130"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-130"><strong>Range:</strong> <span class="math notranslate nohighlight">\((0,1]\)</span></p></td>
+<td><p class="linemarker linemarker-130"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-133"><code class="docutils literal notranslate"><span class="pre">FILM_DIFFUSION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-135">Film diffusion coefficients for each component of each particle type</p>
+<p class="linemarker linemarker-137"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-140"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-140"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-140"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-143"><code class="docutils literal notranslate"><span class="pre">FILM_DIFFUSION_MULTIPLEX</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-145">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span> is treated as component-, type-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-147">Component-dependent, type-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></li>
+<li><p class="linemarker linemarker-148">Component-dependent, type-independent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+<li><p class="linemarker linemarker-149">Component-dependent, type-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NPARTYPE}\)</span>; ordering is type-major</p></li>
+<li><p class="linemarker linemarker-150">Component-dependent, type-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{FILM_DIFFUSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NPARTYPE} \cdot \texttt{NSEC}\)</span>; ordering is section-type-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-153"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-153"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 3 \}\)</span></p></td>
+<td><p class="linemarker linemarker-153"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-156"><code class="docutils literal notranslate"><span class="pre">PAR_POROSITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-158">Particle porosity of all particle types or for each particle type</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-161"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-161"><strong>Range:</strong> <span class="math notranslate nohighlight">\((0,1]\)</span></p></td>
+<td><p class="linemarker linemarker-161"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-164"><code class="docutils literal notranslate"><span class="pre">PAR_RADIUS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-166">Particle radius of all particle types or for each particle type</p>
+<p class="linemarker linemarker-168"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-171"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-171"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt;0\)</span></p></td>
+<td><p class="linemarker linemarker-171"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-174"><code class="docutils literal notranslate"><span class="pre">PORE_ACCESSIBILITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-176">Pore accessibility factor of each component in each particle type (optional, defaults to <span class="math notranslate nohighlight">\(1\)</span>).
+Note: Should not be used in combination with any binding model!</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-181"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-181"><strong>Range:</strong> <span class="math notranslate nohighlight">\((0, 1]\)</span></p></td>
+<td><p class="linemarker linemarker-181"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PORE_ACCESSIBILITY_MULTIPLEX</span></code></dt><dd><blockquote>
+<div><p class="linemarker linemarker-185">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span> is treated as component-, type-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-187">Component-dependent, type-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></li>
+<li><p class="linemarker linemarker-188">Component-dependent, type-independent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+<li><p class="linemarker linemarker-189">Component-dependent, type-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NPARTYPE}\)</span>; ordering is type-major</p></li>
+<li><p class="linemarker linemarker-190">Component-dependent, type-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{PORE_ACCESSIBILITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NPARTYPE} \cdot \texttt{NSEC}\)</span>; ordering is section-type-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-193"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-193"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 3 \}\)</span></p></td>
+<td><p class="linemarker linemarker-193"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VELOCITY</span></code></dt><dd><p class="linemarker linemarker-197">Interstitial velocity of the mobile phase (optional if <span class="math notranslate nohighlight">\(\texttt{CROSS_SECTION_AREA}\)</span> is present, see Section <a class="reference internal" href="../../modelling/unit_operations/general_rate_model.html#muopgrmflow"><span class="std std-ref">Specification of flow rate / velocity and direction</span></a>)</p>
+<p class="linemarker linemarker-199"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-202"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-202"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-202"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NSEC}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p class="linemarker linemarker-205"><code class="docutils literal notranslate"><span class="pre">CROSS_SECTION_AREA</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-207">Cross section area of the column (optional if <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is present, see Section <a class="reference internal" href="../../modelling/unit_operations/general_rate_model.html#muopgrmflow"><span class="std std-ref">Specification of flow rate / velocity and direction</span></a>)</p>
+<p class="linemarker linemarker-209"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}^{2}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-212"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-212"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt;0\)</span></p></td>
+<td><p class="linemarker linemarker-212"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-215"><code class="docutils literal notranslate"><span class="pre">PAR_TYPE_VOLFRAC</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-217">Volume fractions of the particle types. The volume fractions can be set for all axial cells together or for each individual axial cell. For each cell, the volume fractions have to sum to <span class="math notranslate nohighlight">\(1\)</span>. In case of a spatially inhomogeneous setting, the data is expected in cell-major ordering and the <span class="math notranslate nohighlight">\(\texttt{SENS_SECTION}\)</span> field is used for indexing the axial cell when specifying parameter sensitivities.  This field is optional in case of only one particle type.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-220"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-220"><strong>Range:</strong> <span class="math notranslate nohighlight">\([0,1]\)</span></p></td>
+<td><p class="linemarker linemarker-220"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NPARTYPE}\)</span> / <span class="math notranslate nohighlight">\(\texttt{NCOL} \cdot \texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-with-pores">
+<h2>Group /input/model/unit_XXX/discretization - UNIT_TYPE = LUMPED_RATE_MODEL_WITH_PORES<a class="headerlink" href="#group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-with-pores" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-228"><code class="docutils literal notranslate"><span class="pre">NCOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-230">Number of axial column discretization cells</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-233"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-233"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-233"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-236"><code class="docutils literal notranslate"><span class="pre">NPARTYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-238">Number of particle types. Optional, inferred from the length of <span class="math notranslate nohighlight">\(\texttt{NBOUND}\)</span> if left out.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-241"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-241"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-241"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-244"><code class="docutils literal notranslate"><span class="pre">NBOUND</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-246">Number of bound states for each component in each particle type in type-major ordering</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-249"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-249"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-249"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP} / \texttt{NPARTYPE} \cdot \texttt{NCOMP}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-252"><code class="docutils literal notranslate"><span class="pre">PAR_GEOM</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-254">Specifies the particle geometry for all or each particle type. Valid values are <span class="math notranslate nohighlight">\(\texttt{SPHERE}\)</span>, <span class="math notranslate nohighlight">\(\texttt{CYLINDER}\)</span>, <span class="math notranslate nohighlight">\(\texttt{SLAB}\)</span>. Optional, defaults to <span class="math notranslate nohighlight">\(\texttt{SPHERE}\)</span>.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-257"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-257"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1\)</span> / <span class="math notranslate nohighlight">\(\texttt{NPARTYPE}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-260"><code class="docutils literal notranslate"><span class="pre">USE_ANALYTIC_JACOBIAN</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-262">Determines whether analytically computed Jacobian matrix (faster) is used (value is <span class="math notranslate nohighlight">\(1\)</span>) instead of Jacobians generated by algorithmic differentiation (slower, value is <span class="math notranslate nohighlight">\(0\)</span>)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-265"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-265"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-265"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-268"><code class="docutils literal notranslate"><span class="pre">RECONSTRUCTION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-270">Type of reconstruction method for fluxes</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-273"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-273"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{WENO}\)</span></p></td>
+<td><p class="linemarker linemarker-273"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-276"><code class="docutils literal notranslate"><span class="pre">GS_TYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-278">Type of Gram-Schmidt orthogonalization, see IDAS guide Section~4.5.7.3, p.~41f. A value of <span class="math notranslate nohighlight">\(0\)</span> enables classical Gram-Schmidt, a value of 1 uses modified Gram-Schmidt.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-281"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-281"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-281"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-284"><code class="docutils literal notranslate"><span class="pre">MAX_KRYLOV</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-286">Defines the size of the Krylov subspace in the iterative linear GMRES solver (0: <span class="math notranslate nohighlight">\(\texttt{MAX_KRYLOV} = \texttt{NCOL} \cdot \texttt{NCOMP} \cdot \texttt{NPARTYPE}\)</span>)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-289"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-289"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, \texttt{NCOL} \cdot \texttt{NCOMP} \cdot \texttt{NPARTYPE} \}\)</span></p></td>
+<td><p class="linemarker linemarker-289"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-292"><code class="docutils literal notranslate"><span class="pre">MAX_RESTARTS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-294">Maximum number of restarts in the GMRES algorithm. If lack of memory is not an issue, better use a larger Krylov space than restarts.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-297"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-297"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-297"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-300"><code class="docutils literal notranslate"><span class="pre">SCHUR_SAFETY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-302">Schur safety factor; Influences the tradeoff between linear iterations and nonlinear error control; see IDAS guide Section~2.1 and 5.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-305"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-305"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-305"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-308">For further discretization parameters, see also <a class="reference internal" href="../flux_reconstruction.html#flux-restruction-methods"><span class="std std-ref">Flux reconstruction methods</span></a>, and <a class="reference internal" href="../consistent_initialization.html#non-consistency-solver-parameters"><span class="std std-ref">Nonlinear solver for consistent initialization</span></a>.</p>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/interface/unit_operations/lumped_rate_model_with_pores.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,401 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Multi Channel Transport model (MCT model) &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/unit_operations/multi_channel_transport_model.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="multi-channel-transport-model-mct-model">
+<span id="multi-channel-transport-model-config"></span><h1>Multi Channel Transport model (MCT model)<a class="headerlink" href="#multi-channel-transport-model-mct-model" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6"><code class="docutils literal notranslate"><span class="pre">UNIT_TYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-8">Specifies the type of unit operation model</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-11"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-11"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{MULTI_CHANNEL_TRANSPORT}\)</span></p></td>
+<td><p class="linemarker linemarker-11"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-14"><code class="docutils literal notranslate"><span class="pre">NCOMP</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-16">Number of chemical components in the chromatographic medium</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-19"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-19"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-19"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-22"><code class="docutils literal notranslate"><span class="pre">REACTION_MODEL_BULK</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-24">Specifies the type of reaction model of the bulk volume. The model is configured in the subgroup <span class="math notranslate nohighlight">\(\texttt{reaction_bulk}\)</span>.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-27"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-27"><strong>Range:</strong> See Section <a class="reference internal" href="../reactions.html#ffreaction"><span class="std std-ref">Reaction models</span></a></p></td>
+<td><p class="linemarker linemarker-27"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-30"><code class="docutils literal notranslate"><span class="pre">INIT_C</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-32">Initial concentrations for each component in all channels of the bulk mobile phase (length <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span>), or for each component in each channel (length <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NCHANNEL}\)</span>, ordering channel-major)</p>
+<p class="linemarker linemarker-34"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-37"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-37"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-37"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP} / \texttt{NCOMP} \cdot \texttt{NCHANNEL}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-40"><code class="docutils literal notranslate"><span class="pre">INIT_STATE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-42">Full state vector for initialization (optional, <span class="math notranslate nohighlight">\(\texttt{INIT_C}\)</span> will be ignored; if length is <span class="math notranslate nohighlight">\(2\texttt{NDOF}\)</span>, then the second half is used for time derivatives)</p>
+<p class="linemarker linemarker-44"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(various\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-47"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-47"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-47"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF} / 2\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-50"><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-52">Axial dispersion coefficient.  In case of a spatially inhomogeneous setting, the <span class="math notranslate nohighlight">\(\texttt{SENS_PARTYPE}\)</span> field is used for indexing the channel when specifying parameter sensitivities.</p>
+<p class="linemarker linemarker-54"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}^{2}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-57"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-57"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-57"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-60"><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION_MULTIPLEX</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-62">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is treated as component-, channel-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p class="linemarker linemarker-64">Component-independent, channel-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is 1</p></li>
+<li><p class="linemarker linemarker-65">Component-independent, channel-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCHANNEL}\)</span></p></li>
+<li><p class="linemarker linemarker-66">Component-dependent, channel-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></li>
+<li><p class="linemarker linemarker-67">Component-dependent, channel-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NCHANNEL}\)</span>; ordering is channel-major</p></li>
+<li><p class="linemarker linemarker-68">Component-independent, channel-independent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NSEC}\)</span></p></li>
+<li><p class="linemarker linemarker-69">Component-independent, channel-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCHANNEL} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+<li><p class="linemarker linemarker-70">Component-dependent, channel-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+<li><p class="linemarker linemarker-71">Component-dependent, channel-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NCHANNEL} \cdot \texttt{NSEC}\)</span>; ordering is section-channel-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-74"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-74"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 7 \}\)</span></p></td>
+<td><p class="linemarker linemarker-74"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-77"><code class="docutils literal notranslate"><span class="pre">COL_LENGTH</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-79">Column length</p>
+<p class="linemarker linemarker-81"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-84"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-84"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-84"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-87"><code class="docutils literal notranslate"><span class="pre">VELOCITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-89">Velocity</p>
+<p class="linemarker linemarker-91"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\,\mathrm{s}^{-1}\)</span></p>
+<p class="linemarker linemarker-93">Indicates flow direction in each channel (forward if value is positive, backward if value is negative), see Section <a class="reference internal" href="../../modelling/unit_operations/2d_general_rate_model.html#muopgrmflow2d"><span class="std std-ref">Specification of flow rate / velocity and direction</span></a>).  In case of a spatially inhomogeneous setting, the <span class="math notranslate nohighlight">\(\texttt{SENS_PARTYPE}\)</span> field is used for indexing the channel when specifying parameter sensitivities.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-96"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-96"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-96"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{VELOCITY_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-99"><code class="docutils literal notranslate"><span class="pre">VELOCITY_MULTIPLEX</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-101">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is treated as channel- and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p class="linemarker linemarker-103">Channel-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is 1</p></li>
+<li><p class="linemarker linemarker-104">Channel-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCHANNEL}\)</span></p></li>
+<li><p class="linemarker linemarker-105">Section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NSEC}\)</span></p></li>
+<li><p class="linemarker linemarker-106">Channel-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCHANNEL} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-109"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-109"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 3 \}\)</span></p></td>
+<td><p class="linemarker linemarker-109"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-112"><code class="docutils literal notranslate"><span class="pre">EXCHANGE_MATRIX</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-114">Exchange matrix</p>
+<p class="linemarker linemarker-116"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}^{-1}\)</span></p>
+<p class="linemarker linemarker-118">Ordered list containing all exchange rates <span class="math notranslate nohighlight">\(e_{ij}\)</span> from compartment <span class="math notranslate nohighlight">\(i\)</span> to <span class="math notranslate nohighlight">\(j\)</span> based on the exchange matrix <span class="math notranslate nohighlight">\(E\)</span>. One row after the other is noted in the list.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}E=\begin{bmatrix}
+0 &amp; e_{12} &amp; \dots &amp; e_{1N} \\
+e_{21} &amp; \ddots &amp; &amp; \vdots\\
+\vdots &amp; &amp; \ddots &amp; e_{(N-1)N}\\
+e_{N1} &amp; \dots &amp; e_{N(N-1)} &amp; 0
+\end{bmatrix}\end{split}\]</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-130"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-130"><strong>Range:</strong> <span class="math notranslate nohighlight">\([0,1]\)</span></p></td>
+<td><p class="linemarker linemarker-130"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCHANNEL}*\texttt{NCHANNEL}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-133"><code class="docutils literal notranslate"><span class="pre">NCOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-135">Number of axial column discretization cells</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-138"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-138"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-138"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-141"><code class="docutils literal notranslate"><span class="pre">NCHANNEL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-143">Number of channels <span class="math notranslate nohighlight">\(ij\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-146"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-146"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-146"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-150"><code class="docutils literal notranslate"><span class="pre">CHANNEL_CROSS_SECTION_AREAS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-152">Cross section areas</p>
+<p class="linemarker linemarker-154"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}^{2}\)</span></p>
+<p class="linemarker linemarker-156">Defines the cross section area of each channel</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-159"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-159"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-159"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCHANNEL}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-162"><code class="docutils literal notranslate"><span class="pre">USE_ANALYTIC_JACOBIAN</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-164">Determines whether analytically computed Jacobian matrix (faster) is used (value is 1) instead of Jacobians generated by algorithmic differentiation (slower, value is 0)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-167"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-167"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-167"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-170"><code class="docutils literal notranslate"><span class="pre">LINEAR_SOLVER_BULK</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-172">Linear solver used for the sparse column bulk block. This field is optional, the best available method is selected (i.e., sparse direct solver if possible).  Valid values are:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p class="linemarker linemarker-174"><span class="math notranslate nohighlight">\(\texttt{DENSE}\)</span> Converts the sparse matrix into a banded matrix and uses regular LAPACK. Slow and memory intensive, but always available.</p></li>
+<li><p class="linemarker linemarker-175"><span class="math notranslate nohighlight">\(\texttt{UMFPACK}\)</span> Uses the UMFPACK sparse direct solver (LU decomposition) from SuiteSparse. Fast, but has to be enabled when compiling and requires UMFPACK library.</p></li>
+<li><p class="linemarker linemarker-176"><span class="math notranslate nohighlight">\(\texttt{SUPERLU}\)</span> Uses the SuperLU sparse direct solver (LU decomposition). Fast, but has to be enabled when compiling and requires SuperLU library.</p></li>
+</ul>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-179"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-179"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{\texttt{DENSE},\texttt{UMFPACK},\texttt{SUPERLU}\}\)</span></p></td>
+<td><p class="linemarker linemarker-179"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-182"><code class="docutils literal notranslate"><span class="pre">RECONSTRUCTION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-184">Type of reconstruction method for fluxes</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-187"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-187"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{WENO}\)</span></p></td>
+<td><p class="linemarker linemarker-187"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-190"><code class="docutils literal notranslate"><span class="pre">GS_TYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-192">Type of Gram-Schmidt orthogonalization, see IDAS guide Section~4.5.7.3, p.~41f. A value of 0 enables classical Gram-Schmidt, a value of 1 uses modified Gram-Schmidt.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-195"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-195"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-195"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-198"><code class="docutils literal notranslate"><span class="pre">MAX_KRYLOV</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-200">Defines the size of the Krylov subspace in the iterative linear GMRES solver (0: <span class="math notranslate nohighlight">\(\texttt{MAX_KRYLOV} = \texttt{NCOL} \cdot \texttt{NCHANNEL} \cdot \texttt{NCOMP}\)</span>)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-203"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-203"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, \texttt{NCOL} \cdot \texttt{NCHANNEL} \cdot \texttt{NCOMP}  \}\)</span></p></td>
+<td><p class="linemarker linemarker-203"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-206"><code class="docutils literal notranslate"><span class="pre">MAX_RESTARTS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-208">Maximum number of restarts in the GMRES algorithm. If lack of memory is not an issue, better use a larger Krylov space than restarts.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-211"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-211"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-211"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-214"><code class="docutils literal notranslate"><span class="pre">SCHUR_SAFETY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-216">Schur safety factor; Influences the tradeoff between linear iterations and nonlinear error control; see IDAS guide Section~2.1 and 5.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-219"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-219"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-219"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/interface/unit_operations/multi_channel_transport_model.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

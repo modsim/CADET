@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Binding models &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/modelling/binding/index.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bi Steric Mass Action" href="bi_steric_mass_action.html" />
+    <link rel="prev" title="Outlet" href="../unit_operations/outlet.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modelling</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../unit_operations/index.html">Unit operation models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Binding models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#equilibrium-constants">Equilibrium constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linear-driving-force-ldf">Linear Driving Force (LDF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-concentrations">Reference concentrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dependence-on-external-function">Dependence on external function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#binding-model-feature-matrix">Binding model feature matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networks.html">Networks of unit operations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="binding-models">
+<span id="id1"></span><h1>Binding models<a class="headerlink" href="#binding-models" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">The following binding models are presented in dynamic binding mode.
+By replacing all occurrences of <span class="math notranslate nohighlight">\(\mathrm{d}q / \mathrm{d}t\)</span> with <span class="math notranslate nohighlight">\(0\)</span>, quasi-stationary (rapid-equlibrium) binding mode is achieved.
+In quasi-stationary binding, it is assumed that ad- and desorption take place on a much faster time scale than the other transport processes such that bead liquid phase <span class="math notranslate nohighlight">\(c_{p,i}\)</span> (or bulk liquid phase <span class="math notranslate nohighlight">\(c_i\)</span> for certain unit operation models) are always in equilibrium with the solid phase <span class="math notranslate nohighlight">\(q_i\)</span>.</p>
+<section id="equilibrium-constants">
+<h2>Equilibrium constants<a class="headerlink" href="#equilibrium-constants" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-13">For the quasi-stationary binding mode, adsorption and desorption rate are no longer separate entities.
+Instead, the quotient <span class="math notranslate nohighlight">\(k_{\text{eq}} = k_a / k_d\)</span> of adsorption and desorption coefficient is the relevant parameter as shown for the linear binding model (see Section <a class="reference internal" href="linear.html#linear-model"><span class="std std-ref">Linear</span></a>):</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \frac{\mathrm{d} q_i}{\mathrm{d} t} &amp;= k_{a,i} c_{p,i} - k_{d,i} q_i \qquad \Rightarrow 0 = k_{a,i} c_{p,i} - k_{d,i} q_i \qquad \Leftrightarrow q_i = \frac{k_{a,i}}{k_{d,i}} c_{p,i} = k_{\text{eq},i} c_{p,i}.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-22">The equilibrium constant <span class="math notranslate nohighlight">\(k_{\text{eq},i}\)</span> is used in CADET by setting <span class="math notranslate nohighlight">\(k_{d,i} = 1\)</span> and <span class="math notranslate nohighlight">\(k_{a,i} = k_{\text{eq},i}\)</span>.</p>
+<p class="linemarker linemarker-24">Note that adsorption rate <span class="math notranslate nohighlight">\(k_{a,i}\)</span> and desorption rate <span class="math notranslate nohighlight">\(k_{d,i}\)</span> are linearly correlated in both binding modes due to the form of the equilibrium constant <span class="math notranslate nohighlight">\(k_{\text{eq}}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    k_{a,i} = k_{\text{eq}} k_{d,i}.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-32">This correlation can potentially degrade performance of some optimization algorithms.
+While in quasi-stationary binding mode this is prevented by using the technique above, a dynamic binding model has to be reparameterized in order to decouple parameters:</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \frac{\mathrm{d} q_i}{\mathrm{d} t} &amp;= k_{a,i} c_{p,i} - k_{d,i} q_i = k_{d,i} \left[ k_{\text{eq},i} c_{p,i} - q_i \right] = k_{a,i} \left[ c_{p,i} - \frac{1}{k_{\text{eq},i}} q_i \right].
+\end{aligned}\]</div>
+<p class="linemarker linemarker-41">This can be achieved by a (nonlinear) parameter transform</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    F\left( k_{\text{eq},i}, k_{d,i} \right) = \begin{pmatrix} k_{\text{eq},i} k_{d,i} \\ k_{d,i} \end{pmatrix} \text{ with Jacobian } J_F\left( k_{\text{eq},i}, k_{d,i} \right) = \begin{pmatrix} k_{d,i} &amp; k_{\text{eq},i} \\ 0 &amp; 1 \end{pmatrix}.
+\end{aligned}\end{split}\]</div>
+</section>
+<section id="linear-driving-force-ldf">
+<span id="ldf-model"></span><h2>Linear Driving Force (LDF)<a class="headerlink" href="#linear-driving-force-ldf" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-54">Some authors use the linear driving force (LDF) approximation instead of the native kinetic form of an isotherm.
+All three approaches are equivalent in rapid equilibrium (<code class="docutils literal notranslate"><span class="pre">IS_KINETIC</span> <span class="pre">=</span> <span class="pre">0</span></code>) but not equivalent when binding kinetics are considered (<code class="docutils literal notranslate"><span class="pre">IS_KINETIC</span> <span class="pre">=</span> <span class="pre">1</span></code>).</p>
+<ol class="arabic simple">
+<li><p class="linemarker linemarker-57">In the native approach, <span class="math notranslate nohighlight">\(\frac{dq}{dt}\)</span> is an explicit funtion of <span class="math notranslate nohighlight">\(c\)</span> and <span class="math notranslate nohighlight">\(q\)</span>. For example <span class="math notranslate nohighlight">\(\frac{dq}{dt}=k_a c (q_m - q)-k_d q\)</span> in the Langmuir model.</p></li>
+</ol>
+<p class="linemarker linemarker-59">2. A linear driving force approximation is based on the equilibrium concentration <span class="math notranslate nohighlight">\(q^*\)</span> for given <span class="math notranslate nohighlight">\(c\)</span>.
+For example <span class="math notranslate nohighlight">\(q^*= \frac{q_m k_{eq} c}{1 + k_{eq} c}\)</span> in the Langmuir model.
+Here, <span class="math notranslate nohighlight">\(\frac{dq}{dt}\)</span> is proportional to the actual difference from equilibrium, i.e. <span class="math notranslate nohighlight">\(\frac{dq}{dt} = k_{kin}(q^*-q)\)</span>.
+Note that, the sign of <span class="math notranslate nohighlight">\(\frac{dq}{dt}\)</span> causes the resulting flux to act towards the equilibrium.
+In CADET, this approach is denoted by <code class="docutils literal notranslate"><span class="pre">LDF</span></code>, for example in <code class="docutils literal notranslate"><span class="pre">MULTI_COMPONENT_LANGMUIR_LDF</span></code>.</p>
+<p class="linemarker linemarker-65">3. An alterniative linear driving force approximation is based on the equilibrium concentration <span class="math notranslate nohighlight">\(c^*\)</span> for given <span class="math notranslate nohighlight">\(q\)</span>.
+For example <span class="math notranslate nohighlight">\(c^*=\frac{q}{k_{eq} \left(q_{m}-q\right)}\)</span> in the Langmuir model.
+Here, <span class="math notranslate nohighlight">\(\frac{dq}{dt}\)</span> is proportional to the actual difference from equilibrium concentrations, i.e. <span class="math notranslate nohighlight">\(\frac{dq}{dt} = k_{kin}(c-c^*)\)</span>.
+Note that, the sign of <span class="math notranslate nohighlight">\(\frac{dq}{dt}\)</span> causes the resulting flux to act towards the equilibrium.
+In CADET, this approach is denoted by <code class="docutils literal notranslate"><span class="pre">LDF_LIQUID_PHASE</span></code>, for example in <code class="docutils literal notranslate"><span class="pre">MULTI_COMPONENT_LANGMUIR_LDF_LIQUID_PHASE</span></code>.</p>
+<p class="linemarker linemarker-71">In both LDF examples, the original rate constants <span class="math notranslate nohighlight">\(k_a\)</span> and <span class="math notranslate nohighlight">\(k_d\)</span> are replaced by the equilibrium contant <span class="math notranslate nohighlight">\(k_{eq}=\frac{k_a}{k_d}\)</span>.
+The linear driving force approximations are based on a new kinetic constant, <span class="math notranslate nohighlight">\(k_{kin}\)</span>.</p>
+<p class="linemarker linemarker-74">Note that some isotherms, such as the Freundlich model, don’t have a native representation in the above sense.
+LDF versions are availabe for some but not all binding models implemented in CADET.</p>
+</section>
+<section id="reference-concentrations">
+<span id="id2"></span><h2>Reference concentrations<a class="headerlink" href="#reference-concentrations" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-82">Some binding models use reference concentrations <span class="math notranslate nohighlight">\(c_{\text{ref}}\)</span> and <span class="math notranslate nohighlight">\(q_{\text{ref}}\)</span> of the mobile phase modulator (e.g., salt) in the particle liquid and solid phase, respectively.
+The reference values are mainly used for normalizing adsorption and desorption rates, but also for other parameters that appear with those concentrations.
+They amount to a simple parameter transformation that is exemplified at one equation of the steric mass action binding model</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \frac{\mathrm{d} q_i}{\mathrm{d} t} = k_{a,i} c_{p,i}\bar{q}_0^{\nu_i} - k_{d,i} q_i c_{p,0}^{\nu_i},
+\end{aligned}\]</div>
+<p class="linemarker linemarker-92">where <span class="math notranslate nohighlight">\(c_{p,0}\)</span> denotes the mobile phase salt concentration and</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \bar{q}_0 = \Lambda - \sum_{j=1}^{N_{\text{comp}} - 1} \left( \nu_j + \sigma_j \right) q_j
+\end{aligned}\]</div>
+<p class="linemarker linemarker-100">is the number of available binding sites which is related to the number of bound salt ions.
+Using the parameter transformation</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    k_{a,i} &amp;= \tilde{k}_{a,i} q_{\text{ref}}^{-\nu_i}, \\
+    k_{d,i} &amp;= \tilde{k}_{d,i} c_{\text{ref}}^{-\nu_i},
+\end{aligned}\end{split}\]</div>
+<p class="linemarker linemarker-110">we obtain the modified model equation</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \frac{\mathrm{d} q_i}{\mathrm{d} t} = \tilde{k}_{a,i} c_{p,i} \left(\frac{\bar{q}_0}{q_{\text{ref}}}\right)^{\nu_i} - \tilde{k}_{d,i} q_i \left(\frac{c_{p,0}}{c_{\text{ref}}}\right)^{\nu_i}.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-118">This transformation serves as a (partial) nondimensionalization of the adsorption and desorption rates and, by properly choosing the reference concentrations <span class="math notranslate nohighlight">\(c_{\text{ref}}\)</span> and <span class="math notranslate nohighlight">\(q_{\text{ref}}\)</span>, may improve the optimizer performance.</p>
+<p class="linemarker linemarker-120">Recommended choices for <span class="math notranslate nohighlight">\(c_{\text{ref}}\)</span> are the average or maximum inlet concentration of the mobile phase modifier <span class="math notranslate nohighlight">\(c_0\)</span>, and for <span class="math notranslate nohighlight">\(q_{\text{ref}}\)</span> the ionic capacity <span class="math notranslate nohighlight">\(\Lambda\)</span>.
+Note that setting the reference concentrations to <span class="math notranslate nohighlight">\(1.0\)</span> each results in the original binding model.</p>
+</section>
+<section id="dependence-on-external-function">
+<span id="dependence-on-external-function-bind"></span><h2>Dependence on external function<a class="headerlink" href="#dependence-on-external-function" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-129">A binding model may depend on an external function or profile <span class="math notranslate nohighlight">\(T\colon \left[ 0, T_{\text{end}}\right] \times [0, L] \to \mathbb{R}\)</span>, where <span class="math notranslate nohighlight">\(L\)</span> denotes the physical length of the unit operation, or <span class="math notranslate nohighlight">\(T\colon \left[0, T_{\text{end}}\right] \to \mathbb{R}\)</span> if the unit operation model has no axial length.
+By using an external profile, it is possible to account for effects that are not directly modeled in CADET (e.g., temperature).
+The dependence of each parameter is modeled by a polynomial of third degree. For example, the adsorption rate <span class="math notranslate nohighlight">\(k_a\)</span> is really given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    k_a(T) &amp;= k_{a,3} T^3 + k_{a,2} T^2 + k_{a,1} T + k_{a,0}.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-139">While <span class="math notranslate nohighlight">\(k_{a,0}\)</span> is set by the original parameter <code class="docutils literal notranslate"><span class="pre">XXX_KA</span></code> of the file format (<code class="docutils literal notranslate"><span class="pre">XXX</span></code> being a placeholder for the binding model), the parameters <span class="math notranslate nohighlight">\(k_{a,3}\)</span>, <span class="math notranslate nohighlight">\(k_{a,2}\)</span>, and <span class="math notranslate nohighlight">\(k_{a,1}\)</span> are given by <code class="docutils literal notranslate"><span class="pre">XXX_KA_TTT</span></code>, <code class="docutils literal notranslate"><span class="pre">XXX_KA_TT</span></code>, and <code class="docutils literal notranslate"><span class="pre">XXX_KA_T</span></code>, respectively.
+The identifier of the externally dependent binding model is constructed from the original identifier by prepending <code class="docutils literal notranslate"><span class="pre">EXT_</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">MULTI_COMPONENT_LANGMUIR</span></code> is changed into <code class="docutils literal notranslate"><span class="pre">EXT_MULTI_COMPONENT_LANGMUIR</span></code>).
+This pattern applies to all parameters and supporting binding models (see <a class="reference internal" href="#mbfeaturematrix"><span class="std std-numref">Table 3</span></a>).
+Note that the parameter units have to be adapted to the unit of the external profile by dividing with an appropriate power.</p>
+<p class="linemarker linemarker-144">Each parameter of the externally dependent binding model can depend on a different external source.
+The 0-based indices of the external source for each parameter is given in the dataset <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code>.
+By assigning only one index to <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code>, all parameters use the same source.
+The ordering of the parameters in <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code> is given by the ordering in the file format specification in Section <a class="reference internal" href="../../interface/binding/index.html#ffadsorption"><span class="std std-ref">Binding models</span></a>.</p>
+</section>
+<section id="binding-model-feature-matrix">
+<span id="binding-model-feature"></span><h2>Binding model feature matrix<a class="headerlink" href="#binding-model-feature-matrix" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-155">A short comparison of the most prominent binding model features is given in <a class="reference internal" href="#mbfeaturematrix"><span class="std std-numref">Table 3</span></a>.
+The implemented binding models can be divided into two main classes: Single-state and multi-state binding.
+While single-state models only have one bound state per component (or less), multi-state models provide multiple (possibly different) bound states for each component, which may correspond to different binding orientations or binding site types.
+The models also differ in whether a mobile phase modifier (e.g., salt) is supported to modulate the binding behavior.</p>
+<span id="mbfeaturematrix"></span><table class="docutils align-default" id="id3">
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Supported features of the different binding models</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 15.0%" />
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p class="linemarker linemarker-165">Binding model</p></th>
+<th class="head"><p class="linemarker linemarker-166">Competitive</p></th>
+<th class="head"><p class="linemarker linemarker-167">Mobile phase modifier</p></th>
+<th class="head"><p class="linemarker linemarker-168">External function</p></th>
+<th class="head"><p class="linemarker linemarker-169">Multi-state</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="linemarker linemarker-170"><a class="reference internal" href="linear.html#linear-model"><span class="std std-ref">Linear</span></a></p></td>
+<td><p class="linemarker linemarker-171">×</p></td>
+<td><p class="linemarker linemarker-172">×</p></td>
+<td><p class="linemarker linemarker-173">✓</p></td>
+<td><p class="linemarker linemarker-174">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-175"><a class="reference internal" href="freundlich_ldf.html#freundlich-ldf-model"><span class="std std-ref">Freundlich LDF</span></a></p></td>
+<td><p class="linemarker linemarker-176">×</p></td>
+<td><p class="linemarker linemarker-177">×</p></td>
+<td><p class="linemarker linemarker-178">✓</p></td>
+<td><p class="linemarker linemarker-179">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-180"><a class="reference internal" href="multi_component_langmuir.html#multi-component-langmuir-model"><span class="std std-ref">Multi Component Langmuir</span></a></p></td>
+<td><p class="linemarker linemarker-181">✓</p></td>
+<td><p class="linemarker linemarker-182">×</p></td>
+<td><p class="linemarker linemarker-183">✓</p></td>
+<td><p class="linemarker linemarker-184">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-185"><a class="reference internal" href="multi_component_langmuir_ldf.html#multi-component-langmuir-model-ldf"><span class="std std-ref">Multi Component Langmuir LDF</span></a></p></td>
+<td><p class="linemarker linemarker-186">✓</p></td>
+<td><p class="linemarker linemarker-187">×</p></td>
+<td><p class="linemarker linemarker-188">✓</p></td>
+<td><p class="linemarker linemarker-189">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-190"><a class="reference internal" href="multi_component_langmuir_ldf_liquid_phase.html#multi-component-langmuir-model-ldf-liquid-phase"><span class="std std-ref">Multi Component Langmuir LDF Liquid Phase</span></a></p></td>
+<td><p class="linemarker linemarker-191">✓</p></td>
+<td><p class="linemarker linemarker-192">×</p></td>
+<td><p class="linemarker linemarker-193">✓</p></td>
+<td><p class="linemarker linemarker-194">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-195"><a class="reference internal" href="multi_component_anti_langmuir.html#multi-component-anti-langmuir-model"><span class="std std-ref">Multi Component Anti-Langmuir</span></a></p></td>
+<td><p class="linemarker linemarker-196">✓</p></td>
+<td><p class="linemarker linemarker-197">×</p></td>
+<td><p class="linemarker linemarker-198">✓</p></td>
+<td><p class="linemarker linemarker-199">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-200"><a class="reference internal" href="steric_mass_action.html#steric-mass-action-model"><span class="std std-ref">Steric Mass Action</span></a></p></td>
+<td><p class="linemarker linemarker-201">✓</p></td>
+<td><p class="linemarker linemarker-202">✓</p></td>
+<td><p class="linemarker linemarker-203">✓</p></td>
+<td><p class="linemarker linemarker-204">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-205"><a class="reference internal" href="generalized_ion_exchange.html#generalized-ion-exchange-model"><span class="std std-ref">Generalized Ion Exchange</span></a></p></td>
+<td><p class="linemarker linemarker-206">✓</p></td>
+<td><p class="linemarker linemarker-207">✓</p></td>
+<td><p class="linemarker linemarker-208">✓</p></td>
+<td><p class="linemarker linemarker-209">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-210"><a class="reference internal" href="self_association.html#self-association-model"><span class="std std-ref">Self Association</span></a></p></td>
+<td><p class="linemarker linemarker-211">✓</p></td>
+<td><p class="linemarker linemarker-212">✓</p></td>
+<td><p class="linemarker linemarker-213">✓</p></td>
+<td><p class="linemarker linemarker-214">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-215"><a class="reference internal" href="mobile_phase_modulator_langmuir.html#mobile-phase-modulator-langmuir-model"><span class="std std-ref">Mobile Phase Modulator Langmuir</span></a></p></td>
+<td><p class="linemarker linemarker-216">✓</p></td>
+<td><p class="linemarker linemarker-217">✓</p></td>
+<td><p class="linemarker linemarker-218">✓</p></td>
+<td><p class="linemarker linemarker-219">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-220"><a class="reference internal" href="extended_mobile_phase_modulator_langmuir.html#extended-mobile-phase-modulator-langmuir-model"><span class="std std-ref">Extended Mobile Phase Modulator Langmuir</span></a></p></td>
+<td><p class="linemarker linemarker-221">✓</p></td>
+<td><p class="linemarker linemarker-222">✓</p></td>
+<td><p class="linemarker linemarker-223">✓</p></td>
+<td><p class="linemarker linemarker-224">×</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-225"><a class="reference internal" href="saska.html#saska-model"><span class="std std-ref">Saska</span></a></p></td>
+<td><p class="linemarker linemarker-226">×</p></td>
+<td><p class="linemarker linemarker-227">×</p></td>
+<td><p class="linemarker linemarker-228">✓</p></td>
+<td><p class="linemarker linemarker-229">×</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-230"><a class="reference internal" href="multi_component_bi_langmuir.html#multi-component-bi-langmuir-model"><span class="std std-ref">Multi Component Bi-Langmuir</span></a></p></td>
+<td><p class="linemarker linemarker-231">✓</p></td>
+<td><p class="linemarker linemarker-232">×</p></td>
+<td><p class="linemarker linemarker-233">✓</p></td>
+<td><p class="linemarker linemarker-234">✓</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-235"><a class="reference internal" href="multi_component_bi_langmuir_ldf.html#multi-component-bi-langmuir-model-ldf"><span class="std std-ref">Multi Component Bi-Langmuir LDF</span></a></p></td>
+<td><p class="linemarker linemarker-236">✓</p></td>
+<td><p class="linemarker linemarker-237">×</p></td>
+<td><p class="linemarker linemarker-238">✓</p></td>
+<td><p class="linemarker linemarker-239">✓</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-240"><a class="reference internal" href="multi_component_spreading.html#multi-component-spreading-model"><span class="std std-ref">Multi Component Spreading</span></a></p></td>
+<td><p class="linemarker linemarker-241">✓</p></td>
+<td><p class="linemarker linemarker-242">×</p></td>
+<td><p class="linemarker linemarker-243">✓</p></td>
+<td><p class="linemarker linemarker-244">✓</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-245"><a class="reference internal" href="multi_state_steric_mass_action.html#multi-state-steric-mass-action-model"><span class="std std-ref">Multi-State Steric Mass Action</span></a></p></td>
+<td><p class="linemarker linemarker-246">✓</p></td>
+<td><p class="linemarker linemarker-247">✓</p></td>
+<td><p class="linemarker linemarker-248">✓</p></td>
+<td><p class="linemarker linemarker-249">✓</p></td>
+</tr>
+<tr class="row-even"><td><p class="linemarker linemarker-250"><a class="reference internal" href="simplified_multi_state_steric_mass_action.html#simplified-multi-state-steric-mass-action-model"><span class="std std-ref">Simplified Multi-State Steric Mass Action</span></a></p></td>
+<td><p class="linemarker linemarker-251">✓</p></td>
+<td><p class="linemarker linemarker-252">✓</p></td>
+<td><p class="linemarker linemarker-253">×</p></td>
+<td><p class="linemarker linemarker-254">✓</p></td>
+</tr>
+<tr class="row-odd"><td><p class="linemarker linemarker-255"><a class="reference internal" href="bi_steric_mass_action.html#bi-steric-mass-action-model"><span class="std std-ref">Bi Steric Mass Action</span></a></p></td>
+<td><p class="linemarker linemarker-256">✓</p></td>
+<td><p class="linemarker linemarker-257">✓</p></td>
+<td><p class="linemarker linemarker-258">✓</p></td>
+<td><p class="linemarker linemarker-259">✓</p></td>
+</tr>
+</tbody>
+</table>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/modelling/binding/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

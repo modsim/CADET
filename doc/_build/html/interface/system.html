@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>System of unit operations &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/system.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Unit Operations" href="unit_operations/index.html" />
+    <link rel="prev" title="Input Group" href="input_group.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">System of unit operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="system-of-unit-operations">
+<span id="ffmodelsystem"></span><h1>System of unit operations<a class="headerlink" href="#system-of-unit-operations" title="Permalink to this heading">¶</a></h1>
+<section id="group-input-model">
+<h2>Group /input/model<a class="headerlink" href="#group-input-model" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-9"><code class="docutils literal notranslate"><span class="pre">NUNITS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-11">Number of unit operations in the system</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-14"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-14"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-14"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-17"><code class="docutils literal notranslate"><span class="pre">INIT_STATE_Y</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-19">Initial full state vector (optional, unit operation specific initial data is ignored)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-22"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-22"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-22"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-25"><code class="docutils literal notranslate"><span class="pre">INIT_STATE_YDOT</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-27">Initial full time derivative state vector (optional, unit operation specific initial data is ignored)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-30"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-30"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-33"><code class="docutils literal notranslate"><span class="pre">INIT_STATE_SENSY_XXX</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-35">Number of unit operations in the system</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-38"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-38"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-41"><code class="docutils literal notranslate"><span class="pre">INIT_STATE_SENSYDOT_XXX</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-43">Initial full state vector of the <span class="math notranslate nohighlight">\(\texttt{XXX}\)</span> th sensitivity system (optional, unit operation specific initial data is ignored)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-46"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-46"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-49"><code class="docutils literal notranslate"><span class="pre">NUNITS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-51">Initial full time derivative state vector of the <span class="math notranslate nohighlight">\(\texttt{XXX}\)</span> th sensitivity system (optional, unit operation specific initial data is ignored)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-54"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-54"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-input-model-connections">
+<span id="ffmodelsystemconnections"></span><h2>Group /input/model/connections<a class="headerlink" href="#group-input-model-connections" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-62"><code class="docutils literal notranslate"><span class="pre">NSWITCHES</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-64">Number of valve switches</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-67"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-67"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-67"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-70"><code class="docutils literal notranslate"><span class="pre">CONNECTIONS_INCLUDE_PORTS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-72">Determines whether the <span class="math notranslate nohighlight">\(\texttt{CONNECTIONS}\)</span> table includes ports (<span class="math notranslate nohighlight">\(1\)</span>) or not (<span class="math notranslate nohighlight">\(0\)</span>). Optional, defaults to 0 unless a unit operation model with multiple ports is present.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-75"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-75"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{ 0,1 \}\)</span></p></td>
+<td><p class="linemarker linemarker-75"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-78"><code class="docutils literal notranslate"><span class="pre">CONNECTIONS_INCLUDE_DYNAMIC_FLOW</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-80">Determines whether the <span class="math notranslate nohighlight">\(\texttt{CONNECTIONS}\)</span> table includes linear, quadratic, and cubic flow rate coefficients (1) or not (0). Optional, defaults to 0.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-83"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-83"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{ 0,1 \}\)</span></p></td>
+<td><p class="linemarker linemarker-83"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-input-model-connections-switch-xxx">
+<span id="ffmodelconnectionswitch"></span><h2>Group /input/model/connections/switch_XXX<a class="headerlink" href="#group-input-model-connections-switch-xxx" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-92"><code class="docutils literal notranslate"><span class="pre">SECTION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-94">Index of the section that activates this connection set</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-97"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-97"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-97"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-100"><code class="docutils literal notranslate"><span class="pre">CONNECTIONS</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-102">Matrix with list of connections in row-major storage. Columns are <em>UnitOpID from</em>, <em>UnitOpID to</em>, <em>Port from</em>, <em>Port to</em>, <em>Component from</em>, <em>Component to</em>, <em>volumetric flow rate</em>, <em>linear flow rate coefficient</em>, <em>quadratic flow rate coefficient</em>, <em>cubic flow rate coefficient</em>.
+If both port indices are <span class="math notranslate nohighlight">\(-1\)</span>, all ports are connected.
+If both component indices are <span class="math notranslate nohighlight">\(-1\)</span>, all components are connected.</p>
+<p class="linemarker linemarker-106">The flow rate is a cubic function of time,</p>
+<div class="math notranslate nohighlight">
+\[Q = Q_0 + Q_1(t - t_s) + Q_2(t-t_s)^2 + Q_3(t-t_s)^3,\]</div>
+<p class="linemarker linemarker-111">where <span class="math notranslate nohighlight">\(t_s\)</span> is the beginning of the section that activates the switch (i.e., <span class="math notranslate nohighlight">\(\texttt{SECTION_TIMES}\)</span> at index <span class="math notranslate nohighlight">\(\texttt{SECTION}\)</span>).</p>
+<p class="linemarker linemarker-113">The port indices are left out if <span class="math notranslate nohighlight">\(\texttt{CONNECTIONS_INCLUDE_PORTS}\)</span> is set to <span class="math notranslate nohighlight">\(0\)</span> and no unit operation with multiple ports is present in the system. If a unit operation with multiple ports is present, <span class="math notranslate nohighlight">\(\texttt{CONNECTIONS_INCLUDE_PORTS}\)</span> is ignored and port indices are mandatory.</p>
+<p class="linemarker linemarker-115">The last three flow rate coefficients are left out if <span class="math notranslate nohighlight">\(\texttt{CONNECTIONS_INCLUDE_DYNAMIC_FLOW}\)</span> is set to <span class="math notranslate nohighlight">\(0\)</span>.
+Contrary to the constant coefficient, which has the parameter name <span class="math notranslate nohighlight">\(\texttt{CONNECTION}\)</span>, the other coefficients are named <span class="math notranslate nohighlight">\(\texttt{CONNECTION_LIN}\)</span>, <span class="math notranslate nohighlight">\(\texttt{CONNECTION_QUAD}\)</span>, and <span class="math notranslate nohighlight">\(\texttt{CONNECTION_CUB}\)</span>, respectively.</p>
+<p class="linemarker linemarker-118">For addressing the flow rates as a parameter senstivity, the mapping is as follows:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p class="linemarker linemarker-120"><span class="math notranslate nohighlight">\(\texttt{SENS_UNIT}\)</span> Unused, always set to <span class="math notranslate nohighlight">\(-1\)</span></p></li>
+<li><p class="linemarker linemarker-121"><span class="math notranslate nohighlight">\(\texttt{SENS_BOUNDPHASE}\)</span> <em>UnitOpID from</em></p></li>
+<li><p class="linemarker linemarker-122"><span class="math notranslate nohighlight">\(\texttt{SENS_REACTION}\)</span> <em>UnitOpID to</em></p></li>
+<li><p class="linemarker linemarker-123"><span class="math notranslate nohighlight">\(\texttt{SENS_COMP}\)</span> <em>Port from</em></p></li>
+<li><p class="linemarker linemarker-124"><span class="math notranslate nohighlight">\(\texttt{SENS_PARTYPE}\)</span> <em>Port to</em></p></li>
+<li><p class="linemarker linemarker-125"><span class="math notranslate nohighlight">\(\texttt{SENS_SECTION}\)</span> <span class="math notranslate nohighlight">\(\texttt{SECTION}\)</span> that activates the valve switch</p></li>
+</ul>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-128"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-128"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq -1\)</span></p></td>
+<td><p class="linemarker linemarker-128"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\{5,7,8,10\} \cdot \texttt{NCONNECTIONS}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+</section>
+<section id="group-input-model-external-source-xxx-extfun-type-linear-interp-data">
+<span id="ffmodelexternalsourcelininterp"></span><h2>Group /input/model/external/source_XXX - EXTFUN_TYPE = LINEAR_INTERP_DATA<a class="headerlink" href="#group-input-model-external-source-xxx-extfun-type-linear-interp-data" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-136"><code class="docutils literal notranslate"><span class="pre">VELOCITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-138">Velocity of the external profile in positive column axial direction.
+The velocity is normalized to a column with length 1, hence the unit <span class="math notranslate nohighlight">\(\mathrm{s}^{-1}\)</span>.</p>
+<p class="linemarker linemarker-141"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-144"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-144"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-144"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-147"><code class="docutils literal notranslate"><span class="pre">DATA</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-149">Function values <span class="math notranslate nohighlight">\(T\)</span> at the data points</p>
+<p class="linemarker linemarker-151"><strong>Unit:</strong> <span class="math notranslate nohighlight">\([\mathrm{Ext}]\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-154"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-154"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-154"><strong>Length:</strong> Arbitrary</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">TIME</span></code></dt><dd><p class="linemarker linemarker-158">Time of the data points</p>
+<p class="linemarker linemarker-160"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-163"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-163"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0.0\)</span></p></td>
+<td><p class="linemarker linemarker-163"><strong>Length:</strong> Same as <span class="math notranslate nohighlight">\(\texttt{DATA}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</section>
+<section id="group-input-model-external-source-xxx-extfun-type-piecewise-cubic-poly">
+<span id="ffmodelexternalsourcepiececubicpoly"></span><h2>Group /input/model/external/source_XXX - EXTFUN_TYPE = PIECEWISE_CUBIC_POLY<a class="headerlink" href="#group-input-model-external-source-xxx-extfun-type-piecewise-cubic-poly" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-172"><code class="docutils literal notranslate"><span class="pre">VELOCITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-174">Velocity of the external profile in positive column axial direction.
+The velocity is normalized to a column with length 1, hence the unit <span class="math notranslate nohighlight">\(\mathrm{s}^{-1}\)</span>.</p>
+<p class="linemarker linemarker-177"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-180"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-180"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-180"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-183"><code class="docutils literal notranslate"><span class="pre">CONST_COEFF</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-185">Constant coefficients of piecewise cubic polynomial</p>
+<p class="linemarker linemarker-187"><strong>Unit:</strong> <span class="math notranslate nohighlight">\([\mathrm{Ext}]\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-190"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-190"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-190"><strong>Length:</strong> Arbitrary</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-193"><code class="docutils literal notranslate"><span class="pre">LIN_COEFF</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-195">Linear coefficients of piecewise cubic polynomial</p>
+<p class="linemarker linemarker-197"><strong>Unit:</strong> <span class="math notranslate nohighlight">\([\mathrm{Ext}]\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-200"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-200"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-200"><strong>Length:</strong> Same as <span class="math notranslate nohighlight">\(\texttt{CONST_COEFF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-203"><code class="docutils literal notranslate"><span class="pre">QUAD_COEFF</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-205">Quadratic coefficients of piecewise cubic polynomial</p>
+<p class="linemarker linemarker-207"><strong>Unit:</strong> <span class="math notranslate nohighlight">\([\mathrm{Ext}]\,\mathrm{s}^{-2}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-210"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-210"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-210"><strong>Length:</strong> Same as <span class="math notranslate nohighlight">\(\texttt{CONST_COEFF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-213"><code class="docutils literal notranslate"><span class="pre">CUBE_COEFF</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-215">Cubic coefficients of piecewise cubic polynomial</p>
+<p class="linemarker linemarker-217"><strong>Unit:</strong> <span class="math notranslate nohighlight">\([\mathrm{Ext}]\,\mathrm{s}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-220"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-220"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-220"><strong>Length:</strong> Same as <span class="math notranslate nohighlight">\(\texttt{CONST_COEFF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-223"><code class="docutils literal notranslate"><span class="pre">SECTION_TIMES</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-225">Simulation times at which a new piece begins (breaks of the piecewise polynomial)</p>
+<p class="linemarker linemarker-227"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-230"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-230"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0.0\)</span></p></td>
+<td><p class="linemarker linemarker-230"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{CONST_COEFF}+1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-input-model-solver">
+<span id="ffmodelsolver"></span><h2>Group /input/model/solver<a class="headerlink" href="#group-input-model-solver" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-238"><code class="docutils literal notranslate"><span class="pre">GS_TYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-240">Type of Gram-Schmidt orthogonalization, see IDAS guide Section~4.5.7.3, p.~41f. A value of <span class="math notranslate nohighlight">\(0\)</span> enables classical Gram-Schmidt, a value of 1 uses modified Gram-Schmidt.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-243"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-243"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-243"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-246"><code class="docutils literal notranslate"><span class="pre">MAX_KRYLOV</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-248">Defines the size of the Krylov subspace in the iterative linear GMRES solver (0: <span class="math notranslate nohighlight">\(\texttt{MAX_KRYLOV} = \texttt{NDOF}\)</span>)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-251"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-251"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, \texttt{NDOF}\}\)</span></p></td>
+<td><p class="linemarker linemarker-251"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-254"><code class="docutils literal notranslate"><span class="pre">MAX_RESTARTS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-256">Maximum number of restarts in the GMRES algorithm. If lack of memory is not an issue, better use a larger Krylov space than restarts.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-259"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-259"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-259"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-262"><code class="docutils literal notranslate"><span class="pre">SCHUR_SAFETY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-264">Schur safety factor; Influences the tradeoff between linear iterations and nonlinear error control; see IDAS guide Section~2.1 and 5.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-267"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-267"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-267"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-270"><code class="docutils literal notranslate"><span class="pre">LINEAR_SOLUTION_MODE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-272">Determines whether the system of models is solved in parallel (1) or sequentially (2). A sequential solution is only possible for systems without cyclic connections. The setting can be chosen automatically (0) based on a heuristic (less than 25 unit operations and acyclic network selects sequential mode). Optional, defaults to automatic (0).</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-275"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-275"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{ 0,1,2 \}\)</span></p></td>
+<td><p class="linemarker linemarker-275"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/system.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

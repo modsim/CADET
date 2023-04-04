@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Simplified Multi-State Steric Mass Action &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/modelling/binding/simplified_multi_state_steric_mass_action.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Steric Mass Action" href="steric_mass_action.html" />
+    <link rel="prev" title="Self Association" href="self_association.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modelling</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../unit_operations/index.html">Unit operation models</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Binding models</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#equilibrium-constants">Equilibrium constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#linear-driving-force-ldf">Linear Driving Force (LDF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#reference-concentrations">Reference concentrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#dependence-on-external-function">Dependence on external function</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#binding-model-feature-matrix">Binding model feature matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networks.html">Networks of unit operations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="simplified-multi-state-steric-mass-action">
+<span id="simplified-multi-state-steric-mass-action-model"></span><h1>Simplified Multi-State Steric Mass Action<a class="headerlink" href="#simplified-multi-state-steric-mass-action" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">The simplified multi-state steric mass action is the same as the multi-state SMA model described above (see Section <a class="reference internal" href="multi_state_steric_mass_action.html#multi-state-steric-mass-action-model"><span class="std std-ref">Multi-State Steric Mass Action</span></a>), but with additional assumptions:</p>
+<ul class="simple">
+<li><p class="linemarker linemarker-8">Molecules are only exchanged between two adjacent states, that is, no transfer from state <span class="math notranslate nohighlight">\(q_{i,1}\)</span> to state <span class="math notranslate nohighlight">\(q_{i,3}\)</span> is allowed.</p></li>
+<li><p class="linemarker linemarker-10">Characteristic charge <span class="math notranslate nohighlight">\(\nu_{i,j}\)</span> and shielding factor <span class="math notranslate nohighlight">\(\sigma_{i,j}\)</span> only depend on the index of the state <span class="math notranslate nohighlight">\(j\)</span>.</p></li>
+</ul>
+<p class="linemarker linemarker-12">Thus, the exchange parameters <span class="math notranslate nohighlight">\(k^{(i)}_{j\ell}\)</span>, the characteristic charge <span class="math notranslate nohighlight">\(\nu_{i,j}\)</span>, and the shielding <span class="math notranslate nohighlight">\(\sigma_{i,j}\)</span> can be parameterized with few degrees of freedom.
+For all <span class="math notranslate nohighlight">\(i = 1,\dots,N_{\text{comp}} - 1\)</span> and <span class="math notranslate nohighlight">\(j,\ell = 0,\dots,M_i - 1\)</span> let</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    k^{(i)}_{j\ell} &amp;= \begin{cases}
+    0, &amp; \text{for } \left\lvert j-\ell\right\rvert \neq 1 \\
+    K^{(i)}_{ws} + j K^{(i)}_{ws,\text{lin}} - K^{(i)}_{ws,\text{quad}} j(j - M_i+2), &amp; \text{for } \ell = j+1 \\
+    K^{(i)}_{sw} + \ell K^{(i)}_{sw,\text{lin}} - K^{(i)}_{sw,\text{quad}} \ell(\ell - M_i+2), &amp; \text{for } \ell = j-1, \end{cases}\\
+    \nu_{i,j} &amp;= \nu_{\text{min},i} + \frac{j}{M_i-1} \left( \nu_{\text{max},i} - \nu_{\text{min},i} \right) - \nu_{\text{quad},i} j (j-M_i+1), \\
+    \sigma_{i,j} &amp;= \sigma_{\text{min},i} + \frac{j}{M_i-1} \left( \sigma_{\text{max},i} - \sigma_{\text{min},i} \right) - \sigma_{\text{quad},i} j (j-M_i+1).
+\end{aligned}\end{split}\]</div>
+<p class="linemarker linemarker-26">Note that the characteristic charge <span class="math notranslate nohighlight">\(\nu_{i,j}\)</span> has to be monotonically non-decreasing in the second index <span class="math notranslate nohighlight">\(j\)</span> and all other rates and the steric factor <span class="math notranslate nohighlight">\(\sigma_{i,j}\)</span> have to be non-negative.</p>
+<p class="linemarker linemarker-29">For more information on model parameters required to define in CADET file format, see <a class="reference internal" href="../../interface/binding/simplified_multi_state_steric_mass_action.html#simplified-multi-state-steric-mass-action-config"><span class="std std-ref">Simplified Multi-State Steric Mass Action</span></a>.</p>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/modelling/binding/simplified_multi_state_steric_mass_action.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

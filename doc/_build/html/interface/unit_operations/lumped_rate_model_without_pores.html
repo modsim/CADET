@@ -1,0 +1,346 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Lumped Rate Model Without Pores &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/unit_operations/lumped_rate_model_without_pores.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Two dimensional general rate model" href="2d_general_rate_model.html" />
+    <link rel="prev" title="Lumped rate model with pores" href="lumped_rate_model_with_pores.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System of unit operations</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="lumped-rate-model-without-pores">
+<span id="lumpded-rate-model-without-pores-config"></span><h1>Lumped Rate Model Without Pores<a class="headerlink" href="#lumped-rate-model-without-pores" title="Permalink to this heading">¶</a></h1>
+<section id="group-input-model-unit-xxx-unit-type-lumped-rate-model-without-pores">
+<h2>Group /input/model/unit_XXX - UNIT_TYPE = LUMPED_RATE_MODEL_WITHOUT_PORES<a class="headerlink" href="#group-input-model-unit-xxx-unit-type-lumped-rate-model-without-pores" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-9"><code class="docutils literal notranslate"><span class="pre">UNIT_TYPE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-11">Specifies the type of unit operation model</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-14"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-14"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{LUMPED_RATE_MODEL_WITHOUT_PORES}\)</span></p></td>
+<td><p class="linemarker linemarker-14"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-17"><code class="docutils literal notranslate"><span class="pre">NCOMP</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-19">Number of chemical components in the chromatographic medium</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-22"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-22"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-22"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-25"><code class="docutils literal notranslate"><span class="pre">ADSORPTION_MODEL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-27">Specifies the type of binding model</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-30"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-30"><strong>Range:</strong> See Section <a class="reference internal" href="../binding/index.html#ffadsorption"><span class="std std-ref">Binding models</span></a></p></td>
+<td><p class="linemarker linemarker-30"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-33"><code class="docutils literal notranslate"><span class="pre">REACTION_MODEL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-35">Specifies the type of reaction model of the combined bulk and particle volume. The model is configured in the subgroup <span class="math notranslate nohighlight">\(\texttt{reaction}\)</span>.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-38"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-38"><strong>Range:</strong> See Section <a class="reference internal" href="../reactions.html#ffreaction"><span class="std std-ref">Reaction models</span></a></p></td>
+<td><p class="linemarker linemarker-38"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-41"><code class="docutils literal notranslate"><span class="pre">INIT_C</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-43">Initial concentrations for each component in the bulk mobile phase</p>
+<p class="linemarker linemarker-45"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}_{\mathrm{IV}}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-48"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-48"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-48"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-51"><code class="docutils literal notranslate"><span class="pre">INIT_Q</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-53">Initial concentrations for each bound state of each component in the bead solid phase in component-major ordering</p>
+<p class="linemarker linemarker-55"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{mol}\,\mathrm{m}_{\mathrm{SP}}^{-3}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-58"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-58"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-58"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NTOTALBND}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-61"><code class="docutils literal notranslate"><span class="pre">INIT_STATE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-63">Full state vector for initialization (optional, <span class="math notranslate nohighlight">\(\texttt{INIT_C}\)</span> and <span class="math notranslate nohighlight">\(\texttt{INIT_Q}\)</span> will be ignored; if length is <span class="math notranslate nohighlight">\(2\texttt{NDOF}\)</span>, then the second half is used for time derivatives)</p>
+<p class="linemarker linemarker-65"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(various\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-68"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-68"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-68"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NDOF} / 2\texttt{NDOF}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-71"><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-73">Axial dispersion coefficient</p>
+<p class="linemarker linemarker-75"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}_{\mathrm{IV}}^{2}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-78"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-78"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-78"><strong>Length:</strong> see <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION_MULTIPLEX}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-81"><code class="docutils literal notranslate"><span class="pre">COL_DISPERSION_MULTIPLEX</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-83">Multiplexing mode of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>. Determines whether <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is treated as component- and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span>.  Valid modes are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-85">Component-independent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(1\)</span></p></li>
+<li><p class="linemarker linemarker-86">Component-dependent, section-independent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></li>
+<li><p class="linemarker linemarker-87">Component-independent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NSEC}\)</span></p></li>
+<li><p class="linemarker linemarker-88">Component-dependent, section-dependent; length of <span class="math notranslate nohighlight">\(\texttt{COL_DISPERSION}\)</span> is <span class="math notranslate nohighlight">\(\texttt{NCOMP} \cdot \texttt{NSEC}\)</span>; ordering is section-major</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-91"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-91"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, \dots, 3 \}\)</span></p></td>
+<td><p class="linemarker linemarker-91"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-94"><code class="docutils literal notranslate"><span class="pre">COL_LENGTH</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-96">Column length</p>
+<p class="linemarker linemarker-98"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-101"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-101"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-101"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-104"><code class="docutils literal notranslate"><span class="pre">TOTAL_POROSITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-106">Total porosity</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-109"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-109"><strong>Range:</strong> <span class="math notranslate nohighlight">\([0,1]\)</span></p></td>
+<td><p class="linemarker linemarker-109"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-112"><code class="docutils literal notranslate"><span class="pre">VELOCITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-114">Interstitial velocity of the mobile phase (optional if <span class="math notranslate nohighlight">\(\texttt{CROSS_SECTION_AREA}\)</span> is present, see Section <a class="reference internal" href="../../modelling/unit_operations/general_rate_model.html#muopgrmflow"><span class="std std-ref">Specification of flow rate / velocity and direction</span></a>)</p>
+<p class="linemarker linemarker-116"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}\,\mathrm{s}^{-1}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-119"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-119"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\mathbb{R}\)</span></p></td>
+<td><p class="linemarker linemarker-119"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NSEC}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-122"><code class="docutils literal notranslate"><span class="pre">CROSS_SECTION_AREA</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-124">Cross section area of the column (optional if <span class="math notranslate nohighlight">\(\texttt{VELOCITY}\)</span> is present, see Section <a class="reference internal" href="../../modelling/unit_operations/general_rate_model.html#muopgrmflow"><span class="std std-ref">Specification of flow rate / velocity and direction</span></a>)</p>
+<p class="linemarker linemarker-126"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{m}^{2}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-129"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-129"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt;0\)</span></p></td>
+<td><p class="linemarker linemarker-129"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-without-pores">
+<h2>Group /input/model/unit_XXX/discretization - UNIT_TYPE = LUMPED_RATE_MODEL_WITHOUT_PORES<a class="headerlink" href="#group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-without-pores" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-137"><code class="docutils literal notranslate"><span class="pre">NCOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-139">Number of axial column discretization cells</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-142"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-142"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-142"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-145"><code class="docutils literal notranslate"><span class="pre">NBOUND</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-147">Number of bound states for each component</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-150"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-150"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-150"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NCOMP}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-153"><code class="docutils literal notranslate"><span class="pre">USE_ANALYTIC_JACOBIAN</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-155">Determines whether analytically computed Jacobian matrix (faster) is used (value is 1) instead of Jacobians generated by algorithmic differentiation (slower, value is 0)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-158"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-158"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span></p></td>
+<td><p class="linemarker linemarker-158"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-161"><code class="docutils literal notranslate"><span class="pre">RECONSTRUCTION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-163">Type of reconstruction method for fluxes</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-166"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-166"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\texttt{WENO}\)</span></p></td>
+<td><p class="linemarker linemarker-166"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-169">For further discretization parameters, see also <a class="reference internal" href="../flux_reconstruction.html#flux-restruction-methods"><span class="std std-ref">Flux reconstruction methods</span></a>, and <a class="reference internal" href="../consistent_initialization.html#non-consistency-solver-parameters"><span class="std std-ref">Nonlinear solver for consistent initialization</span></a>.</p>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/interface/unit_operations/lumped_rate_model_without_pores.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Solver Configuration &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/solver.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Output Group" href="output_group.html" />
+    <link rel="prev" title="Parameter Sensitivities" href="sensitivities.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="system.html">System of unit operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="solver-configuration">
+<span id="solver"></span><h1>Solver Configuration<a class="headerlink" href="#solver-configuration" title="Permalink to this heading">¶</a></h1>
+<section id="group-input-solver">
+<h2>Group /input/solver<a class="headerlink" href="#group-input-solver" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-9"><code class="docutils literal notranslate"><span class="pre">NTHREADS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-11">Number of used threads</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-14"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-14"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-14"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-17"><code class="docutils literal notranslate"><span class="pre">USER_SOLUTION_TIMES</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-19">Vector with timepoints at which the solution is evaluated</p>
+<p class="linemarker linemarker-21"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-24"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-24"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-24"><strong>Length:</strong> Arbitrary</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-27"><code class="docutils literal notranslate"><span class="pre">CONSISTENT_INIT_MODE</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-29">Consistent initialization mode (optional, defaults to <span class="math notranslate nohighlight">\(1\)</span>). Valid values are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-31">None</p></li>
+<li><p class="linemarker linemarker-32">Full</p></li>
+<li><p class="linemarker linemarker-33">Once, full</p></li>
+<li><p class="linemarker linemarker-34">Lean</p></li>
+<li><p class="linemarker linemarker-35">Once, lean</p></li>
+<li><p class="linemarker linemarker-36">Full once, then lean</p></li>
+<li><p class="linemarker linemarker-37">None once, then full</p></li>
+<li><p class="linemarker linemarker-38">None once, then lean</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-41"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-41"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{ 0, \dots, 7\}\)</span></p></td>
+<td><p class="linemarker linemarker-41"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+<p class="linemarker linemarker-44"><code class="docutils literal notranslate"><span class="pre">CONSISTENT_INIT_MODE_SENS</span></code></p>
+<blockquote>
+<div><blockquote>
+<div><p class="linemarker linemarker-46">Consistent initialization mode for parameter sensitivities (optional, defaults to <span class="math notranslate nohighlight">\(1\)</span>). Valid values are:</p>
+</div></blockquote>
+<ol class="arabic simple" start="0">
+<li><p class="linemarker linemarker-48">None</p></li>
+<li><p class="linemarker linemarker-49">Full</p></li>
+<li><p class="linemarker linemarker-50">Once, full</p></li>
+<li><p class="linemarker linemarker-51">Lean</p></li>
+<li><p class="linemarker linemarker-52">Once, lean</p></li>
+<li><p class="linemarker linemarker-53">Full once, then lean</p></li>
+<li><p class="linemarker linemarker-54">None once, then full</p></li>
+<li><p class="linemarker linemarker-55">None once, then lean</p></li>
+</ol>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-58"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-58"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{ 0, \dots, 7\}\)</span></p></td>
+<td><p class="linemarker linemarker-58"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div></blockquote>
+</section>
+<section id="group-solver-time-integrator">
+<span id="ffsolvertime"></span><h2>Group /solver/time_integrator<a class="headerlink" href="#group-solver-time-integrator" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-66"><code class="docutils literal notranslate"><span class="pre">ABSTOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-68">Absolute tolerance in the solution of the original system</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-71"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-71"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-71"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-74"><code class="docutils literal notranslate"><span class="pre">RELTOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-76">Relative tolerance in the solution of the original system</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-79"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-79"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-79"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-82"><code class="docutils literal notranslate"><span class="pre">ALGTOL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-84">Tolerance in the solution of the nonlinear consistency equations</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-87"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-87"><strong>Range:</strong> <span class="math notranslate nohighlight">\(&gt; 0\)</span></p></td>
+<td><p class="linemarker linemarker-87"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-90"><code class="docutils literal notranslate"><span class="pre">RELTOL_SENS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-92">Relative tolerance in the solution of the sensitivity systems</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-95"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-95"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-95"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-98"><code class="docutils literal notranslate"><span class="pre">INIT_STEP_SIZE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-100">Initial time integrator step size for each section or one value for all sections (0.0: IDAS default value), see IDAS guide 4.5, p.36f.</p>
+<p class="linemarker linemarker-102"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-105"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-105"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-105"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1 / \texttt{NSEC}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-108"><code class="docutils literal notranslate"><span class="pre">MAX_STEPS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-110">Maximum number of timesteps taken by IDAS (0: IDAS default = 500), see IDAS guide Sec.~4.5</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-113"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-113"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-113"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-116"><code class="docutils literal notranslate"><span class="pre">MAX_STEP_SIZE</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-118">Maximum size of timesteps taken by IDAS (optional, defaults to unlimited 0.0), see IDAS guide Sec.~4.5</p>
+<p class="linemarker linemarker-120"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-123"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-123"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-123"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-126"><code class="docutils literal notranslate"><span class="pre">ERRORTEST_SENS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-128">Determines whether (forward) sensitivities take part in local error test (optional, defaults to 1)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-131"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-131"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0,1\}\)</span></p></td>
+<td><p class="linemarker linemarker-131"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-134"><code class="docutils literal notranslate"><span class="pre">MAX_NEWTON_ITER</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-136">Maximum number of Newton iterations in time step (optional, defaults to 3)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-139"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-139"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-139"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-142"><code class="docutils literal notranslate"><span class="pre">MAX_ERRTEST_FAIL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-144">Maximum number of local error test failures in time step (optional, defaults to 7)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-147"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-147"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-147"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-150"><code class="docutils literal notranslate"><span class="pre">MAX_CONVTEST_FAIL</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-152">Maximum number of Newton convergence test failures (optional, defaults to 10)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-155"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-155"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-155"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-158"><code class="docutils literal notranslate"><span class="pre">MAX_NEWTON_ITER_SENS</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-160">Maximum number of Newton iterations in forward sensitivity time step (optional, defaults to 3)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-163"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-163"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-163"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="group-solver-sections">
+<span id="ffsolversections"></span><h2>Group /solver/sections<a class="headerlink" href="#group-solver-sections" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-171"><code class="docutils literal notranslate"><span class="pre">NSEC</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-173">Number of sections</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-176"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-176"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 1\)</span></p></td>
+<td><p class="linemarker linemarker-176"><strong>Length:</strong> 1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-179"><code class="docutils literal notranslate"><span class="pre">SECTION_TIMES</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-181">Simulation times at which the model changes or behaves discontinously; including start and end times</p>
+<p class="linemarker linemarker-183"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-186"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-186"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\geq 0\)</span></p></td>
+<td><p class="linemarker linemarker-186"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NSEC}+1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-189"><code class="docutils literal notranslate"><span class="pre">SECTION_CONTINUITY</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-191">Continuity indicator for each section transition: 0 (discontinuous) or 1 (continuous).</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-194"><strong>Type:</strong> int</p></td>
+<td><p class="linemarker linemarker-194"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\{0,1\}\)</span></p></td>
+<td><p class="linemarker linemarker-194"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\texttt{NSEC}-1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/solver.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

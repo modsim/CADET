@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Nonlinear solver for consistent initialization &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/consistent_initialization.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Return data" href="return_data.html" />
+    <link rel="prev" title="Flux reconstruction methods" href="flux_reconstruction.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="system.html">System of unit operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="nonlinear-solver-for-consistent-initialization">
+<span id="non-consistency-solver-parameters"></span><h1>Nonlinear solver for consistent initialization<a class="headerlink" href="#nonlinear-solver-for-consistent-initialization" title="Permalink to this heading">¶</a></h1>
+<section id="group-input-model-unit-xxx-discretization-consistency-solver-nonlinear-consistency-solver-paramters">
+<h2>Group /input/model/unit_XXX/discretization/consistency_solver - Nonlinear consistency solver paramters<a class="headerlink" href="#group-input-model-unit-xxx-discretization-consistency-solver-nonlinear-consistency-solver-paramters" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-8"><code class="docutils literal notranslate"><span class="pre">SOLVER_NAME</span></code></p>
+<p class="linemarker linemarker-10">Name of the solver. Available solvers are <code class="docutils literal notranslate"><span class="pre">LEVMAR</span></code>, <code class="docutils literal notranslate"><span class="pre">ATRN_RES</span></code>, <code class="docutils literal notranslate"><span class="pre">ATRN_ERR</span></code>, and <code class="docutils literal notranslate"><span class="pre">COMPOSITE</span></code>.</p>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-13"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-13"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-16"><code class="docutils literal notranslate"><span class="pre">INIT_DAMPING</span></code></p>
+<p class="linemarker linemarker-18">Initial damping factor (default is <span class="math notranslate nohighlight">\(0.01\)</span>)</p>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-21"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-21"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\ge 0\)</span></p></td>
+<td><p class="linemarker linemarker-21"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-24"><code class="docutils literal notranslate"><span class="pre">MIN_DAMPING</span></code></p>
+<p class="linemarker linemarker-26">Minimal damping factor (default is <span class="math notranslate nohighlight">\(0.0001\)</span>; ignored by <code class="docutils literal notranslate"><span class="pre">LEVMAR</span></code>)</p>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-29"><strong>Type:</strong> double</p></td>
+<td><p class="linemarker linemarker-29"><strong>Range:</strong> <span class="math notranslate nohighlight">\(\ge 0\)</span></p></td>
+<td><p class="linemarker linemarker-29"><strong>Length:</strong> <span class="math notranslate nohighlight">\(1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-32"><code class="docutils literal notranslate"><span class="pre">SUBSOLVERS</span></code></p>
+<p class="linemarker linemarker-34">Vector with names of solvers for the composite solver (only required for composite solver). See <code class="docutils literal notranslate"><span class="pre">SOLVER_NAME</span></code> for available solvers.</p>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-37"><strong>Type:</strong> string</p></td>
+<td><p class="linemarker linemarker-37"><strong>Length:</strong> <span class="math notranslate nohighlight">\(\gt 1\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/consistent_initialization.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Bi Steric Mass Action &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/modelling/binding/bi_steric_mass_action.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Extended Mobile Phase Modulator Langmuir" href="extended_mobile_phase_modulator_langmuir.html" />
+    <link rel="prev" title="Binding models" href="index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modelling</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../unit_operations/index.html">Unit operation models</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Binding models</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#equilibrium-constants">Equilibrium constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#linear-driving-force-ldf">Linear Driving Force (LDF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#reference-concentrations">Reference concentrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#dependence-on-external-function">Dependence on external function</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#binding-model-feature-matrix">Binding model feature matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networks.html">Networks of unit operations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="bi-steric-mass-action">
+<span id="bi-steric-mass-action-model"></span><h1>Bi Steric Mass Action<a class="headerlink" href="#bi-steric-mass-action" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">Similar to the Bi-Langmuir model (see Section <a class="reference internal" href="multi_component_bi_langmuir.html#multi-component-bi-langmuir-model"><span class="std std-ref">Multi Component Bi-Langmuir</span></a>), the Bi-SMA model adds <span class="math notranslate nohighlight">\(M - 1\)</span> <em>additional</em> types of binding sites <span class="math notranslate nohighlight">\(q_{i,j}\)</span> (<span class="math notranslate nohighlight">\(0 \leq j \leq M - 1\)</span>) to the SMA model (see Section <a class="reference internal" href="steric_mass_action.html#steric-mass-action-model"><span class="std std-ref">Steric Mass Action</span></a>) without allowing an exchange between the different sites <span class="math notranslate nohighlight">\(q_{i,j}\)</span> and <span class="math notranslate nohighlight">\(q_{i,k}\)</span> (<span class="math notranslate nohighlight">\(k \neq j\)</span>).
+Therefore, there are no competitivity effects between the two types of binding sites and they have independent capacities.</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \frac{\mathrm{d} q_{i,j}}{\mathrm{d} t} &amp;= k_{a,i,j} c_{p,i} \left(\frac{\bar{q}_{0,j}}{q_{\text{ref},j}} \right)^{\nu_{i,j}} - k_{d,i,j}\: q_{i,j}\: \left(\frac{c_{p,0}}{c_{\text{ref},j}}\right)^{\nu_{i,j}} &amp; i = 1, \dots, N_{\text{comp}} - 1, \quad j = 0, \dots, M - 1,
+\end{aligned}\]</div>
+<p class="linemarker linemarker-15">where <span class="math notranslate nohighlight">\(c_{p,0}\)</span> and <span class="math notranslate nohighlight">\(q_{0,j}\)</span> (<span class="math notranslate nohighlight">\(0 \leq j \leq M - 1\)</span>) denote the salt concentrations in the liquid and solid phases of the beads respectively.
+The number of available salt ions <span class="math notranslate nohighlight">\(\bar{q}_{0,j}\)</span> for each binding site type <span class="math notranslate nohighlight">\(0 \leq j \leq M - 1\)</span> is given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    \bar{q}_{0,j} &amp;= \Lambda_j - \sum_{k=1}^{N_{\text{comp}} - 1} \left( \nu_{k,j} + \sigma_{k,j} \right) q_{k,j}.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-24">Electro-neutrality conditions compensating for the missing equations for <span class="math notranslate nohighlight">\(\frac{\mathrm{d} q_{0,j}}{\mathrm{d}t}\)</span> are required:</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    q_{0,j} &amp;= \Lambda_j - \sum_{k=1}^{N_{\text{comp}} - 1} \nu_{k,j} q_{k,j} &amp; j = 0, \dots, M - 1.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-32">Note that all binding components must have exactly the same number of binding site types <span class="math notranslate nohighlight">\(M \geq 1\)</span>.</p>
+<p class="linemarker linemarker-34">The reference concentrations <span class="math notranslate nohighlight">\(c_{\text{ref},j}\)</span> and <span class="math notranslate nohighlight">\(q_{\text{ref},j}\)</span> can be specified for each binding site type <span class="math notranslate nohighlight">\(0 \leq j \leq M - 1\)</span>.
+The concept of reference concentrations is explained in the respective paragraph in Section <a class="reference internal" href="index.html#reference-concentrations"><span class="std std-ref">Reference concentrations</span></a>.</p>
+<p class="linemarker linemarker-37">Originally, the Bi-SMA model is limited to two different binding site types.
+Here, the model has been extended to arbitrary many binding site types.</p>
+<p class="linemarker linemarker-41">For more information on model parameters required to define in CADET file format, see <a class="reference internal" href="../../interface/binding/bi_steric_mass_action.html#bi-steric-mass-action-config"><span class="std std-ref">Bi Steric Mass Action</span></a>.</p>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/modelling/binding/bi_steric_mass_action.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

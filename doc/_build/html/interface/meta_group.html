@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Meta Group &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/meta_group.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="License" href="../license.html" />
+    <link rel="prev" title="Output Group" href="output_group.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_group.html">Input Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="meta-group">
+<span id="ffmeta"></span><h1>Meta Group<a class="headerlink" href="#meta-group" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6"><code class="docutils literal notranslate"><span class="pre">FILE_FORMAT</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-8">Version of the file format (defaults to 040000 = 4.0.0 if omitted) with two digits per part (Major.Minor.Patch)</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-11"><strong>In/out:</strong> In</p></td>
+<td><p class="linemarker linemarker-11"><strong>Type:</strong> int</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-14"><code class="docutils literal notranslate"><span class="pre">CADET_VERSION</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-16">Version of the executed <span class="math notranslate nohighlight">\(\texttt{CADET}\)</span> simulator</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-19"><strong>In/out:</strong> Out</p></td>
+<td><p class="linemarker linemarker-19"><strong>Type:</strong> string</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-22"><code class="docutils literal notranslate"><span class="pre">CADET_COMMIT</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-24">Git commit SHA1 from which the <span class="math notranslate nohighlight">\(\texttt{CADET}\)</span> simulator was built</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-27"><strong>In/out:</strong> Out</p></td>
+<td><p class="linemarker linemarker-27"><strong>Type:</strong> string</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-30"><code class="docutils literal notranslate"><span class="pre">CADET_BRANCH</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-32">Git branch from which the <span class="math notranslate nohighlight">\(\texttt{CADET}\)</span> simulator was built</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-35"><strong>In/out:</strong> Out</p></td>
+<td><p class="linemarker linemarker-35"><strong>Type:</strong> string</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p class="linemarker linemarker-38"><code class="docutils literal notranslate"><span class="pre">TIME_SIM</span></code></p>
+<blockquote>
+<div><p class="linemarker linemarker-40">Time that the time integration took (excluding any preparations and postprocessing)</p>
+<p class="linemarker linemarker-42"><strong>Unit:</strong> <span class="math notranslate nohighlight">\(\mathrm{s}\)</span></p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p class="linemarker linemarker-45"><strong>In/out:</strong> Out</p></td>
+<td><p class="linemarker linemarker-45"><strong>Type:</strong> double</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/meta_group.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

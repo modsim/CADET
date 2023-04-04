@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Installation &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/getting_started/installation.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Build for Linux" href="build_linux.html" />
+    <link rel="prev" title="Getting started" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting started</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-cadet-core-simulator">Install CADET core simulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-a-frontend">Install a frontend</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/breakthrough.html">CADET Introduction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="installation">
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">A CADET installation consists of two parts: The CADET core simulator and a frontend.</p>
+<section id="install-cadet-core-simulator">
+<h2>Install CADET core simulator<a class="headerlink" href="#install-cadet-core-simulator" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-11">The core simulator can be compiled from source, or you can download pre-built binaries.
+If you want to extend or modify CADET (e.g., add a custom binding model), you will need to build CADET from source.</p>
+<section id="install-pre-built-binaries">
+<h3>Install pre-built binaries<a class="headerlink" href="#install-pre-built-binaries" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-16">CADET can be installed via conda from the <code class="docutils literal notranslate"><span class="pre">conda-forge</span> <span class="pre">channel</span></code>.</p>
+<p class="linemarker linemarker-18"><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">cadet</span></code></p>
+<p class="linemarker linemarker-20">This requires a working <a class="reference external" href="https://docs.anaconda.com/anaconda/install/index.html">conda installation</a>.</p>
+<p class="linemarker linemarker-22">Optionally, use <a class="reference external" href="https://github.com/mamba-org/mamba">mamba</a> which uses a faster dependency solver than <code class="docutils literal notranslate"><span class="pre">conda</span></code>.</p>
+<p class="linemarker linemarker-24"><code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">cadet</span></code></p>
+</section>
+<section id="install-from-source">
+<h3>Install from source<a class="headerlink" href="#install-from-source" title="Permalink to this heading">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build_linux.html">Build for Linux</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_windows.html">Build for MS Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_osx.html">Build for OSX</a></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="install-a-frontend">
+<span id="cadet-python"></span><h2>Install a frontend<a class="headerlink" href="#install-a-frontend" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-41">As of now, a MATLAB and a Python frontend are provided.
+In general, we recommend to use the Python frontend.
+Note that the MATLAB interface is no longer actively developed and will be deprecated in a later version.</p>
+<section id="install-cadet-python">
+<h3>Install CADET-Python<a class="headerlink" href="#install-cadet-python" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-48">The easiest way to create CADET simulations is to use the <a class="reference external" href="https://github.com/modsim/CADET-python">CADET-Python</a> frontend.
+For this purpose, we recommend installing <a class="reference external" href="https://www.anaconda.com/">Anaconda</a>.
+Anaconda is a high-performance scientific distribution of Python that includes many common packages needed for scientific and engineering work.
+Download the installer from their <a class="reference external" href="https://www.anaconda.com/">website</a> and run it for the local user.</p>
+<p class="linemarker linemarker-53">To install <code class="docutils literal notranslate"><span class="pre">CADET-Python</span></code>, open an <cite>Anaconda Shell</cite> and execute:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>cadet-python
+</pre></div>
+</div>
+<p class="linemarker linemarker-59">If you would also like to use <a class="reference external" href="https://github.com/modsim/CADET-Match">CADET-Match</a> for parameter estimation, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>cadetmatch
+</pre></div>
+</div>
+</section>
+<section id="install-cadet-mi">
+<h3>Install CADET-MI<a class="headerlink" href="#install-cadet-mi" title="Permalink to this heading">¶</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p class="linemarker linemarker-70">Note that the MATLAB interface is no longer actively developed and will be deprecated in a later version.</p>
+</div>
+<p class="linemarker linemarker-72">The MATLAB frontend is distributed with the pre-built binaries.
+Run MATLAB and call <code class="docutils literal notranslate"><span class="pre">installCADET()</span></code> in the command window.</p>
+</section>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/getting_started/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

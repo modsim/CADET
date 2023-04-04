@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Binding models &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/binding/index.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Linear" href="linear.html" />
+    <link rel="prev" title="Continuous stirred tank reactor model" href="../unit_operations/cstr.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../input_group.html">Input Group</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System of unit operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../unit_operations/index.html">Unit Operations</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="binding-models">
+<span id="ffadsorption"></span><h1>Binding models<a class="headerlink" href="#binding-models" title="Permalink to this heading">¶</a></h1>
+<section id="externally-dependent-binding-models">
+<h2>Externally dependent binding models<a class="headerlink" href="#externally-dependent-binding-models" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-9">Some binding models have a variant that can use external sources as specified in <a class="reference internal" href="../system.html#ffmodelexternalsourcelininterp"><span class="std std-ref">/input/model/external/</span></a> (also see Section <a class="reference internal" href="../../modelling/binding/index.html#dependence-on-external-function-bind"><span class="std std-ref">Dependence on external function</span></a> for more information, and Section <a class="reference internal" href="../../modelling/binding/index.html#binding-model-feature"><span class="std std-ref">Binding model feature matrix</span></a> on which binding models support this feature).
+For the sake of brevity, only the standard variant of those binding models is specified below.
+In order to obtain the format for the externally dependent variant, first replace the binding model name <code class="docutils literal notranslate"><span class="pre">XXX</span></code> by <code class="docutils literal notranslate"><span class="pre">EXT_XXX</span></code>.
+Each parameter <span class="math notranslate nohighlight">\(p\)</span> (except for reference concentrations <code class="docutils literal notranslate"><span class="pre">XXX_REFC0</span></code> and <code class="docutils literal notranslate"><span class="pre">XXX_REFQ</span></code>) depends on a (possibly distinct) external source in a polynomial way:</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+    p(T) &amp;= p_{\texttt{TTT}} T^3 + p_{\texttt{TT}} T^2 + p_{\texttt{T}} T + p.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-20">Thus, a parameter <code class="docutils literal notranslate"><span class="pre">XXX_YYY</span></code> of the standard binding model variant is replaced by the four parameters <code class="docutils literal notranslate"><span class="pre">EXT_XXX_YYY</span></code>, <code class="docutils literal notranslate"><span class="pre">EXT_XXX_YYY_T</span></code>, <code class="docutils literal notranslate"><span class="pre">EXT_XXX_YYY_TT</span></code>, and <code class="docutils literal notranslate"><span class="pre">EXT_XXX_YYY_TTT</span></code>.
+Since each parameter can depend on a different external source, the dataset <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code> (not listed in the standard variants below) should contain a vector of 0-based integer indices of the external source of each parameter.
+The ordering of the parameters in <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code> is given by the ordering in the standard variant.
+However, if only one index is passed in <code class="docutils literal notranslate"><span class="pre">EXTFUN</span></code>, this external source is used for all parameters.</p>
+<p class="linemarker linemarker-25">Note that parameter sensitivities with respect to column radius, column length, particle core radius, and particle radius may be wrong when using externally dependent binding models.
+This is caused by not taking into account the derivative of the external profile with respect to column position.</p>
+</section>
+<section id="non-binding-components">
+<h2>Non-binding components<a class="headerlink" href="#non-binding-components" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-32">For binding models that do not support multiple bound states, many parameters can vary per component and their length is taken as <code class="docutils literal notranslate"><span class="pre">NCOMP</span></code>.
+However, these models still support non-binding components.
+In this case, the entries in their parameters that correspond to non-binding components are simply ignored.</p>
+</section>
+<section id="multiple-particle-types">
+<span id="multiple-particle-types-binding"></span><h2>Multiple particle types<a class="headerlink" href="#multiple-particle-types" title="Permalink to this heading">¶</a></h2>
+<p class="linemarker linemarker-42">The group that contains the parameters of a binding model in unit operation with index <code class="docutils literal notranslate"><span class="pre">XXX</span></code> reads <code class="docutils literal notranslate"><span class="pre">/input/model/unit_XXX/adsorption</span></code>.
+This is valid for models with a single particle type.
+If a model has multiple particle types, it may have a different binding model in each type.
+The parameters are then placed in the group <code class="docutils literal notranslate"><span class="pre">/input/model/unit_XXX/adsorption_YYY</span></code> instead, where <code class="docutils literal notranslate"><span class="pre">YYY</span></code> denotes the index of the particle type.</p>
+<p class="linemarker linemarker-47">Note that, in any case, <code class="docutils literal notranslate"><span class="pre">/input/model/unit_XXX/adsorption_000</span></code> contains the parameters of the first (and possibly sole) particle type.
+This group also takes precedence over a possibly existing <code class="docutils literal notranslate"><span class="pre">/input/model/unit_XXX/adsorption</span></code> group.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linear.html">Linear</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi_component_langmuir.html">Multi Component Langmuir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi_component_bi_langmuir.html">Multi Component Bi-Langmuir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi_component_anti_langmuir.html">Multi Component Anti-Langmuir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mobile_phase_modulator_langmuir.html">Mobile Phase Modulator Langmuir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended_mobile_phase_modulator_langmuir.html">Extended Mobile Phase Modulator Langmuir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi_component_spreading.html">Multi Component Spreading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="steric_mass_action.html">Steric Mass Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi_state_steric_mass_action.html">Multi-State Steric Mass Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simplified_multi_state_steric_mass_action.html">Simplified Multi-State Steric Mass Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bi_steric_mass_action.html">Bi Steric Mass Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generalized_ion_exchange.html">Generalized Ion Exchange</a></li>
+<li class="toctree-l1"><a class="reference internal" href="saska.html">Saska</a></li>
+<li class="toctree-l1"><a class="reference internal" href="self_association.html">Self Association</a></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/interface/binding/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Input Group &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/interface/input_group.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="System of unit operations" href="system.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interface specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Input Group</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System of unit operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/index.html">Binding models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reactions.html">Reaction models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="consistent_initialization.html">Nonlinear solver for consistent initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="return_data.html">Return data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solver.html">Solver Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="output_group.html">Output Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meta_group.html">Meta Group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="input-group">
+<span id="ffinput"></span><h1>Input Group<a class="headerlink" href="#input-group" title="Permalink to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="system.html">System of unit operations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model">Group /input/model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model-connections">Group /input/model/connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model-connections-switch-xxx">Group /input/model/connections/switch_XXX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model-external-source-xxx-extfun-type-linear-interp-data">Group /input/model/external/source_XXX - EXTFUN_TYPE = LINEAR_INTERP_DATA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model-external-source-xxx-extfun-type-piecewise-cubic-poly">Group /input/model/external/source_XXX - EXTFUN_TYPE = PIECEWISE_CUBIC_POLY</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system.html#group-input-model-solver">Group /input/model/solver</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="unit_operations/index.html">Unit Operations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/inlet.html">Inlet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/inlet.html#group-input-model-unit-xxx-unit-type-inlet">Group /input/model/unit_XXX - UNIT-TYPE = INLET</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/inlet.html#group-input-model-unit-xxx-sec-xxx">Group /input/model/unit_XXX/sec_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/outlet.html">Outlet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/general_rate_model.html">General Rate Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/general_rate_model.html#group-input-model-unit-xxx-unit-type-general-rate-model">Group /input/model/unit_XXX - UNIT_TYPE - GENERAL_RATE_MODEL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/general_rate_model.html#group-input-model-unit-xxx-discretization-unit-type-general-rate-model">Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/lumped_rate_model_with_pores.html">Lumped rate model with pores</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_with_pores.html#group-input-model-unit-xxx-unit-type-lumped-rate-model-with-pores">Group /input/model/unit_XXX - UNIT_TYPE = LUMPED_RATE_MODEL_WITH_PORES</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_with_pores.html#group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-with-pores">Group /input/model/unit_XXX/discretization - UNIT_TYPE = LUMPED_RATE_MODEL_WITH_PORES</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/lumped_rate_model_without_pores.html">Lumped Rate Model Without Pores</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_without_pores.html#group-input-model-unit-xxx-unit-type-lumped-rate-model-without-pores">Group /input/model/unit_XXX - UNIT_TYPE = LUMPED_RATE_MODEL_WITHOUT_PORES</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/lumped_rate_model_without_pores.html#group-input-model-unit-xxx-discretization-unit-type-lumped-rate-model-without-pores">Group /input/model/unit_XXX/discretization - UNIT_TYPE = LUMPED_RATE_MODEL_WITHOUT_PORES</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/2d_general_rate_model.html">Two dimensional general rate model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/2d_general_rate_model.html#group-input-model-unit-xxx-discretization-unit-type-general-rate-model-2d">Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL_2D</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit_operations/cstr.html">Continuous stirred tank reactor model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unit_operations/cstr.html#group-input-model-unit-xxx-unit-type-cstr">Group /input/model/unit_XXX - UNIT_TYPE = CSTR</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="binding/index.html">Binding models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="binding/index.html#externally-dependent-binding-models">Externally dependent binding models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="binding/index.html#non-binding-components">Non-binding components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="binding/index.html#multiple-particle-types">Multiple particle types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="binding/linear.html">Linear</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/multi_component_langmuir.html">Multi Component Langmuir</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/multi_component_bi_langmuir.html">Multi Component Bi-Langmuir</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/multi_component_anti_langmuir.html">Multi Component Anti-Langmuir</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/mobile_phase_modulator_langmuir.html">Mobile Phase Modulator Langmuir</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/extended_mobile_phase_modulator_langmuir.html">Extended Mobile Phase Modulator Langmuir</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/multi_component_spreading.html">Multi Component Spreading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/steric_mass_action.html">Steric Mass Action</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/multi_state_steric_mass_action.html">Multi-State Steric Mass Action</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/simplified_multi_state_steric_mass_action.html">Simplified Multi-State Steric Mass Action</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/bi_steric_mass_action.html">Bi Steric Mass Action</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/generalized_ion_exchange.html">Generalized Ion Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/saska.html">Saska</a></li>
+<li class="toctree-l3"><a class="reference internal" href="binding/self_association.html">Self Association</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reactions.html">Reaction models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reactions.html#externally-dependent-reaction-models">Externally dependent reaction models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reactions.html#multiple-particle-types">Multiple particle types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reactions.html#group-input-model-unit-xxx-reaction-reaction-model-mass-action-law">Group /input/model/unit_XXX/reaction - REACTION_MODEL = MASS_ACTION_LAW</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flux_reconstruction.html">Flux reconstruction methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="flux_reconstruction.html#group-input-model-unit-xxx-discretization-weno-weno-parameters">Group /input/model/unit_XXX/discretization/weno - WENO Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="consistent_initialization.html">Nonlinear solver for consistent initialization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="consistent_initialization.html#group-input-model-unit-xxx-discretization-consistency-solver-nonlinear-consistency-solver-paramters">Group /input/model/unit_XXX/discretization/consistency_solver - Nonlinear consistency solver paramters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="return_data.html">Return data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="return_data.html#group-input-return">Group /input/return</a></li>
+<li class="toctree-l2"><a class="reference internal" href="return_data.html#group-input-return-unit-xxx">Group /input/return/unit_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sensitivities.html">Parameter Sensitivities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sensitivities.html#group-input-sensitivity">Group /input/sensitivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sensitivities.html#group-input-sensitivity-param-xxx">Group /input/sensitivity/param_XXX</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="solver.html">Solver Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="solver.html#group-input-solver">Group /input/solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solver.html#group-solver-time-integrator">Group /solver/time_integrator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solver.html#group-solver-sections">Group /solver/sections</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/interface/input_group.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

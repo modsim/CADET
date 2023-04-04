@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Build for OSX &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/getting_started/build_osx.html" />
+    <link rel="icon" href="../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CADET Introduction" href="tutorials/breakthrough.html" />
+    <link rel="prev" title="Build for MS Windows" href="build_windows.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting started</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="installation.html#install-cadet-core-simulator">Install CADET core simulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#install-a-frontend">Install a frontend</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/breakthrough.html">CADET Introduction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modelling/index.html">Modelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="build-for-osx">
+<span id="build-osx"></span><h1>Build for OSX<a class="headerlink" href="#build-for-osx" title="Permalink to this heading">¶</a></h1>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p class="linemarker linemarker-9">CMake (&gt;= 3.12.0)</p></li>
+<li><p class="linemarker linemarker-10">GCC &gt;= 5.0 or Clang &gt;= 3.4</p></li>
+<li><p class="linemarker linemarker-11">Optional: MATLAB R2009a or greater</p></li>
+<li><p class="linemarker linemarker-12">Optional: Git</p></li>
+</ul>
+<p class="linemarker linemarker-14">Assumed directory structure:</p>
+<pre>
+&lt;ROOT&gt;
+   |-libs
+   |   |- sundials
+   |   |- hdf5
+   |   |- superlu
+   |   |- suitesparse
+   |-code
+   |-cadet
+   |-build
+</pre><p class="linemarker linemarker-30">Note that the version numbers of the files and packages below are
+subject to change and will not always reflect the most recent version.</p>
+<p class="linemarker linemarker-33">Also note that you have to use the same compiler for all packages. This
+is especially important if some of the packages are installed via a
+package manager such as <a class="reference external" href="http://brew.sh/">Homebrew</a> which uses the
+system compiler (Clang).</p>
+</section>
+<section id="build-dependencies">
+<h2>Build dependencies<a class="headerlink" href="#build-dependencies" title="Permalink to this heading">¶</a></h2>
+<section id="hdf5">
+<h3>HDF5<a class="headerlink" href="#hdf5" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-44">You can either build HDF5 yourself or rely on the <code class="docutils literal notranslate"><span class="pre">hdf5</span></code> package of
+<a class="reference external" href="http://brew.sh/">Homebrew</a>.</p>
+<p class="linemarker linemarker-47">Obtain HDF5 from Homebrew: * Open a terminal and execute
+<code class="docutils literal notranslate"><span class="pre">brew</span> <span class="pre">install</span> <span class="pre">hdf5</span></code> * Homebrew has installed HDF5 to <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code></p>
+<p class="linemarker linemarker-50">Build HDF5 yourself: * Download CMake-enabled source from
+<a class="reference external" href="https://www.hdfgroup.org/downloads/hdf5/source-code/">https://www.hdfgroup.org/downloads/hdf5/source-code/</a> * Unzip and make
+sure that the directory path does not contain blank spaces * Open a
+terminal and change to the unzipped directory * Execute
+<code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-S</span> <span class="pre">HDF5config.cmake,BUILD_GENERATOR=Unix,INSTALLDIR=&quot;&lt;ROOT&gt;/Libs/hdf5&quot;</span> <span class="pre">-C</span> <span class="pre">Release</span> <span class="pre">-V</span></code>
+* Extract the created <code class="docutils literal notranslate"><span class="pre">HDF5-1.10.0-patch1-Darwin.tar.gz</span></code> file to
+<code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/Libs/hdf5</span></code> such that you have <code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/Libs/hdf5/lib</span></code></p>
+</section>
+<section id="sundials">
+<h3>SUNDIALS<a class="headerlink" href="#sundials" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-61">You can either build SUNDIALS yourself or rely on the <code class="docutils literal notranslate"><span class="pre">sundials</span></code>
+package of <a class="reference external" href="http://brew.sh/">Homebrew</a>. Note that a version &lt;= 3.2.1
+is required whereas the current version provided by Homebrew is &gt;=
+5.1.0.</p>
+<p class="linemarker linemarker-66">Obtain SUNDIALS from Homebrew: * Open a terminal and execute
+<code class="docutils literal notranslate"><span class="pre">brew</span> <span class="pre">install</span> <span class="pre">sundials</span></code> * Homebrew has installed SUNDIALS to
+<code class="docutils literal notranslate"><span class="pre">/usr/local</span></code></p>
+<p class="linemarker linemarker-70">Build SUNDIALS yourself: * Download SUNDIALS source from
+<a class="reference external" href="http://computation.llnl.gov/projects/sundials/sundials-software">http://computation.llnl.gov/projects/sundials/sundials-software</a> * Unzip
+* Open a terminal and change to the parent directory of the unzipped
+directory * Create a new folder <code class="docutils literal notranslate"><span class="pre">sundialsbuild</span></code> and change to it *
+Execute
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DCMAKE_INSTALL_PREFIX=&quot;&lt;ROOT&gt;/Libs/sundials&quot;</span> <span class="pre">-DEXAMPLES_ENABLE=OFF</span> <span class="pre">-DOPENMP_ENABLE=ON</span> <span class="pre">-DBUILD_SHARED_LIBS=OFF</span> <span class="pre">-DCMAKE_C_FLAGS=-fPIC</span> <span class="pre">-DCMAKE_BUILD_TYPE=Release</span> <span class="pre">../sundials-3.2.1/</span></code>
+* Execute <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> * Delete the folder <code class="docutils literal notranslate"><span class="pre">sundialsbuild</span></code>
+(e.g., execute <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">sundialsbuild</span></code> in the parent directory of
+<code class="docutils literal notranslate"><span class="pre">sundialsbuild</span></code>)</p>
+</section>
+<section id="lapack">
+<h3>LAPACK<a class="headerlink" href="#lapack" title="Permalink to this heading">¶</a></h3>
+<p class="linemarker linemarker-83">You can either use the native LAPACK implementation provided by Mac OS X
+(vecLib, Accelerate) or install the freely available <a class="reference external" href="https://software.intel.com/sites/campaigns/nest/">Intel
+MKL</a> which is very
+fast and probably faster than Accelerate.</p>
+</section>
+<section id="superlu">
+<h3>SuperLU<a class="headerlink" href="#superlu" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p class="linemarker linemarker-91">Download SuperLU source from <a class="reference external" href="https://github.com/xiaoyeli/superlu">https://github.com/xiaoyeli/superlu</a></p></li>
+<li><p class="linemarker linemarker-92">Unzip</p></li>
+<li><p class="linemarker linemarker-93">Open a terminal and change to the parent directory of the unzipped
+directory</p></li>
+<li><p class="linemarker linemarker-95">Create a new folder <code class="docutils literal notranslate"><span class="pre">superlubuild</span></code> and change to it</p></li>
+<li><p class="linemarker linemarker-96">Execute
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DCMAKE_INSTALL_PREFIX=&quot;&lt;ROOT&gt;/Libs/superlu&quot;</span> <span class="pre">-Denable_complex=OFF</span> <span class="pre">-Denable_complex16=OFF</span> <span class="pre">-Denable_blaslib=OFF</span> <span class="pre">-DCMAKE_C_FLAGS=-fPIC</span> <span class="pre">-DCMAKE_BUILD_TYPE=Release</span> <span class="pre">../SuperLU_5.2.1/</span></code></p></li>
+<li><p class="linemarker linemarker-98">Execute <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code></p></li>
+<li><p class="linemarker linemarker-99">Delete the folder <code class="docutils literal notranslate"><span class="pre">superlubuild</span></code> (e.g., execute
+<code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">superlubuild</span></code> in the parent directory of <code class="docutils literal notranslate"><span class="pre">superlubuild</span></code>)</p></li>
+</ul>
+</section>
+<section id="umfpack">
+<h3>UMFPACK<a class="headerlink" href="#umfpack" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p class="linemarker linemarker-105">Download SuiteSparse source from
+<a class="reference external" href="http://faculty.cse.tamu.edu/davis/suitesparse.html">http://faculty.cse.tamu.edu/davis/suitesparse.html</a></p></li>
+<li><p class="linemarker linemarker-107">Unzip</p></li>
+<li><p class="linemarker linemarker-108">Open a terminal and change to the unzipped directory</p></li>
+<li><p class="linemarker linemarker-109">Execute
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span> <span class="pre">INSTALL=&quot;&lt;ROOT&gt;/Libs/suitesparse&quot;</span> <span class="pre">CHOLMOD_CONFIG=-DNPARTITION</span></code>
+or
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span> <span class="pre">INSTALL=&quot;&lt;ROOT&gt;/Libs/suitesparse&quot;</span> <span class="pre">CHOLMOD_CONFIG=-DNPARTITION</span> <span class="pre">AUTOCC=no</span> <span class="pre">CC=&lt;COMPILER&gt;</span> <span class="pre">CXX=&lt;C++COMPILER&gt;</span></code>
+if you want to manually select the compiler</p></li>
+</ul>
+</section>
+</section>
+<section id="build-cadet">
+<h2>Build CADET<a class="headerlink" href="#build-cadet" title="Permalink to this heading">¶</a></h2>
+<ul>
+<li><p class="linemarker linemarker-118">Download release of CADET or checkout from git</p></li>
+<li><p class="linemarker linemarker-120">Place the source in <code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/code</span></code> and create the directory
+<code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/build</span></code></p></li>
+<li><p class="linemarker linemarker-123">Open a terminal and change to <code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/build</span></code></p></li>
+<li><p class="linemarker linemarker-125">If you have built HDF5 yourself, execute
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">HDF5_ROOT=&lt;ROOT&gt;/Libs/hdf5</span></code></p></li>
+<li><p class="linemarker linemarker-128">If you have built SUNDIALS yourself, execute
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">SUNDIALS_ROOT=&lt;ROOT&gt;/Libs/sundials</span></code></p></li>
+<li><p class="linemarker linemarker-131">Execute <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">SUPERLU_ROOT=&lt;ROOT&gt;/Libs/superlu</span></code></p></li>
+<li><p class="linemarker linemarker-133">Execute <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">UMFPACK_ROOT=&lt;ROOT&gt;/Libs/suitesparse</span></code></p></li>
+<li><p class="linemarker linemarker-135">If using MKL, execute <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">MKLROOT=/opt/intel/mkl</span></code></p></li>
+<li><p class="linemarker linemarker-137">Using standard LAPACK: Execute
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DCMAKE_INSTALL_PREFIX=&quot;&lt;ROOT&gt;/cadet&quot;</span> <span class="pre">../code/</span></code></p>
+<p class="linemarker linemarker-140">Using MKL (sequential): Execute
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DCMAKE_INSTALL_PREFIX=&quot;&lt;ROOT&gt;/cadet&quot;</span> <span class="pre">-DBLA_VENDOR=Intel10_64lp_seq</span> <span class="pre">../code/</span></code></p>
+<p class="linemarker linemarker-143">Using MKL (parallel): Execute
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DCMAKE_INSTALL_PREFIX=&quot;&lt;ROOT&gt;/cadet&quot;</span> <span class="pre">-DBLA_VENDOR=Intel10_64lp</span> <span class="pre">../code/</span></code></p>
+</li>
+<li><p class="linemarker linemarker-146">Execute <code class="docutils literal notranslate"><span class="pre">make</span></code></p></li>
+<li><p class="linemarker linemarker-148">Execute <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code></p></li>
+</ul>
+<p class="linemarker linemarker-150">Before running cadet, make sure to</p>
+<ul class="simple">
+<li><p class="linemarker linemarker-152">add <code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/cadet/bin</span></code> to your <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, by executing
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=&lt;ROOT&gt;/cadet/bin:$PATH</span></code>, and</p></li>
+<li><p class="linemarker linemarker-155">add <code class="docutils literal notranslate"><span class="pre">&lt;ROOT&gt;/cadet/lib</span></code> to your <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code>, by executing
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">LD_LIBRARY_PATH=&lt;ROOT&gt;/cadet/lib:$LD_LIBRARY_PATH</span></code>.</p></li>
+</ul>
+</section>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../_sources/getting_started/build_osx.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

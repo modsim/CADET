@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Freundlich LDF &#8212; CADET</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="canonical" href="https://cadet.github.io/master/modelling/binding/freundlich_ldf.html" />
+    <link rel="icon" href="../../_static/cadet_icon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Generalized Ion Exchange" href="generalized_ion_exchange.html" />
+    <link rel="prev" title="Extended Mobile Phase Modulator Langmuir" href="extended_mobile_phase_modulator_langmuir.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CADET</a></h1>
+
+
+
+<p class="blurb">CADET - An open platform for integrated process modelling and simulation</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modelling</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../unit_operations/index.html">Unit operation models</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Binding models</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#equilibrium-constants">Equilibrium constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#linear-driving-force-ldf">Linear Driving Force (LDF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#reference-concentrations">Reference concentrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#dependence-on-external-function">Dependence on external function</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#binding-model-feature-matrix">Binding model feature matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reactions.html">Reaction models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networks.html">Networks of unit operations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation/index.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../interface/index.html">Interface specifications</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cadet.github.io/CADET-Match/master/index.html">CADET-Match</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zbibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html">Legal notice</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+
+
+  <section id="freundlich-ldf">
+<span id="freundlich-ldf-model"></span><h1>Freundlich LDF<a class="headerlink" href="#freundlich-ldf" title="Permalink to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">The Freundlich isotherm model is an empirical model that considers changes in the equilibrium constant of the binding process due to the heterogeneity of the surface and the variation of the interaction strength <span id="id1">[<a class="reference internal" href="../../zbibliography.html#id34" title="Benedikt M. Aumeier, Anh H. Q. Dang, Burkhard Ohs, Süleyman Yüce, and Matthias Wessling. Aqueous-phase temperature swing adsorption for pesticide removal. Environmental Science &amp; Technology, 53(2):919-927, 2019. URL: https://doi.org/10.1021/acs.est.8b05873, arXiv:https://doi.org/10.1021/acs.est.8b05873, doi:10.1021/acs.est.8b05873.">11</a>, <a class="reference internal" href="../../zbibliography.html#id33" title="Ashok K. Singh. Chapter 8 - nanoparticle ecotoxicology. In Ashok K. Singh, editor, Engineered Nanoparticles, pages 343-450. Academic Press, Boston, 2016. URL: https://www.sciencedirect.com/science/article/pii/B978012801406600008X, doi:https://doi.org/10.1016/B978-0-12-801406-6.00008-X.">12</a>]</span>.
+This variant of the model is based on the linear driving force approximation (see section <a class="reference internal" href="index.html#ldf-model"><span class="std std-ref">Linear Driving Force (LDF)</span></a>) and is given as</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+        q^*_i= k_{F,i}c_{p,i}^{\frac{1}{n_{i}}}  &amp;&amp; i = 0, \dots, N_{\text{comp}} - 1.
+\end{aligned}\]</div>
+<p class="linemarker linemarker-14">No interaction between the components is considered when the model has multiple components.
+One of the limitation of this isotherm is the first order Jacobian <span class="math notranslate nohighlight">\(\left(\frac{dq^*}{dc_p}\right)\)</span> tends to infinity as <span class="math notranslate nohighlight">\(c_{p} \rightarrow 0\)</span> for <span class="math notranslate nohighlight">\(n&gt;1\)</span>.
+To address this issue an approximation of isotherm is considered near the origin.
+This approximation matches the isotherm in such a way that  <span class="math notranslate nohighlight">\(q=0\)</span> at <span class="math notranslate nohighlight">\(c_p=0\)</span> and also matches the first derivative of the istotherm at <span class="math notranslate nohighlight">\(c_p = \epsilon\)</span>, where <span class="math notranslate nohighlight">\(\epsilon\)</span> is a very small number, for example <span class="math notranslate nohighlight">\(1e-14\)</span>.
+The form of approximation and its derivative is given below for <span class="math notranslate nohighlight">\(c_p &lt; \varepsilon\)</span> and <span class="math notranslate nohighlight">\(n&gt;1\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\begin{aligned}
+        q^* = \alpha_0+\alpha_1 c+\alpha_2 c_p^2
+\end{aligned}\\\begin{aligned}
+        \frac{dq^*}{dc_p} = \alpha_1+ 2 \alpha_2 c_p
+\end{aligned}\end{aligned}\end{align} \]</div>
+<p class="linemarker linemarker-30">where <span class="math notranslate nohighlight">\(\alpha_0=0\)</span> and <span class="math notranslate nohighlight">\(\alpha_1\)</span> and <span class="math notranslate nohighlight">\(\alpha_2\)</span> are determined from <span class="math notranslate nohighlight">\(\alpha_1 \varepsilon+\alpha_2 \varepsilon^2 = k_f \varepsilon^{1/n}\)</span> and <span class="math notranslate nohighlight">\(\alpha_1 + 2 \alpha_2 \varepsilon = \frac{1}{n}k_f \varepsilon^{\frac{1-n}{n}}\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+        \alpha_1 = \frac{2 n-1}{n}k_f \varepsilon^{\frac{1-n}{n}}
+\end{aligned}\]</div>
+<div class="math notranslate nohighlight">
+\[\begin{aligned}
+        \alpha_2 = \frac{1-n}{n}k_f \varepsilon^{\frac{1-2 n}{n}}
+\end{aligned}\]</div>
+<p class="linemarker linemarker-41">This approximation can be used for any pore phase cocentration <span class="math notranslate nohighlight">\(c_p &lt; \epsilon\)</span> given <span class="math notranslate nohighlight">\(n&gt;1\)</span>.
+For the case, when <span class="math notranslate nohighlight">\(n \le 1\)</span> no special treament near the origin is required.
+For more information on model parameters required to define in CADET file format, see <a class="reference internal" href="../../interface/binding/freundlich_ldf.html#freundlich-ldf-config"><span class="std std-ref">Freundlich LDF</span></a>.</p>
+</section>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2008-2023.
+      
+      |
+      <a href="../../_sources/modelling/binding/freundlich_ldf.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

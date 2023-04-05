@@ -1,9 +1,0 @@
-Bibliography
-============
-
-.. bibliography:: 
-    :style: unsrt
-
-
-
-

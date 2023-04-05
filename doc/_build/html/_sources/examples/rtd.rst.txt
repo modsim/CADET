@@ -1,3 +1,0 @@
-Residence time distributions
-============================
-

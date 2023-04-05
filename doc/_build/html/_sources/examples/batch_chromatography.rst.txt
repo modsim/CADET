@@ -1,3 +1,0 @@
-Batch chromatography
-====================
-

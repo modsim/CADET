@@ -29,12 +29,12 @@ Multi Channel Transport model (MCT model)
    
 ``INIT_C``
 
-   Initial concentrations for each component in all channels of the bulk mobile phase (length :math:`\texttt{NCOMP}`), or for each component in each channel (length :math:`\texttt{NCOMP} \cdot \texttt{NCHANNEL}`, ordering channel-major)
+   Initial concentrations for each component in all radial zones the bulk mobile phase (length :math:`\texttt{NCOMP}`), or for each component in each radial zone (length :math:`\texttt{NCOMP} \cdot \texttt{NRAD}`, ordering radial-major)
 
-   **Unit:** :math:`\mathrm{mol}\,\mathrm{m}^{-3}`
+   **Unit:** :math:`\mathrm{mol}\,\mathrm{m}_{\mathrm{IV}}^{-3}`
    
    ================  =========================  =========================================================================
-   **Type:** double  **Range:** :math:`\geq 0`  **Length:** :math:`\texttt{NCOMP} / \texttt{NCOMP} \cdot \texttt{NCHANNEL}`
+   **Type:** double  **Range:** :math:`\geq 0`  **Length:** :math:`\texttt{NCOMP} / \texttt{NCOMP} \cdot \texttt{NRAD}`
    ================  =========================  =========================================================================
    
 ``INIT_STATE``
@@ -49,9 +49,9 @@ Multi Channel Transport model (MCT model)
    
 ``COL_DISPERSION``
 
-   Axial dispersion coefficient.  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the channel when specifying parameter sensitivities.
+   Axial dispersion coefficient.  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the radial zone when specifying parameter sensitivities.
 
-   **Unit:** :math:`\mathrm{m}^{2}\,\mathrm{s}^{-1}`
+   **Unit:** :math:`\mathrm{m}_{\mathrm{IV}}^{2}\,\mathrm{s}^{-1}`
    
    ================  =========================  =========================================================
    **Type:** double  **Range:** :math:`\geq 0`  **Length:** see :math:`\texttt{COL_DISPERSION_MULTIPLEX}`
@@ -59,16 +59,16 @@ Multi Channel Transport model (MCT model)
    
 ``COL_DISPERSION_MULTIPLEX``
 
-   Multiplexing mode of :math:`\texttt{COL_DISPERSION}`. Determines whether :math:`\texttt{COL_DISPERSION}` is treated as component-, channel-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of :math:`\texttt{COL_DISPERSION}`.  Valid modes are: 
+   Multiplexing mode of :math:`\texttt{COL_DISPERSION}`. Determines whether :math:`\texttt{COL_DISPERSION}` is treated as component-, radial-, and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of :math:`\texttt{COL_DISPERSION}`.  Valid modes are: 
 
-  1. Component-independent, channel-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is 1 
-  2. Component-independent, channel-dependent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCHANNEL}` 
-  3. Component-dependent, channel-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP}` 
-  4. Component-dependent, channel-dependent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NCHANNEL}`; ordering is channel-major 
-  5. Component-independent, channel-independent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NSEC}` 
-  6. Component-independent, channel-dependent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCHANNEL} \cdot \texttt{NSEC}`; ordering is section-major 
-  7. Component-dependent, channel-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NSEC}`; ordering is section-major 
-  8. Component-dependent, channel-dependent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NCHANNEL} \cdot \texttt{NSEC}`; ordering is section-channel-major 
+  1. Component-independent, radial-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is 1 
+  2. Component-independent, radial-dependent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NRAD}` 
+  3. Component-dependent, radial-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP}` 
+  4. Component-dependent, radial-dependent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NRAD}`; ordering is radial-major 
+  5. Component-independent, radial-independent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NSEC}` 
+  6. Component-independent, radial-dependent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NRAD} \cdot \texttt{NSEC}`; ordering is section-major 
+  7. Component-dependent, radial-independent, section-independent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NSEC}`; ordering is section-major 
+  8. Component-dependent, radial-dependent, section-dependent; length of :math:`\texttt{COL_DISPERSION}` is :math:`\texttt{NCOMP} \cdot \texttt{NRAD} \cdot \texttt{NSEC}`; ordering is section-radial-major 
    
    =============  ===================================  =============
    **Type:** int  **Range:** :math:`\{0, \dots, 7 \}`  **Length:** 1
@@ -90,7 +90,7 @@ Multi Channel Transport model (MCT model)
 
    **Unit:** :math:`\mathrm{m}\,\mathrm{s}^{-1}`
 
-   Indicates flow direction in each channel (forward if value is positive, backward if value is negative), see Section :ref:`MUOPGRMflow2D`).  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the channel when specifying parameter sensitivities.
+   Indicates flow direction in each radial zone (forward if value is positive, backward if value is negative), see Section :ref:`MUOPGRMflow2D`).  In case of a spatially inhomogeneous setting, the :math:`\texttt{SENS_PARTYPE}` field is used for indexing the radial cell when specifying parameter sensitivities.
    
    ================  =============================  ===================================================
    **Type:** double  **Range:** :math:`\mathbb{R}`  **Length:** see :math:`\texttt{VELOCITY_MULTIPLEX}`
@@ -98,12 +98,12 @@ Multi Channel Transport model (MCT model)
    
 ``VELOCITY_MULTIPLEX``
 
-   Multiplexing mode of :math:`\texttt{VELOCITY}`. Determines whether :math:`\texttt{VELOCITY}` is treated as channel- and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of :math:`\texttt{VELOCITY}`.  Valid modes are: 
+   Multiplexing mode of :math:`\texttt{VELOCITY}`. Determines whether :math:`\texttt{VELOCITY}` is treated as radial- and/or section-independent.  This field is optional. When left out, multiplexing behavior is inferred from the length of :math:`\texttt{VELOCITY}`.  Valid modes are: 
 
-  1. Channel-independent, section-independent; length of :math:`\texttt{VELOCITY}` is 1 
-  2. Channel-dependent, section-independent; length of :math:`\texttt{VELOCITY}` is :math:`\texttt{NCHANNEL}` 
+  1. Radial-independent, section-independent; length of :math:`\texttt{VELOCITY}` is 1 
+  2. Radial-dependent, section-independent; length of :math:`\texttt{VELOCITY}` is :math:`\texttt{NRAD}` 
   3. Section-dependent; length of :math:`\texttt{VELOCITY}` is :math:`\texttt{NSEC}` 
-  4. Channel-dependent, section-dependent; length of :math:`\texttt{VELOCITY}` is :math:`\texttt{NCHANNEL} \cdot \texttt{NSEC}`; ordering is section-major 
+  4. Radial-dependent, section-dependent; length of :math:`\texttt{VELOCITY}` is :math:`\texttt{NRAD} \cdot \texttt{NSEC}`; ordering is section-major 
    
    =============  ===================================  =============
    **Type:** int  **Range:** :math:`\{0, \dots, 3 \}`  **Length:** 1

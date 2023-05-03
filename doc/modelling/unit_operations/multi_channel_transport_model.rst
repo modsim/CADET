@@ -11,7 +11,7 @@ The Multi Channel Transport (MCT) model in CADET is based on a class of compartm
 There it is used to determine transport and storage parameters of radioactive labelled tracer molecules from positron emission tomography (PET) or magnetic resonance imaging (MRI) based experimental data.
 The model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments and storage of tracer in compartments. Here, the axial direction represents the length of the stem of the plant and the lateral dimension its cross section. In the MCT context, the compartments of the model class are also referred to as channels.
 
-The same model equations arise in describing other biological and technical processes outside of the field of plant sciences, where solutes are transported and exchanged between spatially separated compartments, for example liquid-liquid chromatography (LLC). Here, components in a mixture are separated based on their interactions with two immiscible phases of a biphasic solvent system :cite:`MORLEY2020460479`. The MCT model represents these phases by channels with respective transport and exchange properties. While the current implementation only covers linear driving forces for the exchange processes, the reaction module in CADET allows to add non-linear driving forces for the exchange processes and other chemical reactions in the channels. 
+The same model equations arise in describing other biological and technical processes outside of the field of plant sciences, where solutes are transported and exchanged between spatially separated compartments, for example liquid-liquid chromatography (LLC). Here, components in a mixture are separated based on their interactions with two immiscible phases of a biphasic solvent system :cite:`Morley2020`. The MCT model represents these phases by channels with respective transport and exchange properties. While the current implementation only covers linear driving forces for the exchange processes, the reaction module in CADET allows to add non-linear driving forces for the exchange processes and other chemical reactions in the channels. 
 
 The model class consists of :math:`N` one-dimensional spatially parallel channels (see :numref:`fig-model-class`).
 In each channel tracer can be transported with flux velocities :math:`v_i` while undergoing axial diffusion: :math:`d_i`.
@@ -21,7 +21,7 @@ Tracer can be laterally exchanged between any pair of channels :math:`i` and :ma
 .. figure:: multi_channel_transport_model_class.png
 
     Illustration of the Multi Channel Transport model class and relevant parameters. 
-    Figure taken from Jonas Bühler et al. :cite:`BUHLER2014131`.
+    Figure taken from Jonas Bühler et al. :cite:`Buehler2014`.
 
 The model class is defined by a system of partial differential equations:
 
@@ -57,7 +57,7 @@ The model class is defined by a system of partial differential equations:
 
 
 All parameters can be zero to exclude the respective mechanism from the model.
-A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`BUHLER2014131`.
+A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`Buehler2014`.
 
 
 The cross-section area :math:`A_N` is individually specified for each channel (see :numref:`fig-variable-areas`). The MCT is agnostic to the shape of these cross sections, while their ratio determines the distribution of the volumetric flow.

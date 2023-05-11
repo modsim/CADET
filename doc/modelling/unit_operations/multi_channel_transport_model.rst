@@ -1,6 +1,6 @@
 .. _multi_channel_transport_model:
 
-Multi Channel Transport model (MCT model) 
+Multichannel Transport model (MCT model) 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -20,7 +20,7 @@ Tracer can be laterally exchanged between any pair of channels :math:`i` and :ma
 .. _fig-model-class:
 .. figure:: multi_channel_transport_model_class.png
 
-    Illustration of the Multi Channel Transport model class and relevant parameters. 
+    Illustration of the Multichannel Transport model class and relevant parameters. 
     Figure taken from Jonas Bühler et al. :cite:`Buehler2014`.
 
 The model class is defined by a system of partial differential equations:

@@ -95,6 +95,11 @@ void readDataOutputConfig(ParamProvider_t& pp, StorageConfig_t& cfg, const std::
 		cfg.storeVolume = pp.getBool("WRITE_" + dataType + "_VOLUME");
 	else
 		cfg.storeVolume = false;
+
+	if (pp.exists("WRITE_" + dataType + "_SMOOTHNESS_INDICATOR"))
+		cfg.storeSmoothnessIndicator = pp.getBool("WRITE_" + dataType + "_SMOOTHNESS_INDICATOR");
+	else
+		cfg.storeSmoothnessIndicator = false;
 }
 
 template <class ParamProvider_t>

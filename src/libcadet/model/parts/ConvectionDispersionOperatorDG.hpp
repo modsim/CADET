@@ -115,11 +115,16 @@ namespace cadet
 				inline const active* currentDispersion(const int secIdx) const CADET_NOEXCEPT { return getSectionDependentSlice(_colDispersion, _nComp, secIdx); }
 				inline const bool dispersionCompIndep() const CADET_NOEXCEPT { return _dispersionCompIndep; }
 
-	inline unsigned int nComp() const CADET_NOEXCEPT { return _nComp; }
-	inline unsigned int nCells() const CADET_NOEXCEPT { return _nCells; }
-	inline unsigned int nNodes() const CADET_NOEXCEPT { return _nNodes; }
-	inline unsigned int nPoints() const CADET_NOEXCEPT { return _nPoints; }
-	inline bool exactInt() const CADET_NOEXCEPT { return _exactInt; }
+				inline unsigned int nComp() const CADET_NOEXCEPT { return _nComp; }
+				inline unsigned int nCells() const CADET_NOEXCEPT { return _nCells; }
+				inline unsigned int nNodes() const CADET_NOEXCEPT { return _nNodes; }
+				inline unsigned int nPoints() const CADET_NOEXCEPT { return _nPoints; }
+				inline bool exactInt() const CADET_NOEXCEPT { return _exactInt; }
+				inline bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return static_cast<bool>(_OSmode); } // only zero if no oscillation suppression
+				inline double* smoothnessIndicator() const CADET_NOEXCEPT
+				{
+						return nullptr;
+				}
 
 				// Indexer functionality:
 				// Strides

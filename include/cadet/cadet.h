@@ -161,6 +161,10 @@ extern "C"
 	enum cdtErrors
 	{
 		/**
+		 * @brief Requested data has not been stored / is not available
+		 */
+		cdtDataNotStored = -3,
+		/**
 		 * @brief Input arguments invalid
 		 */
 		cdtErrorInvalidInputs = -2,
@@ -446,12 +450,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionParticle)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSolutionParticle)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nComp);
 
 		/**
 		 * @brief Returns the solution of the last simulation of the column particle solid phase
@@ -463,12 +467,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionSolid)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound);
+		cdtResult (*getSolutionSolid)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nBound);
 
 		/**
 		 * @brief Returns the solution of the last simulation of the column particle flux
@@ -550,12 +554,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionDerivativeParticle)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSolutionDerivativeParticle)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nComp);
 
 		/**
 		 * @brief Returns the solution derivative of the last simulation of the column particle solid phase
@@ -567,12 +571,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSolutionDerivativeSolid)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound);
+		cdtResult (*getSolutionDerivativeSolid)(cdtDriver* drv, int unitOpId, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nBound);
 
 		/**
 		 * @brief Returns the solution derivative of the last simulation of the column particle flux
@@ -657,12 +661,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivityParticle)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSensitivityParticle)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nComp);
 
 		/**
 		 * @brief Returns the parameter sensitivity of the last simulation of the column particle solid phase
@@ -675,12 +679,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivitySolid)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound);
+		cdtResult (*getSensitivitySolid)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nBound);
 
 		/**
 		 * @brief Returns the parameter sensitivity of the last simulation of the column particle flux
@@ -768,12 +772,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivityDerivativeParticle)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nComp);
+		cdtResult (*getSensitivityDerivativeParticle)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nComp);
 
 		/**
 		 * @brief Returns the parameter sensitivity derivative of the last simulation of the column particle solid phase
@@ -786,12 +790,12 @@ extern "C"
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
 		 * @param [out] nTime Number of time points
-		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nAxialCells Number of axial cells
 		 * @param [out] nRadialCells Number of ports
+		 * @param [out] nParShells Number of particle shells
 		 * @param [out] nComp Number of components
 		 */
-		cdtResult (*getSensitivityDerivativeSolid)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nParShells, int* nAxialCells, int* nRadialCells, int* nBound);
+		cdtResult (*getSensitivityDerivativeSolid)(cdtDriver* drv, int unitOpId, int idx, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nBound);
 
 		/**
 		 * @brief Returns the parameter sensitivity derivative of the last simulation of the column particle flux
@@ -821,6 +825,86 @@ extern "C"
 		 * @param [out] data Data array pointer
 		 */
 		cdtResult (*getSensitivityDerivativeVolume)(cdtDriver* drv, int unitOpId, int idx, double const** time, double const** data, int* nTime);
+
+		/**
+		 * @brief Returns the last state of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastState)(cdtDriver* drv, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last time derivative state of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastStateTimeDerivative)(cdtDriver* drv, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last state of the unit operation of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastUnitState)(cdtDriver* drv, int unitOpId, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last time derivative state of the unit operation of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastUnitStateTimeDerivative)(cdtDriver* drv, int unitOpId, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last sensitivity state of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] sensIdx Sensitivity ID
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastSensitivityState)(cdtDriver* drv, int sensIdx, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last time derivative sensitivity state of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] sensIdx Sensitivity ID
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastSensitivityStateTimeDerivative)(cdtDriver* drv, int sensIdx, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last sensitivity state of the unit operation of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] sensIdx Sensitivity ID
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastSensitivityUnitState)(cdtDriver* drv, int sensIdx, int unitOpId, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the last time derivative sensitivity state of the unit operation of the simulation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [in] sensIdx Sensitivity ID
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] state State vector pointer
+		 * @param [out] nStates Number of entries in the state vector
+		*/
+		cdtResult (*getLastSensitivityUnitStateTimeDerivative)(cdtDriver* drv, int sensIdx, int unitOpId, double const** state, int* nStates);
 
 	} cdtAPIv010000;
 

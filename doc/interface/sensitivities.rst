@@ -39,7 +39,7 @@ Group /input/sensitivity/param_XXX
    
 ``SENS_NAME``
 
-   Name of the parameter
+   Name of the parameter (Note that ``PAR_RADIUS`` and ``PAR_CORE_RADIUS`` sensitivities are only available for Finite Volume discretization)
    
    ================  ===========================
    **Type:** string  **Length:** :math:`\geq 1`

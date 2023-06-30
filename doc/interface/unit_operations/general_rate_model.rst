@@ -430,13 +430,20 @@ For information on model equations, refer to :ref:`general_rate_model_model`.
    ================  ========================  =============================================================================
 
 
-Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL
----------------------------------------------------------------------------
 
+Discretization Methods
+----------------------
+
+CADET has two discretization frameworks available, Finite Volumes (FV) and Discontinuous Galerkin (DG), only one needs to be specified. Both methods approximate the same solution to the same underlying model but can differ regarding computational performance.
+
+Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL
+----------------------------------------------------------------------------------------
+Finite Volumes (Default)
+------------------------
 
 ``NCOL``
 
-   Number of axial column discretization cells
+   Number of axial column discretization points
    
    =============  =========================  =============
    **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
@@ -452,7 +459,7 @@ Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL
 
 ``NPAR``
 
-   Number of particle (radial) discretization cells for each particle type
+   Number of particle (radial) discretization points for each particle type
    
    =============  =========================  =================================================
    **Type:** int  **Range:** :math:`\geq 1`  **Length:** :math:`1` / :math:`\texttt{NPARTYPE}`
@@ -556,3 +563,95 @@ Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL
 
 For further discretization parameters, see also :ref:`flux_restruction_methods`, and :ref:`non_consistency_solver_parameters`.
 
+Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL_DG
+----------------------------------------------------------------------------------------
+Discontinuous Galerkin
+----------------------
+
+``POLYDEG``
+
+   DG polynomial degree. Optional, defaults to 4. The total number of axial discrete points is given by (``POLYDEG`` + 1 ) * ``NCOL``.
+   
+   =============  =========================  =============
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
+   =============  =========================  =============
+
+``NCOL``
+
+   Number of axial column discretization DG cells\elements. The total number of axial discrete points is given by (``POLYDEG`` + 1 ) * ``NCOL``.
+   
+   =============  =========================  =============
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
+   =============  =========================  =============
+
+``EXACT_INTEGRATION``
+
+   Specifies the DG integration method. Optional, defaults to 0: Choose 1 for exact integration (more accurate but slower), 0 for LGL quadrature (less accurate but faster, typically more performant).
+   
+   =============  ===========================  =============
+   **Type:** int  **Range:** :math:`\{0, 1\}`  **Length:** 1
+   =============  ===========================  =============
+
+``NPARTYPE``
+
+   Number of particle types. Optional, inferred from the length of :math:`\texttt{NPAR}` or :math:`\texttt{NBOUND}` if left out.
+   
+   =============  =========================  =============
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
+   =============  =========================  =============
+
+``PARPOLYDEG``
+
+   DG particle (radial) polynomial degree. Optional, defaults to 3. The total number of particle (radial) discrete points is given by (``PARPOLYDEG`` + 1 ) * ``NPARCELL``.
+   
+   =============  =========================  =============
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
+   =============  =========================  =============
+
+``NPARCELL``
+
+   Number of particle (radial) discretization DG cells for each particle type. For the particle discretization, it is usually most performant to fix ``NPARCELL`` = 1 and to increase the polynomial degree for more accuracy.
+   
+   =============  =========================  =================================================
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** :math:`1` / :math:`\texttt{NPARTYPE}`
+   =============  =========================  =================================================
+
+``NBOUND``
+
+   Number of bound states for each component
+   
+   =============  =========================  ==================================
+   **Type:** int  **Range:** :math:`\geq 0`  **Length:** :math:`\texttt{NCOMP}`
+   =============  =========================  ==================================
+   
+``PAR_GEOM``
+
+   Specifies the particle geometry for all or each particle type. Valid values are :math:`\texttt{SPHERE}`, :math:`\texttt{CYLINDER}`, :math:`\texttt{SLAB}`. Optional, defaults to :math:`\texttt{SPHERE}`.
+   
+   ================  =================================================
+   **Type:** string  **Length:** :math:`1` / :math:`\texttt{NPARTYPE}`
+   ================  =================================================
+
+``PAR_DISC_TYPE``
+
+   Specifies the discretization scheme inside the particles for all or each particle type. Valid values are :math:`\texttt{EQUIDISTANT_PAR}`, :math:`\texttt{EQUIVOLUME_PAR}`, and :math:`\texttt{USER_DEFINED_PAR}`.
+   
+   ================  =================================================
+   **Type:** string  **Length:** :math:`1` / :math:`\texttt{NPARTYPE}`
+   ================  =================================================
+
+``PAR_DISC_VECTOR``
+
+   Node coordinates for the cell boundaries (ignored if :math:`\texttt{PAR_DISC_TYPE} \neq \texttt{USER_DEFINED_PAR}`). The coordinates are relative and have to include the endpoints :math:`0` and :math:`1`. They are later linearly mapped to the true radial range :math:`[r_{c,j}, r_{p,j}]`. The coordinates for each particle type are appended to one long vector in type-major ordering.
+   
+   ================  ========================  ================================================
+   **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\sum_i (\texttt{NPAR}_i + 1)`
+   ================  ========================  ================================================
+
+``USE_ANALYTIC_JACOBIAN``
+
+   Determines whether analytically computed Jacobian matrix (faster) is used (value is 1) instead of Jacobians generated by algorithmic differentiation (slower, value is 0)
+   
+   =============  ===========================  =============
+   **Type:** int  **Range:** :math:`\{0, 1\}`  **Length:** 1
+   =============  ===========================  =============

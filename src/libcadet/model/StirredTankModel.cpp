@@ -106,7 +106,7 @@ void CSTRModel::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 	_flowRateOut = out[0];
 }
 
-bool CSTRModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool CSTRModel::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	_nComp = paramProvider.getInt("NCOMP");
 

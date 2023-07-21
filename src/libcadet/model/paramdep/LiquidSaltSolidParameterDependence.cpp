@@ -71,15 +71,15 @@ namespace
 /**
  * @brief Defines an exponential parameter dependence for the solid phase of a combined cell based on the liquid phase salt concentration
  */
-class ExpLiquidSaltSolidParameterDependence : public ParameterDependenceBase
+class ExpLiquidSaltSolidParameterStateDependence : public ParameterStateDependenceBase
 {
 public:
 
-	ExpLiquidSaltSolidParameterDependence() : _factor(0), _multiplicator(0) { }
-	virtual ~ExpLiquidSaltSolidParameterDependence() CADET_NOEXCEPT { }
+	ExpLiquidSaltSolidParameterStateDependence() : _factor(0), _multiplicator(0) { }
+	virtual ~ExpLiquidSaltSolidParameterStateDependence() CADET_NOEXCEPT { }
 
 	static const char* identifier() { return "LIQUID_SALT_EXPONENTIAL"; }
-	virtual const char* name() const CADET_NOEXCEPT { return ExpLiquidSaltSolidParameterDependence::identifier(); }
+	virtual const char* name() const CADET_NOEXCEPT { return ExpLiquidSaltSolidParameterStateDependence::identifier(); }
 
 	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
 	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 1; }
@@ -92,7 +92,7 @@ public:
 		jac(row, offset) += factor * param * static_cast<double>(_factor[bnd]) * exp(yLiquid[0] * static_cast<double>(_multiplicator[bnd])) * static_cast<double>(_multiplicator[bnd]);
 	}
 
-	CADET_PARAMETERDEPENDENCE_BOILERPLATE
+	CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE
 
 protected:
 	std::vector<active> _factor;
@@ -141,15 +141,15 @@ protected:
 /**
  * @brief Defines a power law parameter dependence for the solid phase of a combined cell based on the liquid phase salt concentration
  */
-class PowerLiquidSaltSolidParameterDependence : public ParameterDependenceBase
+class PowerLiquidSaltSolidParameterStateDependence : public ParameterStateDependenceBase
 {
 public:
 
-	PowerLiquidSaltSolidParameterDependence() : _factor(0), _exponent(0) { }
-	virtual ~PowerLiquidSaltSolidParameterDependence() CADET_NOEXCEPT { }
+	PowerLiquidSaltSolidParameterStateDependence() : _factor(0), _exponent(0) { }
+	virtual ~PowerLiquidSaltSolidParameterStateDependence() CADET_NOEXCEPT { }
 
 	static const char* identifier() { return "LIQUID_SALT_POWER"; }
-	virtual const char* name() const CADET_NOEXCEPT { return PowerLiquidSaltSolidParameterDependence::identifier(); }
+	virtual const char* name() const CADET_NOEXCEPT { return PowerLiquidSaltSolidParameterStateDependence::identifier(); }
 
 	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
 	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 1; }
@@ -162,7 +162,7 @@ public:
 		jac(row, offset) += factor * param * static_cast<double>(_factor[bnd]) * pow(yLiquid[0], static_cast<double>(_exponent[bnd]) - 1.0) * static_cast<double>(_exponent[bnd]);
 	}
 
-	CADET_PARAMETERDEPENDENCE_BOILERPLATE
+	CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE
 
 protected:
 	std::vector<active> _factor;
@@ -211,15 +211,15 @@ protected:
 /**
  * @brief Defines a parameter dependence for the solid phase of a combined cell based on the liquid phase salt concentration using the binding affinity of a colloidal binding model
  */
-class ColloidalAffinityLiquidSaltSolidParameterDependence : public ParameterDependenceBase
+class ColloidalAffinityLiquidSaltSolidParameterStateDependence : public ParameterStateDependenceBase
 {
 public:
 
-	ColloidalAffinityLiquidSaltSolidParameterDependence() : _lnKeqExp(0), _lnKeqFactor(0), _lnKeqConst(0), _powFactor(0), _powExponent(0), _expFactor(0), _expExponent(0) { }
-	virtual ~ColloidalAffinityLiquidSaltSolidParameterDependence() CADET_NOEXCEPT { }
+	ColloidalAffinityLiquidSaltSolidParameterStateDependence() : _lnKeqExp(0), _lnKeqFactor(0), _lnKeqConst(0), _powFactor(0), _powExponent(0), _expFactor(0), _expExponent(0) { }
+	virtual ~ColloidalAffinityLiquidSaltSolidParameterStateDependence() CADET_NOEXCEPT { }
 
 	static const char* identifier() { return "LIQUID_SALT_COLLOIDAL_AFFINITY"; }
-	virtual const char* name() const CADET_NOEXCEPT { return ColloidalAffinityLiquidSaltSolidParameterDependence::identifier(); }
+	virtual const char* name() const CADET_NOEXCEPT { return ColloidalAffinityLiquidSaltSolidParameterStateDependence::identifier(); }
 
 	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
 	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 1; }
@@ -236,7 +236,7 @@ public:
 		jac(row, offset) += factor * param * (dPow_dy + dExp_dy) * dLogKeq_dy;
 	}
 
-	CADET_PARAMETERDEPENDENCE_BOILERPLATE
+	CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE
 
 protected:
 	std::vector<active> _lnKeqExp;
@@ -301,13 +301,13 @@ protected:
 
 namespace paramdep
 {
-	void registerLiquidSaltSolidParamDependence(std::unordered_map<std::string, std::function<model::IParameterDependence*()>>& paramDeps)
+	void registerLiquidSaltSolidParamDependence(std::unordered_map<std::string, std::function<model::IParameterStateDependence*()>>& paramDeps)
 	{
-		paramDeps[ExpLiquidSaltSolidParameterDependence::identifier()] = []() { return new ExpLiquidSaltSolidParameterDependence(); };
-		paramDeps[PowerLiquidSaltSolidParameterDependence::identifier()] = []() { return new PowerLiquidSaltSolidParameterDependence(); };
-		paramDeps[ColloidalAffinityLiquidSaltSolidParameterDependence::identifier()] = []() { return new ColloidalAffinityLiquidSaltSolidParameterDependence(); };
+		paramDeps[ExpLiquidSaltSolidParameterStateDependence::identifier()] = []() { return new ExpLiquidSaltSolidParameterStateDependence(); };
+		paramDeps[PowerLiquidSaltSolidParameterStateDependence::identifier()] = []() { return new PowerLiquidSaltSolidParameterStateDependence(); };
+		paramDeps[ColloidalAffinityLiquidSaltSolidParameterStateDependence::identifier()] = []() { return new ColloidalAffinityLiquidSaltSolidParameterStateDependence(); };
 	}
-}  // namespace reaction
+}  // namespace paramdep
 
 }  // namespace model
 

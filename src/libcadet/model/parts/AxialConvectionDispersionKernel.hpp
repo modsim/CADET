@@ -12,11 +12,11 @@
 
 /**
  * @file 
- * Implements the kernel of the convection dispersion transport operator.
+ * Implements the kernel of the axial convection dispersion transport operator.
  */
 
-#ifndef LIBCADET_CONVECTIONDISPERSIONKERNEL_HPP_
-#define LIBCADET_CONVECTIONDISPERSIONKERNEL_HPP_
+#ifndef LIBCADET_AXIALCONVECTIONDISPERSIONKERNEL_HPP_
+#define LIBCADET_AXIALCONVECTIONDISPERSIONKERNEL_HPP_
 
 #include "AutoDiff.hpp"
 #include "Memory.hpp"
@@ -24,6 +24,8 @@
 #include "Stencil.hpp"
 #include "linalg/CompressedSparseMatrix.hpp"
 #include "SimulationTypes.hpp"
+#include "model/ParameterDependence.hpp"
+#include "model/UnitOperation.hpp"
 
 namespace cadet
 {
@@ -38,7 +40,7 @@ namespace convdisp
 {
 
 template <typename T>
-struct FlowParameters
+struct AxialFlowParameters
 {
 	T u;
 	active const* d_ax;
@@ -52,13 +54,15 @@ struct FlowParameters
 	unsigned int nCol;
 	unsigned int offsetToInlet; //!< Offset to the first component of the inlet DOFs in the local state vector
 	unsigned int offsetToBulk; //!< Offset to the first component of the first bulk cell in the local state vector
+	IParameterParameterDependence* parDep;
+	const IModel& model;
 };
 
 
 namespace impl
 {
 	template <typename StateType, typename ResidualType, typename ParamType, typename RowIteratorType, bool wantJac>
-	int residualForwardsFlow(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const FlowParameters<ParamType>& p)
+	int residualForwardsAxialFlow(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const AxialFlowParameters<ParamType>& p)
 	{
 		const ParamType h2 = p.h * p.h;
 
@@ -119,24 +123,28 @@ namespace impl
 				// Right side, leave out if we're in the last cell (boundary condition)
 				if (cadet_likely(col < p.nCol - 1))
 				{
-					resBulkComp[col * p.strideCell] -= d_ax / h2 * (stencil[1] - stencil[0]);
+					const double relCoord = static_cast<double>(col+1) / p.nCol;
+					const ParamType d_ax_right = p.parDep->getValue(p.model, ColumnPosition{relCoord, 0.0, 0.0}, comp, ParTypeIndep, BoundStateIndep, d_ax, static_cast<ParamType>(p.u));
+					resBulkComp[col * p.strideCell] -= d_ax_right / h2 * (stencil[1] - stencil[0]);
 					// Jacobian entries
 					if (wantJac)
 					{
-						jac[0] += static_cast<double>(d_ax) / static_cast<double>(h2);
-						jac[p.strideCell] -= static_cast<double>(d_ax) / static_cast<double>(h2);
+						jac[0] += static_cast<double>(d_ax_right) / static_cast<double>(h2);
+						jac[p.strideCell] -= static_cast<double>(d_ax_right) / static_cast<double>(h2);
 					}
 				}
 
 				// Left side, leave out if we're in the first cell (boundary condition)
 				if (cadet_likely(col > 0))
 				{
-					resBulkComp[col * p.strideCell] -= d_ax / h2 * (stencil[-1] - stencil[0]);
+					const double relCoord = static_cast<double>(col) / p.nCol;
+					const ParamType d_ax_left = p.parDep->getValue(p.model, ColumnPosition{relCoord, 0.0, 0.0}, comp, ParTypeIndep, BoundStateIndep, d_ax, static_cast<ParamType>(p.u));
+					resBulkComp[col * p.strideCell] -= d_ax_left / h2 * (stencil[-1] - stencil[0]);
 					// Jacobian entries
 					if (wantJac)
 					{
-						jac[0] += static_cast<double>(d_ax) / static_cast<double>(h2);
-						jac[-p.strideCell] -= static_cast<double>(d_ax) / static_cast<double>(h2);
+						jac[0] += static_cast<double>(d_ax_left) / static_cast<double>(h2);
+						jac[-p.strideCell] -= static_cast<double>(d_ax_left) / static_cast<double>(h2);
 					}
 				}
 
@@ -200,7 +208,7 @@ namespace impl
 	}
 
 	template <typename StateType, typename ResidualType, typename ParamType, typename RowIteratorType, bool wantJac>
-	int residualBackwardsFlow(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const FlowParameters<ParamType>& p)
+	int residualBackwardsAxialFlow(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const AxialFlowParameters<ParamType>& p)
 	{
 		const ParamType h2 = p.h * p.h;
 
@@ -262,24 +270,28 @@ namespace impl
 				// Right side, leave out if we're in the first cell (boundary condition)
 				if (cadet_likely(col < p.nCol - 1))
 				{
-					resBulkComp[col * p.strideCell] -= d_ax / h2 * (stencil[-1] - stencil[0]);
+					const double relCoord = static_cast<double>(col+1) / p.nCol;
+					const ParamType d_ax_right = p.parDep->getValue(p.model, ColumnPosition{relCoord, 0.0, 0.0}, comp, ParTypeIndep, BoundStateIndep, d_ax, static_cast<ParamType>(p.u));
+					resBulkComp[col * p.strideCell] -= d_ax_right / h2 * (stencil[-1] - stencil[0]);
 					// Jacobian entries
 					if (wantJac)
 					{
-						jac[0] += static_cast<double>(d_ax) / static_cast<double>(h2);
-						jac[p.strideCell] -= static_cast<double>(d_ax) / static_cast<double>(h2);
+						jac[0] += static_cast<double>(d_ax_right) / static_cast<double>(h2);
+						jac[p.strideCell] -= static_cast<double>(d_ax_right) / static_cast<double>(h2);
 					}
 				}
 
 				// Left side, leave out if we're in the last cell (boundary condition)
 				if (cadet_likely(col > 0))
 				{
-					resBulkComp[col * p.strideCell] -= d_ax / h2 * (stencil[1] - stencil[0]);
+					const double relCoord = static_cast<double>(col) / p.nCol;
+					const ParamType d_ax_left = p.parDep->getValue(p.model, ColumnPosition{relCoord, 0.0, 0.0}, comp, ParTypeIndep, BoundStateIndep, d_ax, static_cast<ParamType>(p.u));
+					resBulkComp[col * p.strideCell] -= d_ax_left / h2 * (stencil[1] - stencil[0]);
 					// Jacobian entries
 					if (wantJac)
 					{
-						jac[0] += static_cast<double>(d_ax) / static_cast<double>(h2);
-						jac[-p.strideCell] -= static_cast<double>(d_ax) / static_cast<double>(h2);
+						jac[0] += static_cast<double>(d_ax_left) / static_cast<double>(h2);
+						jac[-p.strideCell] -= static_cast<double>(d_ax_left) / static_cast<double>(h2);
 					}
 				}
 
@@ -346,19 +358,19 @@ namespace impl
 
 
 template <typename StateType, typename ResidualType, typename ParamType, typename RowIteratorType, bool wantJac>
-int residualKernel(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const FlowParameters<ParamType>& p)
+int residualKernelAxial(const SimulationTime& simTime, StateType const* y, double const* yDot, ResidualType* res, RowIteratorType jacBegin, const AxialFlowParameters<ParamType>& p)
 {
 	if (p.u >= 0.0)
-		return impl::residualForwardsFlow<StateType, ResidualType, ParamType, RowIteratorType, wantJac>(simTime, y, yDot, res, jacBegin, p);
+		return impl::residualForwardsAxialFlow<StateType, ResidualType, ParamType, RowIteratorType, wantJac>(simTime, y, yDot, res, jacBegin, p);
 	else
-		return impl::residualBackwardsFlow<StateType, ResidualType, ParamType, RowIteratorType, wantJac>(simTime, y, yDot, res, jacBegin, p);
+		return impl::residualBackwardsAxialFlow<StateType, ResidualType, ParamType, RowIteratorType, wantJac>(simTime, y, yDot, res, jacBegin, p);
 }
 
-void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno);
+void sparsityPatternAxial(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno);
 
 } // namespace convdisp
 } // namespace parts
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_CONVECTIONDISPERSIONKERNEL_HPP_
+#endif  // LIBCADET_AXIALCONVECTIONDISPERSIONKERNEL_HPP_

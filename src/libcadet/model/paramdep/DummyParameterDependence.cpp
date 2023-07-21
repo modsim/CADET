@@ -27,17 +27,47 @@ namespace model
 {
 
 /**
- * @brief Defines a dummy parameter dependence
+ * @brief Defines a dummy parameter dependence that outputs the (independent) parameter itself
  */
-class DummyParameterDependence : public ParameterDependenceBase
+class IdentityParameterParameterDependence : public ParameterParameterDependenceBase
 {
 public:
 
-	DummyParameterDependence() { }
-	virtual ~DummyParameterDependence() CADET_NOEXCEPT { }
+	IdentityParameterParameterDependence() { }
+	virtual ~IdentityParameterParameterDependence() CADET_NOEXCEPT { }
 
-	static const char* identifier() { return "DUMMY"; }
-	virtual const char* name() const CADET_NOEXCEPT { return DummyParameterDependence::identifier(); }
+	static const char* identifier() { return "IDENTITY"; }
+	virtual const char* name() const CADET_NOEXCEPT { return IdentityParameterParameterDependence::identifier(); }
+
+	CADET_PARAMETERPARAMETERDEPENDENCE_BOILERPLATE
+
+protected:
+
+	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, BoundStateIdx bndIdx, const std::string& name)
+	{
+		return true;
+	}
+
+	template <typename ParamType>
+	ParamType getValueImpl(const IModel& model, const ColumnPosition& colPos, int comp, int parType, int bnd, const ParamType& depVal, const ParamType& indepVal) const
+	{
+		return depVal;
+	}
+
+};
+
+/**
+ * @brief Defines a parameter dependence that outputs constant 0.0
+ */
+class ConstantZeroParameterStateDependence : public ParameterStateDependenceBase
+{
+public:
+
+	ConstantZeroParameterStateDependence() { }
+	virtual ~ConstantZeroParameterStateDependence() CADET_NOEXCEPT { }
+
+	static const char* identifier() { return "CONSTANT_ZERO"; }
+	virtual const char* name() const CADET_NOEXCEPT { return ConstantZeroParameterStateDependence::identifier(); }
 
 	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
 	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 0; }
@@ -46,7 +76,7 @@ public:
 	virtual void analyticJacobianCombinedAddLiquid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int comp, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
 	virtual void analyticJacobianCombinedAddSolid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
 
-	CADET_PARAMETERDEPENDENCE_BOILERPLATE
+	CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE
 
 protected:
 
@@ -83,15 +113,78 @@ protected:
 	void analyticJacobianCombinedAddSolidImpl(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, RowIterator jac) const { }
 };
 
+/**
+ * @brief Defines a parameter dependence that outputs constant 1.0
+ */
+class ConstantOneParameterStateDependence : public ParameterStateDependenceBase
+{
+public:
+
+	ConstantOneParameterStateDependence() { }
+	virtual ~ConstantOneParameterStateDependence() CADET_NOEXCEPT { }
+
+	static const char* identifier() { return "CONSTANT_ONE"; }
+	virtual const char* name() const CADET_NOEXCEPT { return ConstantOneParameterStateDependence::identifier(); }
+
+	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
+	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 0; }
+
+	virtual void analyticJacobianLiquidAdd(const ColumnPosition& colPos, double param, double const* y, int comp, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
+	virtual void analyticJacobianCombinedAddLiquid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int comp, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
+	virtual void analyticJacobianCombinedAddSolid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
+
+	CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE
+
+protected:
+
+	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, const std::string& name)
+	{
+		return true;
+	}
+
+	template <typename StateType, typename ParamType>
+	typename DoubleActivePromoter<StateType, ParamType>::type liquidParameterImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* y, int comp) const
+	{
+		return 1.0;
+	}
+
+	template <typename RowIterator>
+	void analyticJacobianLiquidAddImpl(const ColumnPosition& colPos, double param, double const* y, int comp, double factor, int offset, RowIterator jac) const { }
+
+	template <typename StateType, typename ParamType>
+	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterLiquidImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* yLiquid, StateType const* ySolid, int comp) const
+	{
+		return 1.0;
+	}
+
+	template <typename RowIterator>
+	void analyticJacobianCombinedAddLiquidImpl(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int comp, double factor, int offset, RowIterator jac) const { }
+
+	template <typename StateType, typename ParamType>
+	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterSolidImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* yLiquid, StateType const* ySolid, int bnd) const
+	{
+		return 1.0;
+	}
+
+	template <typename RowIterator>
+	void analyticJacobianCombinedAddSolidImpl(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, RowIterator jac) const { }
+};
 
 namespace paramdep
 {
-	void registerDummyParamDependence(std::unordered_map<std::string, std::function<model::IParameterDependence*()>>& paramDeps)
+	void registerDummyParamDependence(std::unordered_map<std::string, std::function<model::IParameterStateDependence*()>>& paramDeps)
 	{
-		paramDeps[DummyParameterDependence::identifier()] = []() { return new DummyParameterDependence(); };
-		paramDeps["NONE"] = []() { return new DummyParameterDependence(); };
+		paramDeps[ConstantOneParameterStateDependence::identifier()] = []() { return new ConstantOneParameterStateDependence(); };
+		paramDeps[ConstantZeroParameterStateDependence::identifier()] = []() { return new ConstantZeroParameterStateDependence(); };
+		paramDeps["NONE"] = []() { return new ConstantOneParameterStateDependence(); };
 	}
-}  // namespace reaction
+
+	void registerDummyParamDependence(std::unordered_map<std::string, std::function<model::IParameterParameterDependence*()>>& paramDeps)
+	{
+		paramDeps[IdentityParameterParameterDependence::identifier()] = []() { return new IdentityParameterParameterDependence(); };
+		paramDeps["NONE"] = []() { return new IdentityParameterParameterDependence(); };
+	}
+}  // namespace paramdep
 
 }  // namespace model
 

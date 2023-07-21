@@ -91,7 +91,7 @@ public:
 	 * @param [in] helper Used to inject or create required objects
 	 * @return @c true if the configuration was successful, otherwise @c false
 	 */
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper) = 0;
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper) = 0;
 
 	/**
 	 * @brief (Re-)configures the model by extracting all non-structural parameters (e.g., model parameters) from the given @p paramProvider

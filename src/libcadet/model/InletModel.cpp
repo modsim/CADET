@@ -62,7 +62,7 @@ bool InletModel::usesAD() const CADET_NOEXCEPT
 	return false;
 }
 
-bool InletModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool InletModel::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	_nComp = paramProvider.getInt("NCOMP");
 	const std::string inType = paramProvider.getString("INLET_TYPE");

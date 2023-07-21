@@ -109,7 +109,8 @@ namespace model
  * @param [in] simState State of the simulation (state vector and its time derivatives) at which the Jacobian is evaluated
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int GeneralRateModel::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
+template <typename ConvDispOperator>
+int GeneralRateModel<ConvDispOperator>::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
 	const ConstSimulationState& simState)
 {
 	BENCH_SCOPE(_timerLinearSolve);
@@ -375,7 +376,8 @@ int GeneralRateModel::linearSolve(double t, double alpha, double outerTol, doubl
  * @param [out] z Result of the matrix-vector multiplication
  * @return @c 0 if successful, any other value in case of failure
  */
-int GeneralRateModel::schurComplementMatrixVector(double const* x, double* z) const
+template <typename ConvDispOperator>
+int GeneralRateModel<ConvDispOperator>::schurComplementMatrixVector(double const* x, double* z) const
 {
 	BENCH_SCOPE(_timerMatVec);
 
@@ -484,7 +486,8 @@ int GeneralRateModel::schurComplementMatrixVector(double const* x, double* z) co
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] idxr Indexer
  */
-void GeneralRateModel::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
 {
 	linalg::FactorizableBandMatrix& fbm = _jacPdisc[_disc.nCol * parType + pblk];
 	const linalg::BandMatrix& bm = _jacP[_disc.nCol * parType + pblk];
@@ -511,7 +514,8 @@ void GeneralRateModel::assembleDiscretizedJacobianParticleBlock(unsigned int par
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] parType Index of the particle type
  */
-void GeneralRateModel::addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
 {
 	parts::cell::addTimeDerivativeToJacobianParticleShell<linalg::FactorizableBandMatrix::RowIterator, true>(jac, alpha, static_cast<double>(_parPorosity[parType]), _disc.nComp, _disc.nBound + _disc.nComp * parType,
 		_poreAccessFactor.data() + _disc.nComp * parType, _disc.strideBound[parType], _disc.boundOffset + _disc.nComp * parType, _binding[parType]->reactionQuasiStationarity());

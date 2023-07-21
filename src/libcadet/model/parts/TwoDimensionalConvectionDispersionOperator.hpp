@@ -34,9 +34,13 @@ namespace cadet
 {
 
 class IParameterProvider;
+class IModel;
+class IConfigHelper;
 
 namespace model
 {
+
+class IParameterParameterDependence;
 
 namespace parts
 {
@@ -70,14 +74,14 @@ public:
 	void setFlowRates(int compartment, const active& in, const active& out) CADET_NOEXCEPT;
 	void setFlowRates(active const* in, active const* out) CADET_NOEXCEPT;
 
-	bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, bool dynamicReactions);
+	bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, unsigned int nCol, unsigned int nRad, bool dynamicReactions);
 	bool configure(UnitOpIdx unitOpIdx, IParameterProvider& paramProvider, std::unordered_map<ParameterId, active*>& parameters);
 	bool notifyDiscontinuousSectionTransition(double t, unsigned int secIdx);
 
-	int residual(double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity);
-	int residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity);
-	int residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity);
-	int residual(double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity);
 
 	bool solveTimeDerivativeSystem(const SimulationTime& simTime, double* const rhs);
 	void multiplyWithDerivativeJacobian(const SimulationTime& simTime, double const* sDot, double* ret) const;
@@ -118,7 +122,7 @@ protected:
 	void assembleDiscretizedJacobian(double alpha);
 
 	template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-	int residualImpl(double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res);
+	int residualImpl(const IModel& model, double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res);
 
 	void setSparsityPattern();
 
@@ -177,6 +181,8 @@ protected:
 
 	linalg::CompressedSparseMatrix _jacC; //!< Jacobian
 	LinearSolver* _linearSolver; //!< Solves linear system with time discretized Jacobian
+
+	IParameterParameterDependence* _dispersionDep;
 };
 
 } // namespace parts

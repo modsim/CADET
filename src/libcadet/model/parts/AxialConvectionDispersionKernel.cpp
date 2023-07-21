@@ -12,10 +12,10 @@
 
 /**
  * @file 
- * Implements the kernel of the convection dispersion transport operator.
+ * Implements the kernel of the axial convection dispersion transport operator.
  */
 
-#include "model/parts/ConvectionDispersionKernel.hpp"
+#include "model/parts/AxialConvectionDispersionKernel.hpp"
 #include "Weno.hpp"
 #include "linalg/CompressedSparseMatrix.hpp"
 
@@ -43,7 +43,7 @@ namespace impl
 
 } // namespace impl
 
-void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno)
+void sparsityPatternAxial(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno)
 {
 	impl::DummyStencil stencil;
 

@@ -33,6 +33,24 @@
 
 #include "Benchmark.hpp"
 
+namespace
+{
+	template <typename Operator>
+	struct LumpedRateModelWithoutPoresName { };
+
+	template <>
+	struct LumpedRateModelWithoutPoresName<cadet::model::parts::AxialConvectionDispersionOperatorBase>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	};
+
+	template <>
+	struct LumpedRateModelWithoutPoresName<cadet::model::parts::RadialConvectionDispersionOperatorBase>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "RADIAL_LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	};
+}
+
 namespace cadet
 {
 
@@ -54,6 +72,7 @@ u c_{\text{in},i}(t) &= u c_i(t,0) - D_{\text{ax},i} \frac{\partial c_i}{\partia
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), @cite Puttmann2013 @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
+template <typename ConvDispOperator>
 class LumpedRateModelWithoutPores : public UnitOperationBase
 {
 public:
@@ -73,10 +92,10 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return 1; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
-	static const char* identifier() { return "LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	static const char* identifier() CADET_NOEXCEPT { return LumpedRateModelWithoutPoresName<ConvDispOperator>::identifier(); }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -204,7 +223,7 @@ protected:
 	Discretization _disc; //!< Discretization info
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::ConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	ConvDispOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 
 	linalg::BandMatrix _jac; //!< Jacobian
 	linalg::FactorizableBandMatrix _jacDisc; //!< Jacobian with time derivatives from BDF method
@@ -319,7 +338,7 @@ protected:
 		virtual double const* outlet(unsigned int port, unsigned int& stride) const
 		{
 			stride = _idx.strideColComp();
-			if (_model._convDispOp.currentVelocity() >= 0)
+			if (_model._convDispOp.forwardFlow())
 				return &_idx.c(_data, _disc.nCol - 1, 0);
 			else
 				return &_idx.c(_data, 0, 0);
@@ -327,9 +346,8 @@ protected:
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{
-			const double h = static_cast<double>(_model._convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
 			for (unsigned int i = 0; i < _disc.nCol; ++i)
-				coords[i] = (i + 0.5) * h;
+				coords[i] = _model._convDispOp.cellCenter(i);
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }

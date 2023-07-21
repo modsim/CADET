@@ -108,7 +108,8 @@ namespace model
  * @param [in] simState State of the simulation (state vector and its time derivatives) at which the Jacobian is evaluated
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
+template <typename ConvDispOperator>
+int LumpedRateModelWithPores<ConvDispOperator>::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
 	const ConstSimulationState& simState)
 {
 	BENCH_SCOPE(_timerLinearSolve);
@@ -358,7 +359,8 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
  * @param [out] z Result of the matrix-vector multiplication
  * @return @c 0 if successful, any other value in case of failure
  */
-int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, double* z) const
+template <typename ConvDispOperator>
+int LumpedRateModelWithPores<ConvDispOperator>::schurComplementMatrixVector(double const* x, double* z) const
 {
 	BENCH_SCOPE(_timerMatVec);
 
@@ -460,7 +462,8 @@ int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, doubl
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] idxr Indexer
  */
-void LumpedRateModelWithPores::assembleDiscretizedJacobianParticleBlock(unsigned int parType, double alpha, const Indexer& idxr)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::assembleDiscretizedJacobianParticleBlock(unsigned int parType, double alpha, const Indexer& idxr)
 {
 	linalg::FactorizableBandMatrix& fbm = _jacPdisc[parType];
 	const linalg::BandMatrix& bm = _jacP[parType];
@@ -487,7 +490,8 @@ void LumpedRateModelWithPores::assembleDiscretizedJacobianParticleBlock(unsigned
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] parType Index of the particle type
  */
-void LumpedRateModelWithPores::addTimeDerivativeToJacobianParticleBlock(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
+template <typename ConvDispOperator>
+void LumpedRateModelWithPores<ConvDispOperator>::addTimeDerivativeToJacobianParticleBlock(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
 {
 	// Mobile phase
 	for (int comp = 0; comp < static_cast<int>(_disc.nComp); ++comp, ++jac)

@@ -1,9 +1,8 @@
 {
-  // See https://go.microsoft.com//fwlink//?linkid=834763 for more information about this file.
   "environments": [
     {
-      "TBB_DIR": "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/tbb",
-      "BLAS_DIR": "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64_win",
+      "TBB_DIR": "C:/Program Files (x86)/Intel/oneAPI/tbb/latest",
+      "BLAS_DIR": "C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64",
       "SUNDIALS_DIR": "${projectDir}/../../libs/sundials",
       "HDF5_DIR": "${projectDir}/../../libs/hdf5",
       "ZLIB": "${projectDir}/../../libs/hdf5/lib/zlib.lib",
@@ -11,134 +10,176 @@
       "INSTALL_DIR": "${projectDir}/../cadet/${name}",
       "BLAS_DEBUG": "Intel10_64lp_seq",
       "BLAS_RELEASE": "Intel10_64lp_seq",
-      "BUILDROOT": "${env.USERPROFILE}\\CMakeBuild\\${workspaceHash}\\build\\${name}"
+      "BUILDROOT": "${env.USERPROFILE}/CMakeBuild/${workspaceHash}/build/${name}",
+      "TOOLCHAIN_FILE": "${env.USERPROFILE}/vcpkg/scripts/buildsystems/vcpkg.cmake"
     }
   ],
   "configurations": [
     {
       "name": "MS_MKL_DEBUG",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "Debug",
       "buildRoot": "${env.BUILDROOT}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-DENABLE_ANALYTIC_JACOBIAN_CHECK=OFF",
       "buildCommandArgs": "-m -v:minimal",
       "variables": [
         {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.SUNDIALS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_DEBUG}"
+          "value": "${env.BLAS_DEBUG}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Debug"
+          "value": "Debug",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "${env.TOOLCHAIN_FILE}",
+          "type": "STRING"
         }
-      ]
-
+      ],
+      "inheritEnvironments": []
     },
     {
       "name": "MS_MKL_RELEASE",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "Release",
       "buildRoot": "${env.BUILDROOT}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-m -v:minimal",
       "variables": [
         {
+          "name": "ENABLE_STATIC_LINK_LAPACK",
+          "value": "TRUE",
+          "type": "BOOL"
+        },
+        {
+          "name": "ENABLE_STATIC_LINK_DEPS",
+          "value": "TRUE",
+          "type": "BOOL"
+        },
+        {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
-        },
-        {
-          "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_USE_STATIC_LIBRARIES",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_RELEASE}"
+          "value": "${env.BLAS_RELEASE}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Release"
+          "value": "Release",
+          "type": "STRING"
+        },
+        {
+          "name": "Eigen3_DIR",
+          "value": "",
+          "type": "PATH"
         }
-      ]
+      ],
+      "inheritEnvironments": []
     },
     {
       "name": "MS_MKL_RELDEBINFO",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${env.BUILDROOT}",
       "cmakeCommandArgs": "",
@@ -146,61 +187,75 @@
       "variables": [
         {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.SUNDIALS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_USE_STATIC_LIBRARIES",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_RELEASE}"
+          "value": "${env.BLAS_RELEASE}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Release"
+          "value": "Release",
+          "type": "STRING"
         }
-      ]
+      ],
+      "inheritEnvironments": []
     },
     {
       "name": "MS_SMKL_DEBUG",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "Debug",
       "buildRoot": "${env.BUILDROOT}",
       "cmakeCommandArgs": "",
@@ -208,62 +263,75 @@
       "variables": [
         {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.SUNDIALS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_DEBUG}"
+          "value": "${env.BLAS_DEBUG}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Debug"
+          "value": "Debug",
+          "type": "STRING"
         },
         {
           "name": "BLA_STATIC",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         }
-      ]
-
+      ],
+      "inheritEnvironments": []
     },
     {
       "name": "MS_SMKL_RELEASE",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "Release",
       "buildRoot": "${env.BUILDROOT}",
       "cmakeCommandArgs": "",
@@ -271,65 +339,80 @@
       "variables": [
         {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.SUNDIALS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_USE_STATIC_LIBRARIES",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_RELEASE}"
+          "value": "${env.BLAS_RELEASE}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Release"
+          "value": "Release",
+          "type": "STRING"
         },
         {
           "name": "BLA_STATIC",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         }
-      ]
+      ],
+      "inheritEnvironments": []
     },
     {
       "name": "MS_SMKL_RELDEBINFO",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${env.BUILDROOT}",
       "cmakeCommandArgs": "",
@@ -337,61 +420,76 @@
       "variables": [
         {
           "name": "TBB_ROOT_DIR:PATH",
-          "value": "${env.TBB_DIR}"
+          "value": "${env.TBB_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_LIBRARY_PATH:PATH",
-          "value": "${env.BLAS_DIR}"
+          "value": "${env.BLAS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "SUNDIALS_ROOT:PATH",
-          "value": "${env.SUNDIALS_DIR}"
+          "value": "${env.SUNDIALS_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ROOT:PATH",
-          "value": "${env.HDF5_DIR}"
+          "value": "${env.HDF5_DIR}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_ZLIB",
-          "value": "${env.ZLIB}"
+          "value": "${env.ZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_SZLIB",
-          "value": "${env.SZLIB}"
+          "value": "${env.SZLIB}",
+          "type": "STRING"
         },
         {
           "name": "HDF5_USE_STATIC_LIBRARIES",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_SHARED_LIBS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         },
         {
           "name": "BUILD_STATIC_LIBS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BUILD_TESTS",
-          "value": "0"
+          "value": "0",
+          "type": "STRING"
         },
         {
           "name": "BLA_VENDOR",
-          "value": "${env.BLAS_RELEASE}"
+          "value": "${env.BLAS_RELEASE}",
+          "type": "STRING"
         },
         {
-          "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${env.INSTALL_DIR}"
+          "name": "remoteInstallRoot",
+          "value": "${env.INSTALL_DIR}",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_BUILD_TYPE",
-          "value": "Release"
+          "value": "Release",
+          "type": "STRING"
         },
         {
           "name": "BLA_STATIC",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
         }
-      ]
+      ],
+      "inheritEnvironments": []
     }
   ]
 }

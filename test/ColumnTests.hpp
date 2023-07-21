@@ -42,6 +42,16 @@ namespace column
 	void setNumAxialCells(cadet::JsonParameterProvider& jpp, unsigned int nCol);
 
 	/**
+	* @brief Sets the discrete points, polynomial basis in a configuration of a column-like unit operation
+	* @details Overwrites the POLYNOMIAL_BASIS, POLYDEG, NCOL fields in the discretization group of the given ParameterProvider.
+	* @param [in,out] jpp ParameterProvider to change the number of axial cells in
+	* @param [in] basis type of polynomial basis functions
+	* @param [in] polyDeg Number of axial nodes per cell
+	* @param [in] nCol Number of axial cells
+	*/
+	void setDG(cadet::JsonParameterProvider& jpp, std::string basis, unsigned int polyDeg, unsigned int nCol);
+
+	/**
 	 * @brief Sets the WENO order in a configuration of a column-like unit operation
 	 * @details Overwrites the WENO_ORDER field in the weno group of the given ParameterProvider.
 	 * @param [in,out] jpp ParameterProvider to change the WENO order in
@@ -87,6 +97,7 @@ namespace column
 	 * @param [in] relTol Relative error tolerance
 	 */
 	void testAnalyticBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, unsigned int nCol, double absTol, double relTol);
+	void testAnalyticBenchmark_DG(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, std::string basis, unsigned int polyDeg, unsigned int nCol, double absTol, double relTol);
 
 	/**
 	 * @brief Runs a simulation test comparing against (semi-)analytic single component pulse injection reference data

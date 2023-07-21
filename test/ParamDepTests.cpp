@@ -33,10 +33,10 @@
 
 namespace
 {
-	inline cadet::model::IParameterDependence* createParameterDependence(const char* name)
+	inline cadet::model::IParameterStateDependence* createParameterStateDependence(const char* name)
 	{
 		cadet::ParameterDependenceFactory pdf;
-		cadet::model::IParameterDependence* const pd = pdf.create(name);
+		cadet::model::IParameterStateDependence* const pd = pdf.createStateDependence(name);
 		
 		REQUIRE(nullptr != pd);
 		return pd;
@@ -60,7 +60,7 @@ ConfiguredParameterDependence::~ConfiguredParameterDependence()
 
 ConfiguredParameterDependence ConfiguredParameterDependence::create(const char* name, unsigned int nComp, unsigned int const* nBound, const char* config)
 {
-	cadet::model::IParameterDependence* const pd = createParameterDependence(name);
+	cadet::model::IParameterStateDependence* const pd = createParameterStateDependence(name);
 
 	// Calculate offset of bound states
 	unsigned int* boundOffset = new unsigned int[nComp];

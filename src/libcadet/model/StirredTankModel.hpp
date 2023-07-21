@@ -66,7 +66,7 @@ public:
 	static const char* identifier() { return "CSTR"; }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -181,7 +181,11 @@ protected:
 		virtual bool hasParticleMobilePhase() const CADET_NOEXCEPT { return false; }
 		virtual bool hasSolidPhase() const CADET_NOEXCEPT { return _totalBound > 0; }
 		virtual bool hasVolume() const CADET_NOEXCEPT { return true; }
+		virtual bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return false; }
 
+		virtual unsigned int primaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int secondaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int particlePolynomialDegree(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return 0; }
@@ -212,6 +216,8 @@ protected:
 		virtual int writeOutlet(double* buffer) const;
 
 		virtual double const* solidPhase(unsigned int parType) const { return _data + 2 * _nComp; }
+
+		virtual int writeSmoothnessIndicator(double* indicator) const { return 0; }
 
 		virtual int writePrimaryCoordinates(double* coords) const { return 0; }
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }

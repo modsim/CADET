@@ -31,6 +31,25 @@ endif()
 add_executable(testLogging testLogging.cpp)
 target_link_libraries(testLogging PRIVATE CADET::CompileOptions)
 
+if (NOT WIN32)
+	add_executable(testRadialKernel testRadialKernel.cpp TimeIntegrator.cpp ${CMAKE_SOURCE_DIR}/src/libcadet/Logging.cpp ${CMAKE_SOURCE_DIR}/src/libcadet/AutoDiff.cpp ${CMAKE_SOURCE_DIR}/src/libcadet/model/paramdep/ParameterDependenceBase.cpp)
+	target_link_libraries(testRadialKernel PRIVATE CADET::CompileOptions CADET::AD SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} )
+	target_include_directories(testRadialKernel PRIVATE ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR}/src/libcadet)
+
+	if (ENABLE_GRM_2D)
+		target_include_directories(testRadialKernel PRIVATE ${CMAKE_BINARY_DIR}/src/libcadet)
+		if (SUPERLU_FOUND)
+			target_link_libraries(testRadialKernel PRIVATE SuperLU::SuperLU)
+		endif()
+		if (UMFPACK_FOUND)
+			target_link_libraries(testRadialKernel PRIVATE UMFPACK::UMFPACK)
+		endif()
+	endif()
+
+	list(APPEND TEST_NONLINALG_TARGETS testRadialKernel)
+	list(APPEND TEST_HDF5_TARGETS testRadialKernel)
+endif()
+
 
 # CATCH unit tests
 set(LIBCADET_SHARED_LIBFILE "$<TARGET_FILE:libcadet_shared>")
@@ -43,7 +62,7 @@ if (ENABLE_GRM_2D)
 endif()
 
 add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp UnitOperationTests.cpp SimHelper.cpp ParticleHelper.cpp
-	GeneralRateModel.cpp GeneralRateModel2D.cpp LumpedRateModelWithPores.cpp LumpedRateModelWithoutPores.cpp
+	GeneralRateModel.cpp GeneralRateModel2D.cpp LumpedRateModelWithPores.cpp LumpedRateModelWithoutPores.cpp LumpedRateModelWithoutPoresDG.cpp
 	CSTR-Residual.cpp CSTR-Simulation.cpp
 	ConvectionDispersionOperator.cpp
 	CellKernelTests.cpp
@@ -56,9 +75,10 @@ add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp Unit
 	${TEST_ADDITIONAL_SOURCES}
 	$<TARGET_OBJECTS:libcadet_object>)
 
-target_link_libraries(testRunner PRIVATE CADET::CompileOptions CADET::AD SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET})
+target_include_directories(testRunner PRIVATE ${CMAKE_BINARY_DIR}/src/libcadet)
+target_link_libraries(testRunner PRIVATE CADET::CompileOptions CADET::AD SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
+
 if (ENABLE_GRM_2D)
-	target_include_directories(testRunner PRIVATE ${CMAKE_BINARY_DIR}/src/libcadet)
 	if (SUPERLU_FOUND)
 		target_link_libraries(testRunner PRIVATE SuperLU::SuperLU)
 	endif()
@@ -95,8 +115,7 @@ endforeach()
 
 # ---------------------------------------------------
 
-
-if(WIN32)
+if (WIN32)
 	add_executable(testCAPIv1 "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" testCAPIv1.cpp)
 	target_include_directories(testCAPIv1 PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ThirdParty/json)
 endif()

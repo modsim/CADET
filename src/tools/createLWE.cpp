@@ -33,6 +33,8 @@ struct ProgramOptions
 	double endTime;
 	double constAlg;
 	double stddevAlg;
+	bool radialFlow;
+	bool velocityDependence;
 	bool reverseFlow;
 	bool adJacobian;
 	int nPar;
@@ -63,6 +65,8 @@ int main(int argc, char** argv)
 		cmd >> (new TCLAP::ValueArg<double>("c", "constAlg", "Set all algebraic variables to constant value", false, nanVal, "Value"))->storeIn(&opts.constAlg);
 		cmd >> (new TCLAP::ValueArg<double>("s", "stddevAlg", "Perturb algebraic variables with normal variates", false, nanVal, "Value"))->storeIn(&opts.stddevAlg);
 		cmd >> (new TCLAP::SwitchArg("", "reverseFlow", "Reverse the flow for column"))->storeIn(&opts.reverseFlow);
+		cmd >> (new TCLAP::SwitchArg("", "radialFlow", "Use radial flow column"))->storeIn(&opts.radialFlow);
+		cmd >> (new TCLAP::SwitchArg("", "velDep", "Use velocity dependent dispersion and film diffusion"))->storeIn(&opts.velocityDependence);
 		cmd >> (new TCLAP::ValueArg<int>("", "rad", "Number of radial cells (default: 3)", false, 3, "Value"))->storeIn(&opts.nRad);
 		addMiscToCmdLine(cmd, opts);
 		addUnitTypeToCmdLine(cmd, opts.unitType);
@@ -81,7 +85,7 @@ int main(int argc, char** argv)
 	writer.openFile(opts.fileName, "co");
 	writer.pushGroup("input");
 
-	parseUnitType(opts.unitType);
+	parseUnitType(opts.unitType, opts.radialFlow);
 	const bool isGRM2D = (opts.unitType == "GENERAL_RATE_MODEL_2D");
 
 	// Model
@@ -98,9 +102,9 @@ int main(int argc, char** argv)
 
 			// Transport
 			if (!opts.reverseFlow)
-				writer.scalar<double>("VELOCITY", 5.75e-4);
+				writer.scalar<double>("VELOCITY", 1.0);
 			else
-				writer.scalar<double>("VELOCITY", -5.75e-4);
+				writer.scalar<double>("VELOCITY", -1.0);
 			writer.scalar<double>("COL_DISPERSION", 5.75e-8);
 			writer.scalar<double>("COL_DISPERSION_RADIAL", 1e-6);
 
@@ -112,9 +116,26 @@ int main(int argc, char** argv)
 			writer.vector<double>("PAR_DIFFUSION", 4, parDiff);
 			writer.vector<double>("PAR_SURFDIFFUSION", 4, parSurfDiff);
 
+			if (opts.velocityDependence)
+			{
+				writer.scalar<std::string>("COL_DISPERSION_DEP", "POWER_LAW");
+				writer.scalar<double>("COL_DISPERSION_DEP_BASE", 1.25);
+				writer.scalar<double>("COL_DISPERSION_DEP_EXPONENT", 1.0);
+
+				writer.scalar<std::string>("FILM_DIFFUSION_DEP", "POWER_LAW");
+				writer.scalar<double>("FILM_DIFFUSION_DEP_BASE", 1.25);
+				writer.scalar<double>("FILM_DIFFUSION_DEP_EXPONENT", 1.0);
+			}
+
 			// Geometry
-			writer.scalar<double>("COL_LENGTH", 0.014);
+			if (opts.radialFlow)
+				writer.scalar<double>("COL_LENGTH", 0.0014);
+			else
+				writer.scalar<double>("COL_LENGTH", 0.014);
 			writer.scalar<double>("COL_RADIUS", 0.01);
+			writer.scalar<double>("COL_RADIUS_INNER", 0.01);
+			writer.scalar<double>("COL_RADIUS_OUTER", 0.04);
+			writer.scalar<double>("CROSS_SECTION_AREA", 0.0003141592653589793);
 			writer.scalar<double>("PAR_RADIUS", 4.5e-5);
 			writer.scalar<double>("PAR_CORERADIUS", 0.0);
 			writer.scalar<double>("COL_POROSITY", 0.37);
@@ -332,12 +353,12 @@ int main(int argc, char** argv)
 				{
 					// Connection list is 1x7 since we have 1 connection between
 					// the two unit operations (and we need to have 7 columns)
-					const double connMatrix[] = {1, 0, -1, -1, -1, -1, 1.0};
+					const double connMatrix[] = {1, 0, -1, -1, -1, -1, 6.683738370512285e-8};
 					// Connections: From unit operation 1 port -1 (i.e., all ports)
 					//              to unit operation 0 port -1 (i.e., all ports),
 					//              connect component -1 (i.e., all components)
 					//              to component -1 (i.e., all components) with
-					//              a flow rate of 1.0
+					//              a flow rate of 6.683738370512285e-8 m^3/s
 
 					writer.vector<double>("CONNECTIONS", 7, connMatrix);
 				}

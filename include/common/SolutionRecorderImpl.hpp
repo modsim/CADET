@@ -51,15 +51,16 @@ public:
 		bool storeOutlet;
 		bool storeInlet;
 		bool storeVolume;
+		bool storeSmoothnessIndicator;
 	};
 
 	InternalStorageUnitOpRecorder() : InternalStorageUnitOpRecorder(UnitOpIndep) { }
 
-	InternalStorageUnitOpRecorder(UnitOpIdx idx) : _cfgSolution({false, false, false, true, false, false, false}),
-		_cfgSolutionDot({false, false, false, false, false, false, false}), _cfgSensitivity({false, false, false, true, false, false, false}),
-		_cfgSensitivityDot({false, false, false, true, false, false, false}), _storeTime(false), _storeCoordinates(false), _splitComponents(true), _splitPorts(true),
-		_singleAsMultiPortUnitOps(false), _curCfg(nullptr), _nComp(0), _nVolumeDof(0), _nAxialCells(0), _nRadialCells(0), _nInletPorts(0), _nOutletPorts(0),
-		_numTimesteps(0), _numSens(0), _unitOp(idx), _needsReAlloc(false), _axialCoords(0), _radialCoords(0), _particleCoords(0)
+	InternalStorageUnitOpRecorder(UnitOpIdx idx) : _cfgSolution({ false, false, false, true, false, false, false, false }),
+		_cfgSolutionDot({ false, false, false, false, false, false, false, false }), _cfgSensitivity({ false, false, false, true, false, false, false, false }),
+		_cfgSensitivityDot({ false, false, false, true, false, false, false, false }), _storeTime(false), _storeCoordinates(false),
+		_splitComponents(true), _splitPorts(true), _singleAsMultiPortUnitOps(false), _curCfg(nullptr), _nComp(0), _nVolumeDof(0), _nAxialPoints(0), _nRadialPoints(0),
+		_nInletPorts(0), _nOutletPorts(0), _numTimesteps(0), _numSens(0), _unitOp(idx), _needsReAlloc(false), _axialCoords(0), _radialCoords(0), _particleCoords(0)
 	{
 	}
 
@@ -124,8 +125,9 @@ public:
 		_nInletPorts = exporter.numInletPorts();
 		_nOutletPorts = exporter.numOutletPorts();
 
-		_nAxialCells = exporter.numPrimaryCoordinates();
-		_nRadialCells = exporter.numSecondaryCoordinates();
+		_nAxialPoints = exporter.numPrimaryCoordinates();
+		_nRadialPoints = exporter.numSecondaryCoordinates();
+		_axialPolyDeg = exporter.primaryPolynomialDegree();
 
 		// Query particle type specific structure
 		const unsigned int numParTypes = exporter.numParticleTypes();
@@ -155,7 +157,7 @@ public:
 				offset += _nParShells[i];
 			}
 		}
-
+		 
 		// Validate config
 		validateConfig(exporter, _cfgSolution);
 		validateConfig(exporter, _cfgSolutionDot);
@@ -241,6 +243,15 @@ public:
 
 			v.resize(v.size() + sliceSize);
 			exporter.writeMobilePhase(v.data() + v.size() - sliceSize);
+		}
+
+		if (_curCfg->storeSmoothnessIndicator)
+		{
+			const int sliceSize = exporter.numMobilePhaseDofs() / (exporter.primaryPolynomialDegree() + 1u); // = nComp * nCells
+			std::vector<double>& v = _curStorage->smoothnessIndicator;
+
+			v.resize(v.size() + sliceSize);
+			exporter.writeSmoothnessIndicator(v.data() + v.size() - sliceSize);
 		}
 
 		if (_curCfg->storeParticle)
@@ -461,6 +472,7 @@ public:
 	inline double const* solid(unsigned int parType = 0) const CADET_NOEXCEPT { return _data.solid[parType].data(); }
 	inline double const* flux() const CADET_NOEXCEPT { return _data.flux.data(); }
 	inline double const* volume() const CADET_NOEXCEPT { return _data.volume.data(); }
+	inline double const* smoothnessIndicator() const CADET_NOEXCEPT { return _data.smoothnessIndicator.data(); }
 	inline double const* inletDot() const CADET_NOEXCEPT { return _dataDot.inlet.data(); }
 	inline double const* outletDot() const CADET_NOEXCEPT { return _dataDot.outlet.data(); }
 	inline double const* bulkDot() const CADET_NOEXCEPT { return _dataDot.bulk.data(); }
@@ -493,6 +505,7 @@ protected:
 		std::vector<std::vector<double>> solid;
 		std::vector<double> flux;
 		std::vector<double> volume;
+		std::vector<double> smoothnessIndicator;
 	};
 
 	inline void beginSensitivity(unsigned int sensIdx)
@@ -517,6 +530,7 @@ protected:
 		cfg.storeSolid = exporter.hasSolidPhase() && cfg.storeSolid;
 		cfg.storeFlux = exporter.hasParticleFlux() && cfg.storeFlux;
 		cfg.storeVolume = exporter.hasVolume() && cfg.storeVolume;
+		cfg.storeSmoothnessIndicator = exporter.hasSmoothnessIndicator() && cfg.storeSmoothnessIndicator;
 	}
 
 	inline void allocateMemory(const ISolutionExporter& exporter)
@@ -551,6 +565,9 @@ protected:
 
 		if (_curCfg->storeVolume)
 			_curStorage->volume.reserve(nAllocTimesteps * exporter.numVolumeDofs());
+
+		if (_curCfg->storeSmoothnessIndicator)
+			_curStorage->smoothnessIndicator.reserve(nAllocTimesteps * _nComp * _nAxialPoints / (_axialPolyDeg + 1));
 	}
 
 	template <typename Writer_t>
@@ -573,8 +590,8 @@ protected:
 							}
 							else
 							{
-								oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port 
-									<<  "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port
+									<< "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
 							}
 
 							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->outlet.data() + comp + port * _nComp, _nComp * _nOutletPorts);
@@ -615,13 +632,13 @@ protected:
 					oss << prefix << "_OUTLET";
 					if ((_nOutletPorts == 1) && !_singleAsMultiPortUnitOps)
 					{
-						const std::vector<std::size_t> layout = {_numTimesteps, _nComp};
+						const std::vector<std::size_t> layout = { _numTimesteps, _nComp };
 						debugCheckTensorLayout(layout, _curStorage->outlet.size());
 						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->outlet.data());
 					}
 					else
 					{
-						const std::vector<std::size_t> layout = {_numTimesteps, _nOutletPorts, _nComp};
+						const std::vector<std::size_t> layout = { _numTimesteps, _nOutletPorts, _nComp };
 						debugCheckTensorLayout(layout, _curStorage->outlet.size());
 						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->outlet.data());
 					}
@@ -646,8 +663,8 @@ protected:
 							}
 							else
 							{
-								oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port 
-									<<  "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port
+									<< "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
 							}
 
 							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->inlet.data() + comp + port * _nComp, _nComp * _nInletPorts);
@@ -688,13 +705,13 @@ protected:
 					oss << prefix << "_INLET";
 					if ((_nInletPorts == 1) && !_singleAsMultiPortUnitOps)
 					{
-						const std::vector<std::size_t> layout = {_numTimesteps, _nComp};
+						const std::vector<std::size_t> layout = { _numTimesteps, _nComp };
 						debugCheckTensorLayout(layout, _curStorage->inlet.size());
 						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->inlet.data());
 					}
 					else
 					{
-						const std::vector<std::size_t> layout = {_numTimesteps, _nInletPorts, _nComp};
+						const std::vector<std::size_t> layout = { _numTimesteps, _nInletPorts, _nComp };
 						debugCheckTensorLayout(layout, _curStorage->inlet.size());
 						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->inlet.data());
 					}
@@ -711,10 +728,10 @@ protected:
 			layout.reserve(4);
 			layout.push_back(_numTimesteps);
 
-			if (_nAxialCells > 0)
-				layout.push_back(_nAxialCells);
-			if (_nRadialCells > 0)
-				layout.push_back(_nRadialCells);
+			if (_nAxialPoints > 0)
+				layout.push_back(_nAxialPoints);
+			if (_nRadialPoints > 0)
+				layout.push_back(_nRadialPoints);
 			layout.push_back(_nComp);
 
 			debugCheckTensorLayout(layout, _curStorage->bulk.size());
@@ -728,10 +745,10 @@ protected:
 			layout.reserve(5);
 			layout.push_back(_numTimesteps);
 
-			if (_nAxialCells > 0)
-				layout.push_back(_nAxialCells);
-			if (_nRadialCells > 0)
-				layout.push_back(_nRadialCells);
+			if (_nAxialPoints > 0)
+				layout.push_back(_nAxialPoints);
+			if (_nRadialPoints > 0)
+				layout.push_back(_nRadialPoints);
 
 			if (_nParShells.size() <= 1)
 			{
@@ -772,10 +789,10 @@ protected:
 			layout.reserve(5);
 			layout.push_back(_numTimesteps);
 
-			if (_nAxialCells > 0)
-				layout.push_back(_nAxialCells);
-			if (_nRadialCells > 0)
-				layout.push_back(_nRadialCells);
+			if (_nAxialPoints > 0)
+				layout.push_back(_nAxialPoints);
+			if (_nRadialPoints > 0)
+				layout.push_back(_nRadialPoints);
 
 			if (_nParShells.size() <= 1)
 			{
@@ -818,10 +835,10 @@ protected:
 
 			layout.push_back(_numTimesteps);
 			layout.push_back(_nParShells.size());
-			if (_nAxialCells > 0)
-				layout.push_back(_nAxialCells);
-			if (_nRadialCells > 0)
-				layout.push_back(_nRadialCells);
+			if (_nAxialPoints > 0)
+				layout.push_back(_nAxialPoints);
+			if (_nRadialPoints > 0)
+				layout.push_back(_nRadialPoints);
 			layout.push_back(_nComp);
 
 			debugCheckTensorLayout(layout, _curStorage->flux.size());
@@ -836,6 +853,24 @@ protected:
 			oss.str("");
 			oss << prefix << "_VOLUME";
 			writer.template matrix<double>(oss.str(), _numTimesteps, _nVolumeDof, _curStorage->volume.data(), 1);
+		}
+
+		if (_curCfg->storeSmoothnessIndicator)
+		{
+			oss.str("");
+			oss << prefix << "_SMOOTHNESS_INDICATOR";
+
+			std::vector<std::size_t> layout(0);
+			layout.reserve(4);
+			layout.push_back(_numTimesteps);
+
+			if (_nAxialPoints > 0)
+				layout.push_back(_nAxialPoints / (_axialPolyDeg + 1));
+			layout.push_back(_nComp);
+
+			debugCheckTensorLayout(layout, _curStorage->smoothnessIndicator.size());
+
+			writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->smoothnessIndicator.data());
 		}
 	}
 
@@ -888,8 +923,9 @@ protected:
 
 	unsigned int _nComp;
 	unsigned int _nVolumeDof;
-	unsigned int _nAxialCells;
-	unsigned int _nRadialCells;
+	unsigned int _nAxialPoints;
+	unsigned int _nRadialPoints;
+	int _axialPolyDeg;
 	unsigned int _nInletPorts;
 	unsigned int _nOutletPorts;
 	std::vector<unsigned int> _nParShells;
@@ -1062,7 +1098,7 @@ public:
 			}
 		}
 	}
-	
+
 	template <typename Writer_t>
 	void writeSolution(Writer_t& writer)
 	{

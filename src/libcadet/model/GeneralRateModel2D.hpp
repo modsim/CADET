@@ -86,7 +86,7 @@ public:
 	static const char* identifier() { return "GENERAL_RATE_MODEL_2D"; }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -410,7 +410,11 @@ protected:
 		virtual bool hasParticleMobilePhase() const CADET_NOEXCEPT { return true; }
 		virtual bool hasSolidPhase() const CADET_NOEXCEPT { return _disc.strideBound[_disc.nParType] > 0; }
 		virtual bool hasVolume() const CADET_NOEXCEPT { return false; }
+		virtual bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return false; }
 
+		virtual unsigned int primaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int secondaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int particlePolynomialDegree(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }
 		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return _disc.nRad; }
@@ -451,6 +455,8 @@ protected:
 		virtual int writeInlet(double* buffer) const;
 		virtual int writeOutlet(unsigned int port, double* buffer) const;
 		virtual int writeOutlet(double* buffer) const;
+
+		virtual int writeSmoothnessIndicator(double* indicator) const { return 0; }
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{

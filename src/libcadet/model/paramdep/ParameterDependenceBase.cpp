@@ -26,12 +26,12 @@ namespace cadet
 namespace model
 {
 
-ParameterDependenceBase::ParameterDependenceBase() : _nComp(0), _nBoundStates(nullptr) { }
-ParameterDependenceBase::~ParameterDependenceBase() CADET_NOEXCEPT
+ParameterStateDependenceBase::ParameterStateDependenceBase() : _nComp(0), _nBoundStates(nullptr) { }
+ParameterStateDependenceBase::~ParameterStateDependenceBase() CADET_NOEXCEPT
 {
 }
 
-bool ParameterDependenceBase::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset)
+bool ParameterStateDependenceBase::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset)
 {
 	_nComp = nComp;
 	_nBoundStates = nBound;
@@ -45,14 +45,14 @@ bool ParameterDependenceBase::configureModelDiscretization(IParameterProvider& p
 	return true;
 }
 
-bool ParameterDependenceBase::configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, const std::string& name)
+bool ParameterStateDependenceBase::configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, const std::string& name)
 {
 	// Clear all parameters and reconfigure
 	_parameters.clear();
 	return configureImpl(paramProvider, unitOpIdx, parTypeIdx, name);
 }
 
-std::unordered_map<ParameterId, double> ParameterDependenceBase::getAllParameterValues() const
+std::unordered_map<ParameterId, double> ParameterStateDependenceBase::getAllParameterValues() const
 {
 	std::unordered_map<ParameterId, double> data;
 	std::transform(_parameters.begin(), _parameters.end(), std::inserter(data, data.end()),
@@ -60,17 +60,17 @@ std::unordered_map<ParameterId, double> ParameterDependenceBase::getAllParameter
 	return data;
 }
 
-bool ParameterDependenceBase::hasParameter(const ParameterId& pId) const
+bool ParameterStateDependenceBase::hasParameter(const ParameterId& pId) const
 {
 	return _parameters.find(pId) != _parameters.end();
 }
 
-bool ParameterDependenceBase::setParameter(const ParameterId& pId, int value)
+bool ParameterStateDependenceBase::setParameter(const ParameterId& pId, int value)
 {
 	return false;
 }
 
-bool ParameterDependenceBase::setParameter(const ParameterId& pId, double value)
+bool ParameterStateDependenceBase::setParameter(const ParameterId& pId, double value)
 {
 	auto paramHandle = _parameters.find(pId);
 	if (paramHandle != _parameters.end())
@@ -82,12 +82,76 @@ bool ParameterDependenceBase::setParameter(const ParameterId& pId, double value)
 	return false;
 }
 
-bool ParameterDependenceBase::setParameter(const ParameterId& pId, bool value)
+bool ParameterStateDependenceBase::setParameter(const ParameterId& pId, bool value)
 {
 	return false;
 }
 
-active* ParameterDependenceBase::getParameter(const ParameterId& pId)
+active* ParameterStateDependenceBase::getParameter(const ParameterId& pId)
+{
+	auto paramHandle = _parameters.find(pId);
+	if (paramHandle != _parameters.end())
+	{
+		return paramHandle->second;
+	}
+
+	return nullptr;
+}
+
+
+ParameterParameterDependenceBase::ParameterParameterDependenceBase() { }
+ParameterParameterDependenceBase::~ParameterParameterDependenceBase() CADET_NOEXCEPT
+{
+}
+
+bool ParameterParameterDependenceBase::configureModelDiscretization(IParameterProvider& paramProvider)
+{
+	return true;
+}
+
+bool ParameterParameterDependenceBase::configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, BoundStateIdx bndIdx, const std::string& name)
+{
+	// Clear all parameters and reconfigure
+	_parameters.clear();
+	return configureImpl(paramProvider, unitOpIdx, parTypeIdx, bndIdx, name);
+}
+
+std::unordered_map<ParameterId, double> ParameterParameterDependenceBase::getAllParameterValues() const
+{
+	std::unordered_map<ParameterId, double> data;
+	std::transform(_parameters.begin(), _parameters.end(), std::inserter(data, data.end()),
+	               [](const std::pair<const ParameterId, active*>& p) { return std::make_pair(p.first, static_cast<double>(*p.second)); });
+	return data;
+}
+
+bool ParameterParameterDependenceBase::hasParameter(const ParameterId& pId) const
+{
+	return _parameters.find(pId) != _parameters.end();
+}
+
+bool ParameterParameterDependenceBase::setParameter(const ParameterId& pId, int value)
+{
+	return false;
+}
+
+bool ParameterParameterDependenceBase::setParameter(const ParameterId& pId, double value)
+{
+	auto paramHandle = _parameters.find(pId);
+	if (paramHandle != _parameters.end())
+	{
+		paramHandle->second->setValue(value);
+		return true;
+	}
+
+	return false;
+}
+
+bool ParameterParameterDependenceBase::setParameter(const ParameterId& pId, bool value)
+{
+	return false;
+}
+
+active* ParameterParameterDependenceBase::getParameter(const ParameterId& pId)
 {
 	auto paramHandle = _parameters.find(pId);
 	if (paramHandle != _parameters.end())

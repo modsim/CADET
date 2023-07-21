@@ -38,7 +38,8 @@ namespace cadet
 namespace model
 {
 
-int GeneralRateModel::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
+template <typename ConvDispOperator>
+int GeneralRateModel<ConvDispOperator>::multiplexInitialConditions(const cadet::ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (_singleBinding)
 	{
@@ -81,7 +82,8 @@ int GeneralRateModel::multiplexInitialConditions(const cadet::ParameterId& pId, 
 	return 0;
 }
 
-int GeneralRateModel::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
+template <typename ConvDispOperator>
+int GeneralRateModel<ConvDispOperator>::multiplexInitialConditions(const cadet::ParameterId& pId, double val, bool checkSens)
 {
 	if (_singleBinding)
 	{
@@ -132,7 +134,8 @@ int GeneralRateModel::multiplexInitialConditions(const cadet::ParameterId& pId, 
 	return 0;
 }
 
-void GeneralRateModel::applyInitialCondition(const SimulationState& simState) const
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::applyInitialCondition(const SimulationState& simState) const
 {
 	Indexer idxr(_disc);
 
@@ -188,7 +191,8 @@ void GeneralRateModel::applyInitialCondition(const SimulationState& simState) co
 	}
 }
 
-void GeneralRateModel::readInitialCondition(IParameterProvider& paramProvider)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::readInitialCondition(IParameterProvider& paramProvider)
 {
 	_initState.clear();
 	_initStateDot.clear();
@@ -302,7 +306,8 @@ void GeneralRateModel::readInitialCondition(IParameterProvider& paramProvider)
  * @param [in] errorTol Error tolerance for algebraic equations
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -355,7 +360,7 @@ void GeneralRateModel::consistentInitialState(const SimulationTime& simTime, dou
 			linalg::DenseMatrixView fullJacobianMatrix(_jacPdisc[type * _disc.nCol + pblk].data(), nullptr, mask.len, mask.len);
 
 			// Midpoint of current column cell (z coordinate) - needed in externally dependent adsorption kinetic
-			const double z = (0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nCol);
+			const double z = _convDispOp.relativeCoordinate(pblk);
 
 			// Get workspace memory
 			BufferedArray<double> nonlinMemBuffer = tlmAlloc.array<double>(_nonlinearSolver->workspaceSize(probSize));
@@ -641,7 +646,8 @@ void GeneralRateModel::consistentInitialState(const SimulationTime& simTime, dou
  * @param [in] vecStateY Consistently initialized state vector
  * @param [in,out] vecStateYdot On entry, residual without taking time derivatives into account. On exit, consistent state time derivatives.
  */
-void GeneralRateModel::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -670,7 +676,7 @@ void GeneralRateModel::consistentInitialTimeDerivative(const SimulationTime& sim
 		const unsigned int par = pblk % _disc.nCol;
 
 		// Midpoint of current column cell (z coordinate) - needed in externally dependent adsorption kinetic
-		const double z = (0.5 + static_cast<double>(par)) / static_cast<double>(_disc.nCol);
+		const double z = _convDispOp.relativeCoordinate(par);
 
 		// Assemble
 		linalg::FactorizableBandMatrix& fbm = _jacPdisc[pblk];
@@ -793,7 +799,8 @@ void GeneralRateModel::consistentInitialTimeDerivative(const SimulationTime& sim
  * @param [in,out] adJac Jacobian information for AD (AD vectors for residual and state, direction offset)
  * @param [in] errorTol Error tolerance for algebraic equations
  */
-void GeneralRateModel::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
 		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
@@ -819,7 +826,7 @@ void GeneralRateModel::leanConsistentInitialState(const SimulationTime& simTime,
 				LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
 				// Midpoint of current column cell (z coordinate) - needed in externally dependent adsorption kinetic
-				const double z = (0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nCol);
+				const double z = _convDispOp.relativeCoordinate(pblk);
 
 				const int localOffsetToParticle = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{static_cast<unsigned int>(pblk)});
 				for(std::size_t shell = 0; shell < static_cast<std::size_t>(_disc.nParCell[type]); ++shell)
@@ -889,7 +896,8 @@ void GeneralRateModel::leanConsistentInitialState(const SimulationTime& simTime,
  * @param [in,out] vecStateYdot On entry, inconsistent state time derivatives. On exit, partially consistent state time derivatives.
  * @param [in] res On entry, residual without taking time derivatives into account. The data is overwritten during execution of the function.
  */
-void GeneralRateModel::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
 		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
@@ -925,7 +933,8 @@ void GeneralRateModel::leanConsistentInitialTimeDerivative(double t, double cons
 	solveForFluxes(vecStateYdot, idxr);
 }
 
-void GeneralRateModel::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
 {
 	Indexer idxr(_disc);
 	for (std::size_t param = 0; param < vecSensY.size(); ++param)
@@ -1020,7 +1029,8 @@ void GeneralRateModel::initializeSensitivityStates(const std::vector<double*>& v
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerConsistentInit);
@@ -1248,7 +1258,8 @@ void GeneralRateModel::consistentInitialSensitivity(const SimulationTime& simTim
  * @param [in] adRes Pointer to residual vector of AD datatypes with parameter sensitivities
  * @todo Decrease amount of allocated memory by partially using temporary vectors (state and Schur complement)
  */
-void GeneralRateModel::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
@@ -1305,7 +1316,8 @@ void GeneralRateModel::leanConsistentInitialSensitivity(const SimulationTime& si
  *                 on exit the solution @f$ j_f. @f$
  * @param [in] idxr Indexer
  */
-void GeneralRateModel::solveForFluxes(double* const vecState, const Indexer& idxr) const
+template <typename ConvDispOperator>
+void GeneralRateModel<ConvDispOperator>::solveForFluxes(double* const vecState, const Indexer& idxr) const
 {
 	// We have j_f - k_f * (c - c_p) == 0
 	// Thus, jacFC contains -k_f and jacFP +k_f.

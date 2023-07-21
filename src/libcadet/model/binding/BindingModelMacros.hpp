@@ -61,17 +61,38 @@
  *          
  *          The implementation is inserted inline in the class declaration.
  */
-#define CADET_BINDINGMODEL_JACOBIAN_BOILERPLATE                                                                     \
-	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
-		int offsetCp, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const                   \
-	{                                                                                                               \
-		jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
-	}                                                                                                               \
-	                                                                                                                \
-	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
-		int offsetCp, linalg::DenseBandedRowIterator jac, LinearBufferAllocator workSpace) const                    \
-	{                                                                                                               \
-		jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
-	}
+#ifdef ENABLE_DG
+	#define CADET_BINDINGMODEL_JACOBIAN_BOILERPLATE                                                                     \
+		virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
+			int offsetCp, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const                   \
+		{                                                                                                               \
+			jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
+		}                                                                                                               \
+																														\
+		virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
+			int offsetCp, linalg::DenseBandedRowIterator jac, LinearBufferAllocator workSpace) const                    \
+		{                                                                                                               \
+			jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
+		}																												\
+																														\
+		virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,		\
+			int offsetCp, linalg::BandedEigenSparseRowIterator jac, LinearBufferAllocator workSpace) const              \
+		{                                                                                                               \
+			jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
+		}
+#else
+	#define CADET_BINDINGMODEL_JACOBIAN_BOILERPLATE                                                                     \
+		virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
+			int offsetCp, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const                   \
+		{                                                                                                               \
+			jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
+		}                                                                                                               \
+																														\
+		virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,     \
+			int offsetCp, linalg::DenseBandedRowIterator jac, LinearBufferAllocator workSpace) const                    \
+		{                                                                                                               \
+			jacobianImpl(t, secIdx, colPos, y, y - offsetCp, offsetCp, jac, workSpace);                                 \
+		}
+#endif
 
 #endif  // LIBCADET_BINDINGMODELMACROS_HPP_

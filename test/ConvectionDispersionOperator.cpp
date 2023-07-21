@@ -15,18 +15,23 @@
 #include "cadet/cadet.hpp"
 
 #include "model/parts/ConvectionDispersionOperator.hpp"
-#include "model/parts/ConvectionDispersionKernel.hpp"
+#include "model/parts/AxialConvectionDispersionKernel.hpp"
+#include "model/parts/RadialConvectionDispersionKernel.hpp"
 #include "Weno.hpp"
 #include "AdUtils.hpp"
 #include "SimulationTypes.hpp"
+#include "ModelBuilderImpl.hpp"
+#include "ParameterDependenceFactory.hpp"
 
 #include "JsonTestModels.hpp"
 #include "ColumnTests.hpp"
 #include "JacobianHelper.hpp"
 #include "Utils.hpp"
+#include "Dummies.hpp"
 
 #include <cmath>
 #include <functional>
+#include <memory>
 
 namespace
 {
@@ -112,7 +117,8 @@ namespace
 		}	
 	}
 
-	inline cadet::active* createAndConfigureOperator(cadet::model::parts::ConvectionDispersionOperator& convDispOp, int& nComp, int& nCol, int wenoOrder)
+	template <typename OperatorType>
+	inline cadet::active* createAndConfigureOperator(OperatorType& convDispOp, int& nComp, int& nCol, int wenoOrder)
 	{
 		// Obtain parameters from some test case
 		cadet::JsonParameterProvider jpp = createColumnWithSMA("GENERAL_RATE_MODEL");
@@ -126,7 +132,8 @@ namespace
 		// Configure the operator
 		typedef std::unordered_map<cadet::ParameterId, cadet::active*> ParameterMap;
 		ParameterMap parameters;
-		REQUIRE(convDispOp.configureModelDiscretization(jpp, nComp, nCol));
+		cadet::ModelBuilder builder;
+		REQUIRE(convDispOp.configureModelDiscretization(jpp, builder, nComp, nCol));
 		REQUIRE(convDispOp.configure(0, jpp, parameters));
 
 		// Make sure that VELOCITY parameter is present
@@ -139,13 +146,14 @@ namespace
 
 } // namespace
 
+template <typename OperatorType>
 void testResidualBulkWenoForwardBackward(int wenoOrder)
 {
 	SECTION("Forward vs backward flow residual bulk (WENO=" + std::to_string(wenoOrder) + ")")
 	{
 		int nComp = 0;
 		int nCol = 0;
-		cadet::model::parts::ConvectionDispersionOperator convDispOp;
+		OperatorType convDispOp;
 		cadet::active* const velocity = createAndConfigureOperator(convDispOp, nComp, nCol, wenoOrder);
 		const double origVelocity = velocity->getValue();
 
@@ -165,7 +173,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 		SECTION("Forward flow yields backwards flow residual (zero state)")
 		{
 			// Forward flow residual
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, res.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, res.data(), false, cadet::WithoutParamSensitivity());
 
 			// Reverse flow
 			velocity->setValue(-origVelocity);
@@ -173,7 +181,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 			std::vector<double> resRev(nDof, 0.0);
 
 			// Backward flow residual
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, resRev.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, resRev.data(), false, cadet::WithoutParamSensitivity());
 
 			// Compare
 			compareResidualBulkFwdBwd(res.data(), resRev.data(), nComp, nCol);
@@ -184,7 +192,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 			std::vector<double> resFwd2(nDof, 0.0);
 
 			// Forward flow residual
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, resFwd2.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, resFwd2.data(), false, cadet::WithoutParamSensitivity());
 
 			// Compare against first forward flow residual
 			compareResidualBulkFwdFwd(res.data(), resFwd2.data(), nComp, nCol);
@@ -196,7 +204,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 			// Fill state vector with some values
 			fillStateBulkFwd(y.data(), [](unsigned int comp, unsigned int col, unsigned int idx) { return std::abs(std::sin(idx * 0.13)); }, nComp, nCol);
 
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, res.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, res.data(), false, cadet::WithoutParamSensitivity());
 
 			// Reverse state for backwards flow
 			fillStateBulkBwd(y.data(), [](unsigned int comp, unsigned int col, unsigned int idx) { return std::abs(std::sin(idx * 0.13)); }, nComp, nCol);
@@ -207,7 +215,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 			std::vector<double> resRev(nDof, 0.0);
 
 			// Backward flow residual
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, resRev.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, resRev.data(), false, cadet::WithoutParamSensitivity());
 
 			// Compare
 			compareResidualBulkFwdBwd(res.data(), resRev.data(), nComp, nCol);
@@ -221,7 +229,7 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 			fillStateBulkFwd(y.data(), [](unsigned int comp, unsigned int col, unsigned int idx) { return std::abs(std::sin(idx * 0.13)); }, nComp, nCol);
 
 			// Forward flow residual
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, resFwd2.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, resFwd2.data(), false, cadet::WithoutParamSensitivity());
 
 			// Compare against first forward flow residual
 			compareResidualBulkFwdFwd(res.data(), resFwd2.data(), nComp, nCol);
@@ -229,11 +237,12 @@ void testResidualBulkWenoForwardBackward(int wenoOrder)
 	}
 }
 
+template <typename OperatorType>
 void testTimeDerivativeBulkJacobianFD(double h, double absTol, double relTol)
 {
 	int nComp = 0;
 	int nCol = 0;
-	cadet::model::parts::ConvectionDispersionOperator convDispOp;
+	OperatorType convDispOp;
 	createAndConfigureOperator(convDispOp, nComp, nCol, cadet::Weno::maxOrder());
 
 	// Setup matrices
@@ -253,19 +262,20 @@ void testTimeDerivativeBulkJacobianFD(double h, double absTol, double relTol)
 
 	// Compare Jacobians
 	cadet::test::compareJacobianFD(
-		[&](double const* dir, double* res) -> void { convDispOp.residual(0.0, 0u, y.data(), dir, res, false, cadet::WithoutParamSensitivity()); }, 
+		[&](double const* dir, double* res) -> void { convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), dir, res, false, cadet::WithoutParamSensitivity()); }, 
 		[&](double const* dir, double* res) -> void { convDispOp.multiplyWithDerivativeJacobian(cadet::SimulationTime{0.0, 0u}, dir, res); }, 
 		yDot.data(), jacDir.data(), jacCol1.data(), jacCol2.data(), nDof, h, absTol, relTol);
 }
 
+template <typename OperatorType>
 void testBulkJacobianWenoForwardBackward(int wenoOrder)
 {
 	SECTION("Forward vs backward flow Jacobian (WENO=" + std::to_string(wenoOrder) + ")")
 	{
 		int nComp = 0;
 		int nCol = 0;
-		cadet::model::parts::ConvectionDispersionOperator opAna;
-		cadet::model::parts::ConvectionDispersionOperator opAD;
+		OperatorType opAna;
+		OperatorType opAD;
 		cadet::active* const anaVelocity = createAndConfigureOperator(opAna, nComp, nCol, wenoOrder);
 		cadet::active* const adVelocity = createAndConfigureOperator(opAD, nComp, nCol, wenoOrder);
 
@@ -293,17 +303,17 @@ void testBulkJacobianWenoForwardBackward(int wenoOrder)
 		SECTION("Forward then backward flow (nonzero state)")
 		{
 			// Compute state Jacobian
-			opAna.residual(0.0, 0u, y.data(), nullptr, jacDir.data(), true, cadet::WithoutParamSensitivity());
+			opAna.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacDir.data(), true, cadet::WithoutParamSensitivity());
 			std::fill(jacDir.begin(), jacDir.end(), 0.0);
 
 			cadet::ad::copyToAd(y.data(), adY, nDof);
 			cadet::ad::resetAd(adRes, nDof);
-			opAD.residual(0.0, 0u, adY, nullptr, adRes, false, cadet::WithoutParamSensitivity());
+			opAD.residual(DummyModel(), 0.0, 0u, adY, nullptr, adRes, false, cadet::WithoutParamSensitivity());
 			opAD.extractJacobianFromAD(adRes, 0);
 
 			const std::function<void(double const*, double*)> anaResidual = [&](double const* lDir, double* res) -> void
 				{
-					opAna.residual(0.0, 0u, lDir - nComp, nullptr, res - nComp, false, cadet::WithoutParamSensitivity());
+					opAna.residual(DummyModel(), 0.0, 0u, lDir - nComp, nullptr, res - nComp, false, cadet::WithoutParamSensitivity());
 				};
 
 			const std::function<void(double const*, double*)> anaMultJac = [&](double const* lDir, double* res) -> void
@@ -335,12 +345,12 @@ void testBulkJacobianWenoForwardBackward(int wenoOrder)
 			opAD.notifyDiscontinuousSectionTransition(0.0, 0u, cadet::AdJacobianParams{adRes, adY, 0u});
 
 			// Compute state Jacobian
-			opAna.residual(0.0, 0u, y.data(), nullptr, jacDir.data(), true, cadet::WithoutParamSensitivity());
+			opAna.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacDir.data(), true, cadet::WithoutParamSensitivity());
 			std::fill(jacDir.begin(), jacDir.end(), 0.0);
 
 			cadet::ad::copyToAd(y.data(), adY, nDof);
 			cadet::ad::resetAd(adRes, nDof);
-			opAD.residual(0.0, 0u, adY, nullptr, adRes, false, cadet::WithoutParamSensitivity());
+			opAD.residual(DummyModel(), 0.0, 0u, adY, nullptr, adRes, false, cadet::WithoutParamSensitivity());
 			opAD.extractJacobianFromAD(adRes, 0);
 
 			// Compare Jacobians
@@ -359,6 +369,121 @@ void testBulkJacobianWenoForwardBackward(int wenoOrder)
 	}
 }
 
+
+struct AxialFlow
+{
+	typedef cadet::model::parts::convdisp::AxialFlowParameters<double> Params;
+
+	static void sparsityPattern(cadet::linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, cadet::Weno& weno)
+	{
+		cadet::model::parts::convdisp::sparsityPatternAxial(itBegin, nComp, nCol, strideCell, u, weno);
+	}
+
+	static void residual(double const* y, double const* yDot, double* res, const Params& fp)
+	{
+		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, cadet::linalg::BandedSparseRowIterator(), fp);
+	}
+
+	template <typename IteratorType>
+	static void residualWithJacobian(double const* y, double const* yDot, double* res, IteratorType jacBegin, const Params& fp)
+	{
+		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, IteratorType, true>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, jacBegin, fp);
+	}
+
+	std::unique_ptr<cadet::model::IParameterParameterDependence> parDep;
+
+	AxialFlow()
+	{
+		cadet::ParameterDependenceFactory paramDepFactory;
+		parDep.reset(paramDepFactory.createParameterDependence("CONSTANT_ONE"));
+	}
+
+	Params makeParams(double u, cadet::active const* d_ax, double h, double* wenoDerivatives, cadet::Weno* weno, cadet::ArrayPool* stencilMemory, int strideCell, int nComp, int nCol)
+	{
+		return Params {
+			u,
+			d_ax,
+			h,
+			wenoDerivatives,
+			weno,
+			stencilMemory,
+			1e-12,
+			strideCell,
+			static_cast<unsigned int>(nComp),
+			static_cast<unsigned int>(nCol),
+			0u,
+			static_cast<unsigned int>(nComp),
+			parDep.get(),
+			DummyModel()
+		};
+	}
+};
+
+struct RadialFlow
+{
+	typedef cadet::model::parts::convdisp::RadialFlowParameters<double> Params;
+
+	static void sparsityPattern(cadet::linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, cadet::Weno& weno)
+	{
+		cadet::model::parts::convdisp::sparsityPatternRadial(itBegin, nComp, nCol, strideCell, u, weno);
+	}
+
+	static void residual(double const* y, double const* yDot, double* res, const Params& fp)
+	{
+		cadet::model::parts::convdisp::residualKernelRadial<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, cadet::linalg::BandedSparseRowIterator(), fp);
+	}
+
+	template <typename IteratorType>
+	static void residualWithJacobian(double const* y, double const* yDot, double* res, IteratorType jacBegin, const Params& fp)
+	{
+		cadet::model::parts::convdisp::residualKernelRadial<double, double, double, IteratorType, true>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, jacBegin, fp);
+	}
+
+	std::unique_ptr<cadet::model::IParameterParameterDependence> parDep;
+	std::vector<cadet::active> centers;
+	std::vector<cadet::active> sizes;
+	std::vector<cadet::active> bounds;
+
+	RadialFlow()
+	{
+		cadet::ParameterDependenceFactory paramDepFactory;
+		parDep.reset(paramDepFactory.createParameterDependence("CONSTANT_ONE"));
+	}
+
+	Params makeParams(double u, cadet::active const* d_rad, double h, double* wenoDerivatives, cadet::Weno* weno, cadet::ArrayPool* stencilMemory, int strideCell, int nComp, int nCol)
+	{
+		centers.resize(10);
+		sizes.resize(10);
+		bounds.resize(11);
+
+		for (int i = 0; i < 10; ++i)
+		{
+			centers[i] = (i + 1.5) * h;
+			sizes[i] = h;
+			bounds[i] = (i + 1) * h;
+		}
+		bounds.back() = 11 * h;
+
+		return Params {
+			u,
+			d_rad,
+			centers.data(),
+			sizes.data(),
+			bounds.data(),
+			stencilMemory,
+			strideCell,
+			static_cast<unsigned int>(nComp),
+			static_cast<unsigned int>(nCol),
+			0u,
+			static_cast<unsigned int>(nComp),
+			parDep.get(),
+			DummyModel()
+		};
+	}
+};
+
+
+template <typename FlowType>
 void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 {
 	SECTION("WENO=" + std::to_string(wenoOrder))
@@ -378,24 +503,25 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 
-		cadet::model::parts::convdisp::FlowParameters<double> fp{
+		cadet::ParameterDependenceFactory paramDepFactory;
+		std::unique_ptr<cadet::model::IParameterParameterDependence> parDep(paramDepFactory.createParameterDependence("CONSTANT_ONE"));
+
+		FlowType ft;
+		typename FlowType::Params fp = ft.makeParams(
 			u,
 			d_c.data(),
 			h,
 			wenoDerivatives.data(),
 			&weno,
 			&stencilMemory,
-			1e-12,
 			strideCell,
-			static_cast<unsigned int>(nComp),
-			static_cast<unsigned int>(nCol),
-			0u,
-			static_cast<unsigned int>(nComp)
-		};
+			nComp,
+			nCol
+		);
 
 		// Obtain sparsity pattern
 		cadet::linalg::SparsityPattern pattern(nComp * nCol, std::max(weno.lowerBandwidth() + 1u, 1u) + 1u + std::max(weno.upperBandwidth(), 1u));
-		cadet::model::parts::convdisp::sparsityPattern(pattern.row(0), nComp, nCol, strideCell, u, weno);
+		FlowType::sparsityPattern(pattern.row(0), nComp, nCol, strideCell, u, weno);
 
 		// Obtain memory for state, Jacobian columns
 		const int nDof = nComp + nComp * nCol;
@@ -412,10 +538,10 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 
 			// Central finite differences
 			y[nComp + col] = ref * (1.0 + 1e-6);
-			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol1.data(), cadet::linalg::BandedSparseRowIterator(), fp);
+			FlowType::residual(y.data(), nullptr, jacCol1.data(), fp);
 
 			y[nComp + col] = ref * (1.0 - 1e-6);
-			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol2.data(), cadet::linalg::BandedSparseRowIterator(), fp);
+			FlowType::residual(y.data(), nullptr, jacCol2.data(), fp);
 
 			y[nComp + col] = ref;
 
@@ -433,6 +559,7 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 	}
 }
 
+template <typename FlowType>
 void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 {
 	SECTION("WENO=" + std::to_string(wenoOrder))
@@ -452,26 +579,27 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 
-		cadet::model::parts::convdisp::FlowParameters<double> fp{
+		cadet::ParameterDependenceFactory paramDepFactory;
+		std::unique_ptr<cadet::model::IParameterParameterDependence> parDep(paramDepFactory.createParameterDependence("CONSTANT_ONE"));
+
+		FlowType ft;
+		typename FlowType::Params fp = ft.makeParams(
 			u,
 			d_c.data(),
 			h,
 			wenoDerivatives.data(),
 			&weno,
 			&stencilMemory,
-			1e-12,
 			strideCell,
-			static_cast<unsigned int>(nComp),
-			static_cast<unsigned int>(nCol),
-			0u,
-			static_cast<unsigned int>(nComp)
-		};
+			nComp,
+			nCol
+		);
 
 		// Obtain sparsity pattern
 		const unsigned int lowerBandwidth = std::max(weno.lowerBandwidth() + 1u, 1u);
 		const unsigned int upperBandwidth = std::max(weno.upperBandwidth(), 1u);
 		cadet::linalg::SparsityPattern pattern(nComp * nCol, lowerBandwidth + 1u + upperBandwidth);
-		cadet::model::parts::convdisp::sparsityPattern(pattern.row(0), nComp, nCol, strideCell, u, weno);
+		FlowType::sparsityPattern(pattern.row(0), nComp, nCol, strideCell, u, weno);
 
 		// Obtain memory for state
 		const int nDof = nComp + nComp * nCol;
@@ -483,7 +611,7 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 
 		// Populate sparse matrix
 		cadet::linalg::CompressedSparseMatrix sparseMat(pattern);
-		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), sparseMat.row(0), fp);
+		FlowType::template residualWithJacobian<cadet::linalg::BandedSparseRowIterator>(y.data(), nullptr, res.data(), sparseMat.row(0), fp);
 
 		// Populate dense matrix
 		cadet::linalg::BandMatrix bandMat;
@@ -491,7 +619,8 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 			bandMat.resize(nComp * nCol, lowerBandwidth * strideCell, upperBandwidth * strideCell);
 		else
 			bandMat.resize(nComp * nCol, upperBandwidth * strideCell, lowerBandwidth * strideCell);
-		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandMatrix::RowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), bandMat.row(0), fp);
+
+		FlowType::template residualWithJacobian<cadet::linalg::BandMatrix::RowIterator>(y.data(), nullptr, res.data(), bandMat.row(0), fp);
 
 		for (int col = 0; col < bandMat.rows(); ++col)
 		{
@@ -510,53 +639,105 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 	}
 }
 
-TEST_CASE("ConvectionDispersionOperator residual forward vs backward flow", "[Operator],[Residual]")
+TEST_CASE("AxialConvectionDispersionOperator residual forward vs backward flow", "[Operator],[AxialFlow],[Residual]")
 {
 	// Test all WENO orders
 	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		testResidualBulkWenoForwardBackward(i);
+		testResidualBulkWenoForwardBackward<cadet::model::parts::AxialConvectionDispersionOperator>(i);
 }
 
-TEST_CASE("ConvectionDispersionOperator time derivative Jacobian vs FD", "[Operator],[Residual],[Jacobian]")
+TEST_CASE("AxialConvectionDispersionOperator time derivative Jacobian vs FD", "[Operator],[AxialFlow],[Residual],[Jacobian]")
 {
-	testTimeDerivativeBulkJacobianFD(1e-6, 0.0, 1e-5);
+	testTimeDerivativeBulkJacobianFD<cadet::model::parts::AxialConvectionDispersionOperator>(1e-6, 0.0, 1e-5);
 }
 
-TEST_CASE("ConvectionDispersionOperator Jacobian forward vs backward flow", "[Operator],[Residual],[Jacobian],[AD]")
+TEST_CASE("AxialConvectionDispersionOperator Jacobian forward vs backward flow", "[Operator],[AxialFlow],[Residual],[Jacobian],[AD]")
 {
 	// Test all WENO orders
 	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		testBulkJacobianWenoForwardBackward(i);
+		testBulkJacobianWenoForwardBackward<cadet::model::parts::AxialConvectionDispersionOperator>(i);
 }
 
-TEST_CASE("ConvectionDispersionKernel Jacobian sparsity pattern vs FD", "[Operator],[Residual],[Jacobian],[SparseMatrix]")
+TEST_CASE("AxialConvectionDispersionKernel Jacobian sparsity pattern vs FD", "[Operator],[AxialFlow],[Residual],[Jacobian],[SparseMatrix]")
 {
 	SECTION("Forward flow")
 	{
 		// Test all WENO orders
 		for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-			testBulkJacobianSparsityWeno(i, true);
+			testBulkJacobianSparsityWeno<AxialFlow>(i, true);
 	}
 	SECTION("Backward flow")
 	{
 		// Test all WENO orders
 		for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-			testBulkJacobianSparsityWeno(i, false);
+			testBulkJacobianSparsityWeno<AxialFlow>(i, false);
 	}
 }
 
-TEST_CASE("ConvectionDispersionKernel Jacobian sparse vs banded", "[Operator],[Jacobian],[SparseMatrix]")
+TEST_CASE("AxialConvectionDispersionKernel Jacobian sparse vs banded", "[Operator],[AxialFlow],[Jacobian],[SparseMatrix]")
 {
 	SECTION("Forward flow")
 	{
 		// Test all WENO orders
 		for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-			testBulkJacobianSparseBandedWeno(i, true);
+			testBulkJacobianSparseBandedWeno<AxialFlow>(i, true);
 	}
 	SECTION("Backward flow")
 	{
 		// Test all WENO orders
 		for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-			testBulkJacobianSparseBandedWeno(i, false);
+			testBulkJacobianSparseBandedWeno<AxialFlow>(i, false);
+	}
+}
+
+
+TEST_CASE("RadialConvectionDispersionOperator residual forward vs backward flow", "[Operator],[RadialFlow],[Residual]")
+{
+	// Test all WENO orders
+	for (unsigned int i = 1; i <= 1; ++i)
+		testResidualBulkWenoForwardBackward<cadet::model::parts::RadialConvectionDispersionOperator>(i);
+}
+
+TEST_CASE("RadialConvectionDispersionOperator time derivative Jacobian vs FD", "[Operator],[RadialFlow],[Residual],[Jacobian]")
+{
+	testTimeDerivativeBulkJacobianFD<cadet::model::parts::RadialConvectionDispersionOperator>(1e-6, 0.0, 1e-5);
+}
+
+TEST_CASE("RadialConvectionDispersionOperator Jacobian forward vs backward flow", "[Operator],[RadialFlow],[Residual],[Jacobian],[AD]")
+{
+	// Test all WENO orders
+	for (unsigned int i = 1; i <= 1; ++i)
+		testBulkJacobianWenoForwardBackward<cadet::model::parts::RadialConvectionDispersionOperator>(i);
+}
+
+TEST_CASE("RadialConvectionDispersionKernel Jacobian sparsity pattern vs FD", "[Operator],[RadialFlow],[Residual],[Jacobian],[SparseMatrix]")
+{
+	SECTION("Forward flow")
+	{
+		// Test all WENO orders
+		for (unsigned int i = 1; i <= 1; ++i)
+			testBulkJacobianSparsityWeno<RadialFlow>(i, true);
+	}
+	SECTION("Backward flow")
+	{
+		// Test all WENO orders
+		for (unsigned int i = 1; i <= 1; ++i)
+			testBulkJacobianSparsityWeno<RadialFlow>(i, false);
+	}
+}
+
+TEST_CASE("RadialConvectionDispersionKernel Jacobian sparse vs banded", "[Operator],[RadialFlow],[Jacobian],[SparseMatrix]")
+{
+	SECTION("Forward flow")
+	{
+		// Test all WENO orders
+		for (unsigned int i = 1; i <= 1; ++i)
+			testBulkJacobianSparseBandedWeno<RadialFlow>(i, true);
+	}
+	SECTION("Backward flow")
+	{
+		// Test all WENO orders
+		for (unsigned int i = 1; i <= 1; ++i)
+			testBulkJacobianSparseBandedWeno<RadialFlow>(i, false);
 	}
 }

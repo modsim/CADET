@@ -31,7 +31,8 @@ class IExternalFunction;
 	{
 		class IBindingModel;
 		class IDynamicReactionModel;
-		class IParameterDependence;
+		class IParameterStateDependence;
+		class IParameterParameterDependence;
 	}
 
 /**
@@ -80,19 +81,34 @@ public:
 	virtual bool isValidDynamicReactionModel(const std::string& name) const = 0;
 
 	/**
-	 * @brief Creates an IParameterDependence object of the given @p name
-	 * @details The caller owns the returned IParameterDependence object.
-	 * @param [in] name Name of the IParameterDependence object
-	 * @return Object of the given IParameterDependence @p name or @c nullptr if that name does not exist
+	 * @brief Creates an IParameterStateDependence object of the given @p name
+	 * @details The caller owns the returned IParameterStateDependence object.
+	 * @param [in] name Name of the IParameterStateDependence object
+	 * @return Object of the given IParameterStateDependence @p name or @c nullptr if that name does not exist
 	 */
-	virtual model::IParameterDependence* createParameterDependence(const std::string& name) const = 0;
+	virtual model::IParameterStateDependence* createParameterStateDependence(const std::string& name) const = 0;
 
 	/**
-	 * @brief Checks if there is an IParameterDependence of the given @p name
-	 * @param [in] name Name of the IParameterDependence object
+	 * @brief Checks if there is an IParameterStateDependence of the given @p name
+	 * @param [in] name Name of the IParameterStateDependence object
 	 * @return @c true if a dynamic reaction model of this name exists, otherwise @c false
 	 */
-	virtual bool isValidParameterDependence(const std::string& name) const = 0;
+	virtual bool isValidParameterStateDependence(const std::string& name) const = 0;
+
+	/**
+	 * @brief Creates an IParameterParameterDependence object of the given @p name
+	 * @details The caller owns the returned IParameterParameterDependence object.
+	 * @param [in] name Name of the IParameterParameterDependence object
+	 * @return Object of the given IParameterParameterDependence @p name or @c nullptr if that name does not exist
+	 */
+	virtual model::IParameterParameterDependence* createParameterParameterDependence(const std::string& name) const = 0;
+
+	/**
+	 * @brief Checks if there is an IParameterParameterDependence of the given @p name
+	 * @param [in] name Name of the IParameterParameterDependence object
+	 * @return @c true if a dynamic reaction model of this name exists, otherwise @c false
+	 */
+	virtual bool isValidParameterParameterDependence(const std::string& name) const = 0;
 
 	/**
 	 * @brief Creates an IExternalFunction object of the given @p type

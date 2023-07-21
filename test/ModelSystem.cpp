@@ -24,6 +24,7 @@
 #include "JacobianHelper.hpp"
 #include "ColumnTests.hpp"
 #include "Utils.hpp"
+#include "Dummies.hpp"
 #include "model/UnitOperation.hpp"
 
 #include <limits>
@@ -32,21 +33,6 @@
 
 namespace
 {
-	class DummyConfigHelper : public cadet::IConfigHelper
-	{
-	public:
-
-		DummyConfigHelper() { }
-
-		virtual cadet::IInletProfile* createInletProfile(const std::string& type) const { return nullptr; }
-		virtual cadet::model::IBindingModel* createBindingModel(const std::string& name) const { return nullptr; }
-		virtual bool isValidBindingModel(const std::string& name) const { return false; }
-		virtual cadet::IExternalFunction* createExternalFunction(const std::string& type) const { return nullptr; }
-		virtual cadet::model::IDynamicReactionModel* createDynamicReactionModel(const std::string& name) const { return nullptr; }
-		virtual bool isValidDynamicReactionModel(const std::string& name) const { return false; }
-		virtual cadet::model::IParameterDependence* createParameterDependence(const std::string& name) const { return nullptr; }
-		virtual bool isValidParameterDependence(const std::string& name) const { return false; }
-	};
 
 	class DummyUnitOperation : public cadet::IUnitOperation
 	{
@@ -103,7 +89,7 @@ namespace
 		virtual bool usesAD() const CADET_NOEXCEPT { return false; }
 		virtual unsigned int requiredADdirs() const CADET_NOEXCEPT { return 0; }
 
-		virtual bool configureModelDiscretization(cadet::IParameterProvider& paramProvider, cadet::IConfigHelper& helper) { return true; }
+		virtual bool configureModelDiscretization(cadet::IParameterProvider& paramProvider, const cadet::IConfigHelper& helper) { return true; }
 		virtual bool configure(cadet::IParameterProvider& paramProvider) { return true; }
 
 		virtual void reportSolution(cadet::ISolutionRecorder& reporter, double const* const solution) const { }

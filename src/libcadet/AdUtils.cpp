@@ -15,6 +15,7 @@
 #include "linalg/SparseMatrix.hpp"
 #include "AdUtils.hpp"
 
+#include <Eigen/Sparse>
 #include <limits>
 #include <algorithm>
 
@@ -60,6 +61,63 @@ void extractBandedJacobianFromAd(active const* const adVec, int adDirOffset, int
 		for (int diag = 0; diag < stride; ++diag)
 		{
 			mat.native(eq, diag) = adVec[eq].getADValue(adDirOffset + dir);
+
+			// Wrap around at end of row and jump to lowest subdiagonal
+			if (dir == diagDir + upperBandwidth)
+				dir = diagDir - lowerBandwidth;
+			else
+				++dir;
+		}
+	}
+}
+
+void extractBandedEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat)
+{
+	const int stride = lowerBandwidth + 1 + upperBandwidth;
+	for (int eq = 0; eq < mat.rows(); ++eq)
+	{
+		// Start with lowest subdiagonal and stay in the range of the columns:
+		// diagDir might be too big for the matrix and, hence, dir ranges between
+		// diagDir - lowerBandwidth <= dir <= diagDir + upperBandwidth
+		int dir = diagDir - lowerBandwidth + eq % stride;
+
+		// Loop over diagonals
+		for (int diag = 0; diag < stride; ++diag)
+		{
+			if (eq - lowerBandwidth + diag >= 0 && // left block boundary
+				eq - lowerBandwidth + diag < mat.rows() && // right block boundary
+				adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
+				)
+				mat.coeffRef(eq, eq - lowerBandwidth + diag) = adVec[eq].getADValue(adDirOffset + dir);
+
+			// Wrap around at end of row and jump to lowest subdiagonal
+			if (dir == diagDir + upperBandwidth)
+				dir = diagDir - lowerBandwidth;
+			else
+				++dir;
+		}
+	}
+}
+
+void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
+	const int blockOffset, const int nCols, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
+{
+	const int stride = lowerBandwidth + 1 + upperBandwidth;
+	for (int eq = blockOffset; eq < blockOffset + nCols; ++eq)
+	{
+		// Start with lowest subdiagonal and stay in the range of the columns:
+		// diagDir might be too big for the matrix and, hence, dir ranges between
+		// diagDir - lowerBandwidth <= dir <= diagDir + upperBandwidth
+		int dir = diagDir - lowerBandwidth + eq % stride;
+
+		// Loop over diagonals
+		for (int diag = 0; diag < stride; ++diag)
+		{
+			if (eq - lowerBandwidth + diag >= blockOffset && // left block boundary
+				eq - lowerBandwidth + diag < blockOffset + nCols && // right block boundary
+				adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
+				)
+				mat.coeffRef(matrixOffset + eq, matrixOffset + eq - lowerBandwidth + diag) = adVec[eq].getADValue(adDirOffset + dir);
 
 			// Wrap around at end of row and jump to lowest subdiagonal
 			if (dir == diagDir + upperBandwidth)

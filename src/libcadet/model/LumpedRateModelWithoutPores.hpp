@@ -33,6 +33,24 @@
 
 #include "Benchmark.hpp"
 
+namespace
+{
+	template <typename Operator>
+	struct LumpedRateModelWithoutPoresName { };
+
+	template <>
+	struct LumpedRateModelWithoutPoresName<cadet::model::parts::AxialConvectionDispersionOperatorBase>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	};
+
+	template <>
+	struct LumpedRateModelWithoutPoresName<cadet::model::parts::RadialConvectionDispersionOperatorBase>
+	{
+		static const char* identifier() CADET_NOEXCEPT { return "RADIAL_LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	};
+}
+
 namespace cadet
 {
 
@@ -54,6 +72,7 @@ u c_{\text{in},i}(t) &= u c_i(t,0) - D_{\text{ax},i} \frac{\partial c_i}{\partia
 \end{align} @f]
  * Methods are described in @cite VonLieres2010a (WENO, linear solver), @cite Puttmann2013 @cite Puttmann2016 (forward sensitivities, AD, band compression)
  */
+template <typename ConvDispOperator>
 class LumpedRateModelWithoutPores : public UnitOperationBase
 {
 public:
@@ -73,10 +92,10 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return 1; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return false; }
 
-	static const char* identifier() { return "LUMPED_RATE_MODEL_WITHOUT_PORES"; }
+	static const char* identifier() CADET_NOEXCEPT { return LumpedRateModelWithoutPoresName<ConvDispOperator>::identifier(); }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -204,7 +223,7 @@ protected:
 	Discretization _disc; //!< Discretization info
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::ConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	ConvDispOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 
 	linalg::BandMatrix _jac; //!< Jacobian
 	linalg::FactorizableBandMatrix _jacDisc; //!< Jacobian with time derivatives from BDF method
@@ -218,8 +237,6 @@ protected:
 
 	bool _factorizeJacobian; //!< Determines whether the Jacobian needs to be factorized
 	double* _tempState; //!< Temporary storage with the size of the state vector or larger if binding models require it
-	linalg::Gmres _gmres; //!< GMRES algorithm for the Schur-complement in linearSolve()
-	double _schurSafety; //!< Safety factor for Schur-complement solution
 
 	std::vector<active> _initC; //!< Liquid phase initial conditions
 	std::vector<active> _initQ; //!< Solid phase initial conditions
@@ -276,7 +293,11 @@ protected:
 		virtual bool hasParticleMobilePhase() const CADET_NOEXCEPT { return false; }
 		virtual bool hasSolidPhase() const CADET_NOEXCEPT { return _disc.strideBound > 0; }
 		virtual bool hasVolume() const CADET_NOEXCEPT { return false; }
+		virtual bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return false; }
 
+		virtual unsigned int primaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int secondaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int particlePolynomialDegree(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }
 		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return 0; }
@@ -306,30 +327,12 @@ protected:
 		virtual int writeOutlet(unsigned int port, double* buffer) const;
 		virtual int writeOutlet(double* buffer) const;
 
-		virtual double const* concentration() const { return _idx.c(_data); }
-		virtual double const* flux() const { return nullptr; }
-		virtual double const* particleMobilePhase(unsigned int parType) const { return nullptr; }
-		virtual double const* solidPhase(unsigned int parType) const { return _idx.q(_data); }
-		virtual double const* volume() const { return nullptr; }
-		virtual double const* inlet(unsigned int port, unsigned int& stride) const
-		{
-			stride = _idx.strideColComp();
-			return _data;
-		}
-		virtual double const* outlet(unsigned int port, unsigned int& stride) const
-		{
-			stride = _idx.strideColComp();
-			if (_model._convDispOp.currentVelocity() >= 0)
-				return &_idx.c(_data, _disc.nCol - 1, 0);
-			else
-				return &_idx.c(_data, 0, 0);
-		}
+		virtual int writeSmoothnessIndicator(double* indicator) const { return 0; }
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{
-			const double h = static_cast<double>(_model._convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
 			for (unsigned int i = 0; i < _disc.nCol; ++i)
-				coords[i] = (i + 0.5) * h;
+				coords[i] = _model._convDispOp.cellCenter(i);
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }

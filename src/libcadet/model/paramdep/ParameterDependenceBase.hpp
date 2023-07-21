@@ -12,7 +12,7 @@
 
 /**
  * @file 
- * Defines an IParameterDependence base class.
+ * Defines an IParameterStateDependence base class.
  */
 
 #ifndef LIBCADET_PARAMETERDEPENDENCEBASE_HPP_
@@ -30,17 +30,17 @@ namespace model
 {
 
 /**
- * @brief Defines a ParameterDependence base class that can be used to implement other parameter dependences
+ * @brief Defines a ParameterStateDependence base class that can be used to implement other parameter dependences
  * @details This base class can be used as a starting point for new parameter dependences.
  *          Some common parameter handling is provided using a hash map (std::unordered_map).
  */
-class ParameterDependenceBase : public IParameterDependence
+class ParameterStateDependenceBase : public IParameterStateDependence
 {
 public:
 
-	ParameterDependenceBase();
+	ParameterStateDependenceBase();
 
-	virtual ~ParameterDependenceBase() CADET_NOEXCEPT;
+	virtual ~ParameterStateDependenceBase() CADET_NOEXCEPT;
 
 	virtual bool requiresConfiguration() const CADET_NOEXCEPT { return true; }
 	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT { return true; }
@@ -81,7 +81,7 @@ protected:
 
 /**
  * @brief Inserts implementations of all parameter() and analyticJacobian() method variants
- * @details An IParameterDependence implementation has to provide liquidParameter(), combinedParameterLiquid(),
+ * @details An IParameterStateDependence implementation has to provide liquidParameter(), combinedParameterLiquid(),
  *          combinedParameterSolid(), analyticJacobianLiquidAdd(), analyticJacobianCombinedAddLiquid(), and
  *          analyticJacobianCombinedAddSolid() methods for different variants of state and parameter type.
  *          This macro saves some time by providing those implementations. It assumes that the implementation
@@ -91,7 +91,7 @@ protected:
  *          
  *          The implementation is inserted inline in the class declaration.
  */
-#define CADET_PARAMETERDEPENDENCE_BOILERPLATE                                                                                                                                                                               \
+#define CADET_PARAMETERSTATEDEPENDENCE_BOILERPLATE                                                                                                                                                                               \
 	virtual active liquidParameter(const ColumnPosition& colPos, const active& param, active const* y, int comp) const                                                                                                      \
 	{                                                                                                                                                                                                                       \
 		return liquidParameterImpl<active, active>(colPos, param, y, comp);                                                                                                                                                 \
@@ -181,6 +181,87 @@ protected:
 	{                                                                                                                                                                                                                       \
 		analyticJacobianCombinedAddSolidImpl(colPos, param, yLiquid, ySolid, bnd, factor, offset, jac);                                                                                                                     \
 	}
+
+
+
+/**
+ * @brief Defines a ParameterParameterDependence base class that can be used to implement other parameter dependences
+ * @details This base class can be used as a starting point for new parameter dependences.
+ *          Some common parameter handling is provided using a hash map (std::unordered_map).
+ */
+class ParameterParameterDependenceBase : public IParameterParameterDependence
+{
+public:
+
+	ParameterParameterDependenceBase();
+
+	virtual ~ParameterParameterDependenceBase() CADET_NOEXCEPT;
+
+	virtual bool requiresConfiguration() const CADET_NOEXCEPT { return true; }
+	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT { return true; }
+	virtual bool configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, BoundStateIdx bndIdx, const std::string& name);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider);
+
+	virtual std::unordered_map<ParameterId, double> getAllParameterValues() const;
+	virtual bool hasParameter(const ParameterId& pId) const;
+
+	virtual bool setParameter(const ParameterId& pId, int value);
+	virtual bool setParameter(const ParameterId& pId, double value);
+	virtual bool setParameter(const ParameterId& pId, bool value);
+
+	virtual active* getParameter(const ParameterId& pId);
+
+protected:
+
+	std::unordered_map<ParameterId, active*> _parameters; //!< Map used to translate ParameterIds to actual variables
+
+	/**
+	 * @brief Configures the reaction model
+	 * @details This function implements the (re-)configuration of a reaction model. It is called when
+	 *          the reaction model is configured or reconfigured. On call the _parameters map will always
+	 *          be empty.
+	 * @param [in] paramProvider Parameter provider
+	 * @param [in] unitOpIdx Unit operation index
+	 * @param [in] parTypeIdx Particle type index
+	 * @param [in] bndIdx Bound state index
+	 * @param [in] name Name of the parameter
+	 * @return @c true if the configuration was successful, otherwise @c false
+	 */
+	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, BoundStateIdx bndIdx, const std::string& name) = 0;
+};
+
+
+
+/**
+ * @brief Inserts implementations of all getValue() method variants
+ * @details An IParameterStateDependence implementation has to provide getValue(), and getValueActive()
+ *          methods for different variants of state and parameter type.
+ *          This macro saves some time by providing those implementations. It assumes that the implementation
+ *          provides templatized getValue() functions that realize all required variants.
+ *          
+ *          The implementation is inserted inline in the class declaration.
+ */
+#define CADET_PARAMETERPARAMETERDEPENDENCE_BOILERPLATE                                                                                  \
+	virtual double getValue(const IModel& model, const ColumnPosition& colPos, int comp, int parType, int bnd, double val) const        \
+	{                                                                                                                                   \
+		return getValueImpl<double>(model, colPos, comp, parType, bnd, val);                                                            \
+	}                                                                                                                                   \
+                                                                                                                                        \
+	virtual active getValue(const IModel& model, const ColumnPosition& colPos, int comp, int parType, int bnd, const active& val) const \
+	{                                                                                                                                   \
+		return getValueImpl<active>(model, colPos, comp, parType, bnd, val);                                                            \
+	}                                                                                                                                   \
+                                                                                                                                        \
+	virtual double getValue(const IModel& model, const ColumnPosition& colPos, int comp, int parType, int bnd) const                    \
+	{                                                                                                                                   \
+		return getValueImpl<double>(model, colPos, comp, parType, bnd);                                                                 \
+	}                                                                                                                                   \
+                                                                                                                                        \
+	virtual active getValueActive(const IModel& model, const ColumnPosition& colPos, int comp, int parType, int bnd) const              \
+	{                                                                                                                                   \
+		return getValueImpl<active>(model, colPos, comp, parType, bnd);                                                                 \
+	}
+
 
 } // namespace model
 } // namespace cadet

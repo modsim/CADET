@@ -20,6 +20,8 @@
 
 #include "AutoDiff.hpp"
 
+#include<Eigen/Sparse>
+
 namespace cadet
 {
 
@@ -63,6 +65,34 @@ void prepareAdVectorSeedsForBandMatrix(active* const adVec, int adDirOffset, int
  * @param [out] mat BandMatrix to be populated with the Jacobian
  */
 void extractBandedJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, linalg::BandMatrix& mat);
+
+/**
+ * @brief Extracts a band (sub)matrix (Eigen lib) from band compressed AD seed vectors
+ * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
+			assemble the Jacobian block which is a band matrix. The block must be on the main diagonal.
+ * @param [in] adVec Vector of AD datatypes with band compressed seed vectors
+ * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
+ * @param [in] diagDir Diagonal direction index
+ * @param [in] lowerBandwidth lower band width
+ * @param [in] upperBandwidth upper band width
+ * @param [in] blockOffset offset to diagonal block
+ * @param [in] nCols number of columns of the extracted block
+ * @param [out] mat Eigen matrix to be populated with the Jacobian block
+ */
+void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
+	const int blockOffset, const int nCols, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset = 0);
+/**
+ * @brief Extracts a band matrix (Eigen lib) from band compressed AD seed vectors
+ * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
+			assemble the Jacobian block which is a band matrix. The block must be on the main diagonal.
+ * @param [in] adVec Vector of AD datatypes with band compressed seed vectors
+ * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
+ * @param [in] diagDir Diagonal direction index
+ * @param [in] lowerBandwidth lower band width
+ * @param [in] upperBandwidth upper band width
+ * @param [out] mat Eigen matrix to be populated with the Jacobian block
+ */
+void extractBandedEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat);
 
 /**
  * @brief Sets seed vectors on an AD vector for computing a dense Jacobian

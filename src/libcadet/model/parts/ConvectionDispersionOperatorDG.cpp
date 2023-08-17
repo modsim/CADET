@@ -70,10 +70,11 @@ AxialConvectionDispersionOperatorBaseDG::~AxialConvectionDispersionOperatorBaseD
  * @param [in] strideNode node stride in state vector
  * @return @c true if configuration went fine, @c false otherwise
  */
-bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, bool exact_integration, unsigned int nCells, unsigned int polyDeg, unsigned int strideNode)
+bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, int polynomial_integration_mode, unsigned int nCells, unsigned int polyDeg, unsigned int strideNode)
 {
+
 	_nComp = nComp;
-	_exactInt = exact_integration;
+	_exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 	_nCells = nCells;
 	_polyDeg = polyDeg;
 	_nNodes = _polyDeg + 1u;
@@ -104,6 +105,9 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 	lglNodesWeights();
 	invMMatrix();
 	derivativeMatrix();
+
+	if(polynomial_integration_mode == 2) // use Gauss quadrature for exact integration
+		_invMM = gaussQuadratureMMatrix(_nodes, _nNodes).inverse();
 
 	if (paramProvider.exists("COL_DISPERSION_DEP"))
 	{
@@ -718,9 +722,9 @@ int ConvectionDispersionOperatorDG<Operator>::requiredADdirs() const CADET_NOEXC
  * @return @c true if configuration went fine, @c false otherwise
  */
 template <typename Operator>
-bool ConvectionDispersionOperatorDG<Operator>::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, bool exact_integration, unsigned int nCells, unsigned int polyDeg, unsigned int strideNode)
+bool ConvectionDispersionOperatorDG<Operator>::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, int polynomial_integration_mode, unsigned int nCells, unsigned int polyDeg, unsigned int strideNode)
 {
-	const bool retVal = _baseOp.configureModelDiscretization(paramProvider, helper, nComp, exact_integration, nCells, polyDeg, strideNode);
+	const bool retVal = _baseOp.configureModelDiscretization(paramProvider, helper, nComp, polynomial_integration_mode, nCells, polyDeg, strideNode);
 
 	// todo: manage jacobians in convDispOp instead of unitOp ?
 	//// Allocate memory

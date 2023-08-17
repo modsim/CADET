@@ -98,7 +98,8 @@ namespace cadet
 
 			paramProvider.pushScope("discretization");
 
-			_disc.exactInt = paramProvider.getBool("EXACT_INTEGRATION");
+			const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+			_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 			if (paramProvider.getInt("POLYDEG") < 1)
 				throw InvalidParameterException("Polynomial degree must be at least 1!");
@@ -145,7 +146,7 @@ namespace cadet
 			paramProvider.popScope();
 
 			const unsigned int strideNode = _disc.nComp + _disc.strideBound;
-			const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.exactInt, _disc.nCol, _disc.polyDeg, strideNode);
+			const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, polynomial_integration_mode, _disc.nCol, _disc.polyDeg, strideNode);
 
 			_disc.curSection = -1;
 

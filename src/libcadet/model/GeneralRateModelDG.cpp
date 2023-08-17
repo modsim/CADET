@@ -147,7 +147,8 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 		LOG(Warning) << "Polynomial degree > 2 in bulk discretization (cf. POLYDEG) is always recommended for performance reasons.";
 	_disc.nNodes = _disc.polyDeg + 1u;
 	_disc.nPoints = _disc.nNodes * _disc.nCol;
-	_disc.exactInt = paramProvider.getBool("EXACT_INTEGRATION");
+	const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+	_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 	const std::vector<int> nParCell = paramProvider.getIntArray("NPARCELL");
 	const std::vector<int> parPolyDeg = paramProvider.getIntArray("PARPOLYDEG");
@@ -449,7 +450,7 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 	}
 
 	unsigned int strideColNode = _disc.nComp;
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.exactInt, _disc.nCol, _disc.polyDeg, strideColNode);
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, polynomial_integration_mode, _disc.nCol, _disc.polyDeg, strideColNode);
 
 	_disc.curSection = -1;
 

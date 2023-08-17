@@ -114,7 +114,8 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 	_disc.nNodes = _disc.polyDeg + 1;
 	_disc.nPoints = _disc.nNodes * _disc.nCol;
 
-	_disc.exactInt = paramProvider.getBool("EXACT_INTEGRATION");
+	const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+	_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 	const std::vector<int> nBound = paramProvider.getIntArray("NBOUND");
 	if (nBound.size() < _disc.nComp)
@@ -222,7 +223,7 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 	paramProvider.popScope();
 
 	const unsigned int strideNode = _disc.nComp;
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.exactInt, _disc.nCol, _disc.polyDeg, strideNode);
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, polynomial_integration_mode, _disc.nCol, _disc.polyDeg, strideNode);
 
 	_disc.curSection = -1;
 

@@ -956,7 +956,7 @@ int MultiChannelTransportModel::Exporter::writeOutlet(unsigned int port, double*
 
 int MultiChannelTransportModel::Exporter::writeOutlet(double* buffer) const
 {
-	for (int i = 0; i < _disc.nChannel; ++i)
+	for (unsigned int i = 0; i < _disc.nChannel; ++i)
 	{
 		writeOutlet(i, buffer);
 		buffer += _disc.nComp;

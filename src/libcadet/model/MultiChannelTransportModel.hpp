@@ -259,6 +259,7 @@ protected:
 		virtual bool hasParticleMobilePhase() const CADET_NOEXCEPT { return false; }
 		virtual bool hasSolidPhase() const CADET_NOEXCEPT { return false; }
 		virtual bool hasVolume() const CADET_NOEXCEPT { return false; }
+		virtual bool isParticleLumped() const CADET_NOEXCEPT { return false; }
 
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }

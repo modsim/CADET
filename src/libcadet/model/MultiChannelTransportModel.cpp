@@ -921,6 +921,7 @@ bool MultiChannelTransportModel::setSensitiveParameter(const ParameterId& pId, u
 	return UnitOperationBase::setSensitiveParameter(pId, adDirection, adValue);
 }
 
+
 int MultiChannelTransportModel::Exporter::writeMobilePhase(double* buffer) const
 {
 	const int blockSize = numMobilePhaseDofs();
@@ -962,6 +963,7 @@ int MultiChannelTransportModel::Exporter::writeOutlet(double* buffer) const
 	}
 	return _disc.nComp * _disc.nChannel;
 }
+
 
 
 void registerMultiChannelTransportModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)

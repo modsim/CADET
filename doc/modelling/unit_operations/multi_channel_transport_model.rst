@@ -5,9 +5,7 @@ Multichannel Transport model (MCT model)
 
 
 
-
-
-The Multi Channel Transport (MCT) model in CADET is based on a class of compartment models introduced by Jonas Bühler et al. :cite:`BUHLER2014131`, which was originally developed in the field of plant sciences.
+The Multichannel Transport (MCT) model in CADET is based on a class of compartment models introduced by Jonas Bühler et al. :cite:`Buehler2014`, which was originally developed in the field of plant sciences.
 There it is used to determine transport and storage parameters of radioactive labelled tracer molecules from positron emission tomography (PET) or magnetic resonance imaging (MRI) based experimental data.
 The model represents main functions of vascular transport pathways: axial transport of the tracer, diffusion in axial direction, lateral exchange between compartments and storage of tracer in compartments. Here, the axial direction represents the length of the stem of the plant and the lateral dimension its cross section. In the MCT context, the compartments of the model class are also referred to as channels.
 
@@ -31,6 +29,7 @@ The model class is defined by a system of partial differential equations:
 
 - :math:`\boldsymbol{\rho}=({\rho}_1 \dots {\rho}_N)^T` is the tracer density within each channel :math:`N` at position :math:`x` and time :math:`t`.
 - The coupling matrix :math:`A` contains exchange rates :math:`e_{ij}` describing the lateral tracer transport from channel :math:`i` to channel :math:`j`. All diagonal elements :math:`e_{ii}` in the first term are zero indicating there is no tracer exchange of one channel with itself. The second term ensures mass conservation and removes exchanged tracer from each channel respectively, by subtracting the sum of all exchange rates of a row (and therefore channel) from the diagonal. The third term describes the decay of a radioactive tracer at a tracer specific rate :math:`\lambda`.
+
 .. math::
 
     A=\begin{bmatrix}
@@ -40,6 +39,17 @@ The model class is defined by a system of partial differential equations:
     e_{N1} & \dots & e_{N(N-1)} & 0
     \end{bmatrix}-   
     \begin{bmatrix}
+    {\sum_{k=1}^{N} e_{1k}} &  & 0 \\
+     & \ddots & \\
+     0 &  & {\sum_{k=1}^{N} e_{Nk}}
+    \end{bmatrix}-
+    \lambda {I}
+
+- The diagonal matrix :math:`V` contains the flux velocities :math:`v_{i}` for each channel.
+
+.. math::
+
+    V=\begin{bmatrix}
     v_1 &  & 0 \\
      & \ddots & \\
      0 &  & v_N
@@ -62,10 +72,6 @@ A chart of all resulting valid models of the model family can be found in Bühle
 
 The cross-section area :math:`A_N` is individually specified for each channel (see :numref:`fig-variable-areas`). The MCT is agnostic to the shape of these cross sections, while their ratio determines the distribution of the volumetric flow.
 
-
-The cross-section area :math:`A_N` is individually specified for each channel (see :numref:`fig-variable-areas`). The MCT is agnostic to the shape of these cross sections, while their ratio determines the distribution of the volumetric flow.
-
-FixMe: Ideally add an example from another field.
 
 .. _fig-variable-areas:
 .. figure:: mct_variable_areas.png

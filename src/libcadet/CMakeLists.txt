@@ -164,7 +164,7 @@ set (LIBCADET_NONLINALG_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/nonlin/Solver.cpp
 )
 
-if (ENABLE_GRM_2D)
+if (ENABLE_2D_MODELS)
 	set(LIBCADET_NONLINALG_SPARSE_SOURCES)
 	if (SUPERLU_FOUND)
 		list(APPEND LIBCADET_NONLINALG_SPARSE_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/SuperLUSparseMatrix.cpp)
@@ -234,7 +234,7 @@ if (LAPACK_FOUND)
 	target_compile_definitions(libcadet_nonlinalg_static PRIVATE libcadet_nonlinalg_static_EXPORTS ${LIB_LAPACK_DEFINE})
 	target_link_libraries(libcadet_nonlinalg_static PUBLIC CADET::CompileOptions PRIVATE SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${LAPACK_LIBRARIES})
 
-	if (ENABLE_GRM_2D)
+	if (ENABLE_2D_MODELS)
 		if (SUPERLU_FOUND)
 			target_link_libraries(libcadet_nonlinalg_static PRIVATE SuperLU::SuperLU)
 		endif()

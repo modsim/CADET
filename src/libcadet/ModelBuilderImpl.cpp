@@ -37,7 +37,7 @@ namespace cadet
 		void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-#ifdef ENABLE_GRM_2D
+#ifdef ENABLE_2D_MODELS
 		void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerMultiChannelTransportModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 #endif
@@ -64,7 +64,7 @@ namespace cadet
 		model::registerLumpedRateModelWithoutPores(_modelCreators);
 		model::registerCSTRModel(_modelCreators);
 
-#ifdef ENABLE_GRM_2D
+#ifdef ENABLE_2D_MODELS
 		model::registerGeneralRateModel2D(_modelCreators);
 		model::registerMultiChannelTransportModel(_modelCreators);
 #endif

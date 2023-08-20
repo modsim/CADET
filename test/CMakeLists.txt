@@ -38,12 +38,13 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Paths.cpp.in" "${CMAKE_CURRENT_BINAR
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" INPUT "${CMAKE_CURRENT_BINARY_DIR}/Paths.cpp.in")
 
 set(TEST_ADDITIONAL_SOURCES "")
-if (ENABLE_GRM_2D)
+if (ENABLE_2D_MODELS)
 	list(APPEND TEST_ADDITIONAL_SOURCES SparseFactorizableMatrix.cpp TwoDimConvectionDispersionOperator.cpp)
 endif()
 
 add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp UnitOperationTests.cpp SimHelper.cpp ParticleHelper.cpp
 	GeneralRateModel.cpp GeneralRateModel2D.cpp LumpedRateModelWithPores.cpp LumpedRateModelWithoutPores.cpp
+	MultiChannelTransportModel.cpp
 	CSTR-Residual.cpp CSTR-Simulation.cpp
 	ConvectionDispersionOperator.cpp
 	CellKernelTests.cpp
@@ -57,7 +58,7 @@ add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp Unit
 	$<TARGET_OBJECTS:libcadet_object>)
 
 target_link_libraries(testRunner PRIVATE CADET::CompileOptions CADET::AD SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET})
-if (ENABLE_GRM_2D)
+if (ENABLE_2D_MODELS)
 	target_include_directories(testRunner PRIVATE ${CMAKE_BINARY_DIR}/src/libcadet)
 	if (SUPERLU_FOUND)
 		target_link_libraries(testRunner PRIVATE SuperLU::SuperLU)

@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines strong types for interfaces.
  */
 
@@ -23,20 +23,35 @@
 namespace cadet
 {
 
-	namespace model
-	{
+namespace model
+{
 
-		struct ComponentIndex { unsigned int value; };
+struct ComponentIndex
+{
+	unsigned int value;
+};
 
-		struct AxialCellIndex { unsigned int value; };
+struct AxialCellIndex
+{
+	unsigned int value;
+};
 
-		struct ParticleTypeIndex { unsigned int value; };
+struct ParticleTypeIndex
+{
+	unsigned int value;
+};
 
-		struct ParticleIndex { unsigned int value; };
+struct ParticleIndex
+{
+	unsigned int value;
+};
 
-		struct ShellIndex { unsigned int value; };
+struct ShellIndex
+{
+	unsigned int value;
+};
 
-	} // namespace model
+} // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_STRONGTYPES_HPP_
+#endif // LIBCADET_STRONGTYPES_HPP_

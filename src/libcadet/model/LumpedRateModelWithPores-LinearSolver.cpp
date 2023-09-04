@@ -25,11 +25,11 @@
 #include "ParallelSupport.hpp"
 
 #ifdef CADET_PARALLELIZE
-	#include <tbb/parallel_for.h>
-	#include <tbb/flow_graph.h>
+#include <tbb/parallel_for.h>
+#include <tbb/flow_graph.h>
 
-	typedef tbb::flow::continue_node< tbb::flow::continue_msg > node_t;
-	typedef const tbb::flow::continue_msg & msg_t;
+typedef tbb::flow::continue_node<tbb::flow::continue_msg> node_t;
+typedef const tbb::flow::continue_msg& msg_t;
 #endif
 
 namespace cadet
@@ -40,12 +40,16 @@ namespace model
 
 /**
  * @brief Computes the solution of the linear system involving the system Jacobian
- * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x = b \f]
+ * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x =
+ b \f]
  *          has to be solved. The right hand side \f$ b \f$ is given by @p rhs, the Jacobians are evaluated at the
- *          point \f$(y, \dot{y})\f$ given by @p y and @p yDot. The residual @p res at this point, \f$ F(t, y, \dot{y}) \f$,
- *          may help with this. Error weights (see IDAS guide) are given in @p weight. The solution is returned in @p rhs.
+ *          point \f$(y, \dot{y})\f$ given by @p y and @p yDot. The residual @p res at this point, \f$ F(t, y, \dot{y})
+ \f$,
+ *          may help with this. Error weights (see IDAS guide) are given in @p weight. The solution is returned in @p
+ rhs.
  *
- *          The full Jacobian @f$ J = \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) @f$ is given by
+ *          The full Jacobian @f$ J = \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}}
+ \right) @f$ is given by
  *          @f[ \begin{align}
 				J =
 				\left[\begin{array}{c|ccc|c}
@@ -86,13 +90,16 @@ namespace model
  *          Note that @f$ J_f = I @f$ is the identity matrix and that the off-diagonal blocks @f$ J_{i,f} @f$
  *          and @f$ J_{f,i} @f$ for @f$ i = 0, \dots, N_{z} @f$ are sparse.
  *
- *          Exploiting the decomposition, the solution procedure @f$ x = J^{-1}b = \left( LU \right)^{-1}b = U^{-1} L^{-1} b @f$
+ *          Exploiting the decomposition, the solution procedure @f$ x = J^{-1}b = \left( LU \right)^{-1}b = U^{-1}
+ L^{-1} b @f$
  *          works as follows:
  *              -# Factorize the diagonal blocks @f$ J_0, \dots, J_{N_z} @f$
- *              -# Solve @f$ y = L^{-1} b @f$ by forward substitution. This is accomplished by first solving the diagonal
+ *              -# Solve @f$ y = L^{-1} b @f$ by forward substitution. This is accomplished by first solving the
+ diagonal
  *                 blocks independently, that is,
  *                 @f[ y_i = J_{i}^{-1} b_i. @f]
- *                 Then, calculate the flux-part @f$ y_f @f$ by substituting in the already calculated solutions @f$ y_i @f$:
+ *                 Then, calculate the flux-part @f$ y_f @f$ by substituting in the already calculated solutions @f$ y_i
+ @f$:
  *                 @f[ y_f = b_f - \sum_{i=0}^{N_z} J_{f,i} y_i. @f]
  *              -# Solve the Schur-complement @f$ S x_f = y_f @f$ using an iterative method that only requires
  *                 matrix-vector products. The already inverted diagonal blocks @f$ J_i^{-1} @f$ come in handy here.
@@ -105,11 +112,12 @@ namespace model
  * @param [in] outerTol Error tolerance for the solution of the linear system from outer Newton iteration
  * @param [in,out] rhs On entry the right hand side of the linear equation system, on exit the solution
  * @param [in] weight Vector with error weights
- * @param [in] simState State of the simulation (state vector and its time derivatives) at which the Jacobian is evaluated
+ * @param [in] simState State of the simulation (state vector and its time derivatives) at which the Jacobian is
+ evaluated
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
-	const ConstSimulationState& simState)
+int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTol, double* const rhs,
+										  double const* const weight, const ConstSimulationState& simState)
 {
 	BENCH_SCOPE(_timerLinearSolve);
 
@@ -130,15 +138,15 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 		node_t A(g, [&](msg_t)
 #endif
 		{
-			// Assemble and factorize discretized bulk Jacobian
-			const bool result = _convDispOp.assembleAndFactorizeDiscretizedJacobian(alpha);
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Factorize() failed for bulk block";
-			}
+		// Assemble and factorize discretized bulk Jacobian
+		const bool result = _convDispOp.assembleAndFactorizeDiscretizedJacobian(alpha);
+		if (cadet_unlikely(!result))
+		{
+			LOG(Error) << "Factorize() failed for bulk block";
+		}
 		} CADET_PARNODE_END;
 
-	// Process the particle blocks
+		// Process the particle blocks
 #ifdef CADET_PARALLELIZE
 		node_t B(g, [&](msg_t)
 #endif
@@ -149,37 +157,36 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 			for (unsigned int type = 0; type < _disc.nParType; ++type)
 #endif
 			{
-				// Assemble
-				assembleDiscretizedJacobianParticleBlock(type, alpha, idxr);
+			// Assemble
+			assembleDiscretizedJacobianParticleBlock(type, alpha, idxr);
 
-				// Factorize
-				const bool result = _jacPdisc[type].factorize();
-				if (cadet_unlikely(!result))
-				{
-					LOG(Error) << "Factorize() failed for par type block " << type;
-				}
+			// Factorize
+			const bool result = _jacPdisc[type].factorize();
+			if (cadet_unlikely(!result))
+			{
+				LOG(Error) << "Factorize() failed for par type block " << type;
+			}
 			} CADET_PARFOR_END;
 		} CADET_PARNODE_END;
 
 #ifndef CADET_PARALLELIZE
 		// Do not factorize again at next call without changed Jacobians
 		_factorizeJacobian = false;
-	} // if (_factorizeJacobian)
+} // if (_factorizeJacobian)
 #endif
 
-	// ====== Step 1.5: Solve J c_uo = b_uo - A * c_in = b_uo - A*b_in
+// ====== Step 1.5: Solve J c_uo = b_uo - A * c_in = b_uo - A*b_in
 
-	// rhs is passed twice but due to the values in jacA the writes happen to a different area of the rhs than the reads.
+// rhs is passed twice but due to the values in jacA the writes happen to a different area of the rhs than the reads.
 #ifdef CADET_PARALLELIZE
 	node_t C(g, [&](msg_t)
 #endif
 	{
-		_jacInlet.multiplySubtract(rhs, rhs + idxr.offsetC());
+	_jacInlet.multiplySubtract(rhs, rhs + idxr.offsetC());
 	} CADET_PARNODE_END;
 
 	// ==== Step 2: Solve diagonal Jacobian blocks J_i to get y_i = J_i^{-1} b_i
 	// The result is stored in rhs (in-place solution)
-
 
 	// Threads that are done with solving the bulk column blocks can proceed
 	// to solving the particle blocks
@@ -187,11 +194,11 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 	node_t D(g, [&](msg_t)
 #endif
 	{
-		const bool result = _convDispOp.solveDiscretizedJacobian(rhs + idxr.offsetC());
-		if (cadet_unlikely(!result))
-		{
-			LOG(Error) << "Solve() failed for bulk block";
-		}
+	const bool result = _convDispOp.solveDiscretizedJacobian(rhs + idxr.offsetC());
+	if (cadet_unlikely(!result))
+	{
+		LOG(Error) << "Solve() failed for bulk block";
+	}
 	} CADET_PARNODE_END;
 
 #ifdef CADET_PARALLELIZE
@@ -201,14 +208,15 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 #ifdef CADET_PARALLELIZE
 		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nParType), [&](std::size_t type)
 #else
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
+			for (unsigned int type = 0; type < _disc.nParType; ++type)
 #endif
 		{
-			const bool result = _jacPdisc[type].solve(rhs + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)}));
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Solve() failed for par type block " << type;
-			}
+		const bool result =
+			_jacPdisc[type].solve(rhs + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)}));
+		if (cadet_unlikely(!result))
+		{
+			LOG(Error) << "Solve() failed for par type block " << type;
+		}
 		} CADET_PARFOR_END;
 	} CADET_PARNODE_END;
 
@@ -220,40 +228,40 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 	node_t F(g, [&](msg_t)
 #endif
 	{
-		_jacFC.multiplySubtract(rhs + idxr.offsetC(), rhs + idxr.offsetJf());
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
-			_jacFP[type].multiplySubtract(rhs + idxr.offsetCp(ParticleTypeIndex{type}), rhs + idxr.offsetJf());
+	_jacFC.multiplySubtract(rhs + idxr.offsetC(), rhs + idxr.offsetJf());
+	for (unsigned int type = 0; type < _disc.nParType; ++type)
+		_jacFP[type].multiplySubtract(rhs + idxr.offsetCp(ParticleTypeIndex{type}), rhs + idxr.offsetJf());
 
-		// Now, rhs contains the full intermediate solution y = L^{-1} b
+	// Now, rhs contains the full intermediate solution y = L^{-1} b
 
-		// Initialize temporary storage by copying over the fluxes
-		// Note that the rest of _tempState is zeroed out in schurComplementMatrixVector()
-		std::copy(rhs + idxr.offsetJf(), rhs + numDofs(), _tempState + idxr.offsetJf());
+	// Initialize temporary storage by copying over the fluxes
+	// Note that the rest of _tempState is zeroed out in schurComplementMatrixVector()
+	std::copy(rhs + idxr.offsetJf(), rhs + numDofs(), _tempState + idxr.offsetJf());
 
-		// ==== Step 3: Solve Schur-complement to get x_f = S^{-1} y_f
-		// Column and particle parts remain unchanged.
-		// The only thing to be done is the iterative (and approximate)
-		// solution of the Schur complement system:
-		//     S * x_f = y_f
+	// ==== Step 3: Solve Schur-complement to get x_f = S^{-1} y_f
+	// Column and particle parts remain unchanged.
+	// The only thing to be done is the iterative (and approximate)
+	// solution of the Schur complement system:
+	//     S * x_f = y_f
 
-		// Note that rhs is updated in-place with the solution of the Schur-complement
-		// The temporary storage is only needed to hold the right hand side of the Schur-complement
-		const double tolerance = std::sqrt(static_cast<double>(numDofs())) * outerTol * _schurSafety;
+	// Note that rhs is updated in-place with the solution of the Schur-complement
+	// The temporary storage is only needed to hold the right hand side of the Schur-complement
+	const double tolerance = std::sqrt(static_cast<double>(numDofs())) * outerTol * _schurSafety;
 
-		BENCH_START(_timerGmres);
-		_gmres.solve(tolerance, weight + idxr.offsetJf(), _tempState + idxr.offsetJf(), rhs + idxr.offsetJf());
-		BENCH_STOP(_timerGmres);
+	BENCH_START(_timerGmres);
+	_gmres.solve(tolerance, weight + idxr.offsetJf(), _tempState + idxr.offsetJf(), rhs + idxr.offsetJf());
+	BENCH_STOP(_timerGmres);
 
-		// Remove temporary results that are leftovers from schurComplementMatrixVector()
-		std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
+	// Remove temporary results that are leftovers from schurComplementMatrixVector()
+	std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
 
-		// At this point, rhs contains the intermediate solution [y_0, ..., y_{N_z}, x_f]
+	// At this point, rhs contains the intermediate solution [y_0, ..., y_{N_z}, x_f]
 
-		// ==== Step 4: Solve U * x = y by backward substitution
-		// The fluxes are already solved and remain unchanged
+	// ==== Step 4: Solve U * x = y by backward substitution
+	// The fluxes are already solved and remain unchanged
 
-		// Compute tempState_0 = J_{0,f} * y_f
-		_jacCF.multiplyAdd(rhs + idxr.offsetJf(), _tempState + idxr.offsetC());
+	// Compute tempState_0 = J_{0,f} * y_f
+	_jacCF.multiplyAdd(rhs + idxr.offsetJf(), _tempState + idxr.offsetC());
 	} CADET_PARNODE_END;
 
 	// Threads that are done with solving the bulk column blocks can proceed
@@ -262,19 +270,19 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 	node_t G(g, [&](msg_t)
 #endif
 	{
-		double* const localCol = _tempState + idxr.offsetC();
-		double* const rhsCol = rhs + idxr.offsetC();
+	double* const localCol = _tempState + idxr.offsetC();
+	double* const rhsCol = rhs + idxr.offsetC();
 
-		// Apply J_0^{-1} to tempState_0
-		const bool result = _convDispOp.solveDiscretizedJacobian(localCol);
-		if (cadet_unlikely(!result))
-		{
-			LOG(Error) << "Solve() failed for bulk block";
-		}
+	// Apply J_0^{-1} to tempState_0
+	const bool result = _convDispOp.solveDiscretizedJacobian(localCol);
+	if (cadet_unlikely(!result))
+	{
+		LOG(Error) << "Solve() failed for bulk block";
+	}
 
-		// Compute rhs_0 = y_0 - J_0^{-1} * J_{0,f} * y_f = y_0 - tempState_0
-		for (unsigned int i = 0; i < _disc.nCol * _disc.nComp; ++i)
-			rhsCol[i] -= localCol[i];
+	// Compute rhs_0 = y_0 - J_0^{-1} * J_{0,f} * y_f = y_0 - tempState_0
+	for (unsigned int i = 0; i < _disc.nCol * _disc.nComp; ++i)
+		rhsCol[i] -= localCol[i];
 	} CADET_PARNODE_END;
 
 #ifdef CADET_PARALLELIZE
@@ -284,24 +292,24 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 #ifdef CADET_PARALLELIZE
 		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nParType), [&](std::size_t type)
 #else
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
+			for (unsigned int type = 0; type < _disc.nParType; ++type)
 #endif
 		{
-			double* const localPar = _tempState + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)});
-			double* const rhsPar = rhs + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)});
+		double* const localPar = _tempState + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)});
+		double* const rhsPar = rhs + idxr.offsetCp(ParticleTypeIndex{static_cast<unsigned int>(type)});
 
-			// Compute tempState_i = J_{i,f} * y_f
-			_jacPF[type].multiplyAdd(rhs + idxr.offsetJf(), localPar);
-			// Apply J_i^{-1} to tempState_i
-			const bool result = _jacPdisc[type].solve(localPar);
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Solve() failed for par type block " << type;
-			}
+		// Compute tempState_i = J_{i,f} * y_f
+		_jacPF[type].multiplyAdd(rhs + idxr.offsetJf(), localPar);
+		// Apply J_i^{-1} to tempState_i
+		const bool result = _jacPdisc[type].solve(localPar);
+		if (cadet_unlikely(!result))
+		{
+			LOG(Error) << "Solve() failed for par type block " << type;
+		}
 
-			// Compute rhs_i = y_i - J_i^{-1} * J_{i,f} * y_f = y_i - tempState_i
-			for (unsigned int i = 0; i < idxr.strideParBlock(type) * _disc.nCol; ++i)
-				rhsPar[i] -= localPar[i];
+		// Compute rhs_i = y_i - J_i^{-1} * J_{i,f} * y_f = y_i - tempState_i
+		for (unsigned int i = 0; i < idxr.strideParBlock(type) * _disc.nCol; ++i)
+			rhsPar[i] -= localPar[i];
 		} CADET_PARFOR_END;
 	} CADET_PARNODE_END;
 
@@ -309,8 +317,8 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 	// Create TBB dependency graph
 	if (_factorizeJacobian)
 	{
-		make_edge(A, C);
-		make_edge(B, C);
+	make_edge(A, C);
+	make_edge(B, C);
 	}
 
 	make_edge(C, D);
@@ -323,11 +331,11 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 	// Start the graph running
 	if (_factorizeJacobian)
 	{
-		// Do not factorize again at next call without changed Jacobians
-		_factorizeJacobian = false;
+	// Do not factorize again at next call without changed Jacobians
+	_factorizeJacobian = false;
 
-		A.try_put(tbb::flow::continue_msg());
-		B.try_put(tbb::flow::continue_msg());
+	A.try_put(tbb::flow::continue_msg());
+	B.try_put(tbb::flow::continue_msg());
 	}
 	else
 		C.try_put(tbb::flow::continue_msg());
@@ -338,44 +346,45 @@ int LumpedRateModelWithPores::linearSolve(double t, double alpha, double outerTo
 
 	// The full solution is now stored in rhs
 	return 0;
-}
+	}
 
-/**
- * @brief Performs the matrix-vector product @f$ z = Sx @f$ with the Schur-complement @f$ S @f$ from the Jacobian
- * @details The Schur-complement @f$ S @f$ is given by
- *          @f[ \begin{align}
-				S &= J_f - J_{f,0} \, J_0^{-1} \, J_{0,f} - \sum_{p=1}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}} \\
-				  &= I - \sum_{p=0}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}},
-			\end{align} @f]
- *          where @f$ J_f = I @f$ is the identity matrix and the off-diagonal blocks @f$ J_{i,f} @f$
- *          and @f$ J_{f,i} @f$ for @f$ i = 0, \dots, N_{z} @f$ are sparse.
- *
- *          The matrix-vector multiplication is executed in parallel as follows:
- *              -# Compute @f$ J_{f,i} \, J_i^{-1} \, J_{i,f} @f$ independently (in parallel with respect to index @f$ i @f$)
- *              -# Subtract the result from @f$ z @f$
- *
- * @param [in] x Vector @f$ x @f$ the matrix @f$ S @f$ is multiplied with
- * @param [out] z Result of the matrix-vector multiplication
- * @return @c 0 if successful, any other value in case of failure
- */
-int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, double* z) const
-{
-	BENCH_SCOPE(_timerMatVec);
+	/**
+	 * @brief Performs the matrix-vector product @f$ z = Sx @f$ with the Schur-complement @f$ S @f$ from the Jacobian
+	 * @details The Schur-complement @f$ S @f$ is given by
+	 *          @f[ \begin{align}
+					S &= J_f - J_{f,0} \, J_0^{-1} \, J_{0,f} - \sum_{p=1}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}} \\
+					  &= I - \sum_{p=0}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}},
+				\end{align} @f]
+	 *          where @f$ J_f = I @f$ is the identity matrix and the off-diagonal blocks @f$ J_{i,f} @f$
+	 *          and @f$ J_{f,i} @f$ for @f$ i = 0, \dots, N_{z} @f$ are sparse.
+	 *
+	 *          The matrix-vector multiplication is executed in parallel as follows:
+	 *              -# Compute @f$ J_{f,i} \, J_i^{-1} \, J_{i,f} @f$ independently (in parallel with respect to index
+	 @f$ i @f$)
+	 *              -# Subtract the result from @f$ z @f$
+	 *
+	 * @param [in] x Vector @f$ x @f$ the matrix @f$ S @f$ is multiplied with
+	 * @param [out] z Result of the matrix-vector multiplication
+	 * @return @c 0 if successful, any other value in case of failure
+	 */
+	int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, double* z) const
+	{
+		BENCH_SCOPE(_timerMatVec);
 
-	// Copy x over to result z, which corresponds to the application of the identity matrix
-	std::copy(x, x + _disc.nCol * _disc.nComp * _disc.nParType, z);
+		// Copy x over to result z, which corresponds to the application of the identity matrix
+		std::copy(x, x + _disc.nCol * _disc.nComp * _disc.nParType, z);
 
-	Indexer idxr(_disc);
-	std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
+		Indexer idxr(_disc);
+		std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
 
 #ifdef CADET_PARALLELIZE
-	tbb::flow::graph g;
+		tbb::flow::graph g;
 #endif
 
-	// Solve bulk column blocks first
+		// Solve bulk column blocks first
 
-	// Apply J_{0,f}
-	_jacCF.multiplyAdd(x, _tempState + idxr.offsetC());
+		// Apply J_{0,f}
+		_jacCF.multiplyAdd(x, _tempState + idxr.offsetC());
 
 #ifdef CADET_PARALLELIZE
 	node_t A(g, [&](msg_t)
@@ -393,11 +402,11 @@ int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, doubl
 	node_t B(g, [&](msg_t)
 #endif
 	{
-		// Handle particle blocks
+	// Handle particle blocks
 #ifdef CADET_PARALLELIZE
 		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nParType), [&](std::size_t type)
 #else
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
+			for (unsigned int type = 0; type < _disc.nParType; ++type)
 #endif
 		{
 			// Get this thread's temporary memory block
@@ -441,27 +450,25 @@ int LumpedRateModelWithPores::schurComplementMatrixVector(double const* x, doubl
 #endif
 
 	return 0;
-}
+	}
 
-/**
- * @brief Assembles a particle Jacobian block @f$ J_i @f$ (@f$ i > 0 @f$) of the time-discretized equations
- * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x = b \f]
- *          has to be solved. The system Jacobian of the original equations,
- *          \f[ \frac{\partial F}{\partial y}, \f]
- *          is already computed (by AD or manually in residualImpl() with @c wantJac = true). This function is responsible
- *          for adding
- *          \f[ \alpha \frac{\partial F}{\partial \dot{y}} \f]
- *          to the system Jacobian, which yields the Jacobian of the time-discretized equations
- *          \f[ F\left(t, y_0, \sum_{k=0}^N \alpha_k y_k \right) = 0 \f]
- *          when a BDF method is used. The time integrator needs to solve this equation for @f$ y_0 @f$, which requires
- *          the solution of the linear system mentioned above (@f$ \alpha_0 = \alpha @f$ given in @p alpha).
- *
- * @param [in] parType Index of the particle type block
- * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
- * @param [in] idxr Indexer
- */
-void LumpedRateModelWithPores::assembleDiscretizedJacobianParticleBlock(unsigned int parType, double alpha, const Indexer& idxr)
-{
+	/**
+	 * @brief Assembles a particle Jacobian block @f$ J_i @f$ (@f$ i > 0 @f$) of the time-discretized equations
+	 * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right)
+	 * x = b \f] has to be solved. The system Jacobian of the original equations, \f[ \frac{\partial F}{\partial y}, \f]
+	 *          is already computed (by AD or manually in residualImpl() with @c wantJac = true). This function is
+	 * responsible for adding \f[ \alpha \frac{\partial F}{\partial \dot{y}} \f] to the system Jacobian, which yields
+	 * the Jacobian of the time-discretized equations \f[ F\left(t, y_0, \sum_{k=0}^N \alpha_k y_k \right) = 0 \f] when
+	 * a BDF method is used. The time integrator needs to solve this equation for @f$ y_0 @f$, which requires the
+	 * solution of the linear system mentioned above (@f$ \alpha_0 = \alpha @f$ given in @p alpha).
+	 *
+	 * @param [in] parType Index of the particle type block
+	 * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
+	 * @param [in] idxr Indexer
+	 */
+	void LumpedRateModelWithPores::assembleDiscretizedJacobianParticleBlock(unsigned int parType, double alpha,
+																			const Indexer& idxr)
+	{
 	linalg::FactorizableBandMatrix& fbm = _jacPdisc[parType];
 	const linalg::BandMatrix& bm = _jacP[parType];
 
@@ -475,27 +482,30 @@ void LumpedRateModelWithPores::assembleDiscretizedJacobianParticleBlock(unsigned
 		// Mobile and solid phase (advances jac accordingly)
 		addTimeDerivativeToJacobianParticleBlock(jac, idxr, alpha, parType);
 	}
-}
+	}
 
-/**
- * @brief Adds Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$ to bead rows of system Jacobian
- * @details Actually adds @f$ \alpha \frac{\partial F}{\partial \dot{y}} @f$, which is useful
- *          for constructing the linear system in BDF time discretization.
- * @param [in,out] jac On entry, RowIterator of the particle block pointing to the beginning of a bead shell;
- *                     on exit, the iterator points to the end of the bead shell
- * @param [in] idxr Indexer
- * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
- * @param [in] parType Index of the particle type
- */
-void LumpedRateModelWithPores::addTimeDerivativeToJacobianParticleBlock(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
-{
+	/**
+	 * @brief Adds Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$ to bead rows of system Jacobian
+	 * @details Actually adds @f$ \alpha \frac{\partial F}{\partial \dot{y}} @f$, which is useful
+	 *          for constructing the linear system in BDF time discretization.
+	 * @param [in,out] jac On entry, RowIterator of the particle block pointing to the beginning of a bead shell;
+	 *                     on exit, the iterator points to the end of the bead shell
+	 * @param [in] idxr Indexer
+	 * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
+	 * @param [in] parType Index of the particle type
+	 */
+	void LumpedRateModelWithPores::addTimeDerivativeToJacobianParticleBlock(
+		linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
+	{
 	// Mobile phase
 	for (int comp = 0; comp < static_cast<int>(_disc.nComp); ++comp, ++jac)
 	{
 		// Add derivative with respect to dc_p / dt to Jacobian
 		jac[0] += alpha;
 
-		const double invBetaP = (1.0 - static_cast<double>(_parPorosity[parType])) / (static_cast<double>(_poreAccessFactor[parType * _disc.nComp + comp]) * static_cast<double>(_parPorosity[parType]));
+		const double invBetaP = (1.0 - static_cast<double>(_parPorosity[parType])) /
+								(static_cast<double>(_poreAccessFactor[parType * _disc.nComp + comp]) *
+								 static_cast<double>(_parPorosity[parType]));
 
 		// Add derivative with respect to dq / dt to Jacobian
 		const int nBound = static_cast<int>(_disc.nBound[parType * _disc.nComp + comp]);
@@ -506,7 +516,9 @@ void LumpedRateModelWithPores::addTimeDerivativeToJacobianParticleBlock(linalg::
 			//   + strideParLiquid() skip to solid phase
 			//   + offsetBoundComp() jump to component (skips all bound states of previous components)
 			//   + i go to current bound state
-			jac[idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{static_cast<unsigned int>(comp)}) + i] += alpha * invBetaP;
+			jac[idxr.strideParLiquid() - comp +
+				idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{static_cast<unsigned int>(comp)}) +
+				i] += alpha * invBetaP;
 		}
 	}
 
@@ -521,9 +533,8 @@ void LumpedRateModelWithPores::addTimeDerivativeToJacobianParticleBlock(linalg::
 		// Add derivative with respect to dq / dt to Jacobian
 		jac[0] += alpha;
 	}
-}
+	}
 
+	} // namespace model
 
-}  // namespace model
-
-}  // namespace cadet
+	} // namespace cadet

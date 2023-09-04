@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a compressed sparse matrix
  */
 
@@ -40,7 +40,6 @@ class SparsityPatternRowIterator;
 class SparsityPattern
 {
 public:
-
 	/**
 	 * @brief Creates an empty SparsityPattern with preallocated memory
 	 * @details Uses an estimate of the average number of non-zero entries per row to
@@ -48,9 +47,14 @@ public:
 	 * @param [in] nRows Number of rows in the square matrix
 	 * @param [in] averageNumNonZeros Average number of non-zero entries per row
 	 */
-	SparsityPattern(int nRows, int averageNumNonZeros) : _rows(nRows, MatrixRowPattern(averageNumNonZeros)), _numNonZero(0) { }
+	SparsityPattern(int nRows, int averageNumNonZeros)
+		: _rows(nRows, MatrixRowPattern(averageNumNonZeros)), _numNonZero(0)
+	{
+	}
 
-	~SparsityPattern() CADET_NOEXCEPT { }
+	~SparsityPattern() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	SparsityPattern(const SparsityPattern& cpy) = default;
@@ -68,14 +72,20 @@ public:
 	 * @brief Returns the number of non-zero entries in this pattern
 	 * @return Number of non-zero entries in the matrix
 	 */
-	inline int numNonZeros() const CADET_NOEXCEPT { return _numNonZero; }
+	inline int numNonZeros() const CADET_NOEXCEPT
+	{
+		return _numNonZero;
+	}
 
 	/**
 	 * @brief Returns the number of rows (or columns) of this square matrix
 	 * @details It does not matter whether some rows are fully empty.
 	 * @return Number of rows (or columns) of this square matrix
 	 */
-	inline int rows() const CADET_NOEXCEPT { return _rows.size(); }
+	inline int rows() const CADET_NOEXCEPT
+	{
+		return _rows.size();
+	}
 
 	/**
 	 * @brief Adds an entry to the pattern
@@ -121,7 +131,6 @@ public:
 	SparsityPatternRowIterator row(int idxRow) CADET_NOEXCEPT;
 
 protected:
-
 	/**
 	 * @brief Stores column indices of a matrix row
 	 * @details The column indices are always sorted ascendingly.
@@ -129,20 +138,26 @@ protected:
 	class MatrixRowPattern
 	{
 	public:
-
 		/**
 		 * @brief Creates an empty MatrixRowPattern
 		 */
-		MatrixRowPattern() CADET_NOEXCEPT : _colIdx(0) { }
+		MatrixRowPattern() CADET_NOEXCEPT : _colIdx(0)
+		{
+		}
 
 		/**
 		 * @brief Creates an empty MatrixRowPattern with preallocated memory
 		 * @details Preallocates memory.
 		 * @param [in] averageNumNonZeros Average number of non-zero entries in this row
 		 */
-		MatrixRowPattern(std::size_t averageNumNonZeros) : _colIdx(0) { _colIdx.reserve(averageNumNonZeros); }
+		MatrixRowPattern(std::size_t averageNumNonZeros) : _colIdx(0)
+		{
+			_colIdx.reserve(averageNumNonZeros);
+		}
 
-		~MatrixRowPattern() CADET_NOEXCEPT { }
+		~MatrixRowPattern() CADET_NOEXCEPT
+		{
+		}
 
 		// Default copy and assignment semantics
 		MatrixRowPattern(const MatrixRowPattern& cpy) = default;
@@ -175,7 +190,7 @@ protected:
 			const auto it = std::upper_bound(_colIdx.begin(), _colIdx.end(), column);
 
 			// Check whether this index already exists
-			if ((it != _colIdx.begin()) && (*(it-1) == column))
+			if ((it != _colIdx.begin()) && (*(it - 1) == column))
 				return false;
 
 			_colIdx.insert(it, column);
@@ -196,20 +211,26 @@ protected:
 		 * @brief Returns a sorted array of column indices
 		 * @return Sorted array of column indices
 		 */
-		const std::vector<sparse_int_t>& columnIndices() const CADET_NOEXCEPT { return _colIdx; }
+		const std::vector<sparse_int_t>& columnIndices() const CADET_NOEXCEPT
+		{
+			return _colIdx;
+		}
 
 		/**
 		 * @brief Returns the number of non-zero entries in this row
 		 * @return Number of non-zero entries in this row
 		 */
-		int numNonZeros() const CADET_NOEXCEPT { return _colIdx.size(); }
+		int numNonZeros() const CADET_NOEXCEPT
+		{
+			return _colIdx.size();
+		}
 
 	protected:
 		std::vector<sparse_int_t> _colIdx; //!< Sorted column indices of non-zero elements in this row
 	};
 
 	std::vector<MatrixRowPattern> _rows; //!< Rows with their non-zero indices
-	int _numNonZero; //!< Number of non-zero entries in the matrix
+	int _numNonZero;                     //!< Number of non-zero entries in the matrix
 };
 
 /**
@@ -223,22 +244,30 @@ public:
 	/**
 	 * @brief Creates an empty SparsityPatternRowIterator pointing to nothing
 	 */
-	SparsityPatternRowIterator() CADET_NOEXCEPT : _pattern(nullptr), _row(-1) { }
+	SparsityPatternRowIterator() CADET_NOEXCEPT : _pattern(nullptr), _row(-1)
+	{
+	}
 
 	/**
 	 * @brief Creates a SparsityPatternRowIterator for the given SparsityPattern
 	 * @param [in] pattern SparsityPattern of the SparsityPatternRowIterator
 	 */
-	SparsityPatternRowIterator(SparsityPattern& pattern) CADET_NOEXCEPT : _pattern(&pattern), _row(0) { }
+	SparsityPatternRowIterator(SparsityPattern& pattern) CADET_NOEXCEPT : _pattern(&pattern), _row(0)
+	{
+	}
 
 	/**
 	 * @brief Creates a SparsityPatternRowIterator for the given SparsityPattern
 	 * @param [in] pattern SparsityPattern of the SparsityPatternRowIterator
 	 * @param [in] row Index of the row of the iterator points so
 	 */
-	SparsityPatternRowIterator(SparsityPattern& pattern, int row) CADET_NOEXCEPT : _pattern(&pattern), _row(row) { }
+	SparsityPatternRowIterator(SparsityPattern& pattern, int row) CADET_NOEXCEPT : _pattern(&pattern), _row(row)
+	{
+	}
 
-	~SparsityPatternRowIterator() CADET_NOEXCEPT { }
+	~SparsityPatternRowIterator() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	SparsityPatternRowIterator(const SparsityPatternRowIterator& cpy) = default;
@@ -270,11 +299,11 @@ public:
 	/**
 	 * @brief Accesses an element in the current row where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Dummy value or @c 0.0
 	 */
 	inline double& centered(int diagonal)
@@ -285,16 +314,19 @@ public:
 		_pattern->add(_row, _row + diagonal);
 		return _dummy;
 	}
-	inline double centered(int diagonal) const { return 0.0; }
+	inline double centered(int diagonal) const
+	{
+		return 0.0;
+	}
 
 	/**
 	 * @brief Accesses an element in the current row where the lowest diagonal is indexed by @c 0
 	 * @details In contrast to centered() the index of the column starts with the lowest diagonal (@c 0).
 	 *          The main diagonal is, thus, retrieved for @c lowerBand and the highest upper diagonal
 	 *          is returned for `lowerBand + upperBand`.
-	 * 
+	 *
 	 * @param [in] col Index of the column (from @c 0 to `lowerBand + upperBand`)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline double& native(int col)
@@ -306,7 +338,10 @@ public:
 		return _dummy;
 	}
 
-	inline double native(int col) const { return 0.0; }
+	inline double native(int col) const
+	{
+		return 0.0;
+	}
 
 	inline double& operator()(int diagonal)
 	{
@@ -317,10 +352,19 @@ public:
 		return _dummy;
 	}
 
-	inline double operator()(int diagonal) const { return 0.0; }
+	inline double operator()(int diagonal) const
+	{
+		return 0.0;
+	}
 
-	inline double& operator[](int diagonal) { return (*this)(diagonal); }
-	inline double operator[](int diagonal) const { return (*this)(diagonal); }
+	inline double& operator[](int diagonal)
+	{
+		return (*this)(diagonal);
+	}
+	inline double operator[](int diagonal) const
+	{
+		return (*this)(diagonal);
+	}
 
 	inline SparsityPatternRowIterator& operator++() CADET_NOEXCEPT
 	{
@@ -370,18 +414,24 @@ public:
 	 * @brief Returns the underlying pattern this iterator is pointing into
 	 * @return SparsityPattern this iterator is pointing into
 	 */
-	inline const SparsityPattern& pattern() const CADET_NOEXCEPT { return *_pattern; }
+	inline const SparsityPattern& pattern() const CADET_NOEXCEPT
+	{
+		return *_pattern;
+	}
 
 	/**
 	 * @brief Returns the index of the current row
 	 * @return Index of the current row
 	 */
-	inline int row() const CADET_NOEXCEPT { return _row; }
+	inline int row() const CADET_NOEXCEPT
+	{
+		return _row;
+	}
 
 private:
 	SparsityPattern* _pattern; //!< Underlying pattern
-	int _row; //!< Index of the current row
-	double _dummy; //!< Dummy element for access by reference
+	int _row;                  //!< Index of the current row
+	double _dummy;             //!< Dummy element for access by reference
 };
 
 class BandedSparseRowIterator;
@@ -393,27 +443,36 @@ class ConstBandedSparseRowIterator;
 class CompressedSparseMatrix
 {
 public:
-
 	/**
 	 * @brief Creates an empty CompressedSparseMatrix with capacity @c 0
 	 * @details Users have to call resize() prior to populating the matrix.
 	 */
-	CompressedSparseMatrix() CADET_NOEXCEPT : _values(0), _colIdx(0), _rowStart(0), _dummy(0.0) { }
+	CompressedSparseMatrix() CADET_NOEXCEPT : _values(0), _colIdx(0), _rowStart(0), _dummy(0.0)
+	{
+	}
 
 	/**
 	 * @brief Creates an empty CompressedSparseMatrix with the given capacity
 	 * @param [in] numRows Matrix size (i.e., number of rows or columns)
 	 * @param [in] numNonZeros Maximum number of non-zero elements
 	 */
-	CompressedSparseMatrix(int numRows, int numNonZeros) : _dummy(0.0) { resize(numRows, numNonZeros); }
+	CompressedSparseMatrix(int numRows, int numNonZeros) : _dummy(0.0)
+	{
+		resize(numRows, numNonZeros);
+	}
 
 	/**
 	 * @brief Creates a CompressedSparseMatrix with the given pattern
 	 * @param [in] pattern Sparsity pattern
 	 */
-	CompressedSparseMatrix(const SparsityPattern& pattern) : _values(0), _colIdx(0), _rowStart(0), _dummy(0.0) { assignPattern(pattern); }
+	CompressedSparseMatrix(const SparsityPattern& pattern) : _values(0), _colIdx(0), _rowStart(0), _dummy(0.0)
+	{
+		assignPattern(pattern);
+	}
 
-	~CompressedSparseMatrix() CADET_NOEXCEPT { }
+	~CompressedSparseMatrix() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	CompressedSparseMatrix(const CompressedSparseMatrix& cpy) = default;
@@ -461,7 +520,7 @@ public:
 	/**
 	 * @brief Allocates memory for the sparse matrix of given size
 	 * @details The matrix is reset to an empty state. All previous content is lost.
-	 * 
+	 *
 	 * @param [in] numRows Matrix size (i.e., number of rows or columns)
 	 * @param [in] numNonZeros Maximum number of non-zero elements
 	 */
@@ -494,7 +553,7 @@ public:
 
 		// Try to find the element
 		// TODO: Use binary search
-		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row+1]; ++i)
+		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row + 1]; ++i)
 		{
 			if (_colIdx[i] == col)
 				return true;
@@ -517,7 +576,7 @@ public:
 
 		// Try to find the element
 		// TODO: Use binary search
-		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row+1]; ++i)
+		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row + 1]; ++i)
 		{
 			if (_colIdx[i] == col)
 				return _values[i];
@@ -542,7 +601,7 @@ public:
 
 		// Try to find the element
 		// TODO: Use binary search
-		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row+1]; ++i)
+		for (sparse_int_t i = _rowStart[row]; i < _rowStart[row + 1]; ++i)
 		{
 			if (_colIdx[i] == col)
 				return _values[i];
@@ -557,19 +616,28 @@ public:
 	 * @details The returned vector contains an additional last element that holds the number of non-zeros.
 	 * @return Vector with row index pointers
 	 */
-	inline const std::vector<sparse_int_t>& rowStartIndices() const CADET_NOEXCEPT { return _rowStart; }
+	inline const std::vector<sparse_int_t>& rowStartIndices() const CADET_NOEXCEPT
+	{
+		return _rowStart;
+	}
 
 	/**
 	 * @brief Returns a vector with column indices of the values
 	 * @return Vector with column indices
 	 */
-	inline const std::vector<sparse_int_t>& columnIndices() const CADET_NOEXCEPT { return _colIdx; }
+	inline const std::vector<sparse_int_t>& columnIndices() const CADET_NOEXCEPT
+	{
+		return _colIdx;
+	}
 
 	/**
 	 * @brief Returns a vector with element values
 	 * @return Vector with element values
 	 */
-	inline const std::vector<double>& values() const CADET_NOEXCEPT { return _values; }
+	inline const std::vector<double>& values() const CADET_NOEXCEPT
+	{
+		return _values;
+	}
 
 	/**
 	 * @brief Returns an array with column indices of the values in the given row
@@ -578,7 +646,7 @@ public:
 	 */
 	inline sparse_int_t const* columnIndicesOfRow(int row) const CADET_NOEXCEPT
 	{
-//		cadet_assert((row >= 0) && (row < rows()));
+		//		cadet_assert((row >= 0) && (row < rows()));
 		return _colIdx.data() + _rowStart[row];
 	}
 
@@ -589,7 +657,7 @@ public:
 	 */
 	inline double const* valuesOfRow(int row) const CADET_NOEXCEPT
 	{
-//		cadet_assert((row >= 0) && (row < rows()));
+		//		cadet_assert((row >= 0) && (row < rows()));
 		return _values.data() + _rowStart[row];
 	}
 
@@ -600,7 +668,7 @@ public:
 	 */
 	inline double* valuesOfRow(int row) CADET_NOEXCEPT
 	{
-//		cadet_assert((row >= 0) && (row < rows()));
+		//		cadet_assert((row >= 0) && (row < rows()));
 		return _values.data() + _rowStart[row];
 	}
 
@@ -609,25 +677,37 @@ public:
 	 * @param [in] row Index of the row
 	 * @return Number of (structurally) non-zero elements in the matrix row
 	 */
-	inline sparse_int_t numNonZerosInRow(int row) const CADET_NOEXCEPT { return _rowStart[row+1] - _rowStart[row]; }
+	inline sparse_int_t numNonZerosInRow(int row) const CADET_NOEXCEPT
+	{
+		return _rowStart[row + 1] - _rowStart[row];
+	}
 
 	/**
 	 * @brief Returns the number of (structurally) non-zero elements in the matrix
 	 * @return Number of (structurally) non-zero elements in the matrix
 	 */
-	inline int numNonZeros() const CADET_NOEXCEPT { return _values.size(); }
+	inline int numNonZeros() const CADET_NOEXCEPT
+	{
+		return _values.size();
+	}
 
 	/**
 	 * @brief Returns the number of rows and columns (square matrix)
 	 * @return Number of rows and columns
 	 */
-	inline int matrixSize() const CADET_NOEXCEPT { return _rowStart.size() - 2; }
-	
+	inline int matrixSize() const CADET_NOEXCEPT
+	{
+		return _rowStart.size() - 2;
+	}
+
 	/**
 	 * @brief Returns the number of rows
 	 * @return Number of rows
 	 */
-	inline int rows() const CADET_NOEXCEPT { return _rowStart.size() - 2; }
+	inline int rows() const CADET_NOEXCEPT
+	{
+		return _rowStart.size() - 2;
+	}
 
 	/**
 	 * @brief Sets all matrix elements to the given value
@@ -652,34 +732,52 @@ public:
 	/**
 	 * @brief Accesses an element in the matrix where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& centered(int row, int diagonal) { return (*this)(row, row + diagonal); }
-	inline double centered(int row, int diagonal) const { return (*this)(row, row + diagonal); }
+	inline double& centered(int row, int diagonal)
+	{
+		return (*this)(row, row + diagonal);
+	}
+	inline double centered(int row, int diagonal) const
+	{
+		return (*this)(row, row + diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the matrix
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] col Index of the column
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& native(int row, int col) { return (*this)(row, col); }
-	inline double native(int row, int col) const { return (*this)(row, col); }
+	inline double& native(int row, int col)
+	{
+		return (*this)(row, col);
+	}
+	inline double native(int row, int col) const
+	{
+		return (*this)(row, col);
+	}
 
 	/**
 	 * @brief Provides direct access to the underlying memory
 	 * @return Pointer to the first element of the underlying array
 	 */
-	inline double* data() CADET_NOEXCEPT { return _values.data(); }
-	inline double const* data() const CADET_NOEXCEPT { return _values.data(); }
+	inline double* data() CADET_NOEXCEPT
+	{
+		return _values.data();
+	}
+	inline double const* data() const CADET_NOEXCEPT
+	{
+		return _values.data();
+	}
 
 	/**
 	 * @brief Creates a RowIterator pointing to the given row
@@ -708,9 +806,11 @@ public:
 	void multiplyVector(double const* const x, double alpha, double beta, double* y) const;
 
 protected:
-	std::vector<double> _values; //!< Values of matrix entries
+	std::vector<double> _values;       //!< Values of matrix entries
 	std::vector<sparse_int_t> _colIdx; //!< Column of the value in _values (size is _values.size() = numNonZeros)
-	std::vector<sparse_int_t> _rowStart; //!< Index into _colIdx that marks the beginning of a row (two entries more than rows; second to last entry points beyond the last row, so that _rowStart[numRows] = _values.size() = numNonZeros)
+	std::vector<sparse_int_t>
+		_rowStart; //!< Index into _colIdx that marks the beginning of a row (two entries more than rows; second to last
+				   //!< entry points beyond the last row, so that _rowStart[numRows] = _values.size() = numNonZeros)
 	double _dummy; //!< Dummy for access by reference
 };
 
@@ -720,20 +820,25 @@ public:
 	/**
 	 * @brief Creates a ConstBandedSparseRowIterator pointing nowhere
 	 */
-	BandedSparseRowIterator() : _matrix(nullptr), _values(nullptr), _colIdx(nullptr), _row(-1), _numNonZero(0), _dummy(0.0) { }
+	BandedSparseRowIterator()
+		: _matrix(nullptr), _values(nullptr), _colIdx(nullptr), _row(-1), _numNonZero(0), _dummy(0.0)
+	{
+	}
 
 	/**
 	 * @brief Creates a BandedSparseRowIterator of the given matrix row
 	 * @param [in] mat Matrix
 	 * @param [in] row Index of the row
 	 */
-	BandedSparseRowIterator(CompressedSparseMatrix& mat, int row) 
+	BandedSparseRowIterator(CompressedSparseMatrix& mat, int row)
 		: _matrix(&mat), _values(mat.valuesOfRow(row)), _colIdx(mat.columnIndicesOfRow(row)), _row(row),
-		_numNonZero(mat.numNonZerosInRow(row)), _dummy(0.0)
+		  _numNonZero(mat.numNonZerosInRow(row)), _dummy(0.0)
 	{
 	}
 
-	~BandedSparseRowIterator() CADET_NOEXCEPT { }
+	~BandedSparseRowIterator() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	BandedSparseRowIterator(const BandedSparseRowIterator& cpy) = default;
@@ -760,8 +865,7 @@ public:
 	 * @details Assumes the same sparsity pattern of source and destination row.
 	 * @param [in] it Iterator pointing to a row of a matrix
 	 */
-	template <typename OtherIterator_t>
-	inline void copyRowFrom(const OtherIterator_t& it)
+	template <typename OtherIterator_t> inline void copyRowFrom(const OtherIterator_t& it)
 	{
 		cadet_assert(_numNonZero == it.numNonZeros());
 		std::copy(it.data(), it.data() + _numNonZero, _values);
@@ -770,15 +874,21 @@ public:
 	/**
 	 * @brief Accesses an element in the current row where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] diagonal Index of the diagonal
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& centered(int diagonal) { return native(_row + diagonal); }
-	inline double centered(int diagonal) const { return native(_row + diagonal); }
+	inline double& centered(int diagonal)
+	{
+		return native(_row + diagonal);
+	}
+	inline double centered(int diagonal) const
+	{
+		return native(_row + diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the current row where the lowest diagonal is indexed by @c 0
@@ -818,11 +928,23 @@ public:
 		return 0.0;
 	}
 
-	inline double& operator()(int diagonal) { return centered(diagonal); }
-	inline double operator()(int diagonal) const { return centered(diagonal); }
+	inline double& operator()(int diagonal)
+	{
+		return centered(diagonal);
+	}
+	inline double operator()(int diagonal) const
+	{
+		return centered(diagonal);
+	}
 
-	inline double& operator[](int diagonal) { return centered(diagonal); }
-	inline double operator[](int diagonal) const { return centered(diagonal); }
+	inline double& operator[](int diagonal)
+	{
+		return centered(diagonal);
+	}
+	inline double operator[](int diagonal) const
+	{
+		return centered(diagonal);
+	}
 
 	inline BandedSparseRowIterator& operator++() CADET_NOEXCEPT
 	{
@@ -876,34 +998,48 @@ public:
 	 * @brief Returns the underlying matrix this iterator is pointing into
 	 * @return Matrix this iterator is pointing into
 	 */
-	inline const CompressedSparseMatrix& matrix() const CADET_NOEXCEPT { return *_matrix; }
+	inline const CompressedSparseMatrix& matrix() const CADET_NOEXCEPT
+	{
+		return *_matrix;
+	}
 
 	/**
 	 * @brief Returns the index of the current row
 	 * @return Index of the current row
 	 */
-	inline int row() const CADET_NOEXCEPT { return _row; }
+	inline int row() const CADET_NOEXCEPT
+	{
+		return _row;
+	}
 
 	/**
 	 * @brief Returns the number of non-zero entries in this row
 	 * @return Number of non-zero entries in this row
 	 */
-	inline int numNonZeros() const CADET_NOEXCEPT { return _numNonZero; }
+	inline int numNonZeros() const CADET_NOEXCEPT
+	{
+		return _numNonZero;
+	}
 
 	/**
 	 * @brief Returns an array of the matrix entries in this row
 	 * @return Array with matrix entries in this row
 	 */
-	inline double* data() CADET_NOEXCEPT { return _values; }
-	inline double const* data() const CADET_NOEXCEPT { return _values; }
+	inline double* data() CADET_NOEXCEPT
+	{
+		return _values;
+	}
+	inline double const* data() const CADET_NOEXCEPT
+	{
+		return _values;
+	}
 
 protected:
-
 	inline void updateOnRowChange() CADET_NOEXCEPT
 	{
 		_values = _matrix->valuesOfRow(_row);
 		_colIdx = _matrix->columnIndicesOfRow(_row);
-		_numNonZero = _matrix->numNonZerosInRow(_row);			
+		_numNonZero = _matrix->numNonZerosInRow(_row);
 	}
 
 	CompressedSparseMatrix* _matrix;
@@ -914,28 +1050,30 @@ protected:
 	double _dummy;
 };
 
-
 class ConstBandedSparseRowIterator
 {
 public:
-
 	/**
 	 * @brief Creates a ConstBandedSparseRowIterator pointing nowhere
 	 */
-	ConstBandedSparseRowIterator() : _matrix(nullptr), _values(nullptr), _colIdx(nullptr), _row(-1), _numNonZero(0) { }
+	ConstBandedSparseRowIterator() : _matrix(nullptr), _values(nullptr), _colIdx(nullptr), _row(-1), _numNonZero(0)
+	{
+	}
 
 	/**
 	 * @brief Creates a ConstBandedSparseRowIterator of the given matrix row
 	 * @param [in] mat Matrix
 	 * @param [in] row Index of the row
 	 */
-	ConstBandedSparseRowIterator(const CompressedSparseMatrix& mat, int row) 
+	ConstBandedSparseRowIterator(const CompressedSparseMatrix& mat, int row)
 		: _matrix(&mat), _values(mat.valuesOfRow(row)), _colIdx(mat.columnIndicesOfRow(row)), _row(row),
-		_numNonZero(mat.numNonZerosInRow(row))
+		  _numNonZero(mat.numNonZerosInRow(row))
 	{
 	}
 
-	~ConstBandedSparseRowIterator() CADET_NOEXCEPT { }
+	~ConstBandedSparseRowIterator() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	ConstBandedSparseRowIterator(const ConstBandedSparseRowIterator& cpy) = default;
@@ -951,14 +1089,17 @@ public:
 	/**
 	 * @brief Accesses an element in the current row where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] diagonal Index of the diagonal
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double centered(int diagonal) const { return native(_row + diagonal); }
+	inline double centered(int diagonal) const
+	{
+		return native(_row + diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the current row where the lowest diagonal is indexed by @c 0
@@ -981,8 +1122,14 @@ public:
 		return 0.0;
 	}
 
-	inline double operator()(int diagonal) const { return centered(diagonal); }
-	inline double operator[](int diagonal) const { return centered(diagonal); }
+	inline double operator()(int diagonal) const
+	{
+		return centered(diagonal);
+	}
+	inline double operator[](int diagonal) const
+	{
+		return centered(diagonal);
+	}
 
 	inline ConstBandedSparseRowIterator& operator++() CADET_NOEXCEPT
 	{
@@ -1036,33 +1183,44 @@ public:
 	 * @brief Returns the underlying matrix this iterator is pointing into
 	 * @return Matrix this iterator is pointing into
 	 */
-	inline const CompressedSparseMatrix& matrix() const CADET_NOEXCEPT { return *_matrix; }
+	inline const CompressedSparseMatrix& matrix() const CADET_NOEXCEPT
+	{
+		return *_matrix;
+	}
 
 	/**
 	 * @brief Returns the index of the current row
 	 * @return Index of the current row
 	 */
-	inline int row() const CADET_NOEXCEPT { return _row; }
+	inline int row() const CADET_NOEXCEPT
+	{
+		return _row;
+	}
 
 	/**
 	 * @brief Returns the number of non-zero entries in this row
 	 * @return Number of non-zero entries in this row
 	 */
-	inline int numNonZeros() const CADET_NOEXCEPT { return _numNonZero; }
+	inline int numNonZeros() const CADET_NOEXCEPT
+	{
+		return _numNonZero;
+	}
 
 	/**
 	 * @brief Returns an array of the matrix entries in this row
 	 * @return Array with matrix entries in this row
 	 */
-	inline double const* data() const CADET_NOEXCEPT { return _values; }
+	inline double const* data() const CADET_NOEXCEPT
+	{
+		return _values;
+	}
 
 protected:
-
 	inline void updateOnRowChange() CADET_NOEXCEPT
 	{
 		_values = _matrix->valuesOfRow(_row);
 		_colIdx = _matrix->columnIndicesOfRow(_row);
-		_numNonZero = _matrix->numNonZerosInRow(_row);			
+		_numNonZero = _matrix->numNonZerosInRow(_row);
 	}
 
 	CompressedSparseMatrix const* _matrix;
@@ -1072,11 +1230,10 @@ protected:
 	int _numNonZero;
 };
 
-
 std::ostream& operator<<(std::ostream& out, const CompressedSparseMatrix& sm);
 
 } // namespace linalg
 
 } // namespace cadet
 
-#endif  // LIBCADET_COMPRESSEDSPARSEMATRIX_HPP_
+#endif // LIBCADET_COMPRESSEDSPARSEMATRIX_HPP_

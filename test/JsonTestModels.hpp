@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a ParameterProvider that uses JSON.
  */
 
@@ -28,4 +28,4 @@ cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool non
 cadet::JsonParameterProvider createCSTR(unsigned int nComp);
 cadet::JsonParameterProvider createCSTRBenchmark(unsigned int nSec, double endTime, double interval);
 
-#endif  // CADETTEST_JSONTESTMODELS_HPP_
+#endif // CADETTEST_JSONTESTMODELS_HPP_

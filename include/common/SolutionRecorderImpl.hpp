@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides several implementations of ISolutionRecorder.
  */
 
@@ -30,7 +30,7 @@ namespace cadet
 
 namespace detail
 {
-	CADET_CONST_OR_CONSTEXPR unsigned int numDefaultRecorderTimesteps = 100u;
+CADET_CONST_OR_CONSTEXPR unsigned int numDefaultRecorderTimesteps = 100u;
 }
 
 /**
@@ -41,7 +41,6 @@ namespace detail
 class InternalStorageUnitOpRecorder : public ISolutionRecorder
 {
 public:
-
 	struct StorageConfig
 	{
 		bool storeBulk;
@@ -53,13 +52,19 @@ public:
 		bool storeVolume;
 	};
 
-	InternalStorageUnitOpRecorder() : InternalStorageUnitOpRecorder(UnitOpIndep) { }
+	InternalStorageUnitOpRecorder() : InternalStorageUnitOpRecorder(UnitOpIndep)
+	{
+	}
 
-	InternalStorageUnitOpRecorder(UnitOpIdx idx) : _cfgSolution({false, false, false, true, false, false, false}),
-		_cfgSolutionDot({false, false, false, false, false, false, false}), _cfgSensitivity({false, false, false, true, false, false, false}),
-		_cfgSensitivityDot({false, false, false, true, false, false, false}), _storeTime(false), _storeCoordinates(false), _splitComponents(true), _splitPorts(true),
-		_singleAsMultiPortUnitOps(false), _keepParticleSingletonDim(true), _curCfg(nullptr), _nComp(0), _nVolumeDof(0), _nAxialCells(0), _nRadialCells(0),
-		_nInletPorts(0), _nOutletPorts(0), _numTimesteps(0), _numSens(0), _unitOp(idx), _needsReAlloc(false), _axialCoords(0), _radialCoords(0), _particleCoords(0)
+	InternalStorageUnitOpRecorder(UnitOpIdx idx)
+		: _cfgSolution({false, false, false, true, false, false, false}),
+		  _cfgSolutionDot({false, false, false, false, false, false, false}),
+		  _cfgSensitivity({false, false, false, true, false, false, false}),
+		  _cfgSensitivityDot({false, false, false, true, false, false, false}), _storeTime(false),
+		  _storeCoordinates(false), _splitComponents(true), _splitPorts(true), _singleAsMultiPortUnitOps(false),
+		  _keepParticleSingletonDim(true), _curCfg(nullptr), _nComp(0), _nVolumeDof(0), _nAxialCells(0),
+		  _nRadialCells(0), _nInletPorts(0), _nOutletPorts(0), _numTimesteps(0), _numSens(0), _unitOp(idx),
+		  _needsReAlloc(false), _axialCoords(0), _radialCoords(0), _particleCoords(0)
 	{
 	}
 
@@ -102,7 +107,7 @@ public:
 		clear();
 
 		_numTimesteps = numTimesteps;
-		
+
 		if (numSens != _numSens)
 		{
 			// Allocate sensitivity storage
@@ -174,11 +179,11 @@ public:
 
 		// Allocate space for solution
 		beginSolution();
-		allocateMemory(exporter);		
+		allocateMemory(exporter);
 		endSolution();
 
 		beginSolutionDerivative();
-		allocateMemory(exporter);		
+		allocateMemory(exporter);
 		endSolution();
 
 		// Allocate space for sensitivities
@@ -212,7 +217,8 @@ public:
 			_time.push_back(t);
 	}
 
-	virtual void beginUnitOperation(cadet::UnitOpIdx idx, const cadet::IModel& model, const cadet::ISolutionExporter& exporter)
+	virtual void beginUnitOperation(cadet::UnitOpIdx idx, const cadet::IModel& model,
+									const cadet::ISolutionExporter& exporter)
 	{
 		// Only record one unit operation
 		if ((idx != _unitOp) || !_curCfg)
@@ -288,9 +294,13 @@ public:
 		}
 	}
 
-	virtual void endUnitOperation() { }
+	virtual void endUnitOperation()
+	{
+	}
 
-	virtual void endTimestep() { }
+	virtual void endTimestep()
+	{
+	}
 
 	virtual void beginSolution()
 	{
@@ -310,7 +320,10 @@ public:
 		_curStorage = &_dataDot;
 	}
 
-	virtual void endSolutionDerivative() { endSolution(); }
+	virtual void endSolutionDerivative()
+	{
+		endSolution();
+	}
 
 	virtual void beginSensitivity(const cadet::ParameterId& pId, unsigned int sensIdx)
 	{
@@ -321,7 +334,7 @@ public:
 	{
 		endSolution();
 	}
-	
+
 	virtual void beginSensitivityDerivative(const cadet::ParameterId& pId, unsigned int sensIdx)
 	{
 		beginSensitivityDot(sensIdx);
@@ -332,8 +345,7 @@ public:
 		endSolution();
 	}
 
-	template <typename Writer_t>
-	void writeCoordinates(Writer_t& writer)
+	template <typename Writer_t> void writeCoordinates(Writer_t& writer)
 	{
 		if (!_storeCoordinates)
 			return;
@@ -362,8 +374,7 @@ public:
 		}
 	}
 
-	template <typename Writer_t>
-	void writeSolution(Writer_t& writer)
+	template <typename Writer_t> void writeSolution(Writer_t& writer)
 	{
 		std::ostringstream oss;
 
@@ -379,8 +390,7 @@ public:
 		endSolution();
 	}
 
-	template <typename Writer_t>
-	void writeSensitivity(Writer_t& writer)
+	template <typename Writer_t> void writeSensitivity(Writer_t& writer)
 	{
 		std::ostringstream oss;
 
@@ -402,8 +412,7 @@ public:
 		}
 	}
 
-	template <typename Writer_t>
-	void writeSensitivity(Writer_t& writer, unsigned int param)
+	template <typename Writer_t> void writeSensitivity(Writer_t& writer, unsigned int param)
 	{
 		std::ostringstream oss;
 
@@ -416,79 +425,256 @@ public:
 		endSolution();
 	}
 
-	inline StorageConfig& solutionConfig() CADET_NOEXCEPT { return _cfgSolution; }
-	inline const StorageConfig& solutionConfig() const CADET_NOEXCEPT { return _cfgSolution; }
-	inline void solutionConfig(const StorageConfig& cfg) CADET_NOEXCEPT { _cfgSolution = cfg; }
+	inline StorageConfig& solutionConfig() CADET_NOEXCEPT
+	{
+		return _cfgSolution;
+	}
+	inline const StorageConfig& solutionConfig() const CADET_NOEXCEPT
+	{
+		return _cfgSolution;
+	}
+	inline void solutionConfig(const StorageConfig& cfg) CADET_NOEXCEPT
+	{
+		_cfgSolution = cfg;
+	}
 
-	inline StorageConfig& solutionDotConfig() CADET_NOEXCEPT { return _cfgSolutionDot; }
-	inline const StorageConfig& solutionDotConfig() const CADET_NOEXCEPT { return _cfgSolutionDot; }
-	inline void solutionDotConfig(const StorageConfig& cfg) CADET_NOEXCEPT { _cfgSolutionDot = cfg; }
+	inline StorageConfig& solutionDotConfig() CADET_NOEXCEPT
+	{
+		return _cfgSolutionDot;
+	}
+	inline const StorageConfig& solutionDotConfig() const CADET_NOEXCEPT
+	{
+		return _cfgSolutionDot;
+	}
+	inline void solutionDotConfig(const StorageConfig& cfg) CADET_NOEXCEPT
+	{
+		_cfgSolutionDot = cfg;
+	}
 
-	inline StorageConfig& sensitivityConfig() CADET_NOEXCEPT { return _cfgSensitivity; }
-	inline const StorageConfig& sensitivityConfig() const CADET_NOEXCEPT { return _cfgSensitivity; }
-	inline void sensitivityConfig(const StorageConfig& cfg) CADET_NOEXCEPT { _cfgSensitivity = cfg; }
+	inline StorageConfig& sensitivityConfig() CADET_NOEXCEPT
+	{
+		return _cfgSensitivity;
+	}
+	inline const StorageConfig& sensitivityConfig() const CADET_NOEXCEPT
+	{
+		return _cfgSensitivity;
+	}
+	inline void sensitivityConfig(const StorageConfig& cfg) CADET_NOEXCEPT
+	{
+		_cfgSensitivity = cfg;
+	}
 
-	inline StorageConfig& sensitivityDotConfig() CADET_NOEXCEPT { return _cfgSensitivityDot; }
-	inline const StorageConfig& sensitivityDotConfig() const CADET_NOEXCEPT { return _cfgSensitivityDot; }
-	inline void sensitivityDotConfig(const StorageConfig& cfg) CADET_NOEXCEPT { _cfgSensitivityDot = cfg; }
+	inline StorageConfig& sensitivityDotConfig() CADET_NOEXCEPT
+	{
+		return _cfgSensitivityDot;
+	}
+	inline const StorageConfig& sensitivityDotConfig() const CADET_NOEXCEPT
+	{
+		return _cfgSensitivityDot;
+	}
+	inline void sensitivityDotConfig(const StorageConfig& cfg) CADET_NOEXCEPT
+	{
+		_cfgSensitivityDot = cfg;
+	}
 
-	inline bool storeTime() const CADET_NOEXCEPT { return _storeTime; }
-	inline void storeTime(bool st) CADET_NOEXCEPT { _storeTime = st; }
+	inline bool storeTime() const CADET_NOEXCEPT
+	{
+		return _storeTime;
+	}
+	inline void storeTime(bool st) CADET_NOEXCEPT
+	{
+		_storeTime = st;
+	}
 
-	inline bool storeCoordinates() const CADET_NOEXCEPT { return _storeCoordinates; }
-	inline void storeCoordinates(bool sc) CADET_NOEXCEPT { _storeCoordinates = sc; }
+	inline bool storeCoordinates() const CADET_NOEXCEPT
+	{
+		return _storeCoordinates;
+	}
+	inline void storeCoordinates(bool sc) CADET_NOEXCEPT
+	{
+		_storeCoordinates = sc;
+	}
 
-	inline bool splitComponents() const CADET_NOEXCEPT { return _splitComponents; }
-	inline void splitComponents(bool st) CADET_NOEXCEPT { _splitComponents = st; }
+	inline bool splitComponents() const CADET_NOEXCEPT
+	{
+		return _splitComponents;
+	}
+	inline void splitComponents(bool st) CADET_NOEXCEPT
+	{
+		_splitComponents = st;
+	}
 
-	inline bool splitPorts() const CADET_NOEXCEPT { return _splitPorts; }
-	inline void splitPorts(bool st) CADET_NOEXCEPT { _splitPorts = st; }
+	inline bool splitPorts() const CADET_NOEXCEPT
+	{
+		return _splitPorts;
+	}
+	inline void splitPorts(bool st) CADET_NOEXCEPT
+	{
+		_splitPorts = st;
+	}
 
-	inline bool treatSingleAsMultiPortUnitOps() const CADET_NOEXCEPT { return _singleAsMultiPortUnitOps; }
-	inline void treatSingleAsMultiPortUnitOps(bool smp) CADET_NOEXCEPT { _singleAsMultiPortUnitOps = smp; }
+	inline bool treatSingleAsMultiPortUnitOps() const CADET_NOEXCEPT
+	{
+		return _singleAsMultiPortUnitOps;
+	}
+	inline void treatSingleAsMultiPortUnitOps(bool smp) CADET_NOEXCEPT
+	{
+		_singleAsMultiPortUnitOps = smp;
+	}
 
-	inline bool keepParticleSingletonDim() const CADET_NOEXCEPT { return _keepParticleSingletonDim; }
-	inline void keepParticleSingletonDim(bool keepSingleton) CADET_NOEXCEPT { _keepParticleSingletonDim = keepSingleton; }
+	inline bool keepParticleSingletonDim() const CADET_NOEXCEPT
+	{
+		return _keepParticleSingletonDim;
+	}
+	inline void keepParticleSingletonDim(bool keepSingleton) CADET_NOEXCEPT
+	{
+		_keepParticleSingletonDim = keepSingleton;
+	}
 
-	inline UnitOpIdx unitOperation() const CADET_NOEXCEPT { return _unitOp; }
-	inline void unitOperation(UnitOpIdx idx) CADET_NOEXCEPT { _unitOp = idx; }
+	inline UnitOpIdx unitOperation() const CADET_NOEXCEPT
+	{
+		return _unitOp;
+	}
+	inline void unitOperation(UnitOpIdx idx) CADET_NOEXCEPT
+	{
+		_unitOp = idx;
+	}
 
-	inline unsigned int numDataPoints() const CADET_NOEXCEPT { return _numTimesteps; }
-	inline unsigned int numComponents() const CADET_NOEXCEPT { return _nComp; }
-	inline unsigned int numInletPorts() const CADET_NOEXCEPT { return _nInletPorts; }
-	inline unsigned int numOutletPorts() const CADET_NOEXCEPT { return _nOutletPorts; }
+	inline unsigned int numDataPoints() const CADET_NOEXCEPT
+	{
+		return _numTimesteps;
+	}
+	inline unsigned int numComponents() const CADET_NOEXCEPT
+	{
+		return _nComp;
+	}
+	inline unsigned int numInletPorts() const CADET_NOEXCEPT
+	{
+		return _nInletPorts;
+	}
+	inline unsigned int numOutletPorts() const CADET_NOEXCEPT
+	{
+		return _nOutletPorts;
+	}
 
-	inline double const* time() const CADET_NOEXCEPT { return _time.data(); }
-	inline double const* inlet() const CADET_NOEXCEPT { return _data.inlet.data(); }
-	inline double const* outlet() const CADET_NOEXCEPT { return _data.outlet.data(); }
-	inline double const* bulk() const CADET_NOEXCEPT { return _data.bulk.data(); }
-	inline double const* particle(unsigned int parType = 0) const CADET_NOEXCEPT { return _data.particle[parType].data(); }
-	inline double const* solid(unsigned int parType = 0) const CADET_NOEXCEPT { return _data.solid[parType].data(); }
-	inline double const* flux() const CADET_NOEXCEPT { return _data.flux.data(); }
-	inline double const* volume() const CADET_NOEXCEPT { return _data.volume.data(); }
-	inline double const* inletDot() const CADET_NOEXCEPT { return _dataDot.inlet.data(); }
-	inline double const* outletDot() const CADET_NOEXCEPT { return _dataDot.outlet.data(); }
-	inline double const* bulkDot() const CADET_NOEXCEPT { return _dataDot.bulk.data(); }
-	inline double const* particleDot(unsigned int parType = 0) const CADET_NOEXCEPT { return _dataDot.particle[parType].data(); }
-	inline double const* solidDot(unsigned int parType = 0) const CADET_NOEXCEPT { return _dataDot.solid[parType].data(); }
-	inline double const* fluxDot() const CADET_NOEXCEPT { return _dataDot.flux.data(); }
-	inline double const* volumeDot() const CADET_NOEXCEPT { return _dataDot.volume.data(); }
-	inline double const* sensInlet(unsigned int idx) const CADET_NOEXCEPT { return _sens[idx].inlet.data(); }
-	inline double const* sensOutlet(unsigned int idx) const CADET_NOEXCEPT { return _sens[idx].outlet.data(); }
-	inline double const* sensBulk(unsigned int idx) const CADET_NOEXCEPT { return _sens[idx].bulk.data(); }
-	inline double const* sensParticle(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT { return _sens[idx].particle[parType].data(); }
-	inline double const* sensSolid(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT { return _sens[idx].solid[parType].data(); }
-	inline double const* sensFlux(unsigned int idx) const CADET_NOEXCEPT { return _sens[idx].flux.data(); }
-	inline double const* sensVolume(unsigned int idx) const CADET_NOEXCEPT { return _sens[idx].volume.data(); }
-	inline double const* sensInletDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].inlet.data(); }
-	inline double const* sensOutletDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].outlet.data(); }
-	inline double const* sensBulkDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].bulk.data(); }
-	inline double const* sensParticleDot(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT { return _sensDot[idx].particle[parType].data(); }
-	inline double const* sensSolidDot(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT { return _sensDot[idx].solid[parType].data(); }
-	inline double const* sensFluxDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].flux.data(); }
-	inline double const* sensVolumeDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].volume.data(); }
+	inline double const* time() const CADET_NOEXCEPT
+	{
+		return _time.data();
+	}
+	inline double const* inlet() const CADET_NOEXCEPT
+	{
+		return _data.inlet.data();
+	}
+	inline double const* outlet() const CADET_NOEXCEPT
+	{
+		return _data.outlet.data();
+	}
+	inline double const* bulk() const CADET_NOEXCEPT
+	{
+		return _data.bulk.data();
+	}
+	inline double const* particle(unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _data.particle[parType].data();
+	}
+	inline double const* solid(unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _data.solid[parType].data();
+	}
+	inline double const* flux() const CADET_NOEXCEPT
+	{
+		return _data.flux.data();
+	}
+	inline double const* volume() const CADET_NOEXCEPT
+	{
+		return _data.volume.data();
+	}
+	inline double const* inletDot() const CADET_NOEXCEPT
+	{
+		return _dataDot.inlet.data();
+	}
+	inline double const* outletDot() const CADET_NOEXCEPT
+	{
+		return _dataDot.outlet.data();
+	}
+	inline double const* bulkDot() const CADET_NOEXCEPT
+	{
+		return _dataDot.bulk.data();
+	}
+	inline double const* particleDot(unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _dataDot.particle[parType].data();
+	}
+	inline double const* solidDot(unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _dataDot.solid[parType].data();
+	}
+	inline double const* fluxDot() const CADET_NOEXCEPT
+	{
+		return _dataDot.flux.data();
+	}
+	inline double const* volumeDot() const CADET_NOEXCEPT
+	{
+		return _dataDot.volume.data();
+	}
+	inline double const* sensInlet(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sens[idx].inlet.data();
+	}
+	inline double const* sensOutlet(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sens[idx].outlet.data();
+	}
+	inline double const* sensBulk(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sens[idx].bulk.data();
+	}
+	inline double const* sensParticle(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _sens[idx].particle[parType].data();
+	}
+	inline double const* sensSolid(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _sens[idx].solid[parType].data();
+	}
+	inline double const* sensFlux(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sens[idx].flux.data();
+	}
+	inline double const* sensVolume(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sens[idx].volume.data();
+	}
+	inline double const* sensInletDot(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].inlet.data();
+	}
+	inline double const* sensOutletDot(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].outlet.data();
+	}
+	inline double const* sensBulkDot(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].bulk.data();
+	}
+	inline double const* sensParticleDot(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].particle[parType].data();
+	}
+	inline double const* sensSolidDot(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].solid[parType].data();
+	}
+	inline double const* sensFluxDot(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].flux.data();
+	}
+	inline double const* sensVolumeDot(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _sensDot[idx].volume.data();
+	}
+
 protected:
-
 	struct Storage
 	{
 		std::vector<double> outlet;
@@ -558,8 +744,7 @@ protected:
 			_curStorage->volume.reserve(nAllocTimesteps * exporter.numVolumeDofs());
 	}
 
-	template <typename Writer_t>
-	void writeData(Writer_t& writer, const char* prefix, std::ostringstream& oss)
+	template <typename Writer_t> void writeData(Writer_t& writer, const char* prefix, std::ostringstream& oss)
 	{
 		if (_curCfg->storeOutlet)
 		{
@@ -574,15 +759,19 @@ protected:
 							oss.str("");
 							if ((_nOutletPorts == 1) && !_singleAsMultiPortUnitOps)
 							{
-								oss << prefix << "_OUTLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_OUTLET_COMP_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << comp;
 							}
 							else
 							{
-								oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port 
-									<<  "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << port << "_COMP_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << comp;
 							}
 
-							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->outlet.data() + comp + port * _nComp, _nComp * _nOutletPorts);
+							writer.template vector<double>(oss.str(), _numTimesteps,
+														   _curStorage->outlet.data() + comp + port * _nComp,
+														   _nComp * _nOutletPorts);
 						}
 					}
 				}
@@ -594,9 +783,12 @@ protected:
 						if ((_nOutletPorts == 1) && !_singleAsMultiPortUnitOps)
 							oss << prefix << "_OUTLET";
 						else
-							oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port;
+							oss << prefix << "_OUTLET_PORT_" << std::setfill('0') << std::setw(3)
+								<< std::setprecision(0) << port;
 
-						writer.template matrix<double>(oss.str(), _numTimesteps, _nComp, _curStorage->outlet.data() + port * _nComp, _nOutletPorts * _nComp, _nComp);
+						writer.template matrix<double>(oss.str(), _numTimesteps, _nComp,
+													   _curStorage->outlet.data() + port * _nComp,
+													   _nOutletPorts * _nComp, _nComp);
 					}
 				}
 			}
@@ -607,11 +799,14 @@ protected:
 					for (unsigned int comp = 0; comp < _nComp; ++comp)
 					{
 						oss.str("");
-						oss << prefix << "_OUTLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+						oss << prefix << "_OUTLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+							<< comp;
 						if ((_nOutletPorts == 1) && !_singleAsMultiPortUnitOps)
-							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->outlet.data() + comp, _nComp);
+							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->outlet.data() + comp,
+														   _nComp);
 						else
-							writer.template matrix<double>(oss.str(), _numTimesteps, _nOutletPorts, _curStorage->outlet.data() + comp, _nComp);
+							writer.template matrix<double>(oss.str(), _numTimesteps, _nOutletPorts,
+														   _curStorage->outlet.data() + comp, _nComp);
 					}
 				}
 				else
@@ -622,13 +817,15 @@ protected:
 					{
 						const std::vector<std::size_t> layout = {_numTimesteps, _nComp};
 						debugCheckTensorLayout(layout, _curStorage->outlet.size());
-						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->outlet.data());
+						writer.template tensor<double>(oss.str(), layout.size(), layout.data(),
+													   _curStorage->outlet.data());
 					}
 					else
 					{
 						const std::vector<std::size_t> layout = {_numTimesteps, _nOutletPorts, _nComp};
 						debugCheckTensorLayout(layout, _curStorage->outlet.size());
-						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->outlet.data());
+						writer.template tensor<double>(oss.str(), layout.size(), layout.data(),
+													   _curStorage->outlet.data());
 					}
 				}
 			}
@@ -647,15 +844,19 @@ protected:
 							oss.str("");
 							if ((_nInletPorts == 1) && !_singleAsMultiPortUnitOps)
 							{
-								oss << prefix << "_INLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_INLET_COMP_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << comp;
 							}
 							else
 							{
-								oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port 
-									<<  "_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+								oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << port << "_COMP_" << std::setfill('0') << std::setw(3)
+									<< std::setprecision(0) << comp;
 							}
 
-							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->inlet.data() + comp + port * _nComp, _nComp * _nInletPorts);
+							writer.template vector<double>(oss.str(), _numTimesteps,
+														   _curStorage->inlet.data() + comp + port * _nComp,
+														   _nComp * _nInletPorts);
 						}
 					}
 				}
@@ -667,9 +868,12 @@ protected:
 						if ((_nInletPorts == 1) && !_singleAsMultiPortUnitOps)
 							oss << prefix << "_INLET";
 						else
-							oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << port;
+							oss << prefix << "_INLET_PORT_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+								<< port;
 
-						writer.template matrix<double>(oss.str(), _numTimesteps, _nComp, _curStorage->inlet.data() + port * _nComp, _nInletPorts * _nComp, _nComp);
+						writer.template matrix<double>(oss.str(), _numTimesteps, _nComp,
+													   _curStorage->inlet.data() + port * _nComp, _nInletPorts * _nComp,
+													   _nComp);
 					}
 				}
 			}
@@ -680,11 +884,14 @@ protected:
 					for (unsigned int comp = 0; comp < _nComp; ++comp)
 					{
 						oss.str("");
-						oss << prefix << "_INLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << comp;
+						oss << prefix << "_INLET_COMP_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+							<< comp;
 						if ((_nInletPorts == 1) && !_singleAsMultiPortUnitOps)
-							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->inlet.data() + comp, _nComp);
+							writer.template vector<double>(oss.str(), _numTimesteps, _curStorage->inlet.data() + comp,
+														   _nComp);
 						else
-							writer.template matrix<double>(oss.str(), _numTimesteps, _nInletPorts, _curStorage->inlet.data() + comp, _nComp);
+							writer.template matrix<double>(oss.str(), _numTimesteps, _nInletPorts,
+														   _curStorage->inlet.data() + comp, _nComp);
 					}
 				}
 				else
@@ -695,13 +902,15 @@ protected:
 					{
 						const std::vector<std::size_t> layout = {_numTimesteps, _nComp};
 						debugCheckTensorLayout(layout, _curStorage->inlet.size());
-						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->inlet.data());
+						writer.template tensor<double>(oss.str(), layout.size(), layout.data(),
+													   _curStorage->inlet.data());
 					}
 					else
 					{
 						const std::vector<std::size_t> layout = {_numTimesteps, _nInletPorts, _nComp};
 						debugCheckTensorLayout(layout, _curStorage->inlet.size());
-						writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->inlet.data());
+						writer.template tensor<double>(oss.str(), layout.size(), layout.data(),
+													   _curStorage->inlet.data());
 					}
 				}
 			}
@@ -753,11 +962,13 @@ protected:
 
 				oss.str("");
 				oss << prefix << "_PARTICLE";
-				writer.template tensor<double>(oss.str(), layout.size(), layout.data(), _curStorage->particle[0].data());
+				writer.template tensor<double>(oss.str(), layout.size(), layout.data(),
+											   _curStorage->particle[0].data());
 			}
 			else
 			{
-				const bool hasParticleShells = std::any_of(_nParShells.begin(), _nParShells.end(), [](unsigned int x) { return x >= 1; });
+				const bool hasParticleShells =
+					std::any_of(_nParShells.begin(), _nParShells.end(), [](unsigned int x) { return x >= 1; });
 				if (hasParticleShells)
 					layout.push_back(0);
 				layout.push_back(_nComp);
@@ -781,8 +992,10 @@ protected:
 					debugCheckTensorLayout(layout, layoutSize, _curStorage->particle[parType].size());
 
 					oss.str("");
-					oss << prefix << "_PARTICLE_PARTYPE_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << parType;
-					writer.template tensor<double>(oss.str(), layoutSize, layout.data(), _curStorage->particle[parType].data());
+					oss << prefix << "_PARTICLE_PARTYPE_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+						<< parType;
+					writer.template tensor<double>(oss.str(), layoutSize, layout.data(),
+												   _curStorage->particle[parType].data());
 				}
 			}
 		}
@@ -817,7 +1030,8 @@ protected:
 			}
 			else
 			{
-				const bool hasParticleShells = std::any_of(_nParShells.begin(), _nParShells.end(), [](unsigned int x) { return x >= 1; });
+				const bool hasParticleShells =
+					std::any_of(_nParShells.begin(), _nParShells.end(), [](unsigned int x) { return x >= 1; });
 				if (hasParticleShells)
 					layout.push_back(0);
 				layout.push_back(0);
@@ -840,8 +1054,10 @@ protected:
 					debugCheckTensorLayout(layout, layoutSize, _curStorage->solid[parType].size());
 
 					oss.str("");
-					oss << prefix << "_SOLID_PARTYPE_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << parType;
-					writer.template tensor<double>(oss.str(), layoutSize, layout.data(), _curStorage->solid[parType].data());
+					oss << prefix << "_SOLID_PARTYPE_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+						<< parType;
+					writer.template tensor<double>(oss.str(), layoutSize, layout.data(),
+												   _curStorage->solid[parType].data());
 				}
 			}
 		}
@@ -897,13 +1113,12 @@ protected:
 		std::size_t layoutElems = 1;
 		for (std::size_t i = 0; i < layoutSize; ++i)
 			layoutElems *= layout[i];
-		
+
 		cadet_assert(numElems == layoutElems);
 #endif
 	}
 
-	template <typename T>
-	void debugCheckTensorLayout(const std::vector<T>& layout, std::size_t numElems)
+	template <typename T> void debugCheckTensorLayout(const std::vector<T>& layout, std::size_t numElems)
 	{
 #ifdef CADET_DEBUG
 		debugCheckTensorLayout(layout, layout.size(), numElems);
@@ -949,7 +1164,6 @@ protected:
 	std::vector<double> _particleCoords;
 };
 
-
 /**
  * @brief Stores pieces of the solution of the whole model system in recorders of single unit operations
  * @details Maintains a collection of InternalStorageUnitOpRecorder objects that store individual unit operations.
@@ -959,7 +1173,6 @@ protected:
 class InternalStorageSystemRecorder : public ISolutionRecorder
 {
 public:
-
 	InternalStorageSystemRecorder() : _numTimesteps(0), _numSens(0), _storeTime(true)
 	{
 	}
@@ -1022,7 +1235,8 @@ public:
 			rec->beginTimestep(t);
 	}
 
-	virtual void beginUnitOperation(cadet::UnitOpIdx idx, const cadet::IModel& model, const cadet::ISolutionExporter& exporter)
+	virtual void beginUnitOperation(cadet::UnitOpIdx idx, const cadet::IModel& model,
+									const cadet::ISolutionExporter& exporter)
 	{
 		for (InternalStorageUnitOpRecorder* rec : _recorders)
 			rec->beginUnitOperation(idx, model, exporter);
@@ -1088,15 +1302,15 @@ public:
 			rec->endSensitivityDerivative(pId, sensIdx);
 	}
 
-	template <typename Writer_t>
-	void writeCoordinates(Writer_t& writer)
+	template <typename Writer_t> void writeCoordinates(Writer_t& writer)
 	{
 		std::ostringstream oss;
 
 		for (InternalStorageUnitOpRecorder* rec : _recorders)
 		{
 			oss.str("");
-			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << static_cast<int>(rec->unitOperation());
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+				<< static_cast<int>(rec->unitOperation());
 
 			if (rec->storeCoordinates())
 			{
@@ -1106,9 +1320,8 @@ public:
 			}
 		}
 	}
-	
-	template <typename Writer_t>
-	void writeSolution(Writer_t& writer)
+
+	template <typename Writer_t> void writeSolution(Writer_t& writer)
 	{
 		std::ostringstream oss;
 
@@ -1118,7 +1331,8 @@ public:
 		for (InternalStorageUnitOpRecorder* rec : _recorders)
 		{
 			oss.str("");
-			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << static_cast<int>(rec->unitOperation());
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+				<< static_cast<int>(rec->unitOperation());
 
 			writer.pushGroup(oss.str());
 			rec->writeSolution(writer);
@@ -1126,8 +1340,7 @@ public:
 		}
 	}
 
-	template <typename Writer_t>
-	void writeSensitivity(Writer_t& writer)
+	template <typename Writer_t> void writeSensitivity(Writer_t& writer)
 	{
 		std::ostringstream oss;
 
@@ -1140,7 +1353,8 @@ public:
 			for (InternalStorageUnitOpRecorder* rec : _recorders)
 			{
 				oss.str("");
-				oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << static_cast<int>(rec->unitOperation());
+				oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+					<< static_cast<int>(rec->unitOperation());
 
 				writer.pushGroup(oss.str());
 				rec->writeSensitivity(writer, param);
@@ -1151,8 +1365,14 @@ public:
 		}
 	}
 
-	inline bool storeTime() const CADET_NOEXCEPT { return _storeTime; }
-	inline void storeTime(bool st) CADET_NOEXCEPT { _storeTime = st; }
+	inline bool storeTime() const CADET_NOEXCEPT
+	{
+		return _storeTime;
+	}
+	inline void storeTime(bool st) CADET_NOEXCEPT
+	{
+		_storeTime = st;
+	}
 
 	inline bool anyUnitStoresCoordinates() const CADET_NOEXCEPT
 	{
@@ -1165,16 +1385,28 @@ public:
 		return false;
 	}
 
-	inline unsigned int numDataPoints() const CADET_NOEXCEPT { return _numTimesteps; }
+	inline unsigned int numDataPoints() const CADET_NOEXCEPT
+	{
+		return _numTimesteps;
+	}
 
 	inline void addRecorder(InternalStorageUnitOpRecorder* rec)
 	{
 		_recorders.push_back(rec);
 	}
 
-	inline unsigned int numRecorders() const CADET_NOEXCEPT { return _recorders.size(); }
-	inline InternalStorageUnitOpRecorder* recorder(unsigned int idx) CADET_NOEXCEPT { return _recorders[idx]; }
-	inline InternalStorageUnitOpRecorder* recorder(unsigned int idx) const CADET_NOEXCEPT { return _recorders[idx]; }
+	inline unsigned int numRecorders() const CADET_NOEXCEPT
+	{
+		return _recorders.size();
+	}
+	inline InternalStorageUnitOpRecorder* recorder(unsigned int idx) CADET_NOEXCEPT
+	{
+		return _recorders[idx];
+	}
+	inline InternalStorageUnitOpRecorder* recorder(unsigned int idx) const CADET_NOEXCEPT
+	{
+		return _recorders[idx];
+	}
 
 	inline InternalStorageUnitOpRecorder* unitOperation(UnitOpIdx idx) CADET_NOEXCEPT
 	{
@@ -1202,10 +1434,12 @@ public:
 		_recorders.clear();
 	}
 
-	inline double const* time() const CADET_NOEXCEPT { return _time.data(); }
+	inline double const* time() const CADET_NOEXCEPT
+	{
+		return _time.data();
+	}
 
 protected:
-
 	std::vector<InternalStorageUnitOpRecorder*> _recorders;
 	unsigned int _numTimesteps;
 	unsigned int _numSens;
@@ -1213,7 +1447,6 @@ protected:
 	bool _storeTime;
 };
 
-
 } // namespace cadet
 
-#endif  // LIBCADET_SOLUTIONRECORDER_IMPL_HPP_
+#endif // LIBCADET_SOLUTIONRECORDER_IMPL_HPP_

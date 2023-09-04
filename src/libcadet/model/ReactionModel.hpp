@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines reaction model interfaces.
  */
 
@@ -49,8 +49,9 @@ namespace model
 class IDynamicReactionModel
 {
 public:
-
-	virtual ~IDynamicReactionModel() CADET_NOEXCEPT { }
+	virtual ~IDynamicReactionModel() CADET_NOEXCEPT
+	{
+	}
 
 	/**
 	 * @brief Returns the name of the dynamic reaction model
@@ -81,26 +82,29 @@ public:
 	 * @brief Sets the number of components in the model
 	 * @details This function is called prior to configure() by the underlying model.
 	 *          It can only be called once. Model parameters are configured by configure().
-	 * 
+	 *
 	 * @param [in] paramProvider Parameter provider
 	 * @param [in] nComp Number of components
 	 * @param [in] nBound Array of size @p nComp which contains the number of bound states for each component
-	 * @param [in] boundOffset Array of size @p nComp with offsets to the first bound state of each component beginning from the solid phase
+	 * @param [in] boundOffset Array of size @p nComp with offsets to the first bound state of each component beginning
+	 * from the solid phase
 	 */
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset) = 0;
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp,
+											  unsigned int const* nBound, unsigned int const* boundOffset) = 0;
 
 	/**
-	 * @brief Configures the model by extracting all non-structural parameters (e.g., model parameters) from the given @p paramProvider
+	 * @brief Configures the model by extracting all non-structural parameters (e.g., model parameters) from the given
+	 * @p paramProvider
 	 * @details The scope of the cadet::IParameterProvider is left unchanged on return.
-	 * 
+	 *
 	 *          The structure of the model is left unchanged, that is, the number of degrees of
 	 *          freedom stays the same (e.g., number of bound states is left unchanged). Only
 	 *          true (non-structural) model parameters are read and changed.
-	 *          
+	 *
 	 *          This function may only be called if configureModelDiscretization() has been called
 	 *          in the past. Contrary to configureModelDiscretization(), it can be called multiple
 	 *          times.
-	 * 
+	 *
 	 * @param [in] paramProvider Parameter provider
 	 * @param [in] unitOpIdx Index of the unit operation this dynamic reaction model belongs to
 	 * @param [in] parTypeIdx Index of the particle type this dynamic reaction model belongs to
@@ -111,7 +115,7 @@ public:
 	/**
 	 * @brief Sets external functions for this dynamic reaction model
 	 * @details The external functions are not owned by this IDynamicReactionModel.
-	 * 
+	 *
 	 * @param [in] extFuns Pointer to array of IExternalFunction objects of size @p size
 	 * @param [in] size Number of elements in the IExternalFunction array @p extFuns
 	 */
@@ -133,7 +137,7 @@ public:
 	/**
 	 * @brief Sets a parameter value
 	 * @details The parameter identified by its unique parameter is set to the given value.
-	 * 
+	 *
 	 * @param [in] pId ParameterId that identifies the parameter uniquely
 	 * @param [in] value Value of the parameter
 	 * @return @c true if the parameter has been successfully set to the given value,
@@ -174,23 +178,25 @@ public:
 	 * @param [in] nBoundStates Array with bound states for each component
 	 * @return Size of the workspace in bytes
 	 */
-	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT = 0;
+	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates,
+									   unsigned int const* nBoundStates) const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Evaluates the residual for one liquid phase cell
 	 * @details Adds the dynamic reaction terms to the residual vector for the given
 	 *          liquid phase cell. The reaction terms are premultiplied with a given
 	 *          factor. That is, this function realizes
-	 *          \f[ \begin{align} 
+	 *          \f[ \begin{align}
 	 *              \text{res} = \text{res} + \gamma R
 	 *          \end{align} \f]
 	 *          where @f$ R @f$ are the reaction terms.
-	 *          
+	 *
 	 *          This function is called simultaneously from multiple threads.
-	 * 
+	 *
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] y Pointer to first component in the current cell
 	 * @param [out] res Pointer to residual of the first component in the current particle shell's liquid phase
 	 * @param [in] factor Factor @f$ \gamma @f$
@@ -198,100 +204,128 @@ public:
 	 * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
 	 */
 	virtual int residualLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y,
-		active* res, const active& factor, LinearBufferAllocator workSpace) const = 0;
+								  active* res, const active& factor, LinearBufferAllocator workSpace) const = 0;
 
 	virtual int residualLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y,
-		active* res, double factor, LinearBufferAllocator workSpace) const = 0;
+								  active* res, double factor, LinearBufferAllocator workSpace) const = 0;
 
 	virtual int residualLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
-		active* res, double factor, LinearBufferAllocator workSpace) const = 0;
+								  active* res, double factor, LinearBufferAllocator workSpace) const = 0;
 
 	virtual int residualLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
-		double* res, double factor, LinearBufferAllocator workSpace) const = 0;
+								  double* res, double factor, LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Adds the analytical Jacobian of the reaction terms for one liquid phase cell
 	 * @details Adds the Jacobian of the dynamic reaction terms for the given liquid phase
 	 *          cell to the full Jacobian. The reaction terms are premultiplied with a given
 	 *          factor. That is, this function realizes
-	 *          \f[ \begin{align} 
+	 *          \f[ \begin{align}
 	 *              J = J + \gamma J_R
 	 *          \end{align} \f]
 	 *          where @f$ J_R @f$ is the Jacobian of the reaction terms.
-	 * 
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 *          It can be left out (empty implementation) if AD is used to evaluate the Jacobian.
 	 *
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] y Pointer to first component in the current cell
 	 * @param [in] factor Factor @f$ \gamma @f$
-	 * @param [in,out] jac Row iterator pointing to the first component row of the underlying matrix in which the Jacobian is stored
+	 * @param [in,out] jac Row iterator pointing to the first component row of the underlying matrix in which the
+	 * Jacobian is stored
 	 * @param [in,out] workSpace Memory work space
 	 */
-	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double factor, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const = 0;
-	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double factor, linalg::DenseBandedRowIterator jac, LinearBufferAllocator workSpace) const = 0;
-	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double factor, linalg::BandedSparseRowIterator jac, LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
+										   double factor, linalg::BandMatrix::RowIterator jac,
+										   LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
+										   double factor, linalg::DenseBandedRowIterator jac,
+										   LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianLiquidAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
+										   double factor, linalg::BandedSparseRowIterator jac,
+										   LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Evaluates the residual for one combined phase cell
 	 * @details Adds the dynamic reaction terms to the residual vector for the given
 	 *          combined phase cell. The reaction terms are premultiplied with a given
 	 *          factor. That is, this function realizes
-	 *          \f[ \begin{align} 
+	 *          \f[ \begin{align}
 	 *              \text{res} = \text{res} + \gamma R
 	 *          \end{align} \f]
 	 *          where @f$ R @f$ are the reaction terms.
-	 *          
+	 *
 	 *          This function is called simultaneously from multiple threads.
-	 * 
+	 *
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] yLiquid Pointer to first component in the current cell's liquid phase
 	 * @param [in] ySolid Pointer to first component in the current cell's solid phase
 	 * @param [out] resLiquid Pointer to residual of the first component in the current particle shell's liquid phase
-	 * @param [out] resSolid Pointer to residual of the first bound state of the first component in the current particle shell
+	 * @param [out] resSolid Pointer to residual of the first bound state of the first component in the current particle
+	 * shell
 	 * @param [in] factor Factor @f$ \gamma @f$
 	 * @param [in,out] workSpace Memory work space
 	 * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
 	 */
 	virtual int residualCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* yLiquid,
-		active const* ySolid, active* resLiquid, active* resSolid, double factor, LinearBufferAllocator workSpace) const = 0;
+									active const* ySolid, active* resLiquid, active* resSolid, double factor,
+									LinearBufferAllocator workSpace) const = 0;
 
 	virtual int residualCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yLiquid,
-		double const* ySolid, active* resLiquid, active* resSolid, double factor, LinearBufferAllocator workSpace) const = 0;
+									double const* ySolid, active* resLiquid, active* resSolid, double factor,
+									LinearBufferAllocator workSpace) const = 0;
 
 	virtual int residualCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yLiquid,
-		double const* ySolid, double* resLiquid, double* resSolid, double factor, LinearBufferAllocator workSpace) const = 0;
+									double const* ySolid, double* resLiquid, double* resSolid, double factor,
+									LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Adds the analytical Jacobian of the reaction terms for one combined phase cell
 	 * @details Adds the Jacobian of the dynamic reaction terms for the given combined phase
 	 *          cell to the full Jacobian. The reaction terms are premultiplied with a given
 	 *          factor. That is, this function realizes
-	 *          \f[ \begin{align} 
+	 *          \f[ \begin{align}
 	 *              J = J + \gamma J_R
 	 *          \end{align} \f]
 	 *          where @f$ J_R @f$ is the Jacobian of the reaction terms.
-	 * 
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 *          It can be left out (empty implementation) if AD is used to evaluate the Jacobian.
 	 *
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] yLiquid Pointer to first component in the current cell's liquid phase
 	 * @param [in] ySolid Pointer to first component in the current cell's solid phase
 	 * @param [in] factor Factor @f$ \gamma @f$
-	 * @param [in,out] jacLiquid Row iterator pointing to the first component row of the underlying matrix in which the Jacobian is stored
-	 * @param [in,out] jacSolid Row iterator pointing to the first bound state row of the underlying matrix in which the Jacobian is stored
+	 * @param [in,out] jacLiquid Row iterator pointing to the first component row of the underlying matrix in which the
+	 * Jacobian is stored
+	 * @param [in,out] jacSolid Row iterator pointing to the first bound state row of the underlying matrix in which the
+	 * Jacobian is stored
 	 * @param [in,out] workSpace Memory work space
 	 */
-	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yLiquid, double const* ySolid, double factor, linalg::BandMatrix::RowIterator jacLiquid, linalg::BandMatrix::RowIterator jacSolid, LinearBufferAllocator workSpace) const = 0;
-	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yLiquid, double const* ySolid, double factor, linalg::DenseBandedRowIterator jacLiquid, linalg::DenseBandedRowIterator jacSolid, LinearBufferAllocator workSpace) const = 0;
-	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yLiquid, double const* ySolid, double factor, linalg::BandMatrix::RowIterator jacLiquid, linalg::DenseBandedRowIterator jacSolid, LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos,
+											 double const* yLiquid, double const* ySolid, double factor,
+											 linalg::BandMatrix::RowIterator jacLiquid,
+											 linalg::BandMatrix::RowIterator jacSolid,
+											 LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos,
+											 double const* yLiquid, double const* ySolid, double factor,
+											 linalg::DenseBandedRowIterator jacLiquid,
+											 linalg::DenseBandedRowIterator jacSolid,
+											 LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobianCombinedAdd(double t, unsigned int secIdx, const ColumnPosition& colPos,
+											 double const* yLiquid, double const* ySolid, double factor,
+											 linalg::BandMatrix::RowIterator jacLiquid,
+											 linalg::DenseBandedRowIterator jacSolid,
+											 LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Returns the number of reactions for a liquid phase cell
@@ -311,4 +345,4 @@ protected:
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_REACTIONMODELINTERFACE_HPP_
+#endif // LIBCADET_REACTIONMODELINTERFACE_HPP_

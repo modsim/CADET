@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Simulator implementation.
  */
 
@@ -36,23 +36,21 @@ int residualDaeWrapper(double t, N_Vector y, N_Vector yDot, N_Vector res, void* 
 
 int linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector yCur, N_Vector yDotCur, N_Vector resCur);
 
-int residualSensWrapper(int ns, double t, N_Vector y, N_Vector yDot, N_Vector res, 
-		N_Vector* yS, N_Vector* ySDot, N_Vector* resS,
-		void *userData, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
+int residualSensWrapper(int ns, double t, N_Vector y, N_Vector yDot, N_Vector res, N_Vector* yS, N_Vector* ySDot,
+						N_Vector* resS, void* userData, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
-//int weightWrapper(N_Vector y, N_Vector ewt, void *user_data);
+// int weightWrapper(N_Vector y, N_Vector ewt, void *user_data);
 
 class ISimulatableModel;
 
 /**
  * @brief Provides functionality to simulate a model using a time integrator
- * @details This class is responsible for managing the time integration process 
+ * @details This class is responsible for managing the time integration process
  *          and holds all memory associated with that (e.g., state vectors).
  */
 class Simulator : public ISimulator
 {
 public:
-
 	Simulator();
 
 	virtual ~Simulator() CADET_NOEXCEPT;
@@ -66,7 +64,8 @@ public:
 	virtual void setSensitiveParameterValue(const ParameterId& id, double value);
 	virtual void setSensitiveParameterValue(unsigned int idx, double value);
 	virtual void setSensitiveParameterFactors(unsigned int idx, double const* factors);
-	virtual void setSensitiveParameter(ParameterId const* ids, double const* diffFactors, unsigned int numParams, double absTolS);
+	virtual void setSensitiveParameter(ParameterId const* ids, double const* diffFactors, unsigned int numParams,
+									   double absTolS);
 	virtual void setSensitiveParameter(ParameterId const* ids, unsigned int numParams, double absTolS);
 	virtual void setParameterValue(const ParameterId& id, double value);
 
@@ -81,13 +80,15 @@ public:
 	virtual void setInitialCondition(IParameterProvider& paramProvider);
 	virtual void applyInitialCondition(double const* const initState);
 	virtual void applyInitialCondition(double const* const initState, double const* const initStateDot);
-	virtual void applyInitialConditionFwdSensitivities(double const * const* const initSens, double const * const* const initSensDot);
+	virtual void applyInitialConditionFwdSensitivities(double const* const* const initSens,
+													   double const* const* const initSensDot);
 	virtual void skipConsistentInitialization();
 	virtual void setConsistentInitialization(ConsistentInitialization ci);
 	virtual void setConsistentInitializationSens(ConsistentInitialization ci);
 
 	virtual void initializeFwdSensitivities();
-	virtual void initializeFwdSensitivities(double const * const* const initSens, double const * const* const initSensDot);
+	virtual void initializeFwdSensitivities(double const* const* const initSens,
+											double const* const* const initSensDot);
 
 	virtual void setSolutionRecorder(ISolutionRecorder* recorder);
 
@@ -101,14 +102,19 @@ public:
 
 	virtual void configure(IParameterProvider& paramProvider);
 	virtual void reconfigure(IParameterProvider& paramProvider);
-	virtual void configureTimeIntegrator(double relTol, double absTol, double initStepSize, unsigned int maxSteps, double maxStepSize);
-	virtual void configureTimeIntegrator(double relTol, double absTol, const std::vector<double>& initStepSizes, unsigned int maxSteps, double maxStepSize);
+	virtual void configureTimeIntegrator(double relTol, double absTol, double initStepSize, unsigned int maxSteps,
+										 double maxStepSize);
+	virtual void configureTimeIntegrator(double relTol, double absTol, const std::vector<double>& initStepSizes,
+										 unsigned int maxSteps, double maxStepSize);
 	virtual void setSensitivityErrorTolerance(double relTol, double const* absTol);
 
 	virtual void setRelativeErrorTolerance(double relTol);
 	virtual void setAbsoluteErrorTolerance(double absTol);
 	virtual void setAbsoluteErrorTolerance(const std::vector<double>& absTol);
-	virtual void setAlgebraicErrorTolerance(double algTol) CADET_NOEXCEPT { _algTol = algTol; }
+	virtual void setAlgebraicErrorTolerance(double algTol) CADET_NOEXCEPT
+	{
+		_algTol = algTol;
+	}
 	virtual void setInitialStepSize(double stepSize);
 	virtual void setInitialStepSize(const std::vector<double>& stepSize);
 	virtual void setMaximumSteps(unsigned int maxSteps);
@@ -129,12 +135,18 @@ public:
 	virtual unsigned int numDofs() const CADET_NOEXCEPT;
 	virtual void setNumThreads(unsigned int nThreads) CADET_NOEXCEPT;
 
-	virtual double lastSimulationDuration() const CADET_NOEXCEPT { return _lastIntTime; }
-	virtual double totalSimulationDuration() const CADET_NOEXCEPT { return _timerIntegration.totalElapsedTime(); }
+	virtual double lastSimulationDuration() const CADET_NOEXCEPT
+	{
+		return _lastIntTime;
+	}
+	virtual double totalSimulationDuration() const CADET_NOEXCEPT
+	{
+		return _timerIntegration.totalElapsedTime();
+	}
 
 	virtual void setNotificationCallback(INotificationCallback* nc) CADET_NOEXCEPT;
-protected:
 
+protected:
 	/**
 	 * @brief Clears memory used for time integration of a model
 	 */
@@ -148,7 +160,7 @@ protected:
 
 	/**
 	 * @brief Computes the index of the next section from the given time @p t
-	 * @details Returns the lowest index @c i with @f$ t_i \geq t @f$, where 
+	 * @details Returns the lowest index @c i with @f$ t_i \geq t @f$, where
 	 *          @f$ t_i @f$ is an element of @c _sectionTimes.
 	 * @param [in] t Current time
 	 * @param [in] startIdx Index of the first section the search should begin with
@@ -177,7 +189,7 @@ protected:
 	/**
 	 * @brief Sets up IDAS for computing sensitivities
 	 * @details Main objective is handing the initial values of the sensitivity subsystems over to IDAS
-	 * 
+	 *
 	 * @param [in] nSens Number of sensitivities
 	 */
 	void postFwdSensInit(unsigned int nSens);
@@ -186,13 +198,17 @@ protected:
 	 * @brief Returns the number of AD directions that are assigned to a parameter sensitivity
 	 * @return Total number of AD directions used for parameter sensitivities
 	 */
-	inline unsigned int numSensitivityAdDirections() const { return _sensitiveParams.slices(); }
+	inline unsigned int numSensitivityAdDirections() const
+	{
+		return _sensitiveParams.slices();
+	}
 
 	/**
 	 * @brief Sets the SECTION_TIMES parameter sensitive that matches the given parameter @p id
 	 * @param [in] id Parameter Id of the sensitive parameter
 	 * @param [in] adDirection AD direction assigned to this parameter
-	 * @param [in,out] adValue On entry value of the derivative in the given direction, on exit the (possibly corrected) value
+	 * @param [in,out] adValue On entry value of the derivative in the given direction, on exit the (possibly corrected)
+	 * value
 	 * @return @c true if the given parameter matches a SECTION_TIMES parameter, otherwise @c false
 	 */
 	bool setSectionTimesSensitive(const ParameterId& id, unsigned int adDirection, double adValue);
@@ -215,13 +231,14 @@ protected:
 
 	friend int ::cadet::residualDaeWrapper(double t, N_Vector y, N_Vector yDot, N_Vector res, void* userData);
 
-	friend int ::cadet::linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector yCur, N_Vector yDotCur, N_Vector resCur);
+	friend int ::cadet::linearSolveWrapper(IDAMem IDA_mem, N_Vector rhs, N_Vector weight, N_Vector yCur,
+										   N_Vector yDotCur, N_Vector resCur);
 
-//	friend int ::cadet::weightWrapper(N_Vector y, N_Vector ewt, void *user_data);
+	//	friend int ::cadet::weightWrapper(N_Vector y, N_Vector ewt, void *user_data);
 
-	friend int ::cadet::residualSensWrapper(int ns, double t, N_Vector y, N_Vector yDot, N_Vector res, 
-			N_Vector* yS, N_Vector* ySDot, N_Vector* resS,
-			void *userData, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
+	friend int ::cadet::residualSensWrapper(int ns, double t, N_Vector y, N_Vector yDot, N_Vector res, N_Vector* yS,
+											N_Vector* ySDot, N_Vector* resS, void* userData, N_Vector tmp1,
+											N_Vector tmp2, N_Vector tmp3);
 
 	ISimulatableModel* _model; //!< Simulated model, not owned by the Simulator
 
@@ -231,56 +248,60 @@ protected:
 
 	/**
 	 * @brief Determines whether the transition from section i to section i+1 is continuous.
-	 * @details The solver will be reset only at discontinuous transitions. The i-th element 
-	 *          corresponds to the transition from _sectionTimes[i+1] to _sectionTimes[i+2]. 
+	 * @details The solver will be reset only at discontinuous transitions. The i-th element
+	 *          corresponds to the transition from _sectionTimes[i+1] to _sectionTimes[i+2].
 	 *          Therefore size = nsec - 1.
 	 */
 	std::vector<bool> _sectionContinuity;
 
-	std::vector<double> _solutionTimes; //!< Contains the time transformed user specified times for writing solutions to the output
+	std::vector<double>
+		_solutionTimes; //!< Contains the time transformed user specified times for writing solutions to the output
 
-	N_Vector _vecStateY; //!< IDAS state vector	
-	N_Vector _vecStateYdot; //!< IDAS state vector time derivative
-	N_Vector* _vecFwdYs; //!< IDAS sensitivities vector	
-	N_Vector* _vecFwdYsDot; //!< IDAS sensitivities vector time derivative
+	N_Vector _vecStateY;                              //!< IDAS state vector
+	N_Vector _vecStateYdot;                           //!< IDAS state vector time derivative
+	N_Vector* _vecFwdYs;                              //!< IDAS sensitivities vector
+	N_Vector* _vecFwdYsDot;                           //!< IDAS sensitivities vector time derivative
 	util::SlicedVector<ParameterId> _sensitiveParams; //!< Stores (fused) sensitive parameters
 	std::vector<double> _sensitiveParamsFactor; //!< Stores the factors of the linear sensitive parameter combinations
 	std::vector<active> _sectionTimes; //!< Stores the AD variables used for SECTION_TIMES parameter derivatives
-	
-	double _relTolS; //!< Relative tolerance for forward sensitivity systems in the time integration
+
+	double _relTolS;              //!< Relative tolerance for forward sensitivity systems in the time integration
 	std::vector<double> _absTolS; //!< Absolute tolerances for forward sensitivity systems in the time integration
 
 	std::vector<double> _absTol; //!< Absolute tolerance for the original system in the time integration
-	double _relTol; //!< Relative tolerance for the original system in the time integration
-	double _algTol; //!< Tolerance for the solution of algebraic equations in the consistent initialization
+	double _relTol;              //!< Relative tolerance for the original system in the time integration
+	double _algTol;              //!< Tolerance for the solution of algebraic equations in the consistent initialization
 	std::vector<double> _initStepSize; //!< Initial step size for the time integrator
-	unsigned int _maxSteps; //!< Maximum number of time integration steps
-	double _maxStepSize; //!< Maximum time step size
+	unsigned int _maxSteps;            //!< Maximum number of time integration steps
+	double _maxStepSize;               //!< Maximum time step size
 	unsigned int _nThreads; //!< Maximum number of threads CADET is allowed to use 0, disables maximum setting
 
-	bool _sensErrorTestEnabled; //!< Determines whether forward sensitivity systems participate in the local time integration error test
-	unsigned int _maxNewtonIter; //!< Maximum number of Newton iterations for original DAE system
-	unsigned int _maxErrorTestFail; //!< Maximum number of local time integration error test failures
-	unsigned int _maxConvTestFail; //!< Maximum number of Newton iteration failures
+	bool _sensErrorTestEnabled;      //!< Determines whether forward sensitivity systems participate in the local time
+									 //!< integration error test
+	unsigned int _maxNewtonIter;     //!< Maximum number of Newton iterations for original DAE system
+	unsigned int _maxErrorTestFail;  //!< Maximum number of local time integration error test failures
+	unsigned int _maxConvTestFail;   //!< Maximum number of Newton iteration failures
 	unsigned int _maxNewtonIterSens; //!< Maximum number of Newton iterations for forward sensitivity systems
 
 	SectionIdx _curSec; //!< Index of the current section
 
-	bool _skipConsistencyStateY; //!< Flag that determines whether the consistent initialization is skipped
-	bool _skipConsistencySensitivity; //!< Flag that determines whether the consistent initialization of the sensitivity systems is skipped
+	bool _skipConsistencyStateY;      //!< Flag that determines whether the consistent initialization is skipped
+	bool _skipConsistencySensitivity; //!< Flag that determines whether the consistent initialization of the sensitivity
+									  //!< systems is skipped
 
 	ConsistentInitialization _consistentInitMode; //!< Mode that determines consistent initialization behavior
-	ConsistentInitialization _consistentInitModeSens; //!< Mode that determines consistent initialization behavior of the sensitivity systems
+	ConsistentInitialization
+		_consistentInitModeSens; //!< Mode that determines consistent initialization behavior of the sensitivity systems
 
 	active* _vecADres; //!< Vector of AD datatypes for holding the residual
-	active* _vecADy; //!< Vector of AD datatypes for holding the state vector
+	active* _vecADy;   //!< Vector of AD datatypes for holding the state vector
 
 	Timer _timerIntegration; //!< Timer measuring the duration of the call to integrate()
-	double _lastIntTime; //!< Last simulation duration
+	double _lastIntTime;     //!< Last simulation duration
 
 	INotificationCallback* _notification; //!< Callback handler for notifications
 };
 
 } // namespace cadet
 
-#endif  // LIBCADET_SIMULATOR_IMPL_HPP_
+#endif // LIBCADET_SIMULATOR_IMPL_HPP_

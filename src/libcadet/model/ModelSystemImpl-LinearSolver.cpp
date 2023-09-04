@@ -19,7 +19,7 @@
 
 #include "ParallelSupport.hpp"
 #ifdef CADET_PARALLELIZE
-	#include <tbb/parallel_for.h>
+#include <tbb/parallel_for.h>
 #endif
 
 #include "model/ModelSystemImpl-Helper.hpp"
@@ -31,7 +31,7 @@ namespace model
 {
 
 int ModelSystem::linearSolve(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
-	const ConstSimulationState& simState)
+							 const ConstSimulationState& simState)
 {
 	if (_linearModelOrdering.sliceSize(_curSwitchIndex) == 0)
 	{
@@ -45,8 +45,8 @@ int ModelSystem::linearSolve(double t, double alpha, double outerTol, double* co
 	}
 }
 
-int ModelSystem::linearSolveSequential(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
-	const ConstSimulationState& simState)
+int ModelSystem::linearSolveSequential(double t, double alpha, double outerTol, double* const rhs,
+									   double const* const weight, const ConstSimulationState& simState)
 {
 	// TODO: Add early out error checks
 
@@ -71,7 +71,8 @@ int ModelSystem::linearSolveSequential(double t, double alpha, double outerTol, 
 			for (std::size_t j = 0; j < _models.size(); ++j)
 			{
 				const unsigned int offset2 = _dofOffset[j];
-				_jacFN[j].multiplySubtract(rhs + offset2, rhs + finalOffset, _conDofOffset[idxUnit], _conDofOffset[idxUnit+1]);
+				_jacFN[j].multiplySubtract(rhs + offset2, rhs + finalOffset, _conDofOffset[idxUnit],
+										   _conDofOffset[idxUnit + 1]);
 			}
 
 			// Calculate inlet DOF for unit operation based on the coupling conditions.
@@ -84,21 +85,22 @@ int ModelSystem::linearSolveSequential(double t, double alpha, double outerTol, 
 				const unsigned int localStride = m->localInletComponentStride(port);
 				for (unsigned int comp = 0; comp < m->numComponents(); ++comp)
 				{
-					rhs[offset + localIndex + comp*localStride] = rhs[idxCoupling];
+					rhs[offset + localIndex + comp * localStride] = rhs[idxCoupling];
 					++idxCoupling;
 				}
 			}
 		}
 
 		// Solve unit operation itself
-		_errorIndicator[idxUnit] = m->linearSolve(t, alpha, outerTol, rhs + offset, weight + offset, applyOffset(simState, offset));
+		_errorIndicator[idxUnit] =
+			m->linearSolve(t, alpha, outerTol, rhs + offset, weight + offset, applyOffset(simState, offset));
 	}
 
 	return totalErrorIndicatorFromLocal(_errorIndicator);
 }
 
-int ModelSystem::linearSolveParallel(double t, double alpha, double outerTol, double* const rhs, double const* const weight,
-	const ConstSimulationState& simState)
+int ModelSystem::linearSolveParallel(double t, double alpha, double outerTol, double* const rhs,
+									 double const* const weight, const ConstSimulationState& simState)
 {
 	// TODO: Add early out error checks
 
@@ -114,7 +116,8 @@ int ModelSystem::linearSolveParallel(double t, double alpha, double outerTol, do
 	{
 		IUnitOperation* const m = _models[i];
 		const unsigned int offset = _dofOffset[i];
-		_errorIndicator[i] = m->linearSolve(t, alpha, outerTol, rhs + offset, weight + offset, applyOffset(simState, offset));
+		_errorIndicator[i] =
+			m->linearSolve(t, alpha, outerTol, rhs + offset, weight + offset, applyOffset(simState, offset));
 	} CADET_PARFOR_END;
 
 	// Solve last row of L with backwards substitution: y_f = b_f - \sum_{i=0}^{N_z} J_{f,i} y_i
@@ -183,7 +186,8 @@ int ModelSystem::linearSolveParallel(double t, double alpha, double outerTol, do
 		_jacNF[idxModel].multiplyVector(rhs + finalOffset, _tempState + offset);
 
 		// Apply N_i^{-1} to tempState_i
-		const int linSolve = m->linearSolve(t, alpha, outerTol, _tempState + offset, weight + offset, applyOffset(simState, offset));
+		const int linSolve =
+			m->linearSolve(t, alpha, outerTol, _tempState + offset, weight + offset, applyOffset(simState, offset));
 		_errorIndicator[idxModel] = updateErrorIndicator(_errorIndicator[idxModel], linSolve);
 
 		// Compute rhs_i = y_i - N_i^{-1} * N_{i,f} * y_f = y_i - tempState_i
@@ -208,15 +212,16 @@ S &= J_f - J_{f,0} \, J_0^{-1} \, J_{0,f} - \sum_{p=1}^{N_z}{J_{f,p} \, J_p^{-1}
 *          and @f$ J_{f,i} @f$ for @f$ i = 0, \dots, N_{z} @f$ are sparse.
 *
 *          The matrix-vector multiplication is executed in parallel as follows:
-*              -# Compute @f$ J_{f,i} \, J_i^{-1} \, J_{i,f} @f$ independently (in parallel with respect to index @f$ i @f$)
+*              -# Compute @f$ J_{f,i} \, J_i^{-1} \, J_{i,f} @f$ independently (in parallel with respect to index @f$ i
+@f$)
 *              -# Subtract the result from @f$ z @f$ in a critical section to avoid race conditions
 *
 * @param [in] x Vector @f$ x @f$ the matrix @f$ S @f$ is multiplied with
 * @param [out] z Result of the matrix-vector multiplication
 * @return @c 0 if successful, any other value in case of failure
 */
-int ModelSystem::schurComplementMatrixVector(double const* x, double* z, double t, double alpha, double outerTol, double const* const weight,
-	const ConstSimulationState& simState) const
+int ModelSystem::schurComplementMatrixVector(double const* x, double* z, double t, double alpha, double outerTol,
+											 double const* const weight, const ConstSimulationState& simState) const
 {
 	BENCH_SCOPE(_timerMatVec);
 
@@ -238,7 +243,8 @@ int ModelSystem::schurComplementMatrixVector(double const* x, double* z, double 
 		_jacNF[idxModel].multiplyVector(x, _tempState + offset);
 
 		// Apply N_i^{-1} to tempState_i
-		const int linSolve = m->linearSolve(t, alpha, outerTol, _tempState + offset, weight + offset, applyOffset(simState, offset));
+		const int linSolve =
+			m->linearSolve(t, alpha, outerTol, _tempState + offset, weight + offset, applyOffset(simState, offset));
 		_errorIndicator[idxModel] = updateErrorIndicator(_errorIndicator[idxModel], linSolve);
 
 		// Apply J_{f,i} and subtract results from z
@@ -254,7 +260,8 @@ int ModelSystem::schurComplementMatrixVector(double const* x, double* z, double 
 }
 
 /**
- * @brief Multiplies a vector with the full Jacobian of the entire system (i.e., @f$ \frac{\partial F}{\partial y}\left(t, y, \dot{y}\right) @f$)
+ * @brief Multiplies a vector with the full Jacobian of the entire system (i.e., @f$ \frac{\partial F}{\partial
+ * y}\left(t, y, \dot{y}\right) @f$)
  * @details Actually, the operation @f$ z = \alpha \frac{\partial F}{\partial y} x + \beta z @f$ is performed.
  * @param [in] simTime Current simulation time point
  * @param [in] simState Simulation state vectors
@@ -263,7 +270,8 @@ int ModelSystem::schurComplementMatrixVector(double const* x, double* z, double 
  * @param [in] beta Factor @f$ \beta @f$ in front of @f$ z @f$
  * @param [in,out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void ModelSystem::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
+void ModelSystem::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+									   double const* yS, double alpha, double beta, double* ret)
 {
 	for (std::size_t idxModel = 0; idxModel < _models.size(); ++idxModel)
 	{
@@ -275,14 +283,16 @@ void ModelSystem::multiplyWithJacobian(const SimulationTime& simTime, const Cons
 }
 
 /**
- * @brief Multiplies a vector with the full time derivative Jacobian of the entire system (i.e., @f$ \frac{\partial F}{\partial \dot{y}}\left(t, y, \dot{y}\right) @f$)
+ * @brief Multiplies a vector with the full time derivative Jacobian of the entire system (i.e., @f$ \frac{\partial
+ * F}{\partial \dot{y}}\left(t, y, \dot{y}\right) @f$)
  * @details The operation @f$ z = \frac{\partial F}{\partial \dot{y}} x @f$ is performed.
  * @param [in] simTime Current simulation time point
  * @param [in] simState Simulation state vectors
  * @param [in] yS Vector @f$ x @f$ that is transformed by the Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$
  * @param [in,out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void ModelSystem::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double* ret)
+void ModelSystem::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+												 double const* yS, double* ret)
 {
 	for (std::size_t idxModel = 0; idxModel < _models.size(); ++idxModel)
 	{
@@ -295,377 +305,382 @@ void ModelSystem::multiplyWithDerivativeJacobian(const SimulationTime& simTime, 
 
 #ifdef CADET_DEBUG
 
-	/**
-	 * @brief Generate full system Jacobian FD and multiplyWithJacobian
-	 * @details During debugging this allows you to generate the full jacobian and verify the jacobian structure
-	 *          is what it should be. The system uses FD and multiplyWithJacobian to create the full jacobian.
-	 *          Use this function with a debugger and pull the values out of memory to visualize it.
-	 *
-	 * @param [in] simTime Current simulation time point
-	 * @param [in] simState Simulation state vectors
-	 */
-	void ModelSystem::genJacobian(const SimulationTime& simTime, const ConstSimulationState& simState)
+/**
+ * @brief Generate full system Jacobian FD and multiplyWithJacobian
+ * @details During debugging this allows you to generate the full jacobian and verify the jacobian structure
+ *          is what it should be. The system uses FD and multiplyWithJacobian to create the full jacobian.
+ *          Use this function with a debugger and pull the values out of memory to visualize it.
+ *
+ * @param [in] simTime Current simulation time point
+ * @param [in] simState Simulation state vectors
+ */
+void ModelSystem::genJacobian(const SimulationTime& simTime, const ConstSimulationState& simState)
+{
+	// This method is only for debugging. No point in optimizing it
+	const unsigned int size = numDofs();
+
+	// Jacobians are saved in column-major ordering (i.e., each column is added to the array sequentially / columns are
+	// stacked together)
+	std::vector<double> jacobian(size * size, 0.0);
+	std::vector<double> jacobianDot(size * size, 0.0);
+
+	std::vector<double> jacobianFD(size * size, 0.0);
+	std::vector<double> jacobianFDDot(size * size, 0.0);
+
+	const double h = 1e-5;
+
+	std::vector<double> f(size, 0.0);
+	std::vector<double> fdot(size, 0.0);
+	std::vector<double> fh(size, 0.0);
+	std::vector<double> fhdot(size, 0.0);
+
+	std::vector<double> res(size, 0.0);
+	std::vector<double> resh(size, 0.0);
+
+	// create Jacobian
+	for (unsigned int i = 0; i < size; ++i)
 	{
-		// This method is only for debugging. No point in optimizing it
-		const unsigned int size = numDofs();
+		// Clear res and resh
+		std::fill(res.begin(), res.end(), 0.0);
+		std::fill(resh.begin(), resh.end(), 0.0);
 
-		// Jacobians are saved in column-major ordering (i.e., each column is added to the array sequentially / columns are stacked together)
-		std::vector<double> jacobian(size*size, 0.0);
-		std::vector<double> jacobianDot(size*size, 0.0);
+		// Copy y and yDot
+		std::copy_n(simState.vecStateY, size, &f[0]);
+		std::copy_n(simState.vecStateY, size, &fh[0]);
 
-		std::vector<double> jacobianFD(size*size, 0.0);
-		std::vector<double> jacobianFDDot(size*size, 0.0);
+		std::copy_n(simState.vecStateYdot, size, &fdot[0]);
+		std::copy_n(simState.vecStateYdot, size, &fhdot[0]);
 
-		const double h = 1e-5;
+		// Change ith entry
+		double stepSize = h;
+		if (f[i] != 0.0)
+			stepSize = f[i] * h;
 
-		std::vector<double> f(size, 0.0);
-		std::vector<double> fdot(size, 0.0);
-		std::vector<double> fh(size, 0.0);
-		std::vector<double> fhdot(size, 0.0);
+		f[i] -= stepSize / 2;
+		fh[i] += stepSize / 2;
 
-		std::vector<double> res(size, 0.0);
-		std::vector<double> resh(size, 0.0);
+		residual(simTime, ConstSimulationState{&f[0], &fdot[0]}, &res[0]);
+		residual(simTime, ConstSimulationState{&fh[0], &fhdot[0]}, &resh[0]);
 
-		// create Jacobian
-		for (unsigned int i = 0; i < size; ++i)
+		for (unsigned int j = 0; j < size; ++j)
 		{
-			// Clear res and resh
-			std::fill(res.begin(), res.end(), 0.0);
-			std::fill(resh.begin(), resh.end(), 0.0);
-
-			// Copy y and yDot
-			std::copy_n(simState.vecStateY, size, &f[0]);
-			std::copy_n(simState.vecStateY, size, &fh[0]);
-
-			std::copy_n(simState.vecStateYdot, size, &fdot[0]);
-			std::copy_n(simState.vecStateYdot, size, &fhdot[0]);
-
-			// Change ith entry
-			double stepSize = h;
-			if (f[i] != 0.0)
-				stepSize = f[i] * h;
-
-			f[i] -= stepSize / 2;
-			fh[i] += stepSize / 2;
-
-			residual(simTime, ConstSimulationState{&f[0], &fdot[0]}, &res[0]);
-			residual(simTime, ConstSimulationState{&fh[0], &fhdot[0]}, &resh[0]);
-
-			for (unsigned int j = 0; j < size; ++j)
-			{
-				jacobianFD[i*size + j] = (resh[j] - res[j]) / stepSize;
-			}
+			jacobianFD[i * size + j] = (resh[j] - res[j]) / stepSize;
 		}
-
-		// create JacobianDot
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			// Clear res and resh
-			std::fill(res.begin(), res.end(), 0.0);
-			std::fill(resh.begin(), resh.end(), 0.0);
-
-			// Copy y and yDot
-			std::copy_n(simState.vecStateY, size, &f[0]);
-			std::copy_n(simState.vecStateY, size, &fh[0]);
-
-			std::copy_n(simState.vecStateYdot, size, &fdot[0]);
-			std::copy_n(simState.vecStateYdot, size, &fhdot[0]);
-
-			// Change ith entry
-			double stepSize = h;
-			if (fdot[i] != 0.0)
-				stepSize = fdot[i] * h;
-
-			fdot[i] -= stepSize / 2;
-			fhdot[i] += stepSize / 2;
-
-			residual(simTime, ConstSimulationState{&f[0], &fdot[0]}, &res[0]);
-			residual(simTime, ConstSimulationState{&fh[0], &fhdot[0]}, &resh[0]);
-
-			for (unsigned int j = 0; j < size; ++j)
-			{
-				jacobianFDDot[i*size + j] = (resh[j] - res[j]) / stepSize;
-			}
-		}
-
-		std::vector<double> unit(size, 0.0);
-
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			std::fill(res.begin(), res.end(), 0.0);
-			// Clear res and resh
-			unit[i] = 1.0;
-
-			multiplyWithJacobian(simTime, simState, unit.data(), 1.0, 0.0, res.data());
-			std::copy(res.begin(), res.end(), jacobian.begin() + i * size);
-
-			unit[i] = 0.0;
-		}
-
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			std::fill(res.begin(), res.end(), 0.0);
-			// Clear res and resh
-			unit[i] = 1.0;
-
-			multiplyWithDerivativeJacobian(simTime, simState, unit.data(), res.data());
-			std::copy(res.begin(), res.end(), jacobianDot.begin() + i * size);
-
-			unit[i] = 0.0;
-		}
-
-		LOG(Debug) << "jacFD = " << log::MatrixPtr<double>(jacobianFD.data(), size, size, true);
-		LOG(Debug) << "jacFDDot = " << log::MatrixPtr<double>(jacobianFDDot.data(), size, size, true);
-		LOG(Debug) << "jac = " << log::MatrixPtr<double>(jacobian.data(), size, size, true);
-		LOG(Debug) << "jacDot = " << log::MatrixPtr<double>(jacobianDot.data(), size, size, true);
 	}
 
-	/**
-	 * @brief Generate full system Jacobian with Sensitivities using FD and multiplyWithJacobian
-	 * @details During debugging this allows you to generate the full sensitivity jacobian and verify the jacobian structure
-	 *          is what it should be. The system uses FD and multiplyWithJacobian to create the full jacobian.
-	 *          Use this function with a debugger and pull the values out of memory to visualize it.
-	 *
-	 * @param [in] t Current time point
-	 * @param [in] simTime Current simulation time point
-	 * @param [in] simState Simulation state vectors
-	 * @param [in] residual vector
-	 * @param [in] yS Sensitivity State Vector
-	 * @param [in] ySdot Sensitivity State Vector
-	 * @param [in] resS Sensitivity residual vector
-	 * @param [in] adRes
-	 * @param [in] tmp1
-	 * @param [in] tmp2
-	 * @param [in] tmp3
-	 */
-	void ModelSystem::genJacobian(unsigned int nSens, const SimulationTime& simTime,
-		const ConstSimulationState& simState, double const* const res,
-		const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS,
-		active* const adRes, double* const tmp1, double* const tmp2, double* const tmp3)
+	// create JacobianDot
+	for (unsigned int i = 0; i < size; ++i)
 	{
-		// This method is only for debugging. Don't bother optimizing it
-		const unsigned int size = numDofs();
+		// Clear res and resh
+		std::fill(res.begin(), res.end(), 0.0);
+		std::fill(resh.begin(), resh.end(), 0.0);
 
-		// Jacobians are saved in column-major ordering (i.e., each column is added to the array sequentially / columns are stacked together)
-		std::vector<std::vector<double>> jacobianFD(nSens, std::vector<double>(size*size));
-		std::vector<std::vector<double>> jacobianFDDot(nSens, std::vector<double>(size*size));
+		// Copy y and yDot
+		std::copy_n(simState.vecStateY, size, &f[0]);
+		std::copy_n(simState.vecStateY, size, &fh[0]);
 
-		const double h = 1e-5;
+		std::copy_n(simState.vecStateYdot, size, &fdot[0]);
+		std::copy_n(simState.vecStateYdot, size, &fhdot[0]);
+
+		// Change ith entry
+		double stepSize = h;
+		if (fdot[i] != 0.0)
+			stepSize = fdot[i] * h;
+
+		fdot[i] -= stepSize / 2;
+		fhdot[i] += stepSize / 2;
+
+		residual(simTime, ConstSimulationState{&f[0], &fdot[0]}, &res[0]);
+		residual(simTime, ConstSimulationState{&fh[0], &fhdot[0]}, &resh[0]);
+
+		for (unsigned int j = 0; j < size; ++j)
+		{
+			jacobianFDDot[i * size + j] = (resh[j] - res[j]) / stepSize;
+		}
+	}
+
+	std::vector<double> unit(size, 0.0);
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		std::fill(res.begin(), res.end(), 0.0);
+		// Clear res and resh
+		unit[i] = 1.0;
+
+		multiplyWithJacobian(simTime, simState, unit.data(), 1.0, 0.0, res.data());
+		std::copy(res.begin(), res.end(), jacobian.begin() + i * size);
+
+		unit[i] = 0.0;
+	}
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		std::fill(res.begin(), res.end(), 0.0);
+		// Clear res and resh
+		unit[i] = 1.0;
+
+		multiplyWithDerivativeJacobian(simTime, simState, unit.data(), res.data());
+		std::copy(res.begin(), res.end(), jacobianDot.begin() + i * size);
+
+		unit[i] = 0.0;
+	}
+
+	LOG(Debug) << "jacFD = " << log::MatrixPtr<double>(jacobianFD.data(), size, size, true);
+	LOG(Debug) << "jacFDDot = " << log::MatrixPtr<double>(jacobianFDDot.data(), size, size, true);
+	LOG(Debug) << "jac = " << log::MatrixPtr<double>(jacobian.data(), size, size, true);
+	LOG(Debug) << "jacDot = " << log::MatrixPtr<double>(jacobianDot.data(), size, size, true);
+}
+
+/**
+ * @brief Generate full system Jacobian with Sensitivities using FD and multiplyWithJacobian
+ * @details During debugging this allows you to generate the full sensitivity jacobian and verify the jacobian structure
+ *          is what it should be. The system uses FD and multiplyWithJacobian to create the full jacobian.
+ *          Use this function with a debugger and pull the values out of memory to visualize it.
+ *
+ * @param [in] t Current time point
+ * @param [in] simTime Current simulation time point
+ * @param [in] simState Simulation state vectors
+ * @param [in] residual vector
+ * @param [in] yS Sensitivity State Vector
+ * @param [in] ySdot Sensitivity State Vector
+ * @param [in] resS Sensitivity residual vector
+ * @param [in] adRes
+ * @param [in] tmp1
+ * @param [in] tmp2
+ * @param [in] tmp3
+ */
+void ModelSystem::genJacobian(unsigned int nSens, const SimulationTime& simTime, const ConstSimulationState& simState,
+							  double const* const res, const std::vector<const double*>& yS,
+							  const std::vector<const double*>& ySdot, const std::vector<double*>& resS,
+							  active* const adRes, double* const tmp1, double* const tmp2, double* const tmp3)
+{
+	// This method is only for debugging. Don't bother optimizing it
+	const unsigned int size = numDofs();
+
+	// Jacobians are saved in column-major ordering (i.e., each column is added to the array sequentially / columns are
+	// stacked together)
+	std::vector<std::vector<double>> jacobianFD(nSens, std::vector<double>(size * size));
+	std::vector<std::vector<double>> jacobianFDDot(nSens, std::vector<double>(size * size));
+
+	const double h = 1e-5;
+
+	// -h/2
+	std::vector<double> tmp1mh(size, 0.0);
+	std::vector<double> tmp2mh(size, 0.0);
+	std::vector<double> tmp3mh(size, 0.0);
+
+	//  h/2
+	std::vector<double> tmp1ph(size, 0.0);
+	std::vector<double> tmp2ph(size, 0.0);
+	std::vector<double> tmp3ph(size, 0.0);
+
+	std::vector<active> adResmh(size, 0.0);
+	std::vector<active> adResph(size, 0.0);
+
+	std::vector<double*> ySmh(nSens);
+	std::vector<double*> ySdotmh(nSens);
+	std::vector<double*> resSmh(nSens);
+
+	std::vector<double*> ySph(nSens);
+	std::vector<double*> ySdotph(nSens);
+	std::vector<double*> resSph(nSens);
+
+	std::vector<const double*> CySmh(nSens);
+	std::vector<const double*> CySdotmh(nSens);
+
+	std::vector<const double*> CySph(nSens);
+	std::vector<const double*> CySdotph(nSens);
+
+	// Allocate memory
+	for (unsigned int j = 0; j < nSens; ++j)
+	{
+		ySmh[j] = new double[size];
+		ySdotmh[j] = new double[size];
+		resSmh[j] = new double[size];
+
+		ySph[j] = new double[size];
+		ySdotph[j] = new double[size];
+		resSph[j] = new double[size];
+	}
+
+	for (unsigned int j = 0; j < nSens; ++j)
+	{
+		CySmh[j] = ySmh[j];
+		CySdotmh[j] = ySdotmh[j];
+		CySph[j] = ySph[j];
+		CySdotph[j] = ySdotph[j];
+	}
+
+	// create Jacobian
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		// need to make copies of yS, ySdot, resS, adRes, tmp1, tmp2, tmp3
+
+		// adRes
+		std::copy_n(adRes, size, &adResmh[0]);
+		std::copy_n(adRes, size, &adResph[0]);
+
+		// tmp1
+		std::copy_n(tmp1, size, &tmp1mh[0]);
+		std::copy_n(tmp1, size, &tmp1ph[0]);
+
+		// tmp2
+		std::copy_n(tmp2, size, &tmp2mh[0]);
+		std::copy_n(tmp2, size, &tmp2ph[0]);
+
+		// tmp3
+		std::copy_n(tmp3, size, &tmp3mh[0]);
+		std::copy_n(tmp3, size, &tmp3ph[0]);
+
+		// Clear sync up
+		for (unsigned int j = 0; j < nSens; ++j)
+		{
+			std::copy_n(yS[j], size, ySmh[j]);
+			std::copy_n(yS[j], size, ySph[j]);
+
+			std::copy_n(ySdot[j], size, ySdotmh[j]);
+			std::copy_n(ySdot[j], size, ySdotph[j]);
+
+			std::copy_n(resS[j], size, resSmh[j]);
+			std::copy_n(resS[j], size, resSph[j]);
+		}
+
+		std::vector<double> stepSize(nSens, false);
+
+		// Change ith entry
+		for (unsigned int j = 0; j < nSens; ++j)
+		{
+			const double val = ySmh[j][i];
+			if (val == 0.0)
+			{
+				ySmh[j][i] -= h / 2;
+				ySph[j][i] += h / 2;
+				stepSize[j] = h;
+			}
+			else
+			{
+				ySmh[j][i] -= val * h / 2;
+				ySph[j][i] += val * h / 2;
+				stepSize[j] = val * h;
+			}
+		}
+
+		// clear jacobian
 
 		// -h/2
-		std::vector<double> tmp1mh(size, 0.0);
-		std::vector<double> tmp2mh(size, 0.0);
-		std::vector<double> tmp3mh(size, 0.0);
+		residualSensFwd(nSens, simTime, simState, res, CySmh, CySdotmh, resSmh, &adResmh[0], &tmp1mh[0], &tmp2mh[0],
+						&tmp3mh[0]);
 
-		//  h/2
-		std::vector<double> tmp1ph(size, 0.0);
-		std::vector<double> tmp2ph(size, 0.0);
-		std::vector<double> tmp3ph(size, 0.0);
+		// +h/2
+		residualSensFwd(nSens, simTime, simState, res, CySph, CySdotph, resSph, &adResph[0], &tmp1ph[0], &tmp2ph[0],
+						&tmp3ph[0]);
 
-		std::vector<active> adResmh(size, 0.0);
-		std::vector<active> adResph(size, 0.0);
-
-		std::vector<double *> ySmh(nSens);
-		std::vector<double *> ySdotmh(nSens);
-		std::vector<double *> resSmh(nSens);
-
-		std::vector<double *> ySph(nSens);
-		std::vector<double *> ySdotph(nSens);
-		std::vector<double *> resSph(nSens);
-
-		std::vector<const double *> CySmh(nSens);
-		std::vector<const double *> CySdotmh(nSens);
-
-		std::vector<const double *> CySph(nSens);
-		std::vector<const double *> CySdotph(nSens);
-
-		// Allocate memory
-		for (unsigned int j = 0; j < nSens; ++j)
+		for (unsigned int sens = 0; sens < nSens; ++sens)
 		{
-			ySmh[j] = new double[size];
-			ySdotmh[j] = new double[size];
-			resSmh[j] = new double[size];
-
-			ySph[j] = new double[size];
-			ySdotph[j] = new double[size];
-			resSph[j] = new double[size];
-		}
-
-
-		for (unsigned int j = 0; j < nSens; ++j)
-		{
-			CySmh[j] = ySmh[j];
-			CySdotmh[j] = ySdotmh[j];
-			CySph[j] = ySph[j];
-			CySdotph[j] = ySdotph[j];
-		}
-
-		// create Jacobian
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			// need to make copies of yS, ySdot, resS, adRes, tmp1, tmp2, tmp3
-
-			// adRes
-			std::copy_n(adRes, size, &adResmh[0]);
-			std::copy_n(adRes, size, &adResph[0]);
-
-			// tmp1
-			std::copy_n(tmp1, size, &tmp1mh[0]);
-			std::copy_n(tmp1, size, &tmp1ph[0]);
-
-			// tmp2
-			std::copy_n(tmp2, size, &tmp2mh[0]);
-			std::copy_n(tmp2, size, &tmp2ph[0]);
-
-			// tmp3
-			std::copy_n(tmp3, size, &tmp3mh[0]);
-			std::copy_n(tmp3, size, &tmp3ph[0]);
-
-			// Clear sync up
-			for (unsigned int j = 0; j < nSens; ++j)
+			for (unsigned int j = 0; j < size; ++j)
 			{
-				std::copy_n(yS[j], size, ySmh[j]);
-				std::copy_n(yS[j], size, ySph[j]);
-
-				std::copy_n(ySdot[j], size, ySdotmh[j]);
-				std::copy_n(ySdot[j], size, ySdotph[j]);
-
-				std::copy_n(resS[j], size, resSmh[j]);
-				std::copy_n(resS[j], size, resSph[j]);
+				// Residual is negative so it has to be negated to get the correct jacobian
+				jacobianFD[sens][i * size + j] = (resSph[sens][j] - resSmh[sens][j]) / stepSize[sens];
 			}
-
-			std::vector<double> stepSize(nSens, false);
-
-			// Change ith entry
-			for (unsigned int j = 0; j < nSens; ++j)
-			{
-				const double val = ySmh[j][i];
-				if (val == 0.0)
-				{
-					ySmh[j][i] -= h / 2;
-					ySph[j][i] += h / 2;
-					stepSize[j] = h;
-				}
-				else
-				{
-					ySmh[j][i] -= val * h / 2;
-					ySph[j][i] += val * h / 2;
-					stepSize[j] = val * h;
-				}
-			}
-
-			// clear jacobian
-
-			// -h/2
-			residualSensFwd(nSens, simTime, simState, res, CySmh, CySdotmh, resSmh, &adResmh[0], &tmp1mh[0], &tmp2mh[0], &tmp3mh[0]);
-
-			// +h/2
-			residualSensFwd(nSens, simTime, simState, res, CySph, CySdotph, resSph, &adResph[0], &tmp1ph[0], &tmp2ph[0], &tmp3ph[0]);
-
-			for (unsigned int sens = 0; sens < nSens; ++sens)
-			{
-				for (unsigned int j = 0; j < size; ++j)
-				{
-					// Residual is negative so it has to be negated to get the correct jacobian
-					jacobianFD[sens][i*size + j] = (resSph[sens][j] - resSmh[sens][j]) / stepSize[sens];
-				}
-			}
-		}
-
-		//create Jacobian
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			// need to make copies of yS, ySdot, resS, adRes, tmp1, tmp2, tmp3
-
-			// adRes
-			std::copy_n(adRes, size, &adResmh[0]);
-			std::copy_n(adRes, size, &adResph[0]);
-
-			// tmp1
-			std::copy_n(tmp1, size, &tmp1mh[0]);
-			std::copy_n(tmp1, size, &tmp1ph[0]);
-
-			// tmp2
-			std::copy_n(tmp2, size, &tmp2mh[0]);
-			std::copy_n(tmp2, size, &tmp2ph[0]);
-
-			// tmp3
-			std::copy_n(tmp3, size, &tmp3mh[0]);
-			std::copy_n(tmp3, size, &tmp3ph[0]);
-
-			// Clear sync up
-			for (unsigned int j = 0; j < nSens; ++j)
-			{
-				std::copy_n(yS[j], size, ySmh[j]);
-				std::copy_n(yS[j], size, ySph[j]);
-
-				std::copy_n(ySdot[j], size, ySdotmh[j]);
-				std::copy_n(ySdot[j], size, ySdotph[j]);
-
-				std::copy_n(resS[j], size, resSmh[j]);
-				std::copy_n(resS[j], size, resSph[j]);
-			}
-
-			std::vector<double> stepSize(nSens, false);
-
-			// Change ith entry
-			for (unsigned int j = 0; j < nSens; ++j)
-			{
-				const double val = ySdotmh[j][i];
-				if (val == 0.0)
-				{
-					ySdotmh[j][i] -= h / 2;
-					ySdotph[j][i] += h / 2;
-					stepSize[j] = h;
-				}
-				else
-				{
-					ySdotmh[j][i] -= val * h / 2;
-					ySdotph[j][i] += val * h / 2;
-					stepSize[j] = val * h;
-				}
-			}
-
-			// clear jacobian
-
-			// -h/2
-			residualSensFwd(nSens, simTime, simState, res, CySmh, CySdotmh, resSmh, &adResmh[0], &tmp1mh[0], &tmp2mh[0], &tmp3mh[0]);
-
-			// +h/2
-			residualSensFwd(nSens, simTime, simState, res, CySph, CySdotph, resSph, &adResph[0], &tmp1ph[0], &tmp2ph[0], &tmp3ph[0]);
-
-			for (unsigned int sens = 0; sens < nSens; ++sens)
-			{
-				for (unsigned int j = 0; j < size; ++j)
-				{
-					//Residual is negative so it has to be negated to get the correct jacobian
-					jacobianFDDot[sens][i*size + j] = (resSph[sens][j] - resSmh[sens][j]) / stepSize[sens];
-				}
-			}
-		}
-
-		// Free memory
-
-		for (unsigned int j = 0; j < nSens; ++j)
-		{
-			delete ySmh[j];
-			delete ySdotmh[j];
-			delete resSmh[j];
-
-			delete ySph[j];
-			delete ySdotph[j];
-			delete resSph[j];
-		}
-
-		for (unsigned int i = 0; i < nSens; ++i)
-		{
-			LOG(Debug) << "jacSens" << i << " = " << log::MatrixPtr<double>(jacobianFD[i].data(), size, size, true);
-			LOG(Debug) << "jacSensDot" << i << " = " << log::MatrixPtr<double>(jacobianFDDot[i].data(), size, size, true);
 		}
 	}
+
+	// create Jacobian
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		// need to make copies of yS, ySdot, resS, adRes, tmp1, tmp2, tmp3
+
+		// adRes
+		std::copy_n(adRes, size, &adResmh[0]);
+		std::copy_n(adRes, size, &adResph[0]);
+
+		// tmp1
+		std::copy_n(tmp1, size, &tmp1mh[0]);
+		std::copy_n(tmp1, size, &tmp1ph[0]);
+
+		// tmp2
+		std::copy_n(tmp2, size, &tmp2mh[0]);
+		std::copy_n(tmp2, size, &tmp2ph[0]);
+
+		// tmp3
+		std::copy_n(tmp3, size, &tmp3mh[0]);
+		std::copy_n(tmp3, size, &tmp3ph[0]);
+
+		// Clear sync up
+		for (unsigned int j = 0; j < nSens; ++j)
+		{
+			std::copy_n(yS[j], size, ySmh[j]);
+			std::copy_n(yS[j], size, ySph[j]);
+
+			std::copy_n(ySdot[j], size, ySdotmh[j]);
+			std::copy_n(ySdot[j], size, ySdotph[j]);
+
+			std::copy_n(resS[j], size, resSmh[j]);
+			std::copy_n(resS[j], size, resSph[j]);
+		}
+
+		std::vector<double> stepSize(nSens, false);
+
+		// Change ith entry
+		for (unsigned int j = 0; j < nSens; ++j)
+		{
+			const double val = ySdotmh[j][i];
+			if (val == 0.0)
+			{
+				ySdotmh[j][i] -= h / 2;
+				ySdotph[j][i] += h / 2;
+				stepSize[j] = h;
+			}
+			else
+			{
+				ySdotmh[j][i] -= val * h / 2;
+				ySdotph[j][i] += val * h / 2;
+				stepSize[j] = val * h;
+			}
+		}
+
+		// clear jacobian
+
+		// -h/2
+		residualSensFwd(nSens, simTime, simState, res, CySmh, CySdotmh, resSmh, &adResmh[0], &tmp1mh[0], &tmp2mh[0],
+						&tmp3mh[0]);
+
+		// +h/2
+		residualSensFwd(nSens, simTime, simState, res, CySph, CySdotph, resSph, &adResph[0], &tmp1ph[0], &tmp2ph[0],
+						&tmp3ph[0]);
+
+		for (unsigned int sens = 0; sens < nSens; ++sens)
+		{
+			for (unsigned int j = 0; j < size; ++j)
+			{
+				// Residual is negative so it has to be negated to get the correct jacobian
+				jacobianFDDot[sens][i * size + j] = (resSph[sens][j] - resSmh[sens][j]) / stepSize[sens];
+			}
+		}
+	}
+
+	// Free memory
+
+	for (unsigned int j = 0; j < nSens; ++j)
+	{
+		delete ySmh[j];
+		delete ySdotmh[j];
+		delete resSmh[j];
+
+		delete ySph[j];
+		delete ySdotph[j];
+		delete resSph[j];
+	}
+
+	for (unsigned int i = 0; i < nSens; ++i)
+	{
+		LOG(Debug) << "jacSens" << i << " = " << log::MatrixPtr<double>(jacobianFD[i].data(), size, size, true);
+		LOG(Debug) << "jacSensDot" << i << " = " << log::MatrixPtr<double>(jacobianFDDot[i].data(), size, size, true);
+	}
+}
 
 #endif
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

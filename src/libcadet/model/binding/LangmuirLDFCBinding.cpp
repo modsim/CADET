@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -49,7 +49,10 @@ namespace cadet
 namespace model
 {
 
-inline const char* LangmuirLDFCParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_LANGMUIR_LDF_LIQUID_PHASE"; }
+inline const char* LangmuirLDFCParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "MULTI_COMPONENT_LANGMUIR_LDF_LIQUID_PHASE";
+}
 
 inline bool LangmuirLDFCParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
@@ -59,41 +62,52 @@ inline bool LangmuirLDFCParamHandler::validateConfig(unsigned int nComp, unsigne
 	return true;
 }
 
-inline const char* ExtLangmuirLDFCParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_LANGMUIR_LDF_LIQUID_PHASE"; }
+inline const char* ExtLangmuirLDFCParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "EXT_MULTI_COMPONENT_LANGMUIR_LDF_LIQUID_PHASE";
+}
 
 inline bool ExtLangmuirLDFCParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_keq.size() != _kkin.size()) || (_keq.size() != _qMax.size()) || (_keq.size() < nComp))
-		throw InvalidParameterException("EXT_MCLLDFC_KEQ, EXT_MCLLDFC_KKIN, and EXT_MCLLDFC_QMAX have to have the same size");
+		throw InvalidParameterException(
+			"EXT_MCLLDFC_KEQ, EXT_MCLLDFC_KKIN, and EXT_MCLLDFC_QMAX have to have the same size");
 
 	return true;
 }
 
-
 /**
  * @brief Defines the multi component Langmuir binding model
- * @details Implements the Langmuir adsorption model: \f[ \begin{align} 
- *              \frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} q_{\text{max},i} \left( 1 - \sum_j \frac{q_j}{q_{\text{max},j}} \right) - k_{d,i} q_i
- *          \end{align} \f]
- *          Multiple bound states are not supported. 
+ * @details Implements the Langmuir adsorption model: \f[ \begin{align}
+ *              \frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} q_{\text{max},i} \left( 1 - \sum_j
+ * \frac{q_j}{q_{\text{max},j}} \right) - k_{d,i} q_i \end{align} \f] Multiple bound states are not supported.
  *          Components without bound state (i.e., non-binding components) are supported.
- *          
+ *
  *          See @cite Langmuir1916.
  * @tparam ParamHandler_t Type that can add support for external function dependence
  */
-template <class ParamHandler_t>
-class LangmuirLDFCBindingBase : public ParamHandlerBindingModelBase<ParamHandler_t>
+template <class ParamHandler_t> class LangmuirLDFCBindingBase : public ParamHandlerBindingModelBase<ParamHandler_t>
 {
 public:
+	LangmuirLDFCBindingBase()
+	{
+	}
+	virtual ~LangmuirLDFCBindingBase() CADET_NOEXCEPT
+	{
+	}
 
-	LangmuirLDFCBindingBase() { }
-	virtual ~LangmuirLDFCBindingBase() CADET_NOEXCEPT { }
+	static const char* identifier()
+	{
+		return ParamHandler_t::identifier();
+	}
 
-	static const char* identifier() { return ParamHandler_t::identifier(); }
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT
+	{
+		return true;
+	}
 
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
-
-	/*virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const
+	/*virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos,
+	double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const
 	{
 		if (!this->hasQuasiStationaryReactions())
 			return;
@@ -132,10 +146,10 @@ public:
 				continue;
 
 			// Residual
-			dResDt[bndIdx] = static_cast<double>(dpDt->kD[i]) * y[bndIdx] 
+			dResDt[bndIdx] = static_cast<double>(dpDt->kD[i]) * y[bndIdx]
 				- yCp[i] * (static_cast<double>(dpDt->kA[i]) * static_cast<double>(p->qMax[i]) * qSum
-				           + static_cast<double>(p->kA[i]) * static_cast<double>(dpDt->qMax[i]) * qSum
-				           + static_cast<double>(p->kA[i]) * static_cast<double>(p->qMax[i]) * qSumT);
+						   + static_cast<double>(p->kA[i]) * static_cast<double>(dpDt->qMax[i]) * qSum
+						   + static_cast<double>(p->kA[i]) * static_cast<double>(p->qMax[i]) * qSumT);
 
 			// Next bound component
 			++bndIdx;
@@ -152,9 +166,10 @@ protected:
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,
-		CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
+				 CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
 	{
-		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		// Protein fluxes: k_{kin,i}q_i - k_{kin,i} \frac{q_{m,i}k_{eq,i}c_i}{1+\sum_{j=1}^{n_{comp}} k_{eq,j}c_j}
 		ResidualType qSum = 1.0;
@@ -165,7 +180,7 @@ protected:
 			if (_nBoundStates[i] == 0)
 				continue;
 
-			qSum -= y[bndIdx] / static_cast<ParamType>(p->qMax[i]); 
+			qSum -= y[bndIdx] / static_cast<ParamType>(p->qMax[i]);
 
 			// Next bound component
 			++bndIdx;
@@ -179,7 +194,9 @@ protected:
 				continue;
 
 			// Residual
-			res[bndIdx] = -static_cast<ParamType>(p->kkin[i]) * (yCp[i] - y[bndIdx] / (static_cast<ParamType>(p->keq[i]) * static_cast<ParamType>(p->qMax[i]) * qSum));
+			res[bndIdx] =
+				-static_cast<ParamType>(p->kkin[i]) *
+				(yCp[i] - y[bndIdx] / (static_cast<ParamType>(p->keq[i]) * static_cast<ParamType>(p->qMax[i]) * qSum));
 
 			// Next bound component
 			++bndIdx;
@@ -189,9 +206,11 @@ protected:
 	}
 
 	template <typename RowIterator>
-	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
+	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp,
+					  int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
 	{
-		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		// Protein fluxes: k_{kin,i}q_i - k_{kin,i} \frac{q_{m,i}k_{eq,i}c_i}{1+\sum_{j=1}^{n_{comp}} k_{eq,j}c_j}
 		double qSum = 1.0;
@@ -232,8 +251,9 @@ protected:
 				if (_nBoundStates[j] == 0)
 					continue;
 
-				// dres_i / dq_j 
-				jac[bndIdx2 - bndIdx] += y[bndIdx] * kkin / (keq * qMax * static_cast<double>(p->qMax[j]) * qSum * qSum);
+				// dres_i / dq_j
+				jac[bndIdx2 - bndIdx] +=
+					y[bndIdx] * kkin / (keq * qMax * static_cast<double>(p->qMax[j]) * qSum * qSum);
 				// Getting to q_j: -bndIdx takes us to q_{0}, another +bndIdx2 to q_{j}.
 				// This means jac[bndIdx2 - bndIdx] corresponds to q_{j}.
 
@@ -247,7 +267,7 @@ protected:
 			++bndIdx;
 			++jac;
 		}
-	}	
+	}
 };
 
 typedef LangmuirLDFCBindingBase<LangmuirLDFCParamHandler> LangmuirLDFCBinding;
@@ -255,13 +275,13 @@ typedef LangmuirLDFCBindingBase<ExtLangmuirLDFCParamHandler> ExternalLangmuirLDF
 
 namespace binding
 {
-	void registerLangmuirLDFCModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
-	{
-		bindings[LangmuirLDFCBinding::identifier()] = []() { return new LangmuirLDFCBinding(); };
-		bindings[ExternalLangmuirLDFCBinding::identifier()] = []() { return new ExternalLangmuirLDFCBinding(); };
-	}
-}  // namespace binding
+void registerLangmuirLDFCModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
+{
+	bindings[LangmuirLDFCBinding::identifier()] = []() { return new LangmuirLDFCBinding(); };
+	bindings[ExternalLangmuirLDFCBinding::identifier()] = []() { return new ExternalLangmuirLDFCBinding(); };
+}
+} // namespace binding
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

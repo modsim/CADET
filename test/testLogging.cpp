@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -13,20 +13,18 @@
 #include "cadet/Logging.hpp"
 #include "common/Logger.hpp"
 
-
-typedef cadet::log::NonFilteringLogger<cadet::log::StandardFormattingPolicy, cadet::log::StdOutWritePolicy> GlobalLogger;
+typedef cadet::log::NonFilteringLogger<cadet::log::StandardFormattingPolicy, cadet::log::StdOutWritePolicy>
+	GlobalLogger;
 typedef cadet::log::Logger<GlobalLogger, cadet::LogLevel::Trace> NonFilteringLogger;
 typedef cadet::log::Logger<GlobalLogger, cadet::LogLevel::Warning> FilterLogger;
 
 typedef cadet::log::Logger<cadet::log::RuntimeFilteringLogger<GlobalLogger>, cadet::LogLevel::Normal> RtFilterLogger;
 
-template <>
-cadet::LogLevel cadet::log::RuntimeFilteringLogger<GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
+template <> cadet::LogLevel cadet::log::RuntimeFilteringLogger<GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
 
 #define LOG_GLOBAL(lvl) LOG_BASE(NonFilteringLogger, lvl)
 #define LOG_FILTER(lvl) LOG_BASE(FilterLogger, lvl)
 #define LOG_RT_FILTER(lvl) LOG_BASE(RtFilterLogger, lvl)
-
 
 int main(int argc, char** argv)
 {

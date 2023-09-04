@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides helper functions for tools apps
  */
 
@@ -25,42 +25,54 @@
 
 #include <tclap/CmdLine.h>
 
-template <class Writer_t>
-class Scope
+template <class Writer_t> class Scope
 {
 public:
-	Scope(Writer_t& writer) : _writer(writer) { }
-	Scope(Writer_t& writer, const std::string& scope) : _writer(writer) { _writer.pushGroup(scope); }
-	~Scope() { _writer.popGroup(); }
+	Scope(Writer_t& writer) : _writer(writer)
+	{
+	}
+	Scope(Writer_t& writer, const std::string& scope) : _writer(writer)
+	{
+		_writer.pushGroup(scope);
+	}
+	~Scope()
+	{
+		_writer.popGroup();
+	}
+
 protected:
 	Writer_t& _writer;
 };
-
 
 inline void split(const std::string& s, const char delim, std::vector<std::string>& elems)
 {
 	std::stringstream ss(s);
 	std::string item;
 
-	while(std::getline(ss, item, delim))
+	while (std::getline(ss, item, delim))
 		elems.push_back(item);
 }
 
-template <class ProgramOptions_t>
-inline void addMiscToCmdLine(TCLAP::CmdLine& cmd, ProgramOptions_t& opts)
+template <class ProgramOptions_t> inline void addMiscToCmdLine(TCLAP::CmdLine& cmd, ProgramOptions_t& opts)
 {
-	cmd >> (new TCLAP::ValueArg<int>("", "par", "Number of particle cells (default: 4)", false, 4, "Value"))->storeIn(&opts.nPar);
-	cmd >> (new TCLAP::ValueArg<int>("", "col", "Number of axial cells (default: 10)", false, 10, "Value"))->storeIn(&opts.nCol);
+	cmd >> (new TCLAP::ValueArg<int>("", "par", "Number of particle cells (default: 4)", false, 4, "Value"))
+			   ->storeIn(&opts.nPar);
+	cmd >> (new TCLAP::ValueArg<int>("", "col", "Number of axial cells (default: 10)", false, 10, "Value"))
+			   ->storeIn(&opts.nCol);
 
 	cmd >> (new TCLAP::SwitchArg("", "solverTimes", "Save all solver timesteps"))->storeIn(&opts.solverTimes);
-	cmd >> (new TCLAP::SwitchArg("k", "kinetic", "Kinetic adsorption model used (default: quasi-stationary)"))->storeIn(&opts.isKinetic);
-	cmd >> (new TCLAP::ValueArg<int>("j", "threads", "Number of threads (default: 1)", false, 1, "Value"))->storeIn(&opts.nThreads);
-	cmd >> (new TCLAP::SwitchArg("", "ad", "Calculate Jacobian using AD (default: analytic)"))->storeIn(&opts.adJacobian);
+	cmd >> (new TCLAP::SwitchArg("k", "kinetic", "Kinetic adsorption model used (default: quasi-stationary)"))
+			   ->storeIn(&opts.isKinetic);
+	cmd >> (new TCLAP::ValueArg<int>("j", "threads", "Number of threads (default: 1)", false, 1, "Value"))
+			   ->storeIn(&opts.nThreads);
+	cmd >>
+		(new TCLAP::SwitchArg("", "ad", "Calculate Jacobian using AD (default: analytic)"))->storeIn(&opts.adJacobian);
 }
 
 inline void addUnitTypeToCmdLine(TCLAP::CmdLine& cmd, std::string& unitType)
 {
-	cmd >> (new TCLAP::ValueArg<std::string>("u", "unit", "Unit operation (default: GRM)", false, "GRM", "Unit"))->storeIn(&unitType);
+	cmd >> (new TCLAP::ValueArg<std::string>("u", "unit", "Unit operation (default: GRM)", false, "GRM", "Unit"))
+			   ->storeIn(&unitType);
 }
 
 inline void parseUnitType(std::string& unitType)
@@ -77,10 +89,12 @@ inline void parseUnitType(std::string& unitType)
 
 inline void addSensitivitiyParserToCmdLine(TCLAP::CmdLine& cmd, std::vector<std::string>& sensitivities)
 {
-	cmd >> (new TCLAP::MultiArg<std::string>("S", "sens", 
-			"Add parameter sensitivity (use -1 for component, reaction, section, bound phase, or unit operation independent parameters)", 
-			false, "ParamName/Comp/Reaction/Section/ParType/BoundPhase[/Factor/UnitOp][+ParamName/...]")
-		)->storeIn(&sensitivities);	
+	cmd >> (new TCLAP::MultiArg<std::string>(
+				"S", "sens",
+				"Add parameter sensitivity (use -1 for component, reaction, section, bound phase, or unit operation "
+				"independent parameters)",
+				false, "ParamName/Comp/Reaction/Section/ParType/BoundPhase[/Factor/UnitOp][+ParamName/...]"))
+			   ->storeIn(&sensitivities);
 }
 
 template <class Writer_t>
@@ -125,7 +139,8 @@ inline void parseAndWriteSensitivitiesFromCmdLine(Writer_t& writer, const std::v
 
 			if (tokens.size() < 6)
 			{
-				std::cout << "Warning: Invalid parameter no " << (i+1) << "." << (j+1) << " (" << fusedParams[j] << ") was ignored" << std::endl; 
+				std::cout << "Warning: Invalid parameter no " << (i + 1) << "." << (j + 1) << " (" << fusedParams[j]
+						  << ") was ignored" << std::endl;
 				continue;
 			}
 
@@ -168,7 +183,8 @@ inline void parseAndWriteSensitivitiesFromCmdLine(Writer_t& writer, const std::v
 			++correctParams;
 		}
 		else
-			std::cout << "Warning: Invalid parameter " << (i+1) << " (" << sensitivities[i] << ") was ignored" << std::endl;
+			std::cout << "Warning: Invalid parameter " << (i + 1) << " (" << sensitivities[i] << ") was ignored"
+					  << std::endl;
 	}
 
 	writer.template scalar<int>("NSENS", correctParams);
@@ -176,19 +192,19 @@ inline void parseAndWriteSensitivitiesFromCmdLine(Writer_t& writer, const std::v
 
 inline void addOutputParserToCmdLine(TCLAP::CmdLine& cmd, std::string& outSol)
 {
-	cmd >> (new TCLAP::ValueArg<std::string>("", "outSol",
-			"Solution output format ([I]nlet,[O]utlet,[B]ulk,[P]article,[F]luxes, default: O)",
-			false, "O", "IOBPF")
-		)->storeIn(&outSol);	
+	cmd >> (new TCLAP::ValueArg<std::string>(
+				"", "outSol", "Solution output format ([I]nlet,[O]utlet,[B]ulk,[P]article,[F]luxes, default: O)", false,
+				"O", "IOBPF"))
+			   ->storeIn(&outSol);
 }
 
 inline void addOutputParserToCmdLine(TCLAP::CmdLine& cmd, std::string& outSol, std::string& outSens)
 {
 	addOutputParserToCmdLine(cmd, outSol);
-	cmd >> (new TCLAP::ValueArg<std::string>("", "outSens",
-			"Sensitivity output format ([I]nlet,[O]utlet,[B]ulk,[P]article,[F]luxes, default: O)",
-			false, "O", "IOBPF")
-		)->storeIn(&outSens);	
+	cmd >> (new TCLAP::ValueArg<std::string>(
+				"", "outSens", "Sensitivity output format ([I]nlet,[O]utlet,[B]ulk,[P]article,[F]luxes, default: O)",
+				false, "O", "IOBPF"))
+			   ->storeIn(&outSens);
 }
 
 template <class Writer_t>
@@ -204,21 +220,21 @@ inline void parseAndWriteOutputFormatInternal(Writer_t& writer, const std::strin
 	{
 		switch (outVal[i])
 		{
-			case 'I':
-				inlet = true;
-				break;
-			case 'O':
-				outlet = true;
-				break;
-			case 'B':
-				bulk = true;
-				break;
-			case 'P':
-				particle = true;
-				break;
-			case 'F':
-				flux = true;
-				break;
+		case 'I':
+			inlet = true;
+			break;
+		case 'O':
+			outlet = true;
+			break;
+		case 'B':
+			bulk = true;
+			break;
+		case 'P':
+			particle = true;
+			break;
+		case 'F':
+			flux = true;
+			break;
 		}
 	}
 	writer.template scalar<int>("WRITE_" + prefix + "_BULK", bulk);
@@ -229,17 +245,17 @@ inline void parseAndWriteOutputFormatInternal(Writer_t& writer, const std::strin
 }
 
 template <class Writer_t>
-inline void parseAndWriteOutputFormatsFromCmdLine(Writer_t& writer, const std::string& outSol, const std::string& outSens)
+inline void parseAndWriteOutputFormatsFromCmdLine(Writer_t& writer, const std::string& outSol,
+												  const std::string& outSens)
 {
 	parseAndWriteOutputFormatInternal(writer, "SOLUTION", outSol);
 	parseAndWriteOutputFormatInternal(writer, "SENS", outSens);
 }
 
-template <class Writer_t>
-inline void parseAndWriteOutputFormatsFromCmdLine(Writer_t& writer, const std::string& outSol)
+template <class Writer_t> inline void parseAndWriteOutputFormatsFromCmdLine(Writer_t& writer, const std::string& outSol)
 {
 	parseAndWriteOutputFormatInternal(writer, "SOLUTION", outSol);
 	writer.template scalar<int>("WRITE_SOLUTION_TIMES", true);
 }
 
-#endif  // CADETTOOLS_TOOLSHELPER_HPP_
+#endif // CADETTOOLS_TOOLSHELPER_HPP_

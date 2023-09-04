@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -24,7 +24,7 @@
 #include <tclap/CmdLine.h>
 #include "common/TclapUtils.hpp"
 
-//#define USE_QR_FACTORIZATION
+// #define USE_QR_FACTORIZATION
 
 void printVector(const char* prefix, double const* const vec, unsigned int size)
 {
@@ -44,37 +44,45 @@ void printDiffVector(const char* prefix, double const* const vecA, double const*
 
 struct StdOutNewtonIterateOutputPolicy
 {
-	inline static void outerIteration(unsigned int idxIter, double residualNorm, double const* const res, double const* const x, double const* const dx, unsigned int size)
+	inline static void outerIteration(unsigned int idxIter, double residualNorm, double const* const res,
+									  double const* const x, double const* const dx, unsigned int size)
 	{
 		std::cout << idxIter << " Res " << residualNorm << " dx " << cadet::linalg::l2Norm(dx, size) << std::endl;
 	}
 
-	inline static void innerIteration(unsigned int idxIter, double residualNorm, double const* const res, double const* const x, double const* const dx, double damping, double mu, unsigned int size)
+	inline static void innerIteration(unsigned int idxIter, double residualNorm, double const* const res,
+									  double const* const x, double const* const dx, double damping, double mu,
+									  unsigned int size)
 	{
-		std::cout << " -> lambda " << damping << " mu " << mu << " Res " << residualNorm << " dx " << cadet::linalg::l2Norm(dx, size) << std::endl;
+		std::cout << " -> lambda " << damping << " mu " << mu << " Res " << residualNorm << " dx "
+				  << cadet::linalg::l2Norm(dx, size) << std::endl;
 	}
 };
 
 struct StdOutLevMarIterateOutputPolicy
 {
-	inline static void outerIteration(unsigned int idxIter, double residualNorm, double const* const res, double const* const x, double const* const dx, double damping, unsigned int size)
+	inline static void outerIteration(unsigned int idxIter, double residualNorm, double const* const res,
+									  double const* const x, double const* const dx, double damping, unsigned int size)
 	{
 		std::cout << idxIter << " Res " << residualNorm << " lambda " << damping;
 		if (dx)
 			std::cout << " dx " << cadet::linalg::l2Norm(dx, size);
 		std::cout << std::endl;
 	}
-	inline static void innerIteration(unsigned int idxIter, double residualNorm, double const* const res, double const* const x, double const* const dx, double damping, unsigned int size)
+	inline static void innerIteration(unsigned int idxIter, double residualNorm, double const* const res,
+									  double const* const x, double const* const dx, double damping, unsigned int size)
 	{
-		std::cout << " -> lambda " << damping << " Res " << residualNorm << " dx " << cadet::linalg::l2Norm(dx, size) << std::endl;
+		std::cout << " -> lambda " << damping << " Res " << residualNorm << " dx " << cadet::linalg::l2Norm(dx, size)
+				  << std::endl;
 	}
 };
 
-
 struct SMAProblem
 {
-	const double initPoint[4] = { 1.0485785488181000e+03, 1.1604726694141368e+01, 1.1469542586742687e+01, 9.7852311988018670e+00 };
-	const double yCp[4] = { 5.8377002519964755e+01, 2.9352296732047269e-03, 1.5061023667222263e-02, 1.3523701213590386e-01 };
+	const double initPoint[4] = {1.0485785488181000e+03, 1.1604726694141368e+01, 1.1469542586742687e+01,
+								 9.7852311988018670e+00};
+	const double yCp[4] = {5.8377002519964755e+01, 2.9352296732047269e-03, 1.5061023667222263e-02,
+						   1.3523701213590386e-01};
 	const double _kA[4] = {0.0, 35.5, 1.59, 7.7};
 	const double _kD[4] = {0.0, 1000.0, 1000.0, 1000.0};
 	const double _lambda = 1.2e3;
@@ -84,22 +92,28 @@ struct SMAProblem
 	cadet::linalg::DenseMatrix _jacMatrix;
 #ifdef USE_QR_FACTORIZATION
 	std::vector<double> _workspace;
-#endif 
+#endif
 
-	inline const char* name() const { return "SMAProblem"; }
-	inline int size() const { return 4; }
+	inline const char* name() const
+	{
+		return "SMAProblem";
+	}
+	inline int size() const
+	{
+		return 4;
+	}
 	void init()
 	{
 		_jacMatrix.resize(size(), size());
-#ifdef USE_QR_FACTORIZATION		
+#ifdef USE_QR_FACTORIZATION
 		_workspace = std::vector<double>(2 * size(), 0.0);
 #endif
 	}
 
 	bool residual(double const* const x, double* const res)
 	{
-		// Salt equation: q_0 - Lambda + Sum[nu_j * q_j, j] == 0 
-		//           <=>  q_0 == Lambda - Sum[nu_j * q_j, j] 
+		// Salt equation: q_0 - Lambda + Sum[nu_j * q_j, j] == 0
+		//           <=>  q_0 == Lambda - Sum[nu_j * q_j, j]
 		// Also compute \bar{q}_0 = q_0 - Sum[sigma_j * q_j, j]
 		res[0] = x[0] - _lambda;
 		double q0_bar = x[0];
@@ -145,15 +159,16 @@ struct SMAProblem
 		// We have already computed \bar{q}_0 in the loop above
 		for (int i = 1; i < size(); ++i)
 		{
-			// Getting to c_{p,0}: -bndIdx takes us to q_0, another -nComp to c_{p,0}. This means jac[-bndIdx - nComp] corresponds to c_{p,0}.
-			// Getting to c_{p,i}: -bndIdx takes us to q_0, another -nComp to c_{p,0} and a +i to c_{p,i}.
+			// Getting to c_{p,0}: -bndIdx takes us to q_0, another -nComp to c_{p,0}. This means jac[-bndIdx - nComp]
+			// corresponds to c_{p,0}. Getting to c_{p,i}: -bndIdx takes us to q_0, another -nComp to c_{p,0} and a +i
+			// to c_{p,i}.
 			//                     This means jac[i - bndIdx - nComp] corresponds to c_{p,i}.
 
 			const double ka = _kA[i];
 			const double kd = _kD[i];
 			const double nu = _nu[i];
 
-			const double c0_pow_nu     = pow(yCp[0], nu);
+			const double c0_pow_nu = pow(yCp[0], nu);
 			const double q0_bar_pow_nu_m1 = pow(q0_bar, nu - 1.0);
 
 			// dres_i / dq_0
@@ -164,7 +179,8 @@ struct SMAProblem
 			{
 				// dres_i / dq_j
 				jac[j - i] = -ka * yCp[i] * nu * q0_bar_pow_nu_m1 * (-_sigma[j]);
-				// Getting to q_j: -bndIdx takes us to q_0, another +bndIdx2 to q_j. This means jac[bndIdx2 - bndIdx] corresponds to q_j.
+				// Getting to q_j: -bndIdx takes us to q_0, another +bndIdx2 to q_j. This means jac[bndIdx2 - bndIdx]
+				// corresponds to q_j.
 			}
 
 			// Add to dres_i / dq_i
@@ -209,9 +225,7 @@ struct SMAProblem
 	}
 };
 
-
-template <class Prob>
-void runNewtonRes(double stdDev)
+template <class Prob> void runNewtonRes(double stdDev)
 {
 	Prob p;
 	std::cout << "======= NEWTON RESIDUAL ======\n";
@@ -242,9 +256,10 @@ void runNewtonRes(double stdDev)
 	printVector("Start", sol.data(), p.size());
 	printDiffVector("Diffe", sol.data(), p.initPoint, p.size());
 
-	const bool success = cadet::nonlin::adaptiveTrustRegionNewtonMethod<StdOutNewtonIterateOutputPolicy>([&](double const* const x, double* const res) { return p.residual(x, res); }, 
-		[&](double const* const x, double* const res) { return p.jacobianSolve(x, res); }, maxIter, resTol,
-		initDamping, minDamping, sol.data(), tempMem.data(), p.size());
+	const bool success = cadet::nonlin::adaptiveTrustRegionNewtonMethod<StdOutNewtonIterateOutputPolicy>(
+		[&](double const* const x, double* const res) { return p.residual(x, res); },
+		[&](double const* const x, double* const res) { return p.jacobianSolve(x, res); }, maxIter, resTol, initDamping,
+		minDamping, sol.data(), tempMem.data(), p.size());
 
 	p.residual(sol.data(), tempMem.data());
 
@@ -256,9 +271,7 @@ void runNewtonRes(double stdDev)
 		printDiffVector("Differen", sol.data(), p.initPoint, p.size());
 }
 
-
-template <class Prob>
-void runNewtonErr(double stdDev)
+template <class Prob> void runNewtonErr(double stdDev)
 {
 	Prob p;
 	std::cout << "======== NEWTON ERROR ========\n";
@@ -289,10 +302,11 @@ void runNewtonErr(double stdDev)
 	printVector("Start", sol.data(), p.size());
 	printDiffVector("Diffe", sol.data(), p.initPoint, p.size());
 
-	const bool success = cadet::nonlin::robustAdaptiveTrustRegionNewtonMethod<StdOutNewtonIterateOutputPolicy>([&](double const* const x, double* const res) { return p.residual(x, res); }, 
+	const bool success = cadet::nonlin::robustAdaptiveTrustRegionNewtonMethod<StdOutNewtonIterateOutputPolicy>(
+		[&](double const* const x, double* const res) { return p.residual(x, res); },
 		[&](double const* const x, double* const res) { return p.jacobianSolve(x, res); },
-		[&](double* const res) { return p.jacobianResolve(res); }, maxIter, resTol,
-		initDamping, minDamping, sol.data(), tempMem.data(), p.size());
+		[&](double* const res) { return p.jacobianResolve(res); }, maxIter, resTol, initDamping, minDamping, sol.data(),
+		tempMem.data(), p.size());
 
 	p.residual(sol.data(), tempMem.data());
 
@@ -304,8 +318,7 @@ void runNewtonErr(double stdDev)
 		printDiffVector("Differen", sol.data(), p.initPoint, p.size());
 }
 
-template <class Prob>
-void runLevMar(double stdDev)
+template <class Prob> void runLevMar(double stdDev)
 {
 	Prob p;
 	std::cout << "===== LEVENBERG-MARQUADRT ====\n";
@@ -333,9 +346,10 @@ void runLevMar(double stdDev)
 	printVector("Origi", p.initPoint, p.size());
 	printVector("Start", sol.data(), p.size());
 	printDiffVector("Diffe", sol.data(), p.initPoint, p.size());
-	const bool success = cadet::nonlin::levenbergMarquardt<StdOutLevMarIterateOutputPolicy>([&](double const* const x, double* const res) { return p.residual(x, res); }, 
-		[&](double const* const x, cadet::linalg::detail::DenseMatrixBase& mat) { return p.jacobian(x, mat); }, maxIter, resTol,
-		initDamping, sol.data(), tempMem.data(), p._jacMatrix, p.size());
+	const bool success = cadet::nonlin::levenbergMarquardt<StdOutLevMarIterateOutputPolicy>(
+		[&](double const* const x, double* const res) { return p.residual(x, res); },
+		[&](double const* const x, cadet::linalg::detail::DenseMatrixBase& mat) { return p.jacobian(x, mat); }, maxIter,
+		resTol, initDamping, sol.data(), tempMem.data(), p._jacMatrix, p.size());
 
 	p.residual(sol.data(), tempMem.data());
 
@@ -359,14 +373,19 @@ int main(int argc, char** argv)
 		TCLAP::CmdLine cmd("Tests nonlinear solvers with a small SMA example", ' ', "1.0");
 		cmd.setOutput(&customOut);
 
-		cmd >> (new TCLAP::SwitchArg("r", "newtonRes", "Residual based adaptive trust region Newton"))->storeIn(&useTRNRes);
-		cmd >> (new TCLAP::SwitchArg("e", "newtonErr", "Error based adaptive trust region Newton"))->storeIn(&useTRNErr);
+		cmd >> (new TCLAP::SwitchArg("r", "newtonRes", "Residual based adaptive trust region Newton"))
+				   ->storeIn(&useTRNRes);
+		cmd >>
+			(new TCLAP::SwitchArg("e", "newtonErr", "Error based adaptive trust region Newton"))->storeIn(&useTRNErr);
 		cmd >> (new TCLAP::SwitchArg("l", "levMar", "Levenberg-Marquardt"))->storeIn(&useLevMar);
-		cmd >> (new TCLAP::ValueArg<double>("s", "stddev", "Standard deviation of relative random perturbation (default: 0.01)", false, 0.01, "StdDev"))->storeIn(&stdDev);
+		cmd >> (new TCLAP::ValueArg<double>("s", "stddev",
+											"Standard deviation of relative random perturbation (default: 0.01)", false,
+											0.01, "StdDev"))
+				   ->storeIn(&stdDev);
 
 		cmd.parse(argc, argv);
 	}
-	catch (const TCLAP::ArgException &e)
+	catch (const TCLAP::ArgException& e)
 	{
 		std::cerr << "ERROR: " << e.error() << " for argument " << e.argId() << std::endl;
 		return 1;

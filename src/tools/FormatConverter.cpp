@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -15,11 +15,12 @@
 
 #include <functional>
 
-template <class reader_t, class writer_t>
-class DualScope
+template <class reader_t, class writer_t> class DualScope
 {
 public:
-	DualScope(reader_t& reader, writer_t& writer) : _reader(reader), _writer(writer) { }
+	DualScope(reader_t& reader, writer_t& writer) : _reader(reader), _writer(writer)
+	{
+	}
 	DualScope(reader_t& reader, writer_t& writer, const std::string& scope) : _reader(reader), _writer(writer)
 	{
 		_reader.pushGroup(scope);
@@ -30,14 +31,15 @@ public:
 		_reader.popGroup();
 		_writer.popGroup();
 	}
+
 protected:
 	reader_t& _reader;
 	writer_t& _writer;
 };
 
-
 template <typename reader_t, typename writer_t>
-void copyGroup(reader_t& rd, writer_t& wr, const std::string& path, const std::function<bool(const std::string&, const std::string&)>& filter)
+void copyGroup(reader_t& rd, writer_t& wr, const std::string& path,
+			   const std::function<bool(const std::string&, const std::string&)>& filter)
 {
 	const std::vector<std::string> names = rd.itemNames();
 
@@ -165,14 +167,14 @@ void copyGroup(reader_t& rd, writer_t& wr, const std::string& path, const std::f
 	}
 }
 
-
-template <typename reader_t, typename writer_t>
-void copyGroup(reader_t& rd, writer_t& wr, const std::string& path)
+template <typename reader_t, typename writer_t> void copyGroup(reader_t& rd, writer_t& wr, const std::string& path)
 {
-	copyGroup<reader_t, writer_t>(rd, wr, path, [](const std::string& scope, const std::string& item) -> bool { return true; });
+	copyGroup<reader_t, writer_t>(rd, wr, path,
+								  [](const std::string& scope, const std::string& item) -> bool { return true; });
 }
 
 void copyGroup(cadet::io::IFileReader& rd, cadet::io::IFileWriter& wr, const std::string& path)
 {
-	copyGroup<cadet::io::IFileReader, cadet::io::IFileWriter>(rd, wr, path, [](const std::string& scope, const std::string& item) -> bool { return true; });
+	copyGroup<cadet::io::IFileReader, cadet::io::IFileWriter>(
+		rd, wr, path, [](const std::string& scope, const std::string& item) -> bool { return true; });
 }

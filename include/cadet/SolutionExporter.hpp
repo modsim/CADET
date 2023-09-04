@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines interfaces which export the solution to the user space.
  */
 
@@ -32,7 +32,6 @@ namespace cadet
 class CADET_API ISolutionExporter
 {
 public:
-
 	/**
 	 * @brief Returns whether the associated model has a flux into the particles
 	 * @return @c true if flux into the particles is present, otherwise @c false
@@ -124,14 +123,16 @@ public:
 	virtual unsigned int numMobilePhaseDofs() const CADET_NOEXCEPT = 0;
 
 	/**
-	 * @brief Returns the total number of mobile phase DOFs in the particles of the given type if particles are supported
+	 * @brief Returns the total number of mobile phase DOFs in the particles of the given type if particles are
+	 * supported
 	 * @param [in] parType Particle type index
 	 * @return Total number of particle mobile phase DOFs
 	 */
 	virtual unsigned int numParticleMobilePhaseDofs(unsigned int parType) const CADET_NOEXCEPT = 0;
 
 	/**
-	 * @brief Returns the total number of mobile phase DOFs in the particles of the given type if particles are supported
+	 * @brief Returns the total number of mobile phase DOFs in the particles of the given type if particles are
+	 * supported
 	 * @details This includes all particle types.
 	 * @return Total number of particle mobile phase DOFs
 	 */
@@ -163,19 +164,18 @@ public:
 	 */
 	virtual unsigned int numVolumeDofs() const CADET_NOEXCEPT = 0;
 
-
 	/**
 	 * @brief Writes the solution of the (bulk) mobile phase to the given buffer
 	 * @details The data is written in the order primary-secondary-component,
 	 *          where the last index changes the fastest.
-	 * 
+	 *
 	 *          For a system with 3 primary coordinates, 2 secondary coordinates,
 	 *          and 4 components, the data is written as
 	 *          p0s0c0, p0s0c1, p0s0c2, p0s0c3,
-	 *          p0s1c0, p0s1c1, p0s1c2, p0s1c3, 
+	 *          p0s1c0, p0s1c1, p0s1c2, p0s1c3,
 	 *          p1s0c0, p1s0c1, p1s0c2, p1s0c3,
 	 *          p1s1c0, p1s1c1, p1s1c2, p1s1c3, ...
-	 * 
+	 *
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
 	 */
@@ -186,7 +186,7 @@ public:
 	 * @details The data is written in the order particletype-primary-secondary-particle-component-boundstate,
 	 *          where the last index changes the fastest.
 	 *          The solution is written for all particle types.
-	 * 
+	 *
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
 	 */
@@ -197,7 +197,7 @@ public:
 	 * @details The data is written in the order particletype-primary-secondary-particle-component,
 	 *          where the last index changes the fastest.
 	 *          The solution is written for all particle types.
-	 * 
+	 *
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
 	 */
@@ -208,7 +208,7 @@ public:
 	 * @details The data is written in the order primary-secondary-particle-component-boundstate,
 	 *          where the last index changes the fastest.
 	 *          The solution is written for the given particle type only.
-	 * 
+	 *
 	 *          For a system with 2 primary coordinates, 2 secondary coordinates, 2 particle
 	 *          coordinates, 2 components, and 2 bound states per component, the data is written as
 	 *          p0s0p0c0s0, p0s0p0c0s1, p0s0p0c1s0, p0s0p0c1s1,
@@ -219,7 +219,7 @@ public:
 	 *          p1s0p1c0s0, p1s0p1c0s1, p1s0p1c1s0, p1s0p1c1s1,
 	 *          p1s1p0c0s0, p1s1p0c0s1, p1s1p0c1s0, p1s1p0c1s1,
 	 *          p1s1p1c0s0, p1s1p1c0s1, p1s1p1c1s0, p1s1p1c1s1, ...
-	 * 
+	 *
 	 * @param [in] parType Index of the particle type to be written
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
@@ -231,7 +231,7 @@ public:
 	 * @details The data is written in the order primary-secondary-particle-component,
 	 *          where the last index changes the fastest.
 	 *          The solution is written for the given particle type only.
-	 * 
+	 *
 	 *          For a system with 2 primary coordinates, 2 secondary coordinates, 2 particle
 	 *          coordinates, 2 components, and 2 bound states per component, the data is written as
 	 *          p0s0p0c0s0, p0s0p0c0s1, p0s0p0c1s0, p0s0p0c1s1,
@@ -242,7 +242,7 @@ public:
 	 *          p1s0p1c0s0, p1s0p1c0s1, p1s0p1c1s0, p1s0p1c1s1,
 	 *          p1s1p0c0s0, p1s1p0c0s1, p1s1p0c1s0, p1s1p0c1s1,
 	 *          p1s1p1c0s0, p1s1p1c0s1, p1s1p1c1s0, p1s1p1c1s1, ...
-	 * 
+	 *
 	 * @param [in] parType Index of the particle type to be written
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
@@ -254,17 +254,18 @@ public:
 	 * @details The data is written in the order particletype-primary-secondary-component,
 	 *          where the last index changes the fastest.
 	 *          The solution is written for all particle types.
-	 * 
+	 *
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
 	 */
 	virtual int writeParticleFlux(double* buffer) const = 0;
 
 	/**
-	 * @brief Writes the solution of the flux between primary mobile phase and particle mobile phase of the selected particle type to the given buffer
+	 * @brief Writes the solution of the flux between primary mobile phase and particle mobile phase of the selected
+	 * particle type to the given buffer
 	 * @details The data is written in the order particletype-primary-secondary-component,
 	 *          where the last index changes the fastest.
-	 * 
+	 *
 	 * @param [in] parType Index of the particle type to be written
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
@@ -281,7 +282,7 @@ public:
 	/**
 	 * @brief Writes the solution of the inlet at the given port into the provided buffer
 	 * @details Writes all components of the selected port to the provided buffer.
-	 * 
+	 *
 	 * @param [in] port Index of the port
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
@@ -299,7 +300,7 @@ public:
 	/**
 	 * @brief Writes the solution of the outlet at the given port into the provided buffer
 	 * @details Writes all components of the selected port to the provided buffer.
-	 * 
+	 *
 	 * @param [in] port Index of the port
 	 * @param [out] buffer Pointer to buffer that receives the data
 	 * @return Number of written items
@@ -313,7 +314,6 @@ public:
 	 * @return Number of written items
 	 */
 	virtual int writeOutlet(double* buffer) const = 0;
-
 
 	/**
 	 * @brief Returns primary coordinates (e.g., axial for axial flow columns)
@@ -340,4 +340,4 @@ public:
 
 } // namespace cadet
 
-#endif  // LIBCADET_SOLUTIONEXPORTER_HPP_
+#endif // LIBCADET_SOLUTIONEXPORTER_HPP_

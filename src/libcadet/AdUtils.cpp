@@ -24,8 +24,8 @@ namespace cadet
 namespace ad
 {
 
-void prepareAdVectorSeedsForBandMatrix(active* const adVec, int adDirOffset, int rows, 
-	int lowerBandwidth, int upperBandwidth, int diagDir)
+void prepareAdVectorSeedsForBandMatrix(active* const adVec, int adDirOffset, int rows, int lowerBandwidth,
+									   int upperBandwidth, int diagDir)
 {
 	// Start with diagonal Jacobian element
 	int dir = diagDir;
@@ -93,8 +93,8 @@ void extractDenseJacobianFromAd(active const* const adVec, int adDirOffset, lina
 	}
 }
 
-void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir, 
-	int lowerBandwidth, int upperBandwidth, linalg::detail::DenseMatrixBase& mat)
+void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir,
+									  int lowerBandwidth, int upperBandwidth, linalg::detail::DenseMatrixBase& mat)
 {
 	const int stride = lowerBandwidth + 1 + upperBandwidth;
 	for (int eq = 0; eq < mat.rows(); ++eq)
@@ -121,7 +121,8 @@ void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int ad
 	}
 }
 
-double compareBandedJacobianWithAd(active const* const adVec, int adDirOffset, int diagDir, const linalg::BandMatrix& mat)
+double compareBandedJacobianWithAd(active const* const adVec, int adDirOffset, int diagDir,
+								   const linalg::BandMatrix& mat)
 {
 	const int lowerBandwidth = mat.lowerBandwidth();
 	const int upperBandwidth = mat.upperBandwidth();
@@ -159,7 +160,8 @@ double compareBandedJacobianWithAd(active const* const adVec, int adDirOffset, i
 	return maxDiff;
 }
 
-double compareDenseJacobianWithAd(active const* const adVec, int adDirOffset, const linalg::detail::DenseMatrixBase& mat)
+double compareDenseJacobianWithAd(active const* const adVec, int adDirOffset,
+								  const linalg::detail::DenseMatrixBase& mat)
 {
 	double maxDiff = 0.0;
 	for (int eq = 0; eq < mat.rows(); ++eq)
@@ -182,8 +184,9 @@ double compareDenseJacobianWithAd(active const* const adVec, int adDirOffset, co
 	return maxDiff;
 }
 
-double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir, 
-	int lowerBandwidth, int upperBandwidth, const linalg::detail::DenseMatrixBase& mat)
+double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir,
+										int lowerBandwidth, int upperBandwidth,
+										const linalg::detail::DenseMatrixBase& mat)
 {
 	double maxDiff = 0.0;
 	const int stride = lowerBandwidth + 1 + upperBandwidth;
@@ -205,7 +208,7 @@ double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int 
 				if (std::isnan(mat.native(eq, diagCol)) || std::isnan(baseVal))
 					return std::numeric_limits<double>::quiet_NaN();
 				const double diff = std::abs(mat.native(eq, diagCol) - baseVal);
-				
+
 				baseVal = std::abs(baseVal);
 				if (baseVal > 0.0)
 					maxDiff = std::max(maxDiff, diff / baseVal);
@@ -223,7 +226,8 @@ double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int 
 	return maxDiff;
 }
 
-void adMatrixVectorMultiply(const linalg::SparseMatrix<active>& mat, double const* x, double* y, double alpha, double beta, int adDir)
+void adMatrixVectorMultiply(const linalg::SparseMatrix<active>& mat, double const* x, double* y, double alpha,
+							double beta, int adDir)
 {
 	const std::vector<int>& rows = mat.rows();
 	const std::vector<int>& cols = mat.cols();
@@ -236,33 +240,39 @@ void adMatrixVectorMultiply(const linalg::SparseMatrix<active>& mat, double cons
 	}
 }
 
-DenseJacobianExtractor::DenseJacobianExtractor() { }
+DenseJacobianExtractor::DenseJacobianExtractor()
+{
+}
 
-void DenseJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
+void DenseJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset,
+											 linalg::detail::DenseMatrixBase& mat) const
 {
 	extractDenseJacobianFromAd(adRes + row, adDirOffset + row, mat);
 }
 
-double DenseJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
+double DenseJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset,
+												   linalg::detail::DenseMatrixBase& mat) const
 {
 	return compareDenseJacobianWithAd(adRes + row, adDirOffset + row, mat);
 }
 
-
 BandedJacobianExtractor::BandedJacobianExtractor(int diagDir, int lowerBandwidth, int upperBandwidth)
 	: _diagDir(diagDir), _lowerBandwidth(lowerBandwidth), _upperBandwidth(upperBandwidth)
-	{ }
+{
+}
 
-void BandedJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
+void BandedJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset,
+											  linalg::detail::DenseMatrixBase& mat) const
 {
 	extractDenseJacobianFromBandedAd(adRes, row, adDirOffset, _diagDir, _lowerBandwidth, _upperBandwidth, mat);
 }
 
-double BandedJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
+double BandedJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset,
+													linalg::detail::DenseMatrixBase& mat) const
 {
 	return compareDenseJacobianWithBandedAd(adRes, row, adDirOffset, _diagDir, _lowerBandwidth, _upperBandwidth, mat);
 }
 
-}  // namespace ad
+} // namespace ad
 
-}  // namespace cadet
+} // namespace cadet

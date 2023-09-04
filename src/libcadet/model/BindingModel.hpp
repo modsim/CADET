@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the BindingModel interface.
  */
 
@@ -45,22 +45,20 @@ namespace model
  *          liquid and solid phase. There can be multiple bound states in the solid phase,
  *          if the binding model supports it. Some binding models require a dedicated salt
  *          component, which is always given by component 0.
- * 
+ *
  *          Each binding reaction can be quasi-stationary, that is, it is always in equilibrium.
  *          A dynamic reaction generates the terms
  *          @f[\begin{align}
- *              \frac{\mathrm{d}c_{p,i}}{\mathrm{d}t} + \dots - \frac{1-\varepsilon_p}{\varepsilon_p} v_{i,j}\left( c_p, q \right) &= 0\\
- *              \frac{\mathrm{d}q_{i,j}}{\mathrm{d}t} + \dots + v_{i,j}\left( c_p, q \right) &= 0
- *          \end{align}@f]
+ *              \frac{\mathrm{d}c_{p,i}}{\mathrm{d}t} + \dots - \frac{1-\varepsilon_p}{\varepsilon_p} v_{i,j}\left( c_p,
+ * q \right) &= 0\\ \frac{\mathrm{d}q_{i,j}}{\mathrm{d}t} + \dots + v_{i,j}\left( c_p, q \right) &= 0 \end{align}@f]
  *          where @f$ v_{i,j} @f$ is the flux of the reaction between @f$ c_{p,i} @f$ and @f$ q_{i,j} @f$.
  *          Here, @f$ q_{i,j} @f$ denotes bound state @f$ j @f$ of component @f$ i @f$.
- * 
+ *
  *          A quasi-stationary reaction, on the other hand, results in
  *          @f[\begin{align}
- *              \frac{\mathrm{d}c_{p,i}}{\mathrm{d}t} + \frac{1-\varepsilon_p}{\varepsilon_p} \frac{\mathrm{d}q_{i,j}}{\mathrm{d}t} + \dots &= 0 \\
- *              v_{i,j}\left( c_p, q \right) &= 0.
- *          \end{align}@f]
- * 
+ *              \frac{\mathrm{d}c_{p,i}}{\mathrm{d}t} + \frac{1-\varepsilon_p}{\varepsilon_p}
+ * \frac{\mathrm{d}q_{i,j}}{\mathrm{d}t} + \dots &= 0 \\ v_{i,j}\left( c_p, q \right) &= 0. \end{align}@f]
+ *
  *          The ordering inside the solid phase is component-major, that means, all bound
  *          phases for each component are listed one after the other. For a model having
  *          4 components with 1, 0, 3, 2 bound states, respectively, the ordering is
@@ -72,8 +70,9 @@ namespace model
 class IBindingModel
 {
 public:
-
-	virtual ~IBindingModel() CADET_NOEXCEPT { }
+	virtual ~IBindingModel() CADET_NOEXCEPT
+	{
+	}
 
 	/**
 	 * @brief Returns the name of the binding model
@@ -114,7 +113,7 @@ public:
 	 *          (e.g., rate constants) are configured by configure(), this function
 	 *          sets structural parameters (e.g., number of components and bound states).
 	 *          In particular, it determines whether each binding reaction is quasi-stationary.
-	 * 
+	 *
 	 *          Before this function is called, usesParamProviderInDiscretizationConfig()
 	 *          is queried to determine whether the @p paramProvider is used by this
 	 *          function. If it is used, the @p paramProvider is put in the corresponding
@@ -123,18 +122,21 @@ public:
 	 * @param [in] paramProvider Parameter provider
 	 * @param [in] nComp Number of components
 	 * @param [in] nBound Array of size @p nComp which contains the number of bound states for each component
-	 * @param [in] boundOffset Array of size @p nComp with offsets to the first bound state of each component beginning from the solid phase
+	 * @param [in] boundOffset Array of size @p nComp with offsets to the first bound state of each component beginning
+	 * from the solid phase
 	 */
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset) = 0;
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp,
+											  unsigned int const* nBound, unsigned int const* boundOffset) = 0;
 
 	/**
-	 * @brief Configures the model by extracting all non-structural parameters (e.g., model parameters) from the given @p paramProvider
+	 * @brief Configures the model by extracting all non-structural parameters (e.g., model parameters) from the given
+	 * @p paramProvider
 	 * @details The scope of the cadet::IParameterProvider is left unchanged on return.
-	 * 
+	 *
 	 *          The structure of the model is left unchanged, that is, the number of degrees of
 	 *          freedom stays the same (e.g., number of bound states is left unchanged). Only
 	 *          true (non-structural) model parameters are read and changed.
-	 *          
+	 *
 	 *          This function may only be called if configureModelDiscretization() has been called
 	 *          in the past. Contrary to configureModelDiscretization(), it can be called multiple
 	 *          times.
@@ -152,12 +154,13 @@ public:
 	 * @param [in] unitOpIdx Index of the unit operation this binding model belongs to
 	 * @param [in] parTypeIdx Index of the particle type this binding model belongs to
 	 */
-	virtual void fillBoundPhaseInitialParameters(ParameterId* params, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx) const CADET_NOEXCEPT = 0;
+	virtual void fillBoundPhaseInitialParameters(ParameterId* params, UnitOpIdx unitOpIdx,
+												 ParticleTypeIdx parTypeIdx) const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Sets external functions for this binding model
 	 * @details The external functions are not owned by this IBindingModel.
-	 * 
+	 *
 	 * @param [in] extFuns Pointer to array of IExternalFunction objects of size @p size
 	 * @param [in] size Number of elements in the IExternalFunction array @p extFuns
 	 */
@@ -179,10 +182,10 @@ public:
 	/**
 	 * @brief Sets a parameter value
 	 * @details The parameter identified by its unique parameter is set to the given value.
-	 * 
+	 *
 	 * @param [in] pId ParameterId that identifies the parameter uniquely
 	 * @param [in] value Value of the parameter
-	 * 
+	 *
 	 * @return @c true if the parameter has been successfully set to the given value,
 	 *         otherwise @c false (e.g., if the parameter is not available in this model)
 	 */
@@ -253,63 +256,78 @@ public:
 	 * @param [in] nBoundStates Array with bound states for each component
 	 * @return Size of the workspace in bytes
 	 */
-	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT = 0;
+	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates,
+									   unsigned int const* nBoundStates) const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Evaluates the fluxes
 	 * @details The binding model is responsible for calculating the flux from the mobile to the solid phase.
-	 * 
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 *          It needs to overwrite all values of @p res as the result array @p res is not
 	 *          zeroed on entry.
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] y Pointer to first bound state of the first component in the current particle shell
 	 * @param [in] yCp Pointer to first component of the mobile phase in the current particle shell
 	 * @param [out] res Pointer to result array that is filled with the fluxes
 	 * @param [in,out] workSpace Memory work space
 	 * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
 	 */
-	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active const* yCp, active* res, LinearBufferAllocator workSpace, WithParamSensitivity) const = 0;
-	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active const* yCp, active* res, LinearBufferAllocator workSpace, WithoutParamSensitivity) const = 0;
-	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, active* res, LinearBufferAllocator workSpace) const = 0;
-	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, double* res, LinearBufferAllocator workSpace) const = 0;
+	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active const* yCp,
+					 active* res, LinearBufferAllocator workSpace, WithParamSensitivity) const = 0;
+	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active const* yCp,
+					 active* res, LinearBufferAllocator workSpace, WithoutParamSensitivity) const = 0;
+	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp,
+					 active* res, LinearBufferAllocator workSpace) const = 0;
+	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp,
+					 double* res, LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Evaluates the Jacobian of the fluxes analytically
 	 * @details This function is called simultaneously from multiple threads.
 	 *          It can be left out (empty implementation) if AD is used to evaluate the Jacobian.
-	 *          
+	 *
 	 *          The Jacobian matrix is assumed to be zeroed out by the caller.
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] y Pointer to first bound state of the first component in the current particle shell
 	 * @param [in] offsetCp Offset from the first component of the mobile phase in the current particle shell to @p y
-	 * @param [in,out] jac Row iterator pointing to the first bound states row of the underlying matrix in which the Jacobian is stored
+	 * @param [in,out] jac Row iterator pointing to the first bound states row of the underlying matrix in which the
+	 * Jacobian is stored
 	 * @param [in,out] workSpace Memory work space
 	 */
-	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, int offsetCp, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const = 0;
-	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, int offsetCp, linalg::DenseBandedRowIterator jac, LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
+								  int offsetCp, linalg::BandMatrix::RowIterator jac,
+								  LinearBufferAllocator workSpace) const = 0;
+	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y,
+								  int offsetCp, linalg::DenseBandedRowIterator jac,
+								  LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Calculates the time derivative of the quasi-stationary bound state equations
-	 * @details Calculates @f$ \frac{\partial \text{flux}_{\text{qs}}}{\partial t} @f$ for the quasi-stationary equations
-	 *          in the flux.
-	 * 
+	 * @details Calculates @f$ \frac{\partial \text{flux}_{\text{qs}}}{\partial t} @f$ for the quasi-stationary
+	 * equations in the flux.
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 *          It can be left out (empty implementation) which leads to slightly incorrect initial conditions
 	 *          when using externally dependent binding models.
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in] yCp Pointer to first component in the liquid phase of the current particle shell
 	 * @param [in] y Pointer to first bound state of the first component in the current particle shell
 	 * @param [out] dResDt Pointer to array that stores the time derivative
 	 * @param [in,out] workSpace Memory work space
 	 */
-	virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const = 0;
+	virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos,
+													 double const* yCp, double const* y, double* dResDt,
+													 LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Returns an array that determines whether each binding reaction is quasi-stationary
@@ -325,17 +343,19 @@ public:
 	 *          equations. If consistent initialization can be performed using analytic / direct
 	 *          formulas (i.e., without running a nonlinear solver), this function would be the
 	 *          correct place to do it.
-	 *          
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in,out] y Pointer to first bound state of the first component in the current particle shell
 	 * @param [in] yCp Pointer to first component of the mobile phase in the current particle shell
 	 * @param [in,out] workSpace Memory work space
 	 * @return @c true if a nonlinear solver is required for consistent initialization, otherwise @c false
 	 */
-	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const = 0;
+	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y,
+										   double const* yCp, LinearBufferAllocator workSpace) const = 0;
 
 	/**
 	 * @brief Called after a nonlinear solver has attempted consistent initialization
@@ -343,16 +363,18 @@ public:
 	 *          Depending on the return value, a nonlinear solver is applied to the algebraic
 	 *          equations and, afterwards, this function is called to clean up or refine the
 	 *          solution.
-	 *          
+	 *
 	 *          This function is called simultaneously from multiple threads.
 	 * @param [in] t Current time point
 	 * @param [in] secIdx Index of the current section
-	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1, inner center = 0)
+	 * @param [in] colPos Position in normalized coordinates (column inlet = 0, column outlet = 1; outer shell = 1,
+	 * inner center = 0)
 	 * @param [in,out] y Pointer to first bound state of the first component in the current particle shell
 	 * @param [in] yCp Pointer to first component of the mobile phase in the current particle shell
 	 * @param [in,out] workSpace Memory work space
 	 */
-	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const = 0;
+	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y,
+											double const* yCp, LinearBufferAllocator workSpace) const = 0;
 
 protected:
 };
@@ -360,4 +382,4 @@ protected:
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_BINDINGMODELINTERFACE_HPP_
+#endif // LIBCADET_BINDINGMODELINTERFACE_HPP_

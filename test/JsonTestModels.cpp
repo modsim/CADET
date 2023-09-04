@@ -91,52 +91,52 @@ json createColumnWithSMAJson(const std::string& uoType)
 
 	return config;
 
-/*
-	return R"json({
-	"UNIT_TYPE": "GENERAL_RATE_MODEL",
-	"NCOMP": 4,
-	"VELOCITY": 5.75e-4,
-	"COL_DISPERSION": 5.75e-8,
-	"FILM_DIFFUSION": [6.9e-6, 6.9e-6, 6.9e-6, 6.9e-6],
-	"PAR_DIFFUSION": [7e-10, 6.07e-11, 6.07e-11, 6.07e-11],
-	"PAR_SURFDIFFUSION": [0.0, 0.0, 0.0, 0.0],
-	"COL_LENGTH": 0.014,
-	"PAR_RADIUS": 4.5e-5,
-	"COL_POROSITY": 0.37,
-	"PAR_POROSITY": 0.75,
-	"TOTAL_POROSITY": 0.8425,
-	"INIT_C": [50.0, 0.0, 0.0, 0.0],
-	"INIT_Q": [1.2e3, 0.0, 0.0, 0.0],
-	"ADSORPTION_MODEL": "STERIC_MASS_ACTION",
-	"adsorption":
-	{
-		"IS_KINETIC": 1,
-		"SMA_LAMBDA": 1.2e3,
-		"SMA_KA": [0.0, 35.5, 1.59, 7.7],
-		"SMA_KD": [0.0, 1000.0, 1000.0, 1000.0],
-		"SMA_NU": [0.0, 4.7, 5.29, 3.7],
-		"SMA_SIGMA": [0.0, 11.83, 10.6, 10.0]
-	},
-	"discretization":
-	{
-		"NCOL": 16,
-		"NPAR": 4,
-		"NBOUND": [1, 1, 1, 1],
-		"PAR_DISC_TYPE": "EQUIDISTANT_PAR",
-		"USE_ANALYTIC_JACOBIAN": true,
-		"MAX_KRYLOV": 0,
-		"GS_TYPE": 1,
-		"MAX_RESTARTS": 10,
-		"SCHUR_SAFETY": 1e-8,
-		"weno":
+	/*
+		return R"json({
+		"UNIT_TYPE": "GENERAL_RATE_MODEL",
+		"NCOMP": 4,
+		"VELOCITY": 5.75e-4,
+		"COL_DISPERSION": 5.75e-8,
+		"FILM_DIFFUSION": [6.9e-6, 6.9e-6, 6.9e-6, 6.9e-6],
+		"PAR_DIFFUSION": [7e-10, 6.07e-11, 6.07e-11, 6.07e-11],
+		"PAR_SURFDIFFUSION": [0.0, 0.0, 0.0, 0.0],
+		"COL_LENGTH": 0.014,
+		"PAR_RADIUS": 4.5e-5,
+		"COL_POROSITY": 0.37,
+		"PAR_POROSITY": 0.75,
+		"TOTAL_POROSITY": 0.8425,
+		"INIT_C": [50.0, 0.0, 0.0, 0.0],
+		"INIT_Q": [1.2e3, 0.0, 0.0, 0.0],
+		"ADSORPTION_MODEL": "STERIC_MASS_ACTION",
+		"adsorption":
 		{
-			"WENO_ORDER": 3,
-			"BOUNDARY_MODEL": 0,
-			"WENO_EPS": 1e-10
+			"IS_KINETIC": 1,
+			"SMA_LAMBDA": 1.2e3,
+			"SMA_KA": [0.0, 35.5, 1.59, 7.7],
+			"SMA_KD": [0.0, 1000.0, 1000.0, 1000.0],
+			"SMA_NU": [0.0, 4.7, 5.29, 3.7],
+			"SMA_SIGMA": [0.0, 11.83, 10.6, 10.0]
+		},
+		"discretization":
+		{
+			"NCOL": 16,
+			"NPAR": 4,
+			"NBOUND": [1, 1, 1, 1],
+			"PAR_DISC_TYPE": "EQUIDISTANT_PAR",
+			"USE_ANALYTIC_JACOBIAN": true,
+			"MAX_KRYLOV": 0,
+			"GS_TYPE": 1,
+			"MAX_RESTARTS": 10,
+			"SCHUR_SAFETY": 1e-8,
+			"weno":
+			{
+				"WENO_ORDER": 3,
+				"BOUNDARY_MODEL": 0,
+				"WENO_EPS": 1e-10
+			}
 		}
-	}
-	})json";
-*/
+		})json";
+	*/
 }
 
 cadet::JsonParameterProvider createColumnWithSMA(const std::string& uoType)
@@ -292,8 +292,8 @@ json createLWEJson(const std::string& uoType)
 					// Connection list is 3x7 since we have 1 connection between
 					// the two unit operations with 3 ports (and we need to have 7 columns)
 					sw["CONNECTIONS"] = {1.0, 0.0, 0.0, 0.0, -1.0, -1.0, 7.42637597e-09,
-					                     1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
-					                     1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
+										 1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
+										 1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
 					// Connections: From unit operation 1 port 0
 					//              to unit operation 0 port 0,
 					//              connect component -1 (i.e., all components)
@@ -552,8 +552,8 @@ cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoTyp
 					// Connection list is 3x7 since we have 1 connection between
 					// the two unit operations with 3 ports (and we need to have 7 columns)
 					sw["CONNECTIONS"] = {1.0, 0.0, 0.0, 0.0, -1.0, -1.0, 7.42637597e-09,
-					                     1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
-					                     1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
+										 1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
+										 1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
 					// Connections: From unit operation 1 port 0
 					//              to unit operation 0 port 0,
 					//              connect component -1 (i.e., all components)
@@ -799,8 +799,8 @@ cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool non
 					// Connection list is 3x7 since we have 1 connection between
 					// the two unit operations with 3 ports (and we need to have 7 columns)
 					sw["CONNECTIONS"] = {1.0, 0.0, 0.0, 0.0, -1.0, -1.0, 1.16355283e-09,
-					                     1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 3.49065850e-09,
-					                     1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 5.81776417e-09};
+										 1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 3.49065850e-09,
+										 1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 5.81776417e-09};
 					// Connections: From unit operation 1 port 0
 					//              to unit operation 0 port 0,
 					//              connect component -1 (i.e., all components)
@@ -997,8 +997,7 @@ cadet::JsonParameterProvider createCSTRBenchmark(unsigned int nSec, double endTi
 
 				// Connection list is 2x7 since we have 2 connection between
 				// the three unit operations (and we need to have 7 columns)
-				sw["CONNECTIONS"] = {1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0,
-				                     0.0, 2.0, -1.0, -1.0, -1.0, -1.0, 1.0};
+				sw["CONNECTIONS"] = {1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0, 0.0, 2.0, -1.0, -1.0, -1.0, -1.0, 1.0};
 				// Connections: From unit operation 1 port -1 (i.e., all ports)
 				//              to unit operation 0 port -1 (i.e., all ports),
 				//              connect component -1 (i.e., all components)

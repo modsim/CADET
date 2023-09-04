@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -28,251 +28,252 @@
 
 namespace cadet
 {
-	namespace model
-	{
-		void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+namespace model
+{
+void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 
-		void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerLumpedRateModelWithPores(
+	std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerLumpedRateModelWithoutPores(
+	std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 #ifdef ENABLE_GRM_2D
-		void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 #endif
 
-		namespace inlet
-		{
-			void registerPiecewiseCubicPoly(std::unordered_map<std::string, std::function<IInletProfile*()>>& inlets);
-		} // namespace inlet
+namespace inlet
+{
+void registerPiecewiseCubicPoly(std::unordered_map<std::string, std::function<IInletProfile*()>>& inlets);
+} // namespace inlet
 
-		namespace extfun
-		{
-			void registerLinearInterpolation(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns);
-			void registerPiecewiseCubicPoly(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns);
-		} // namespace extfun
-	} // namespace model
+namespace extfun
+{
+void registerLinearInterpolation(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns);
+void registerPiecewiseCubicPoly(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns);
+} // namespace extfun
+} // namespace model
 
-	ModelBuilder::ModelBuilder()
-	{
-		// Register all available models
-		model::registerInletModel(_modelCreators);
-		model::registerOutletModel(_modelCreators);
-		model::registerGeneralRateModel(_modelCreators);
-		model::registerLumpedRateModelWithPores(_modelCreators);
-		model::registerLumpedRateModelWithoutPores(_modelCreators);
-		model::registerCSTRModel(_modelCreators);
+ModelBuilder::ModelBuilder()
+{
+	// Register all available models
+	model::registerInletModel(_modelCreators);
+	model::registerOutletModel(_modelCreators);
+	model::registerGeneralRateModel(_modelCreators);
+	model::registerLumpedRateModelWithPores(_modelCreators);
+	model::registerLumpedRateModelWithoutPores(_modelCreators);
+	model::registerCSTRModel(_modelCreators);
 
 #ifdef ENABLE_GRM_2D
-		model::registerGeneralRateModel2D(_modelCreators);
+	model::registerGeneralRateModel2D(_modelCreators);
 #endif
 
-		// Register all available inlet profiles
-		model::inlet::registerPiecewiseCubicPoly(_inletCreators);
+	// Register all available inlet profiles
+	model::inlet::registerPiecewiseCubicPoly(_inletCreators);
 
-		// Register all available external functions
-		model::extfun::registerLinearInterpolation(_extFunCreators);
-		model::extfun::registerPiecewiseCubicPoly(_extFunCreators);
-	}
+	// Register all available external functions
+	model::extfun::registerLinearInterpolation(_extFunCreators);
+	model::extfun::registerPiecewiseCubicPoly(_extFunCreators);
+}
 
-	ModelBuilder::~ModelBuilder() CADET_NOEXCEPT
+ModelBuilder::~ModelBuilder() CADET_NOEXCEPT
+{
+	for (IModelSystem* model : _models)
+		delete model;
+}
+
+template <class UnitOpModel_t> void ModelBuilder::registerModel(const std::string& name)
+{
+	_modelCreators[name] = [](UnitOpIdx uoId) { return new UnitOpModel_t(uoId); };
+}
+
+template <class UnitOpModel_t> void ModelBuilder::registerModel()
+{
+	registerModel<UnitOpModel_t>(UnitOpModel_t::identifier());
+}
+
+IModelSystem* ModelBuilder::createSystem(IParameterProvider& paramProvider)
+{
+	model::ModelSystem* sys = new model::ModelSystem();
+
+	// Create and configure all unit operations
+	bool success = true;
+	unsigned int i = 0;
+	std::ostringstream oss;
+	oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+	while (paramProvider.exists(oss.str()))
 	{
-		for (IModelSystem* model : _models)
-			delete model;
-	}
+		// Create and configure unit operation
+		paramProvider.pushScope(oss.str());
 
-	template <class UnitOpModel_t>
-	void ModelBuilder::registerModel(const std::string& name)
-	{
-		_modelCreators[name] = [](UnitOpIdx uoId) { return new UnitOpModel_t(uoId); };
-	}
+		IModel* const unitOp = createUnitOperation(paramProvider, i);
 
-	template <class UnitOpModel_t>
-	void ModelBuilder::registerModel()
-	{
-		registerModel<UnitOpModel_t>(UnitOpModel_t::identifier());
-	}
+		paramProvider.popScope();
 
-	IModelSystem* ModelBuilder::createSystem(IParameterProvider& paramProvider)
-	{
-		model::ModelSystem* sys = new model::ModelSystem();
-		
-		// Create and configure all unit operations
-		bool success = true;
-		unsigned int i = 0;
-		std::ostringstream oss;
-		oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
-		while (paramProvider.exists(oss.str()))
+		if (unitOp)
 		{
-			// Create and configure unit operation
-			paramProvider.pushScope(oss.str());
-
-			IModel* const unitOp = createUnitOperation(paramProvider, i);
-
-			paramProvider.popScope();
-
-			if (unitOp)
-			{
-				// Model correctly created and configured -> add to system
-				sys->addModel(unitOp);
-			}
-			else
-			{
-				// Something went wrong -> abort and exit
-				success = false;
-				break;
-			}
-
-			++i;
-			oss.str("");
-			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
-		}
-
-		// Configure the whole system
-		success = success && sys->configureModelDiscretization(paramProvider, *this) && sys->configure(paramProvider);
-
-		if (success)
-		{
-			_models.push_back(sys);
-			return sys;
+			// Model correctly created and configured -> add to system
+			sys->addModel(unitOp);
 		}
 		else
 		{
-			delete sys;
-			return nullptr;
+			// Something went wrong -> abort and exit
+			success = false;
+			break;
 		}
+
+		++i;
+		oss.str("");
+		oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
 	}
 
-	IModelSystem* ModelBuilder::createSystem()
+	// Configure the whole system
+	success = success && sys->configureModelDiscretization(paramProvider, *this) && sys->configure(paramProvider);
+
+	if (success)
 	{
-		IModelSystem* sys = new model::ModelSystem();
 		_models.push_back(sys);
 		return sys;
 	}
-
-	void ModelBuilder::detachSystem(IModelSystem const* sys)
-	{
-		for (std::vector<IModelSystem*>::iterator it = _models.begin(); it != _models.end(); ++it)
-		{
-			if (*it == sys)
-			{
-				_models.erase(it);
-				break;
-			}
-		}
-	}
-
-	void ModelBuilder::destroySystem(IModelSystem* sys)
+	else
 	{
 		delete sys;
+		return nullptr;
 	}
+}
 
-	IModel* ModelBuilder::createUnitOperation(IParameterProvider& paramProvider, UnitOpIdx uoId)
+IModelSystem* ModelBuilder::createSystem()
+{
+	IModelSystem* sys = new model::ModelSystem();
+	_models.push_back(sys);
+	return sys;
+}
+
+void ModelBuilder::detachSystem(IModelSystem const* sys)
+{
+	for (std::vector<IModelSystem*>::iterator it = _models.begin(); it != _models.end(); ++it)
 	{
-		const std::string uoType = paramProvider.getString("UNIT_TYPE");
-		const auto it = _modelCreators.find(uoType);
-		if (it == _modelCreators.end())
+		if (*it == sys)
 		{
-			// Model was not found
-			LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
-			return nullptr;
+			_models.erase(it);
+			break;
 		}
-
-		// Call factory function (thanks to type erasure of std::function we can store 
-		// all factory functions in one container)
-		IUnitOperation* const model = it->second(uoId);
-
-		if (!model->configureModelDiscretization(paramProvider, *this) || !model->configure(paramProvider))
-		{
-			LOG(Error) << "Configuration of unit " << uoId << "(" << uoType << ") failed";
-			delete model;
-			return nullptr;
-		}
-
-		return model;
 	}
+}
 
-	IModel* ModelBuilder::createUnitOperation(const std::string& uoType, UnitOpIdx uoId)
+void ModelBuilder::destroySystem(IModelSystem* sys)
+{
+	delete sys;
+}
+
+IModel* ModelBuilder::createUnitOperation(IParameterProvider& paramProvider, UnitOpIdx uoId)
+{
+	const std::string uoType = paramProvider.getString("UNIT_TYPE");
+	const auto it = _modelCreators.find(uoType);
+	if (it == _modelCreators.end())
 	{
-		const auto it = _modelCreators.find(uoType);
-		if (it == _modelCreators.end())
-		{
-			// Model was not found
-			LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
-			return nullptr;
-		}
-
-		IUnitOperation* const model = it->second(uoId);
-		return model;
+		// Model was not found
+		LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
+		return nullptr;
 	}
 
-	void ModelBuilder::destroyUnitOperation(IModel* unitOp)
+	// Call factory function (thanks to type erasure of std::function we can store
+	// all factory functions in one container)
+	IUnitOperation* const model = it->second(uoId);
+
+	if (!model->configureModelDiscretization(paramProvider, *this) || !model->configure(paramProvider))
 	{
-		delete unitOp;
+		LOG(Error) << "Configuration of unit " << uoId << "(" << uoType << ") failed";
+		delete model;
+		return nullptr;
 	}
 
-	void ModelBuilder::registerInletType(const std::string& name, std::function<IInletProfile*(void)> factory)
+	return model;
+}
+
+IModel* ModelBuilder::createUnitOperation(const std::string& uoType, UnitOpIdx uoId)
+{
+	const auto it = _modelCreators.find(uoType);
+	if (it == _modelCreators.end())
 	{
-		if (_inletCreators.find(name) == _inletCreators.end())
-			_inletCreators[name] = factory;
-		else
-			throw std::invalid_argument("INLET_TYPE " + name + " is already registered and cannot be overwritten");
+		// Model was not found
+		LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
+		return nullptr;
 	}
 
-	void ModelBuilder::registerExternalFunctionType(const std::string& name, std::function<IExternalFunction*(void)> factory)
-	{
-		if (_extFunCreators.find(name) == _extFunCreators.end())
-			_extFunCreators[name] = factory;
-		else
-			throw std::invalid_argument("EXTFUN_TYPE " + name + " is already registered and cannot be overwritten");
-	}
+	IUnitOperation* const model = it->second(uoId);
+	return model;
+}
 
-	IInletProfile* ModelBuilder::createInletProfile(const std::string& type) const
-	{
-		const InletFactoryContainer_t::const_iterator it = _inletCreators.find(type);
-		if (it != _inletCreators.end())
-			return (it->second)();
+void ModelBuilder::destroyUnitOperation(IModel* unitOp)
+{
+	delete unitOp;
+}
 
-		return nullptr;		
-	}
+void ModelBuilder::registerInletType(const std::string& name, std::function<IInletProfile*(void)> factory)
+{
+	if (_inletCreators.find(name) == _inletCreators.end())
+		_inletCreators[name] = factory;
+	else
+		throw std::invalid_argument("INLET_TYPE " + name + " is already registered and cannot be overwritten");
+}
 
-	IExternalFunction* ModelBuilder::createExternalFunction(const std::string& type) const
-	{
-		const ExternalFunctionFactoryContainer_t::const_iterator it = _extFunCreators.find(type);
-		if (it != _extFunCreators.end())
-			return (it->second)();
+void ModelBuilder::registerExternalFunctionType(const std::string& name,
+												std::function<IExternalFunction*(void)> factory)
+{
+	if (_extFunCreators.find(name) == _extFunCreators.end())
+		_extFunCreators[name] = factory;
+	else
+		throw std::invalid_argument("EXTFUN_TYPE " + name + " is already registered and cannot be overwritten");
+}
 
-		return nullptr;		
-	}
+IInletProfile* ModelBuilder::createInletProfile(const std::string& type) const
+{
+	const InletFactoryContainer_t::const_iterator it = _inletCreators.find(type);
+	if (it != _inletCreators.end())
+		return (it->second)();
 
-	model::IBindingModel* ModelBuilder::createBindingModel(const std::string& name) const
-	{
-		return _bindingModels.create(name);
-	}
+	return nullptr;
+}
 
-	bool ModelBuilder::isValidBindingModel(const std::string& name) const
-	{
-		return _bindingModels.exists(name);
-	}
+IExternalFunction* ModelBuilder::createExternalFunction(const std::string& type) const
+{
+	const ExternalFunctionFactoryContainer_t::const_iterator it = _extFunCreators.find(type);
+	if (it != _extFunCreators.end())
+		return (it->second)();
 
-	model::IDynamicReactionModel* ModelBuilder::createDynamicReactionModel(const std::string& name) const
-	{
-		return _reactionModels.createDynamic(name);
-	}
+	return nullptr;
+}
 
-	bool ModelBuilder::isValidDynamicReactionModel(const std::string& name) const
-	{
-		return _reactionModels.existsDynamic(name);
-	}
+model::IBindingModel* ModelBuilder::createBindingModel(const std::string& name) const
+{
+	return _bindingModels.create(name);
+}
 
-	model::IParameterDependence* ModelBuilder::createParameterDependence(const std::string& name) const
-	{
-		return _paramDeps.create(name);
-	}
+bool ModelBuilder::isValidBindingModel(const std::string& name) const
+{
+	return _bindingModels.exists(name);
+}
 
-	bool ModelBuilder::isValidParameterDependence(const std::string& name) const
-	{
-		return _paramDeps.exists(name);
-	}
+model::IDynamicReactionModel* ModelBuilder::createDynamicReactionModel(const std::string& name) const
+{
+	return _reactionModels.createDynamic(name);
+}
+
+bool ModelBuilder::isValidDynamicReactionModel(const std::string& name) const
+{
+	return _reactionModels.existsDynamic(name);
+}
+
+model::IParameterDependence* ModelBuilder::createParameterDependence(const std::string& name) const
+{
+	return _paramDeps.create(name);
+}
+
+bool ModelBuilder::isValidParameterDependence(const std::string& name) const
+{
+	return _paramDeps.exists(name);
+}
 
 } // namespace cadet

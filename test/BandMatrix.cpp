@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -45,7 +45,8 @@ inline cadet::linalg::FactorizableBandMatrix fromBandMatrix(const cadet::linalg:
  * @param [in] numCols Number of columns to extract
  * @param [out] out Memory in which the dense submatrix is written in row-major format
  */
-inline void extractDenseSubMatrix(const cadet::linalg::BandMatrix& mat, unsigned int startRow, int startDiag, unsigned int numRows, unsigned int numCols, double* const out)
+inline void extractDenseSubMatrix(const cadet::linalg::BandMatrix& mat, unsigned int startRow, int startDiag,
+								  unsigned int numRows, unsigned int numCols, double* const out)
 {
 	std::vector<double> x(numCols, 0.0);
 	std::vector<double> y(numRows, 0.0);
@@ -102,12 +103,12 @@ TEST_CASE("FactorizableBandMatrix iterator read access", "[BandMatrix],[LinAlg]"
 
 TEST_CASE("FactorizableBandMatrix solves", "[BandMatrix],[LinAlg]")
 {
-	using cadet::linalg::FactorizableBandMatrix;
 	using cadet::linalg::BandMatrix;
+	using cadet::linalg::FactorizableBandMatrix;
 
 	const BandMatrix bm = cadet::test::createBandMatrix<BandMatrix>(10, 2, 3);
 	FactorizableBandMatrix fbm = fromBandMatrix(bm);
-	
+
 	REQUIRE(fbm.factorize());
 
 	// Prepare some right hand side
@@ -134,9 +135,11 @@ TEST_CASE("FactorizableBandMatrix solves", "[BandMatrix],[LinAlg]")
  * @param [in] numCols Number of columns to extract
  * @param [in] ref Reference values (matrix in row-major format)
  */
-void testSubMatrixMultiply(const cadet::linalg::BandMatrix& bm, int startRow, int startDiag, int numRows, int numCols, const std::vector<double>& ref)
+void testSubMatrixMultiply(const cadet::linalg::BandMatrix& bm, int startRow, int startDiag, int numRows, int numCols,
+						   const std::vector<double>& ref)
 {
-	SECTION("From row " + std::to_string(startRow) + ", diagonal " + std::to_string(startDiag) + " extract " + std::to_string(numRows) + "x" + std::to_string(numCols) + " matrix")
+	SECTION("From row " + std::to_string(startRow) + ", diagonal " + std::to_string(startDiag) + " extract " +
+			std::to_string(numRows) + "x" + std::to_string(numCols) + " matrix")
 	{
 		std::vector<double> out(bm.rows() * bm.stride(), 0.0);
 		extractDenseSubMatrix(bm, startRow, startDiag, numRows, numCols, out.data());
@@ -152,13 +155,20 @@ TEST_CASE("BandMatrix::submatrixMultiplyVector", "[BandMatrix],[LinAlg]")
 	{
 		const BandMatrix bm = cadet::test::createBandMatrix<BandMatrix>(8, 2, 3);
 
-		testSubMatrixMultiply(bm, 0, 0, 5, 5, {1, 2, 3, 4, 0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 16, 17, 18, 19, 0, 0, 22, 23, 24});
-		testSubMatrixMultiply(bm, 2, 0, 5, 5, {12, 13, 14, 15, 0, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 0, 28, 29, 30, 31, 0, 0, 33, 34, 35});
-		testSubMatrixMultiply(bm, 2, -2, 5, 5, {10, 11, 12, 13, 14, 0, 16, 17, 18, 19, 0, 0, 22, 23, 24, 0, 0, 0, 28, 29, 0, 0, 0, 0, 33});
-		testSubMatrixMultiply(bm, 2, -1, 5, 5, {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 22, 23, 24, 25, 0, 0, 28, 29, 30, 0, 0, 0, 33, 34});
-		testSubMatrixMultiply(bm, 2, 1, 5, 5, {13, 14, 15, 0, 0, 18, 19, 20, 21, 0, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 0, 33, 34, 35, 36});
-		testSubMatrixMultiply(bm, 2, 3, 5, 5, {15, 0, 0, 0, 0, 20, 21, 0, 0, 0, 25, 26, 27, 0, 0, 30, 31, 32, 0, 0, 34, 35, 36, 0, 0});
-		testSubMatrixMultiply(bm, 2, 0, 5, 7, {12, 13, 14, 15, 0, 0, 0, 17, 18, 19, 20, 21, 0, 0, 22, 23, 24, 25, 26, 27, 0, 0, 28, 29, 30, 31, 32, 0, 0, 0, 33, 34, 35, 36, 0});
+		testSubMatrixMultiply(bm, 0, 0, 5, 5,
+							  {1, 2, 3, 4, 0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 16, 17, 18, 19, 0, 0, 22, 23, 24});
+		testSubMatrixMultiply(bm, 2, 0, 5, 5, {12, 13, 14, 15, 0,  17, 18, 19, 20, 21, 22, 23, 24,
+											   25, 26, 0,  28, 29, 30, 31, 0,  0,  33, 34, 35});
+		testSubMatrixMultiply(bm, 2, -2, 5, 5, {10, 11, 12, 13, 14, 0,  16, 17, 18, 19, 0, 0, 22,
+												23, 24, 0,  0,  0,  28, 29, 0,  0,  0,  0, 33});
+		testSubMatrixMultiply(bm, 2, -1, 5, 5, {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0,  22, 23,
+												24, 25, 0,  0,  28, 29, 30, 0,  0,  0,  33, 34});
+		testSubMatrixMultiply(bm, 2, 1, 5, 5, {13, 14, 15, 0,  0,  18, 19, 20, 21, 0,  23, 24, 25,
+											   26, 27, 28, 29, 30, 31, 32, 0,  33, 34, 35, 36});
+		testSubMatrixMultiply(bm, 2, 3, 5, 5,
+							  {15, 0, 0, 0, 0, 20, 21, 0, 0, 0, 25, 26, 27, 0, 0, 30, 31, 32, 0, 0, 34, 35, 36, 0, 0});
+		testSubMatrixMultiply(bm, 2, 0, 5, 7, {12, 13, 14, 15, 0,  0,  0,  17, 18, 19, 20, 21, 0,  0,  22, 23, 24, 25,
+											   26, 27, 0,  0,  28, 29, 30, 31, 32, 0,  0,  0,  33, 34, 35, 36, 0});
 		testSubMatrixMultiply(bm, 2, -1, 5, 3, {11, 12, 13, 16, 17, 18, 0, 22, 23, 0, 0, 28, 0, 0, 0});
 		testSubMatrixMultiply(bm, 2, 1, 5, 3, {13, 14, 15, 18, 19, 20, 23, 24, 25, 28, 29, 30, 0, 33, 34});
 		testSubMatrixMultiply(bm, 2, 2, 5, 3, {14, 15, 0, 19, 20, 21, 24, 25, 26, 29, 30, 31, 33, 34, 35});
@@ -173,7 +183,7 @@ TEST_CASE("BandMatrix::submatrixMultiplyVector", "[BandMatrix],[LinAlg]")
 	SECTION("Matrix size: 24 rows, 6+1+9 bandwidth")
 	{
 		const BandMatrix bm = cadet::test::createBandMatrix<BandMatrix>(24, 6, 9);
-		
+
 		testSubMatrixMultiply(bm, 3, 1, 1, 2, {38, 39});
 		testSubMatrixMultiply(bm, 3, -1, 1, 3, {36, 37, 38});
 	}

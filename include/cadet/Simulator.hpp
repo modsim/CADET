@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the Simulator interface.
  */
 
@@ -58,15 +58,18 @@ enum class ConsistentInitialization : int
 	 */
 	LeanFirstOnly = 4,
 	/**
-	 * @brief Perform full consistent initialization at the beginning and lean initialization on every following discontinuous section transition
+	 * @brief Perform full consistent initialization at the beginning and lean initialization on every following
+	 * discontinuous section transition
 	 */
 	FullOnceThenLean = 5,
 	/**
-	 * @brief Do not initialize at the beginning but perform full initialization on every following discontinuous section transition
+	 * @brief Do not initialize at the beginning but perform full initialization on every following discontinuous
+	 * section transition
 	 */
 	NoneOnceThenFull = 6,
 	/**
-	 * @brief Do not initialize at the beginning but perform lean initialization on every following discontinuous section transition
+	 * @brief Do not initialize at the beginning but perform lean initialization on every following discontinuous
+	 * section transition
 	 */
 	NoneOnceThenLean = 7,
 };
@@ -80,22 +83,22 @@ inline const char* to_string(ConsistentInitialization ci) CADET_NOEXCEPT
 {
 	switch (ci)
 	{
-		case ConsistentInitialization::None:
-			return "None";
-		case ConsistentInitialization::FullFirstOnly:
-			return "FullFirstOnly";
-		case ConsistentInitialization::LeanFirstOnly:
-			return "LeanFirstOnly";
-		case ConsistentInitialization::Full:
-			return "Full";
-		case ConsistentInitialization::Lean:
-			return "Lean";
-		case ConsistentInitialization::FullOnceThenLean:
-			return "FullOnceThenLean";
-		case ConsistentInitialization::NoneOnceThenFull:
-			return "NoneOnceThenFull";
-		case ConsistentInitialization::NoneOnceThenLean:
-			return "NoneOnceThenLean";
+	case ConsistentInitialization::None:
+		return "None";
+	case ConsistentInitialization::FullFirstOnly:
+		return "FullFirstOnly";
+	case ConsistentInitialization::LeanFirstOnly:
+		return "LeanFirstOnly";
+	case ConsistentInitialization::Full:
+		return "Full";
+	case ConsistentInitialization::Lean:
+		return "Lean";
+	case ConsistentInitialization::FullOnceThenLean:
+		return "FullOnceThenLean";
+	case ConsistentInitialization::NoneOnceThenFull:
+		return "NoneOnceThenFull";
+	case ConsistentInitialization::NoneOnceThenLean:
+		return "NoneOnceThenLean";
 	}
 	return "Unknown";
 }
@@ -134,24 +137,29 @@ inline ConsistentInitialization to_consistentinitialization(const std::string& c
  */
 inline ConsistentInitialization toConsistentInitialization(int ci) CADET_NOEXCEPT
 {
-	switch(ci)
+	switch (ci)
 	{
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::None):
-			return ConsistentInitialization::None;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::Full):
-			return ConsistentInitialization::Full;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::FullFirstOnly):
-			return ConsistentInitialization::FullFirstOnly;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::Lean):
-			return ConsistentInitialization::Lean;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::LeanFirstOnly):
-			return ConsistentInitialization::LeanFirstOnly;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::FullOnceThenLean):
-			return ConsistentInitialization::FullOnceThenLean;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::NoneOnceThenFull):
-			return ConsistentInitialization::NoneOnceThenFull;
-		case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::NoneOnceThenLean):
-			return ConsistentInitialization::NoneOnceThenLean;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::None):
+		return ConsistentInitialization::None;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::Full):
+		return ConsistentInitialization::Full;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+		ConsistentInitialization::FullFirstOnly):
+		return ConsistentInitialization::FullFirstOnly;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::Lean):
+		return ConsistentInitialization::Lean;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+		ConsistentInitialization::LeanFirstOnly):
+		return ConsistentInitialization::LeanFirstOnly;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+		ConsistentInitialization::FullOnceThenLean):
+		return ConsistentInitialization::FullOnceThenLean;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+		ConsistentInitialization::NoneOnceThenFull):
+		return ConsistentInitialization::NoneOnceThenFull;
+	case static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+		ConsistentInitialization::NoneOnceThenLean):
+		return ConsistentInitialization::NoneOnceThenLean;
 	}
 	return ConsistentInitialization::Full;
 }
@@ -163,8 +171,10 @@ inline ConsistentInitialization toConsistentInitialization(int ci) CADET_NOEXCEP
  */
 inline bool isValidConsistentInitialization(int ci) CADET_NOEXCEPT
 {
-	return (ci >= static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::None))
-		&& (ci <= static_cast<typename std::underlying_type<ConsistentInitialization>::type>(ConsistentInitialization::NoneOnceThenLean));
+	return (ci >= static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+					  ConsistentInitialization::None)) &&
+		   (ci <= static_cast<typename std::underlying_type<ConsistentInitialization>::type>(
+					  ConsistentInitialization::NoneOnceThenLean));
 }
 
 /**
@@ -173,8 +183,9 @@ inline bool isValidConsistentInitialization(int ci) CADET_NOEXCEPT
 class CADET_API ISimulator
 {
 public:
-
-	virtual ~ISimulator() CADET_NOEXCEPT { }
+	virtual ~ISimulator() CADET_NOEXCEPT
+	{
+	}
 
 	//! \brief Sets a parameter sensitive
 	//!
@@ -214,16 +225,17 @@ public:
 	//!
 	//! Multiple parameters are fused into a single parameter sensitivity that is a
 	//! linear combination of the single parameters. Given two parameters @f$ p_1, p_2 @f$, this means setting
-	//! @f[ \begin{pmatrix} p_1 \\ p_2 \end{pmatrix} = g\left(p\right) = \begin{pmatrix} a_1 p \\ a_2 p \end{pmatrix} @f]
-	//! and computing the parameter sensitivity of @f$ p@f$:
+	//! @f[ \begin{pmatrix} p_1 \\ p_2 \end{pmatrix} = g\left(p\right) = \begin{pmatrix} a_1 p \\ a_2 p \end{pmatrix}
+	//! @f] and computing the parameter sensitivity of @f$ p@f$:
 	//! @f[ \frac{d}{dp} f(g(p)) = a_1 \partial_1 f + a_2 \partial_2 f. @f]
 	//! One additional system in size of the original DAE system is to be solved.
 	//!
 	//! \param  [in]    ids Parameter IDs of the fused sensitive parameters
-	//! \param  [in]    diffFactors Factors @f$ a_i @f$ of the linear combination 
+	//! \param  [in]    diffFactors Factors @f$ a_i @f$ of the linear combination
 	//! \param  [in]    numParams Number of fused parameters
 	//! \param  [in]    absTolS Absolute tolerance used in the sensitivity computation for this parameter (try 1.0e-5)
-	virtual void setSensitiveParameter(ParameterId const* ids, double const* diffFactors, unsigned int numParams, double absTolS) = 0;
+	virtual void setSensitiveParameter(ParameterId const* ids, double const* diffFactors, unsigned int numParams,
+									   double absTolS) = 0;
 
 	//! \brief Reset the simulator to compute no sensitivity at all
 	virtual void clearSensParams() = 0;
@@ -314,12 +326,13 @@ public:
 	//!
 	//! \param  [in]    sectionTimes        A vector containing the timepoints of all sections
 	//! \param  [in]    sectionContinuity   A vector determining the continuity of section transitions
-	virtual void setSectionTimes(const std::vector<double>& sectionTimes, const std::vector<bool>& sectionContinuity) = 0;
+	virtual void setSectionTimes(const std::vector<double>& sectionTimes,
+								 const std::vector<bool>& sectionContinuity) = 0;
 
 	/**
 	 * @brief Initializes the time integrator with the given model system
 	 * @details Allocates internal memory and initializes and sets up the IDAS package.
-	 * 
+	 *
 	 * @param [in] model Model system that is to be simulated
 	 */
 	virtual void initializeModel(IModelSystem& model) = 0;
@@ -329,7 +342,7 @@ public:
 	 * @details Initial conditions are set by calling setInitialCondition(IParameterProvider& paramProvider).
 	 *          This function has to be called once for applyInitialCondition() to work, which will do nothing
 	 *          otherwise.
-	 *          
+	 *
 	 *          This function applies the initial conditions to the state vectors. Consistent initialization
 	 *          will be performed later according to the mode set by setConsistentInitialization().
 	 */
@@ -339,39 +352,39 @@ public:
 	 * @brief Reads initial condition of the model from the given parameter provider
 	 * @details The scope of the cadet::IParameterProvider is unchanged on return.
 	 *          Note that the initial conditions are not applied, which is performed by applyInitialCondition().
-	 * 
+	 *
 	 * @param [in] paramProvider Parameter provider
 	 */
 	virtual void setInitialCondition(IParameterProvider& paramProvider) = 0;
 
 	/**
 	 * @brief Applies the given initial state to the model
-	 * @details The initial state consists of the state @f$ y_0 @f$ and its time derivative @f$\dot{y}_0@f$. 
+	 * @details The initial state consists of the state @f$ y_0 @f$ and its time derivative @f$\dot{y}_0@f$.
 	 *          It has to be consistent, which means that
 	 *          @f[ f\left( t_0, y_0, \dot{y}_0 ) = 0 @f]
 	 *          has to hold. In other words, the initial condition has to fulfill the DAE at the initial
 	 *          time point @f$ t_0@f$.
-	 *          
+	 *
 	 *          If only @f$ y_0 @f$ is given, the simulator will try to find a matching @f$ \dot{y}_0@f$ later.
 	 *          This is done according to the consistent initialization mode set by setConsistentInitialization().
 	 *          Because of nonlinearities, it is usually faster to also provide @f$ \dot{y}_0@f$.
-	 * 
+	 *
 	 * @param [in] initState Initial state @f$ y_0 @f$ of the model
 	 */
 	virtual void applyInitialCondition(double const* const initState) = 0;
 
 	/**
 	 * @brief Applies the given initial state to the model
-	 * @details The initial state consists of the state @f$ y_0 @f$ and its time derivative @f$\dot{y}_0@f$. 
+	 * @details The initial state consists of the state @f$ y_0 @f$ and its time derivative @f$\dot{y}_0@f$.
 	 *          It has to be consistent, which means that
 	 *          @f[ f\left( t_0, y_0, \dot{y}_0 ) = 0 @f]
 	 *          has to hold. In other words, the initial condition has to fulfill the DAE at the initial
 	 *          time point @f$ t_0@f$.
-	 *          
+	 *
 	 *          If only @f$ y_0 @f$ is given, the simulator will try to find a matching @f$ \dot{y}_0@f$ later.
 	 *          This is done according to the consistent initialization mode set by setConsistentInitialization().
 	 *          Because of nonlinearities, it is usually faster to also provide @f$ \dot{y}_0@f$.
-	 * 
+	 *
 	 * @param [in] initState Initial state @f$ y_0 @f$ of the model
 	 * @param [in] initStateDot Initial time derivative state @f$ \dot{y}_0 @f$ of the model
 	 */
@@ -381,20 +394,23 @@ public:
 	 * @brief Applies the given initial state to the forward sensitivity systems
 	 * @details The initial sensitivities are given by the argument @p initSens and their time derivatives
 	 *          by @p initSensDot. The model is not invoked to make changes to the initial values.
-	 *          
+	 *
 	 *          If one of the parameters (@p initSens or @p initSensDot) is @c nullptr, the state vector
 	 *          and its time derivative will be set to zero and consistent values will be computed later.
-	 *          
-	 *          Consistent initialization is performed later according to the mode set by setConsistentInitializationSens().
-	 * 
+	 *
+	 *          Consistent initialization is performed later according to the mode set by
+	 * setConsistentInitializationSens().
+	 *
 	 * @param [in] initSens Pointer to array with pointers to initial sensitivities or @c nullptr
 	 * @param [in] initSensDot Pointer to array with pointers to initial sensitivity time derivatives or @c nullptr
 	 */
-	virtual void applyInitialConditionFwdSensitivities(double const * const* const initSens, double const * const* const initSensDot) = 0;
+	virtual void applyInitialConditionFwdSensitivities(double const* const* const initSens,
+													   double const* const* const initSensDot) = 0;
 
 	/**
 	 * @brief Initializes the forward sensitivity subsystems with zero initial values
-	 * @details The initial sensitivities are set to zero and (later) handed over to the model for consistent initialization.
+	 * @details The initial sensitivities are set to zero and (later) handed over to the model for consistent
+	 * initialization.
 	 */
 	virtual void initializeFwdSensitivities() = 0;
 
@@ -402,7 +418,7 @@ public:
 	 * @brief Skips consistent initialization at the beginning of integrate()
 	 * @details By skipping consistent initialization at the beginning of integrate(), a previous
 	 *          simulation can be resumed.
-	 *          
+	 *
 	 *          More detailed options can be applied with setConsistentInitialization().
 	 */
 	virtual void skipConsistentInitialization() = 0;
@@ -411,7 +427,7 @@ public:
 	 * @brief Sets consistent initialization mode
 	 * @details Sets consistent initialization mode for the subsequent calls to integrate().
 	 *          Use skipConsistentInitialization() to skip the first consistent initialization.
-	 * 
+	 *
 	 * @param [in] ci Consistent initialization mode
 	 */
 	virtual void setConsistentInitialization(ConsistentInitialization ci) = 0;
@@ -420,7 +436,7 @@ public:
 	 * @brief Sets consistent initialization mode of the sensitivity systems
 	 * @details Sets consistent initialization mode for the subsequent calls to integrate().
 	 *          Use skipConsistentInitialization() to skip the first consistent initialization.
-	 * 
+	 *
 	 * @param [in] ci Consistent initialization mode of the sensitivity systems
 	 */
 	virtual void setConsistentInitializationSens(ConsistentInitialization ci) = 0;
@@ -431,17 +447,18 @@ public:
 	 *          by @p initSensDot. The user is responsible for checking whether the initial values are
 	 *          correct and consistent with the sensitive parameters. The model is not invoked to make
 	 *          changes to the initial values.
-	 * 
+	 *
 	 * @param [in] initSens Pointer to array with pointers to initial sensitivities
 	 * @param [in] initSensDot Pointer to array with pointers to initial sensitivity time derivatives
 	 */
-	virtual void initializeFwdSensitivities(double const * const* const initSens, double const * const* const initSensDot) = 0;
+	virtual void initializeFwdSensitivities(double const* const* const initSens,
+											double const* const* const initSensDot) = 0;
 
 	/**
 	 * @brief Sets the solution recorder which receives the solution of each time step
 	 * @details The solution recorder is invoked for every time step when a solution and its sensitivities
 	 *          are to be saved. Setting the recorder to @c NULL disables recording the solution.
-	 * 
+	 *
 	 * @param [in] recorder Implementation of the cadet::ISolutionRecorder interface
 	 */
 	virtual void setSolutionRecorder(ISolutionRecorder* recorder) = 0;
@@ -455,11 +472,10 @@ public:
 	 */
 	virtual void integrate() = 0;
 
-
 	/**
 	 * @brief Returns the bare state vector for the last timepoint
 	 * @details The method returns the last solution as it was written to the memory.
-	 *          The whole state vetor (including column, particle and flux parts) is returned. 
+	 *          The whole state vetor (including column, particle and flux parts) is returned.
 	 *          The ordering is rather unhandy, since the column, the particle, and the flux parts
 	 *          are of different size.
 	 *
@@ -471,7 +487,7 @@ public:
 	/**
 	 * @brief Returns the bare time derivative state vector for the last timepoint
 	 * @details See getLastSolution().
-	 * 
+	 *
 	 * @param [out] len Length of the state vector
 	 * @return Pointer to first element of the state vector
 	 */
@@ -480,7 +496,7 @@ public:
 	/**
 	 * @brief Returns the bare sensitivity state vectors for the last timepoint
 	 * @details The method returns the last solution of the sensitivity systems as it was written to memory.
-	 *          The whole state vetor (including column, particle and flux parts) is returned. 
+	 *          The whole state vetor (including column, particle and flux parts) is returned.
 	 *          The ordering is rather unhandy, since the column, the particle and the flux parts
 	 *          are of different size.
 	 *
@@ -492,7 +508,7 @@ public:
 	/**
 	 * @brief Returns the bare time derivative state vectors of the sensitivity subsystems for the last timepoint
 	 * @details See getLastSolutionDerivative().
-	 * 
+	 *
 	 * @param [out] len Length of the sensitivity state vector
 	 * @return Array with pointers to sensitivity state vectors
 	 */
@@ -514,7 +530,7 @@ public:
 	/**
 	 * @brief Reads all configuration values from the given parameter provider
 	 * @details The scope of the cadet::IParameterProvider is unchanged on return.
-	 * 
+	 *
 	 * @param [in] paramProvider Parameter provider
 	 */
 	virtual void configure(IParameterProvider& paramProvider) = 0;
@@ -522,7 +538,7 @@ public:
 	/**
 	 * @brief Rereads all configuration values from the given parameter provider
 	 * @details The scope of the cadet::IParameterProvider is unchanged on return.
-	 * 
+	 *
 	 * @param [in] paramProvider Parameter provider
 	 */
 	virtual void reconfigure(IParameterProvider& paramProvider) = 0;
@@ -557,8 +573,10 @@ public:
 	 * @param [in] maxSteps Maximum number of time integration steps
 	 * @param [in] maxStepSize Maximum step size of the time integrator
 	 */
-	virtual void configureTimeIntegrator(double relTol, double absTol, double initStepSize, unsigned int maxSteps, double maxStepSize) = 0;
-	virtual void configureTimeIntegrator(double relTol, double absTol, const std::vector<double>& initStepSizes, unsigned int maxSteps, double maxStepSize) = 0;
+	virtual void configureTimeIntegrator(double relTol, double absTol, double initStepSize, unsigned int maxSteps,
+										 double maxStepSize) = 0;
+	virtual void configureTimeIntegrator(double relTol, double absTol, const std::vector<double>& initStepSizes,
+										 unsigned int maxSteps, double maxStepSize) = 0;
 
 	/**
 	 * @brief Sets the error tolerances of the sensitivity systems
@@ -578,7 +596,7 @@ public:
 	/**
 	 * @brief Sets the relative error tolerance of the time integrator
 	 * @details This tolerance is used for all elements of the state vector.
-	 *          Each element @f$ r_i @f$ in the residual is weighted by 
+	 *          Each element @f$ r_i @f$ in the residual is weighted by
 	 *          @f[ \frac{1}{\text{relTol} \left|r_i\right| + \text{absTol}_i}. @f]
 	 * @param [in] relTol Relative error tolerance
 	 */
@@ -587,7 +605,7 @@ public:
 	/**
 	 * @brief Sets the absolute error tolerance of the time integrator
 	 * @details This tolerance is used for all elements of the state vector.
-	 *          Each element @f$ r_i @f$ in the residual is weighted by 
+	 *          Each element @f$ r_i @f$ in the residual is weighted by
 	 *          @f[ \frac{1}{\text{relTol} \left|r_i\right| + \text{absTol}_i}, @f]
 	 *          which means that @f$ \text{absTol}_i @f$ does not depend on the
 	 *          index @f$ i @f$.
@@ -597,7 +615,7 @@ public:
 
 	/**
 	 * @brief Sets the absolute error tolerance of the time integrator
-	 * @details Each element @f$ r_i @f$ in the residual is weighted by 
+	 * @details Each element @f$ r_i @f$ in the residual is weighted by
 	 *          @f[ \frac{1}{\text{relTol} \left|r_i\right| + \text{absTol}_i}. @f]
 	 * @param [in] absTol Vector with absolute error tolerances for each component of the state vector
 	 */
@@ -650,12 +668,13 @@ public:
 	virtual void setRelativeErrorToleranceSens(double relTol) = 0;
 
 	/**
-	 * @brief Controls whether forward sensitivity systems are taken into account for the local error test in time integration
+	 * @brief Controls whether forward sensitivity systems are taken into account for the local error test in time
+	 * integration
 	 * @details The error in time integration can be estimated and is used for step size
 	 *          and order selection. This function controls whether forward sensitivity
 	 *          systems are taken into account in the local error test, which they are
 	 *          by default (@c true).
-	 * 
+	 *
 	 * @param [in] enabled Determines whether sensitivities are taken into account in local error test
 	 */
 	virtual void setSensitivityErrorControl(bool enabled) = 0;
@@ -668,7 +687,7 @@ public:
 	 *          solution) a maximum of 3 iterations is used by default (see SUNDIALS 2.7.0).
 	 *          The iteration is stopped when the specified number of iterations is
 	 *          exceeded. A final convergence test is performed.
-	 * 
+	 *
 	 * @param [in] nIter Maximum number of Newton iterations for a time step
 	 */
 	virtual void setMaxNewtonIteration(unsigned int nIter) = 0;
@@ -679,7 +698,7 @@ public:
 	 *          and order selection. The maximum number of failed local time step error
 	 *          tests defaults to 7 (see SUNDIALS 2.7.0). Time integration fails when
 	 *          the number of failures exceeds the specified value.
-	 * 
+	 *
 	 * @param [in] nFails Maximum number of local error test failures for a time step
 	 */
 	virtual void setMaxErrorTestFails(unsigned int nFails) = 0;
@@ -692,19 +711,20 @@ public:
 	 *          for the number of failed convergence tests (i.e., Newton iterations) is set
 	 *          to 10 (see SUNDIALS 2.7.0). When the specified number of failures is exceeded,
 	 *          time integration fails.
-	 * 
+	 *
 	 * @param [in] nFails Maximum number of convergence test failures
 	 */
 	virtual void setMaxConvergenceFails(unsigned int nFails) = 0;
 
 	/**
-	 * @brief Sets the maximum number of Newton iterations for each forward sensitivity system in a time integration step
+	 * @brief Sets the maximum number of Newton iterations for each forward sensitivity system in a time integration
+	 * step
 	 * @details Each time step requires the solution of a nonlinear equation system which
 	 *          is performed by Newton iteration. After the original system has been solved,
 	 *          each forward sensitivity system is solved using a separate Newton iteration.
 	 *          The maximum number of iterations is controlled by this function and defaults
 	 *          to 3 (see SUNDIALS 2.7.0). After the iteration a convergence test is performed.
-	 * 
+	 *
 	 * @param [in] nIter Maximum number of Newton iterations for a time step
 	 */
 	virtual void setMaxSensNewtonIteration(unsigned int nIter) = 0;
@@ -730,4 +750,4 @@ public:
 
 } // namespace cadet
 
-#endif  // LIBCADET_SIMULATOR_HPP_
+#endif // LIBCADET_SIMULATOR_HPP_

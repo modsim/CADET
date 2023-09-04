@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Interface for the sparse direct solver
  */
 
@@ -19,7 +19,7 @@
 #define LIBCADET_SPARSESOLVERINTERFACE_HPP_
 
 #if defined(CADET_FORCE_MATLAB_UMFPACK) && defined(CADET_MATLABMEX)
-	#include <stddef.h>
+#include <stddef.h>
 #endif
 
 namespace cadet
@@ -30,25 +30,25 @@ namespace linalg
 
 #if defined(CADET_FORCE_MATLAB_UMFPACK) && defined(CADET_MATLABMEX)
 
-	// Matlab uses mwIndex = size_t for indexing sparse matrices.
-	// Hence, it seems probable that size_t is also used for calling Matlab's own UMFPACK functions.
-	// When building the MEX interface and CADET_FORCE_MATLAB_UMFPACK is set, we rely on Matlab's 
-	// UMFPACK version and use size_t for indexing.
+// Matlab uses mwIndex = size_t for indexing sparse matrices.
+// Hence, it seems probable that size_t is also used for calling Matlab's own UMFPACK functions.
+// When building the MEX interface and CADET_FORCE_MATLAB_UMFPACK is set, we rely on Matlab's
+// UMFPACK version and use size_t for indexing.
 
-	// Note that this excludes using SuperLU (unless it is build with size_t as index type, which is not the default)
+// Note that this excludes using SuperLU (unless it is build with size_t as index type, which is not the default)
 
-	typedef size_t sparse_int_t;
+typedef size_t sparse_int_t;
 
-	// Always enable UMFPACK (Matlab distributes its own version), always disable SuperLU
-	#define UMFPACK_FOUND
-	#undef SUPERLU_FOUND
+// Always enable UMFPACK (Matlab distributes its own version), always disable SuperLU
+#define UMFPACK_FOUND
+#undef SUPERLU_FOUND
 
 #else
 
-	typedef @SPARSE_INT_TYPE@ sparse_int_t;
+typedef @SPARSE_INT_TYPE @sparse_int_t;
 
-	#cmakedefine UMFPACK_FOUND
-	#cmakedefine SUPERLU_FOUND
+#cmakedefine UMFPACK_FOUND
+#cmakedefine SUPERLU_FOUND
 
 #endif
 
@@ -56,4 +56,4 @@ namespace linalg
 
 } // namespace cadet
 
-#endif  // LIBCADET_SPARSESOLVERINTERFACE_HPP_
+#endif // LIBCADET_SPARSESOLVERINTERFACE_HPP_

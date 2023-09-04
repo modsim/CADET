@@ -21,8 +21,7 @@
 #include "common/JsonParameterProvider.hpp"
 
 // Uncomment next line to enable logging in JsonParameterProvider
-//#define CADET_JSON_LOGGING_ENABLE
-
+// #define CADET_JSON_LOGGING_ENABLE
 
 #ifdef CADET_JSON_LOGGING_ENABLE
 
@@ -34,59 +33,63 @@ namespace cadet
 namespace log
 {
 
-	/**
-	 * @brief Dispatches a log message to a receiver
-	 * @param [in] file Filename in which the log message was raised
-	 * @param [in] func Name of the function (implementation defined @c __func__ variable)
-	 * @param [in] line Number of the line in which the log message was raised
-	 * @param [in] lvl LogLevel representing the severity of the message
-	 * @param [in] message Message string
-	 */
-	void emitLog(const char* file, const char* func, const unsigned int line, LogLevel lvl, const char* message);
+/**
+ * @brief Dispatches a log message to a receiver
+ * @param [in] file Filename in which the log message was raised
+ * @param [in] func Name of the function (implementation defined @c __func__ variable)
+ * @param [in] line Number of the line in which the log message was raised
+ * @param [in] lvl LogLevel representing the severity of the message
+ * @param [in] message Message string
+ */
+void emitLog(const char* file, const char* func, const unsigned int line, LogLevel lvl, const char* message);
 
-	/**
-	 * @brief Implements a standard formatting policy
-	 */
-	class LibCadetFormattingPolicy : public FormattingPolicyBase<LibCadetFormattingPolicy>
+/**
+ * @brief Implements a standard formatting policy
+ */
+class LibCadetFormattingPolicy : public FormattingPolicyBase<LibCadetFormattingPolicy>
+{
+public:
+	template <class writePolicy_t, class receiver_t, class paramList_t>
+	static inline void format(receiver_t& recv, const char* fileName, const char* funcName, unsigned int line,
+							  LogLevel lvl, const paramList_t& p)
 	{
-	public:
-		template <class writePolicy_t, class receiver_t, class paramList_t>
-		static inline void format(receiver_t& recv, const char* fileName, const char* funcName, unsigned int line, LogLevel lvl, const paramList_t& p)
-		{
-			writeParams<writePolicy_t>(recv, lvl, p);
-		}
-	};
+		writeParams<writePolicy_t>(recv, lvl, p);
+	}
+};
 
-	/**
-	 * @brief Sends all messages to std::cout
-	 */
-	class EmitterWritePolicy : public NonBufferedWritePolicyBase<EmitterWritePolicy>
+/**
+ * @brief Sends all messages to std::cout
+ */
+class EmitterWritePolicy : public NonBufferedWritePolicyBase<EmitterWritePolicy>
+{
+public:
+	static inline void writeLine(const char* fileName, const char* funcName, unsigned int line, LogLevel lvl,
+								 const std::string& msg)
 	{
-	public:
-		static inline void writeLine(const char* fileName, const char* funcName, unsigned int line, LogLevel lvl, const std::string& msg)
-		{
-			emitLog(fileName, funcName, line, lvl, msg.c_str());
-		}
-	};
+		emitLog(fileName, funcName, line, lvl, msg.c_str());
+	}
+};
 
-	typedef NonFilteringLogger<LibCadetFormattingPolicy, EmitterWritePolicy> GlobalLogger;
+typedef NonFilteringLogger<LibCadetFormattingPolicy, EmitterWritePolicy> GlobalLogger;
 
 #ifndef CADET_LOGGING_DISABLE
-	typedef Logger<RuntimeFilteringLogger<GlobalLogger>, LogLevel::CADET_LOGLEVEL_MIN> DoubleFilterLogger;
+typedef Logger<RuntimeFilteringLogger<GlobalLogger>, LogLevel::CADET_LOGLEVEL_MIN> DoubleFilterLogger;
 #else
-	typedef Logger<GlobalLogger, LogLevel::None> DiscardingLogger;
+typedef Logger<GlobalLogger, LogLevel::None> DiscardingLogger;
 #endif
 
 } // namespace log
 } // namespace cadet
 
-	/**
-	 * @brief Base for logging macros
-	 * @details Note that because of the usage pattern
-	 *          <pre>LOG(Info) << "My log line " << arg1;</pre>
-	 *          no semicolon is appended.
-	 */
-	#define LOG(lvl) cadet::log::DoubleFilterLogger::statement(__FILE__, __func__, __LINE__) = cadet::log::DoubleFilterLogger::template createMessage<cadet::LogLevel::lvl>()
+/**
+ * @brief Base for logging macros
+ * @details Note that because of the usage pattern
+ *          <pre>LOG(Info) << "My log line " << arg1;</pre>
+ *          no semicolon is appended.
+ */
+#define LOG(lvl)                                                                                                       \
+	cadet::log::DoubleFilterLogger::statement(__FILE__, __func__, __LINE__) =                                          \
+		cadet::log::DoubleFilterLogger::template createMessage<cadet::LogLevel::lvl>()
 
 #endif
 
@@ -143,7 +146,9 @@ JsonParameterProvider::JsonParameterProvider(const JsonParameterProvider& cpy)
 #endif
 }
 
-JsonParameterProvider::JsonParameterProvider(JsonParameterProvider&& cpy) CADET_NOEXCEPT : _root(cpy._root), _opened(std::move(cpy._opened))
+JsonParameterProvider::JsonParameterProvider(JsonParameterProvider&& cpy) CADET_NOEXCEPT
+	: _root(cpy._root),
+	  _opened(std::move(cpy._opened))
 {
 	cpy._root = nullptr;
 	cpy._opened = std::stack<json*>();
@@ -399,7 +404,8 @@ std::vector<std::string> JsonParameterProvider::getStringArray(const std::string
 bool JsonParameterProvider::exists(const std::string& paramName)
 {
 #ifdef CADET_JSON_LOGGING_ENABLE
-	LOG(Debug) << "EXISTS " << paramName << " = " << ((_opened.top()->find(paramName) != _opened.top()->end()) ? "yes" : "no");
+	LOG(Debug) << "EXISTS " << paramName << " = "
+			   << ((_opened.top()->find(paramName) != _opened.top()->end()) ? "yes" : "no");
 #endif
 	return _opened.top()->find(paramName) != _opened.top()->end();
 }
@@ -523,8 +529,8 @@ void JsonParameterProvider::copy(const std::string& src, const std::string& dest
 
 void JsonParameterProvider::toFile(const std::string& fileName) const
 {
-    std::ofstream ofs(fileName, std::ios::out | std::ios::trunc);
-    ofs << _root->dump(4);
+	std::ofstream ofs(fileName, std::ios::out | std::ios::trunc);
+	ofs << _root->dump(4);
 }
 
 JsonParameterProvider JsonParameterProvider::fromFile(const std::string& fileName)

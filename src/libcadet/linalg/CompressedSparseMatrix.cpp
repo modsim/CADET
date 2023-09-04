@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -64,7 +64,6 @@ std::ostream& operator<<(std::ostream& out, const CompressedSparseMatrix& sm)
 	cols << "cols = [";
 	rows << "rows = [";
 	elems << "elems = [";
-
 
 	for (int row = 0; row < sm.rows(); ++row)
 	{
@@ -139,15 +138,15 @@ void CompressedSparseMatrix::copyFromSubPattern(const CompressedSparseMatrix& ma
 		sparse_int_t curIdx = _rowStart[row];
 
 		// Iterate over source elements in row
-		for (sparse_int_t i = mat._rowStart[row]; i < mat._rowStart[row+1]; ++i)
+		for (sparse_int_t i = mat._rowStart[row]; i < mat._rowStart[row + 1]; ++i)
 		{
 			// Find destination column index mat._colIdx[i] in this row
-			// Due to the column indices being sorted, this should be reasonably fast 
+			// Due to the column indices being sorted, this should be reasonably fast
 			// TODO: Check whether to replace linear with binary search
 			while (_colIdx[curIdx] != mat._colIdx[i])
 			{
 				++curIdx;
-				cadet_assert(curIdx < _rowStart[row+1]);
+				cadet_assert(curIdx < _rowStart[row + 1]);
 			}
 
 			_values[curIdx] = mat._values[i];
@@ -158,7 +157,7 @@ void CompressedSparseMatrix::copyFromSubPattern(const CompressedSparseMatrix& ma
 void CompressedSparseMatrix::copyRowToRowSamePattern(const CompressedSparseMatrix& mat, int srcRow, int destRow)
 {
 	const sparse_int_t start = mat._rowStart[destRow];
-	const sparse_int_t end = mat._rowStart[destRow+1];
+	const sparse_int_t end = mat._rowStart[destRow + 1];
 	std::copy(mat._values.begin() + start, mat._values.begin() + end, _values.begin() + _rowStart[destRow]);
 }
 
@@ -167,15 +166,15 @@ void CompressedSparseMatrix::copyRowToRowSubPattern(const CompressedSparseMatrix
 	sparse_int_t curIdx = _rowStart[destRow];
 
 	// Iterate over source elements in row
-	for (sparse_int_t i = mat._rowStart[srcRow]; i < mat._rowStart[srcRow+1]; ++i)
+	for (sparse_int_t i = mat._rowStart[srcRow]; i < mat._rowStart[srcRow + 1]; ++i)
 	{
 		// Find destination column index mat._colIdx[i] in this row
-		// Due to the column indices being sorted, this should be reasonably fast 
+		// Due to the column indices being sorted, this should be reasonably fast
 		// TODO: Check whether to replace linear with binary search
 		while (_colIdx[curIdx] != mat._colIdx[i])
 		{
 			++curIdx;
-			cadet_assert(curIdx < _rowStart[destRow+1]);
+			cadet_assert(curIdx < _rowStart[destRow + 1]);
 		}
 
 		_values[curIdx] = mat._values[i];
@@ -224,6 +223,6 @@ void CompressedSparseMatrix::multiplyVector(double const* const x, double alpha,
 	}
 }
 
-}  // namespace linalg
+} // namespace linalg
 
-}  // namespace cadet
+} // namespace cadet

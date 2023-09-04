@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines helper functions for checking matrices.
  */
 
@@ -47,8 +47,7 @@ inline void checkMatrixAgainstLinearArray(double const* mat, const std::vector<d
  * @tparam Matrix_t Type of banded matrix to create
  * @return Banded matrix of given shape
  */
-template <typename Matrix_t>
-Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int upper)
+template <typename Matrix_t> Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int upper)
 {
 	Matrix_t bm;
 	bm.resize(rows, lower, upper);
@@ -70,4 +69,4 @@ Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int up
 } // namespace test
 } // namespace cadet
 
-#endif  // CADETTEST_MATRIXHELPER_HPP_
+#endif // CADETTEST_MATRIXHELPER_HPP_

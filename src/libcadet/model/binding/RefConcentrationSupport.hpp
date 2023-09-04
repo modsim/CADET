@@ -28,7 +28,8 @@ namespace cadet
 {
 
 template <typename ValType>
-inline bool readScalarParameterOrArray(std::vector<ValType>& dest, IParameterProvider& paramProvider, const std::string& dataSet, unsigned int nExpand);
+inline bool readScalarParameterOrArray(std::vector<ValType>& dest, IParameterProvider& paramProvider,
+									   const std::string& dataSet, unsigned int nExpand);
 
 /**
  * @brief Reads multiple reference concentrations from the given parameter provider
@@ -43,7 +44,9 @@ inline bool readScalarParameterOrArray(std::vector<ValType>& dest, IParameterPro
  * @tparam ValType Type of the parameter, such as @c active or @c double
  */
 template <typename ValType>
-inline void readReferenceConcentrations(IParameterProvider& paramProvider, unsigned int numRefConc, const std::string& prefix, std::vector<ValType>& refC0, std::vector<ValType>& refQ)
+inline void readReferenceConcentrations(IParameterProvider& paramProvider, unsigned int numRefConc,
+										const std::string& prefix, std::vector<ValType>& refC0,
+										std::vector<ValType>& refQ)
 {
 	if (paramProvider.exists(prefix + "REFC0"))
 		readScalarParameterOrArray(refC0, paramProvider, prefix + "REFC0", 1);
@@ -103,7 +106,8 @@ inline void readReferenceConcentrations(IParameterProvider& paramProvider, unsig
  * @tparam ValType Type of the parameter, such as @c active or @c double
  */
 template <typename ValType>
-inline void readReferenceConcentrations(IParameterProvider& paramProvider, const std::string& prefix, ValType& refC0, ValType& refQ)
+inline void readReferenceConcentrations(IParameterProvider& paramProvider, const std::string& prefix, ValType& refC0,
+										ValType& refQ)
 {
 	if (paramProvider.exists(prefix + "REFC0"))
 		refC0 = paramProvider.getDouble(prefix + "REFC0");
@@ -116,6 +120,6 @@ inline void readReferenceConcentrations(IParameterProvider& paramProvider, const
 		refQ = 1.0;
 }
 
-}  // namespace cadet
+} // namespace cadet
 
-#endif  // LIBCADET_BINDINGMODELREFCONCSUPPORT_HPP_
+#endif // LIBCADET_BINDINGMODELREFCONCSUPPORT_HPP_

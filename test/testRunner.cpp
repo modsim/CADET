@@ -14,33 +14,34 @@
 #include <catch.hpp>
 
 #ifdef CADET_PARALLELIZE
-	#define TBB_PREVIEW_GLOBAL_CONTROL 1
-	#include <tbb/global_control.h>
+#define TBB_PREVIEW_GLOBAL_CONTROL 1
+#include <tbb/global_control.h>
 
-	#ifdef CADET_TBB_GLOBALCTRL
-		#include <tbb/task_arena.h>
-	#endif
+#ifdef CADET_TBB_GLOBALCTRL
+#include <tbb/task_arena.h>
+#endif
 #endif
 
-
 // Uncomment the next line to enable logging output of CADET in unit tests
-//#define CADETTEST_ENABLE_LOG
-
+// #define CADETTEST_ENABLE_LOG
 
 #ifdef CADETTEST_ENABLE_LOG
-	#include "cadet/Logging.hpp"
-	#include <iostream>
+#include "cadet/Logging.hpp"
+#include <iostream>
 
-	class LogReceiver : public cadet::ILogReceiver
+class LogReceiver : public cadet::ILogReceiver
+{
+public:
+	LogReceiver()
 	{
-	public:
-		LogReceiver() { }
+	}
 
-		virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl, const char* lvlStr, const char* message)
-		{
-			std::cout << '[' << lvlStr << ": " << func << "::" << line << "] " << message << std::flush;
-		}
-	};
+	virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl,
+						 const char* lvlStr, const char* message)
+	{
+		std::cout << '[' << lvlStr << ": " << func << "::" << line << "] " << message << std::flush;
+	}
+};
 #endif
 
 int main(int argc, char* argv[])
@@ -54,11 +55,11 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef CADET_PARALLELIZE
-	#ifdef CADET_TBB_GLOBALCTRL
-		int nThreads = tbb::this_task_arena::max_concurrency();
-	#else
-		int nThreads = tbb::task_scheduler_init::automatic;
-	#endif
+#ifdef CADET_TBB_GLOBALCTRL
+	int nThreads = tbb::this_task_arena::max_concurrency();
+#else
+	int nThreads = tbb::task_scheduler_init::automatic;
+#endif
 #else
 	int nThreads = 0;
 #endif
@@ -66,7 +67,8 @@ int main(int argc, char* argv[])
 	Catch::Session session;
 
 	// Add command line option for threads to CATCH's argument parser
-	session.cli(session.cli() | Catch::clara::Opt( nThreads, "number" )["--tbbthreads"]("number of TBB threads"));;
+	session.cli(session.cli() | Catch::clara::Opt(nThreads, "number")["--tbbthreads"]("number of TBB threads"));
+	;
 
 	// Parse the command line and check for error
 	const int returnCode = session.applyCommandLine(argc, argv);
@@ -74,14 +76,15 @@ int main(int argc, char* argv[])
 		return returnCode;
 
 #ifdef CADET_PARALLELIZE
-	#ifdef CADET_TBB_GLOBALCTRL
-		tbb::global_control tbbGlobalControl(tbb::global_control::max_allowed_parallelism, (nThreads <= 0) ? tbb::this_task_arena::max_concurrency() : nThreads);
-	#else
-		if (nThreads <= 0)
-			nThreads = tbb::task_scheduler_init::automatic;
+#ifdef CADET_TBB_GLOBALCTRL
+	tbb::global_control tbbGlobalControl(tbb::global_control::max_allowed_parallelism,
+										 (nThreads <= 0) ? tbb::this_task_arena::max_concurrency() : nThreads);
+#else
+	if (nThreads <= 0)
+		nThreads = tbb::task_scheduler_init::automatic;
 
-		tbb::task_scheduler_init taskSchedulerInit(nThreads);
-	#endif
+	tbb::task_scheduler_init taskSchedulerInit(nThreads);
+#endif
 #endif
 
 	// Run tests

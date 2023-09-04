@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 #ifndef MATLAB_MEX_FILE
-	#define MATLAB_MEX_FILE
+#define MATLAB_MEX_FILE
 #endif
 
 #include <mex.h>
@@ -30,10 +30,10 @@
 
 // Take care of namespace pollution / macros
 #ifdef min
-	#undef min
+#undef min
 #endif
 #ifdef max
-	#undef max
+#undef max
 #endif
 
 #include "Logging.hpp"
@@ -45,24 +45,24 @@
 #include "common/Driver.hpp"
 
 #ifndef CADET_LOGGING_DISABLE
-	template <>
-	cadet::LogLevel cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
+template <>
+cadet::LogLevel cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
 
-	#ifdef __clang__
-		// Silence -Wundefined-var-template warning
-		template class cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>;
-	#endif
+#ifdef __clang__
+// Silence -Wundefined-var-template warning
+template class cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>;
+#endif
 #endif
 
 namespace
 {
-	inline void setMexLogLevel(cadet::LogLevel newLL)
-	{
+inline void setMexLogLevel(cadet::LogLevel newLL)
+{
 #ifndef CADET_LOGGING_DISABLE
-		cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::level(newLL);
+	cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::level(newLL);
 #endif
-	}
 }
+} // namespace
 
 /**
  * @brief Forwards log messages to Matlab using mexPrintf() or mexWarnMsg()
@@ -70,9 +70,12 @@ namespace
 class LogReceiver : public cadet::ILogReceiver
 {
 public:
-	LogReceiver() { }
+	LogReceiver()
+	{
+	}
 
-	virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl, const char* lvlStr, const char* message)
+	virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl,
+						 const char* lvlStr, const char* message)
 	{
 		// @todo: Use red colors for error LogLevels
 		if (lvl == cadet::LogLevel::Warning)
@@ -88,27 +91,33 @@ public:
 class LogReceiverScope
 {
 public:
-	LogReceiverScope() : _lr() { cadetSetLogReceiver(&_lr); }
-	~LogReceiverScope() CADET_NOEXCEPT { cadetSetLogReceiver(nullptr); }
+	LogReceiverScope() : _lr()
+	{
+		cadetSetLogReceiver(&_lr);
+	}
+	~LogReceiverScope() CADET_NOEXCEPT
+	{
+		cadetSetLogReceiver(nullptr);
+	}
+
 private:
 	LogReceiver _lr;
 };
 
-
 namespace cadet
 {
-	namespace mex
-	{
-		void registerMatlabExtFun(IModelBuilder& builder);
+namespace mex
+{
+void registerMatlabExtFun(IModelBuilder& builder);
 
-		void prepareDriver(cadet::Driver& drv)
-		{
-			cadet::mex::registerMatlabExtFun(*drv.modelBuilder());
-		}
-	}
+void prepareDriver(cadet::Driver& drv)
+{
+	cadet::mex::registerMatlabExtFun(*drv.modelBuilder());
 }
+} // namespace mex
+} // namespace cadet
 
-MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	LogReceiverScope lrs;
 
@@ -116,7 +125,8 @@ MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const 
 	{
 		// Print version
 		if (nlhs == 0)
-			mexPrintf("This is CADET version %s built from commit %s on branch %s\n", cadet::getLibraryVersion(), cadet::getLibraryCommitHash(), cadet::getLibraryBranchRefspec());
+			mexPrintf("This is CADET version %s built from commit %s on branch %s\n", cadet::getLibraryVersion(),
+					  cadet::getLibraryCommitHash(), cadet::getLibraryBranchRefspec());
 
 		// Return version
 		if (nlhs >= 1)
@@ -138,7 +148,7 @@ MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const 
 	{
 		if ((nrhs == 1) && (nlhs == 1) && mxIsStruct(prhs[0]))
 		{
-			// Compatibility old style call: res = CadetMex(task);			
+			// Compatibility old style call: res = CadetMex(task);
 
 			// Run and exit
 			cadet::Driver drv;
@@ -200,7 +210,8 @@ MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const 
 			if (nrhs == 1)
 			{
 				if (nlhs != 1)
-					mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'loglevel' expects either an input or an output argument.\n");
+					mexErrMsgIdAndTxt("CADET:mexError",
+									  "CadetMex: Command 'loglevel' expects either an input or an output argument.\n");
 
 				plhs[0] = cadet::mex::io::scalar<double, double>(static_cast<double>(cadetGetLogLevel()));
 				return;
@@ -210,8 +221,10 @@ MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const 
 			if (nrhs != 2)
 				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'loglevel' requires a log level as argument.\n");
 
-			if (cadet::mex::io::isEmpty(prhs[1]) || (!cadet::mex::io::isType<double>(prhs[1]) && !cadet::mex::io::isType<std::string>(prhs[1])))
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'loglevel' requires a scalar argument of type 'double' or 'string' as log level.\n");
+			if (cadet::mex::io::isEmpty(prhs[1]) ||
+				(!cadet::mex::io::isType<double>(prhs[1]) && !cadet::mex::io::isType<std::string>(prhs[1])))
+				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'loglevel' requires a scalar argument of type "
+													"'double' or 'string' as log level.\n");
 
 			// Additionally return current LogLevel if requested
 			if (nlhs == 1)
@@ -249,17 +262,18 @@ MEXFUNCTION_LINKAGE void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const 
 				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Unkown command '%s'.\n", command.c_str());
 
 			if (nrhs < 2)
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a handle to operate on.\n", command.c_str());
+				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a handle to operate on.\n",
+								  command.c_str());
 
 			cadet::Driver* const drv = cadet::mex::convertMat2Ptr<cadet::Driver>(prhs[1]);
 			it->second(*drv, nlhs, plhs, nrhs, prhs);
 		}
 	}
-	catch(const cadet::mex::MatlabException& e)
+	catch (const cadet::mex::MatlabException& e)
 	{
 		mexErrMsgIdAndTxt("CADET:mexError", "Error in Matlab communication: %s\n", e.what());
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		mexErrMsgIdAndTxt("CADET:mexError", "Error in simulation: %s\n", e.what());
 	}

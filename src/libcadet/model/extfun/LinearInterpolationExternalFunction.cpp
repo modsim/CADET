@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides a linearly interpolated external function from moving data points without radial dependence.
  */
 
@@ -44,11 +44,21 @@ namespace model
 class LinearInterpolationExternalFunction : public IExternalFunction
 {
 public:
-	LinearInterpolationExternalFunction() { }
-	virtual ~LinearInterpolationExternalFunction() { }
+	LinearInterpolationExternalFunction()
+	{
+	}
+	virtual ~LinearInterpolationExternalFunction()
+	{
+	}
 
-	static const char* identifier() { return "LINEAR_INTERP_DATA"; }
-	virtual const char* name() const CADET_NOEXCEPT { return LinearInterpolationExternalFunction::identifier(); }
+	static const char* identifier()
+	{
+		return "LINEAR_INTERP_DATA";
+	}
+	virtual const char* name() const CADET_NOEXCEPT
+	{
+		return LinearInterpolationExternalFunction::identifier();
+	}
 
 	virtual bool configure(IParameterProvider* paramProvider)
 	{
@@ -65,12 +75,14 @@ public:
 		return true;
 	}
 
-	virtual void setSectionTimes(double const* secTimes, bool const* secContinuity, unsigned int nSections) { }
+	virtual void setSectionTimes(double const* secTimes, bool const* secContinuity, unsigned int nSections)
+	{
+	}
 
 	virtual double externalProfile(double t, double z, double rho, double r, unsigned int sec)
 	{
 		// z denotes relative axial position in the column, i.e., z is in [0,1].
-		// 
+		//
 		// The coordinate system of the external profile begins at the column outlet
 		// and points backward to the column inlet.
 		//
@@ -143,15 +155,17 @@ public:
 private:
 	double _velocity; //!< Velocity of the movement of the external profile in [1/s] (normalized by column length)
 	std::vector<double> _dataY; //!< External profile data points (function values)
-	std::vector<double> _time; //!< Time point of each measurement in [s]
+	std::vector<double> _time;  //!< Time point of each measurement in [s]
 };
 
 namespace extfun
 {
-	void registerLinearInterpolation(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns)
-	{
-		extFuns[LinearInterpolationExternalFunction::identifier()] = []() { return new LinearInterpolationExternalFunction(); };
-	}
+void registerLinearInterpolation(std::unordered_map<std::string, std::function<IExternalFunction*()>>& extFuns)
+{
+	extFuns[LinearInterpolationExternalFunction::identifier()] = []() {
+		return new LinearInterpolationExternalFunction();
+	};
+}
 } // namespace extfun
 
 } // namespace model

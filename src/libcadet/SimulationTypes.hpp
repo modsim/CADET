@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines useful types for the simulation.
  */
 
@@ -28,8 +28,8 @@ namespace cadet
  */
 struct ColumnPosition
 {
-	double axial; //!< Axial bulk coordinate z
-	double radial; //!< Radial bulk coordinate rho
+	double axial;    //!< Axial bulk coordinate z
+	double radial;   //!< Radial bulk coordinate rho
 	double particle; //!< Radial particle coordinate r
 };
 
@@ -38,8 +38,8 @@ struct ColumnPosition
  */
 struct AdJacobianParams
 {
-	active* adRes; //!< Residual vector
-	active* adY; //!< State vector
+	active* adRes;            //!< Residual vector
+	active* adY;              //!< State vector
 	unsigned int adDirOffset; //!< Number of reserved AD directions (e.g., for sensitivities)
 };
 
@@ -48,7 +48,7 @@ struct AdJacobianParams
  */
 struct SimulationTime
 {
-	double t; //!< Time of the simulation
+	double t;            //!< Time of the simulation
 	unsigned int secIdx; //!< Index of the current section
 };
 
@@ -57,7 +57,7 @@ struct SimulationTime
  */
 struct SimulationState
 {
-	double* vecStateY; //!< State vector
+	double* vecStateY;    //!< State vector
 	double* vecStateYdot; //!< Time derivative of state vector
 };
 
@@ -66,7 +66,7 @@ struct SimulationState
  */
 struct ConstSimulationState
 {
-	double const* vecStateY; //!< State vector
+	double const* vecStateY;    //!< State vector
 	double const* vecStateYdot; //!< Time derivative of state vector
 };
 
@@ -83,12 +83,16 @@ inline ConstSimulationState toConst(const SimulationState& simState)
 /**
  * @brief Type tag for including parameter sensitivities
  */
-struct WithParamSensitivity {};
+struct WithParamSensitivity
+{
+};
 
 /**
  * @brief Type tag for excluding parameter sensitivities
  */
-struct WithoutParamSensitivity {};
+struct WithoutParamSensitivity
+{
+};
 
 /**
  * @brief Type used for choosing the parameter sensitivity tag type
@@ -96,15 +100,20 @@ struct WithoutParamSensitivity {};
  *          WithParamSensitivity if @p T is @c active.
  * @tparam T Parameter data type
  */
-template <typename T>
-struct ParamSens { };
+template <typename T> struct ParamSens
+{
+};
 
-template <>
-struct ParamSens<double> { typedef WithoutParamSensitivity enabled; };
+template <> struct ParamSens<double>
+{
+	typedef WithoutParamSensitivity enabled;
+};
 
-template <>
-struct ParamSens<active> { typedef WithParamSensitivity enabled; };
+template <> struct ParamSens<active>
+{
+	typedef WithParamSensitivity enabled;
+};
 
 } // namespace cadet
 
-#endif  // LIBCADET_SIMULATIONTYPES_HPP_
+#endif // LIBCADET_SIMULATIONTYPES_HPP_

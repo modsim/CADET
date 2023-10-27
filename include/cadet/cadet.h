@@ -389,13 +389,20 @@ extern "C"
 		/**
 		 * @brief Returns the number of particle types
 		 * @details Before this function is called, a simulation has to be run successfully.
-		 *          The array pointers are only valid until a new simulation is started.
 		 * @param [in] drv Driver handle
 		 * @param [in] unitOpId ID of the unit operation whose solution is returned
 		 * @param [in] sensIdx Sensitivity ID
 		 * @param [out] nParTypes Number of particle types
 		 */
 		cdtResult (*getNumParTypes)(cdtDriver* drv, int unitOpId, int* nParTypes);
+
+		/**
+		 * @brief Returns the number of parameter sensitivities
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 * @param [in] drv Driver handle
+		 * @param [out] nSens Number of parameter sensitivities
+		 */
+		cdtResult (*getNumSensitivities)(cdtDriver* drv, int* nSens);
 
 		/**
 		 * @brief Returns the solution of the last simulation at unit inlet
@@ -823,6 +830,7 @@ extern "C"
 		 * @param [in] sensIdx Sensitivity ID
 		 * @param [out] time Time array pointer
 		 * @param [out] data Data array pointer
+		 * @param [out] nTime Number of time points
 		 */
 		cdtResult (*getSensitivityDerivativeVolume)(cdtDriver* drv, int unitOpId, int sensIdx, double const** time, double const** data, int* nTime);
 
@@ -905,6 +913,51 @@ extern "C"
 		 * @param [out] nStates Number of entries in the state vector
 		*/
 		cdtResult (*getLastSensitivityUnitStateTimeDerivative)(cdtDriver* drv, int sensIdx, int unitOpId, double const** state, int* nStates);
+
+		/**
+		 * @brief Returns the primary coordinates of the given unit operation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 *          The array pointers are only valid until a new simulation is started.
+		 * @param [in] drv Driver handle
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] data Data array pointer
+		 * @param [out] nCoords Number of coordinates
+		 */
+		cdtResult (*getPrimaryCoordinates)(cdtDriver* drv, int unitOpId, double const** data, int* nCoords);
+
+		/**
+		 * @brief Returns the secondary coordinates of the given unit operation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 *          The array pointers are only valid until a new simulation is started.
+		 * @param [in] drv Driver handle
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [out] data Data array pointer
+		 * @param [out] nCoords Number of coordinates
+		 */
+		cdtResult (*getSecondaryCoordinates)(cdtDriver* drv, int unitOpId, double const** data, int* nCoords);
+
+		/**
+		 * @brief Returns the secondary coordinates of the given unit operation
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 *          The array pointers are only valid until a new simulation is started.
+		 * @param [in] drv Driver handle
+		 * @param [in] unitOpId ID of the unit operation whose solution is returned
+		 * @param [in] parType Particle type index
+		 * @param [out] data Data array pointer
+		 * @param [out] nCoords Number of coordinates
+		 */
+		cdtResult (*getParticleCoordinates)(cdtDriver* drv, int unitOpId, int parType, double const** data, int* nCoords);
+
+		/**
+		 * @brief Returns the time points at which the solution was computed
+		 * @details Before this function is called, a simulation has to be run successfully.
+		 *          The array pointers are only valid until a new simulation is started.
+		 * @param [in] drv Driver handle
+		 * @param [out] data Data array pointer
+		 * @param [out] time Time array pointer
+		 * @param [out] nTime Number of time points
+		 */
+		cdtResult (*getSolutionTimes)(cdtDriver* drv, double const** time, int* nTime);
 
 	} cdtAPIv010000;
 

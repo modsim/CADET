@@ -496,6 +496,9 @@ public:
 	inline double const* sensSolidDot(unsigned int idx, unsigned int parType = 0) const CADET_NOEXCEPT { return _sensDot[idx].solid[parType].data(); }
 	inline double const* sensFluxDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].flux.data(); }
 	inline double const* sensVolumeDot(unsigned int idx) const CADET_NOEXCEPT { return _sensDot[idx].volume.data(); }
+	inline double const* primaryCoordinates() const CADET_NOEXCEPT { return _axialCoords.data(); }
+	inline double const* secondaryCoordinates() const CADET_NOEXCEPT { return _radialCoords.data(); }
+	inline double const* particleCoordinates() const CADET_NOEXCEPT { return _particleCoords.data(); }
 protected:
 
 	struct Storage
@@ -1213,6 +1216,7 @@ public:
 	}
 
 	inline double const* time() const CADET_NOEXCEPT { return _time.data(); }
+	inline unsigned int numSensitivites() const CADET_NOEXCEPT { return _numSens; }
 
 protected:
 

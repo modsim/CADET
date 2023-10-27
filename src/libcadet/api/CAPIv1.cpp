@@ -439,6 +439,24 @@ namespace v1
 		return cdtOK;
 	}
 
+	cdtResult getNumSensitivities(cdtDriver* drv, int* nSens)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
+		if (!sysRec)
+		{
+			LOG(Error) << "System solution recorder not available";
+			return cdtError;
+		}
+
+		if (nSens)
+			*nSens = sysRec->numSensitivites();
+
+		return cdtOK;
+	}
 
 	InternalStorageUnitOpRecorder* getUnitRecorder(cdtDriver* drv, int unitOpId, double const** time, int* nTime, cdtResult& retCode)
 	{
@@ -848,6 +866,90 @@ namespace v1
 		return cdtOK;
 	}
 
+	cdtResult getPrimaryCoordinates(cdtDriver* drv, int unitOpId, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		if (nCoords)
+			*nCoords = unitRec->numAxialCells();
+		if (data)
+			*data = unitRec->primaryCoordinates();
+		return cdtOK;
+	}
+
+	cdtResult getSecondaryCoordinates(cdtDriver* drv, int unitOpId, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		if (nCoords)
+			*nCoords = unitRec->numRadialCells();
+		if (data)
+			*data = unitRec->secondaryCoordinates();
+		return cdtOK;
+	}
+
+	cdtResult getParticleCoordinates(cdtDriver* drv, int unitOpId, int parType, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		int offset = 0;
+		for (int i = 0; i < parType; ++i)
+			offset += unitRec->numParticleShells(i);
+
+		if (nCoords)
+			*nCoords = unitRec->numParticleShells(parType);
+		if (data)
+			*data = unitRec->particleCoordinates() + offset;
+		return cdtOK;
+	}
+
+	cdtResult getSolutionTimes(cdtDriver* drv, double const** time, int* nTime)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
+		if (!sysRec)
+		{
+			LOG(Error) << "System solution recorder not available";
+			return cdtError;
+		}
+
+		if (nTime)
+			*nTime = sysRec->numDataPoints();
+		if (time)
+			*time = sysRec->time();
+		return cdtOK;
+	}
+
 }  // namespace v1
 
 }  // namespace api
@@ -867,6 +969,7 @@ extern "C"
 		ptr->deleteDriver = &cadet::api::v1::deleteDriver;
 		ptr->runSimulation = &cadet::api::v1::runSimulation;
 		ptr->getNumParTypes = &cadet::api::v1::getNumParTypes;
+		ptr->getNumSensitivities = &cadet::api::v1::getNumSensitivities;
 		ptr->getSolutionInlet = &cadet::api::v1::getSolutionInlet;
 		ptr->getSolutionOutlet = &cadet::api::v1::getSolutionOutlet;
 		ptr->getSolutionBulk = &cadet::api::v1::getSolutionBulk;
@@ -903,6 +1006,10 @@ extern "C"
 		ptr->getLastSensitivityStateTimeDerivative = &cadet::api::v1::getLastSensitivityStateTimeDerivative;
 		ptr->getLastSensitivityUnitState = &cadet::api::v1::getLastSensitivityUnitState;
 		ptr->getLastSensitivityUnitStateTimeDerivative = &cadet::api::v1::getLastSensitivityUnitStateTimeDerivative;
+		ptr->getPrimaryCoordinates = &cadet::api::v1::getPrimaryCoordinates;
+		ptr->getSecondaryCoordinates = &cadet::api::v1::getSecondaryCoordinates;
+		ptr->getParticleCoordinates = &cadet::api::v1::getParticleCoordinates;
+		ptr->getSolutionTimes = &cadet::api::v1::getSolutionTimes;
 
 		return cdtOK;
 	}

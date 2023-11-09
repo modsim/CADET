@@ -565,7 +565,7 @@ protected:
 			{
 				if (_expBulkFwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(y[c]) > 0.0)
+					if (static_cast<double>(y[c]) != 0.0)
 						fwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(y[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expBulkFwd.native(c, r)));
 					else
@@ -581,7 +581,7 @@ protected:
 			{
 				if (_expBulkBwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(y[c]) > 0.0)
+					if (static_cast<double>(y[c]) != 0.0)
 						bwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(y[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expBulkBwd.native(c, r)));
 					else
@@ -617,7 +617,7 @@ protected:
 			{
 				if (_expLiquidFwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(yLiquid[c]) > 0.0)
+					if (static_cast<double>(yLiquid[c]) != 0.0)
 						fwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(yLiquid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expLiquidFwd.native(c, r)));
 					else
@@ -631,7 +631,7 @@ protected:
 			{
 				if (_expLiquidFwdSolid.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(ySolid[c]) > 0.0)
+					if (static_cast<double>(ySolid[c]) != 0.0)
 						fwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(ySolid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expLiquidFwdSolid.native(c, r)));
 					else
@@ -647,7 +647,7 @@ protected:
 			{
 				if (_expLiquidBwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(yLiquid[c]) > 0.0)
+					if (static_cast<double>(yLiquid[c]) != 0.0)
 						bwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(yLiquid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expLiquidBwd.native(c, r)));
 					else
@@ -661,7 +661,7 @@ protected:
 			{
 				if (_expLiquidBwdSolid.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(ySolid[c]) > 0.0)
+					if (static_cast<double>(ySolid[c]) != 0.0)
 						bwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(ySolid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expLiquidBwdSolid.native(c, r)));
 					else
@@ -689,7 +689,7 @@ protected:
 			{
 				if (_expSolidFwdLiquid.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(yLiquid[c]) > 0.0)
+					if (static_cast<double>(yLiquid[c]) != 0.0)
 						fwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(yLiquid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expSolidFwdLiquid.native(c, r)));
 					else
@@ -703,7 +703,7 @@ protected:
 			{
 				if (_expSolidFwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(ySolid[c]) > 0.0)
+					if (static_cast<double>(ySolid[c]) != 0.0)
 						fwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(ySolid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expSolidFwd.native(c, r)));
 					else
@@ -719,7 +719,7 @@ protected:
 			{
 				if (_expSolidBwdLiquid.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(yLiquid[c]) > 0.0)
+					if (static_cast<double>(yLiquid[c]) != 0.0)
 						bwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(yLiquid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expSolidBwdLiquid.native(c, r)));
 					else
@@ -733,7 +733,7 @@ protected:
 			{
 				if (_expSolidBwd.native(c, r) != 0.0)
 				{
-					if (static_cast<double>(ySolid[c]) > 0.0)
+					if (static_cast<double>(ySolid[c]) != 0.0)
 						bwd *= pow(static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(ySolid[c]),
 							static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(_expSolidBwd.native(c, r)));
 					else

@@ -95,9 +95,10 @@ To cite CADET please use the following publication:
     simulation/index
     interface/index
     .. examples/index
+	api/library_root
     CADET-Match <https://cadet.github.io/CADET-Match/master/index.html>
     license
     zbibliography
     Legal notice <https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html>
 
-
+.. todolist::

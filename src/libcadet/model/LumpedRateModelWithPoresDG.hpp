@@ -95,7 +95,7 @@ public:
 	static const char* identifier() { return "LUMPED_RATE_MODEL_WITH_PORES_DG"; }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 	virtual bool configure(IParameterProvider& paramProvider);
 	virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -705,7 +705,7 @@ protected:
 	Discretization _disc; //!< Discretization info
 //	IExternalFunction* _extFun; //!< External function (owned by library user)
 
-	parts::ConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+	parts::AxialConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
 
 	Eigen::SparseLU<Eigen::SparseMatrix<double>> _globalSolver; //!< linear solver for the bulk concentration

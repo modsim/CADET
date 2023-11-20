@@ -135,14 +135,14 @@ void GeneralRateModelDGFV::clearParDepSurfDiffusion()
 	}
 	else
 	{
-		for (IParameterDependence* pd : _parDepSurfDiffusion)
+		for (IParameterStateDependence* pd : _parDepSurfDiffusion)
 			delete pd;
 	}
 
 	_parDepSurfDiffusion.clear();
 }
 
-bool GeneralRateModelDGFV::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool GeneralRateModelDGFV::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
@@ -353,43 +353,43 @@ bool GeneralRateModelDGFV::configureModelDiscretization(IParameterProvider& para
 			{
 				_hasParDepSurfDiffusion = false;
 				_singleParDepSurfDiffusion = true;
-				_parDepSurfDiffusion = std::vector<IParameterDependence*>(_disc.nParType, nullptr);
+				_parDepSurfDiffusion = std::vector<IParameterStateDependence*>(_disc.nParType, nullptr);
 			}
 			else
 			{
-				IParameterDependence* const pd = helper.createParameterDependence(psdDepNames[0]);
+				IParameterStateDependence* const pd = helper.createParameterStateDependence(psdDepNames[0]);
 				if (!pd)
 					throw InvalidParameterException("Unknown parameter dependence " + psdDepNames[0]);
 
-				_parDepSurfDiffusion = std::vector<IParameterDependence*>(_disc.nParType, pd);
+				_parDepSurfDiffusion = std::vector<IParameterStateDependence*>(_disc.nParType, pd);
 				parSurfDiffDepConfSuccess = pd->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nBound, _disc.boundOffset);
 				_hasParDepSurfDiffusion = true;
 			}
 		}
 		else
 		{
-			_parDepSurfDiffusion = std::vector<IParameterDependence*>(_disc.nParType, nullptr);
+			_parDepSurfDiffusion = std::vector<IParameterStateDependence*>(_disc.nParType, nullptr);
 
 			for (unsigned int i = 0; i < _disc.nParType; ++i)
 			{
 				if ((psdDepNames[0] == "") || (psdDepNames[0] == "NONE") || (psdDepNames[0] == "DUMMY"))
 					continue;
 
-				_parDepSurfDiffusion[i] = helper.createParameterDependence(psdDepNames[i]);
+				_parDepSurfDiffusion[i] = helper.createParameterStateDependence(psdDepNames[i]);
 				if (!_parDepSurfDiffusion[i])
 					throw InvalidParameterException("Unknown parameter dependence " + psdDepNames[i]);
 
 				parSurfDiffDepConfSuccess = _parDepSurfDiffusion[i]->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nBound + i * _disc.nComp, _disc.boundOffset + i * _disc.nComp) && parSurfDiffDepConfSuccess;
 			}
 
-			_hasParDepSurfDiffusion = std::any_of(_parDepSurfDiffusion.cbegin(), _parDepSurfDiffusion.cend(), [](IParameterDependence const* pd) -> bool { return pd; });
+			_hasParDepSurfDiffusion = std::any_of(_parDepSurfDiffusion.cbegin(), _parDepSurfDiffusion.cend(), [](IParameterStateDependence const* pd) -> bool { return pd; });
 		}
 	}
 	else
 	{
 		_hasParDepSurfDiffusion = false;
 		_singleParDepSurfDiffusion = true;
-		_parDepSurfDiffusion = std::vector<IParameterDependence*>(_disc.nParType, nullptr);
+		_parDepSurfDiffusion = std::vector<IParameterStateDependence*>(_disc.nParType, nullptr);
 	}
 
 	if (optimizeParticleJacobianBandwidth)
@@ -429,12 +429,12 @@ bool GeneralRateModelDGFV::configureModelDiscretization(IParameterProvider& para
 	}
 
 	// @TODO: needed, or only convDispOpBASE??
-	const bool transportSuccess1 = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nPoints);
-	const bool transportSuccess2 = _convDispOpB.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
+	const bool transportSuccess1 = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nPoints);
+	const bool transportSuccess2 = _convDispOpB.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
 
 	_disc.dispersion = Eigen::VectorXd::Zero(_disc.nComp); // fill later on with convDispOpB (section and component dependent)
 
-	_disc.velocity = static_cast<double>(_convDispOp.currentVelocity()); // updated later on with convDispOpB (section dependent)
+	_disc.velocity = static_cast<double>(_convDispOp.currentVelocity(0)); // updated later on with convDispOpB (section dependent)
 	_disc.curSection = -1;
 
 	_disc.length_ = paramProvider.getDouble("COL_LENGTH");

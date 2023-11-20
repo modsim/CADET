@@ -92,7 +92,7 @@ namespace cadet
 #endif
 		}
 
-		bool LumpedRateModelWithoutPoresDG::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+		bool LumpedRateModelWithoutPoresDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 		{
 			// Read discretization
 			_disc.nComp = paramProvider.getInt("NCOMP");
@@ -145,9 +145,7 @@ namespace cadet
 
 			paramProvider.popScope();
 
-			const unsigned int strideCell = _disc.nNodes;
-
-			const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nCol, strideCell);
+			const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
 
 			_disc.dispersion = Eigen::VectorXd::Zero(_disc.nComp); // fill later on with convDispOp (section and component dependent)
 

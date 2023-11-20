@@ -88,7 +88,7 @@ namespace cadet
 			static const char* identifier() { return "LUMPED_RATE_MODEL_WITHOUT_PORES_DG"; }
 			virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
-			virtual bool configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper);
+			virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
 			virtual bool configure(IParameterProvider& paramProvider);
 			virtual void notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac);
 
@@ -671,7 +671,7 @@ namespace cadet
 		//	IExternalFunction* _extFun; //!< External function (owned by library user)
 
 			// used as auxiliary supplier 
-			parts::ConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
+			parts::AxialConvectionDispersionOperatorBase _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 
 			// linear solver (Eigen lib)
 			Eigen::SparseLU<Eigen::SparseMatrix<double>> _linSolver;

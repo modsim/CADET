@@ -100,7 +100,7 @@ bool LumpedRateModelWithPoresDG::usesAD() const CADET_NOEXCEPT
 #endif
 }
 
-bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
@@ -226,9 +226,9 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 
 	paramProvider.popScope();
 
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
 
 	_disc.dispersion = Eigen::VectorXd::Zero(_disc.nComp); // fill later on with convDispOp (section and component dependent)
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
 
 	_disc.velocity = static_cast<double>(_convDispOp.currentVelocity()); // updated later on with convDispOp (section dependent)
 	_disc.curSection = -1;

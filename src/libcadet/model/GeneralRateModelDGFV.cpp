@@ -1,7 +1,7 @@
 // =============================================================================
 //  CADET
 //
-//  Copyright © 2008-2022: The CADET Authors
+//  Copyright © 2008-2021: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
 //
 //  All rights reserved. This program and the accompanying materials
@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/GeneralRateModel.hpp"
+#include "model/GeneralRateModelDGFV.hpp"
 #include "BindingModelFactory.hpp"
 #include "ReactionModelFactory.hpp"
 #include "ParamReaderHelper.hpp"
@@ -57,14 +57,14 @@ constexpr double SurfVolRatioSphere = 3.0;
 constexpr double SurfVolRatioCylinder = 2.0;
 constexpr double SurfVolRatioSlab = 1.0;
 
-int schurComplementMultiplierGRM(void* userData, double const* x, double* z)
+int schurComplementMultiplierGRM_DGFV(void* userData, double const* x, double* z)
 {
-	GeneralRateModel* const grm = static_cast<GeneralRateModel*>(userData);
+	GeneralRateModelDGFV* const grm = static_cast<GeneralRateModelDGFV*>(userData);
 	return grm->schurComplementMatrixVector(x, z);
 }
 
 
-GeneralRateModel::GeneralRateModel(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
+GeneralRateModelDGFV::GeneralRateModelDGFV(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
 	_hasSurfaceDiffusion(0, false), _dynReactionBulk(nullptr),
 	_jacP(nullptr), _jacPdisc(nullptr), _jacPF(nullptr), _jacFP(nullptr), _jacInlet(), _hasParDepSurfDiffusion(false),
 	_analyticJac(true), _jacobianAdDirs(0), _factorizeJacobian(false), _tempState(nullptr),
@@ -72,7 +72,7 @@ GeneralRateModel::GeneralRateModel(UnitOpIdx unitOpIdx) : UnitOperationBase(unit
 {
 }
 
-GeneralRateModel::~GeneralRateModel() CADET_NOEXCEPT
+GeneralRateModelDGFV::~GeneralRateModelDGFV() CADET_NOEXCEPT
 {
 	delete[] _tempState;
 
@@ -95,27 +95,27 @@ GeneralRateModel::~GeneralRateModel() CADET_NOEXCEPT
 	delete[] _disc.nBoundBeforeType;
 }
 
-unsigned int GeneralRateModel::numDofs() const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::numDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp
-	// Particle DOFs: nCol * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
+	// Column bulk DOFs: nPoints * nComp
+	// Particle DOFs: nPoints * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nParCell shells for each particle type
 	// Flux DOFs: nCol * nComp * nParType (column bulk DOFs times particle types)
 	// Inlet DOFs: nComp
-	return _disc.nCol * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp;
+	return _disc.nPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp;
 }
 
-unsigned int GeneralRateModel::numPureDofs() const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::numPureDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp
-	// Particle DOFs: nCol particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
+	// Column bulk DOFs: nPoints * nComp
+	// Particle DOFs: nPoints particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nPar shells
 	// Flux DOFs: nCol * nComp * nParType (column bulk DOFs times particle types)
-	return _disc.nCol * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType];
+	return _disc.nPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType];
 }
 
 
-bool GeneralRateModel::usesAD() const CADET_NOEXCEPT
+bool GeneralRateModelDGFV::usesAD() const CADET_NOEXCEPT
 {
 #ifdef CADET_CHECK_ANALYTIC_JACOBIAN
 	// We always need AD if we want to check the analytical Jacobian
@@ -126,7 +126,7 @@ bool GeneralRateModel::usesAD() const CADET_NOEXCEPT
 #endif
 }
 
-void GeneralRateModel::clearParDepSurfDiffusion()
+void GeneralRateModelDGFV::clearParDepSurfDiffusion()
 {
 	if (_singleParDepSurfDiffusion)
 	{
@@ -142,7 +142,7 @@ void GeneralRateModel::clearParDepSurfDiffusion()
 	_parDepSurfDiffusion.clear();
 }
 
-bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool GeneralRateModelDGFV::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
@@ -150,6 +150,15 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 	paramProvider.pushScope("discretization");
 
 	_disc.nCol = paramProvider.getInt("NCOL");
+
+	_disc.polyDeg = paramProvider.getInt("POLYDEG");
+	if (_disc.polyDeg < 1)
+		throw InvalidParameterException("Polynomial degree must be at least 1!");
+
+	_disc.exactInt = paramProvider.getBool("EXACT_INTEGRATION");
+
+	// Compute discretization
+	_disc.initializeDG();
 
 	const std::vector<int> nParCell = paramProvider.getIntArray("NPAR");
 
@@ -223,7 +232,8 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 	unsigned int nTotalParCells = 0;
 	for (unsigned int j = 1; j < _disc.nParType + 1; ++j)
 	{
-		_disc.parTypeOffset[j] = _disc.parTypeOffset[j-1] + (_disc.nComp + _disc.strideBound[j-1]) * _disc.nParCell[j-1] * _disc.nCol;
+		_disc.parTypeOffset[j] = _disc.parTypeOffset[j-1] + (_disc.nComp + _disc.strideBound[j-1]) * _disc.nParCell[j-1] * _disc.nPoints;
+		// @TODO: switch cells to nodes for particle calculation with DG
 		_disc.nParCellsBeforeType[j] = _disc.nParCellsBeforeType[j-1] + _disc.nParCell[j-1];
 		nTotalParCells += _disc.nParCell[j-1];
 	}
@@ -306,8 +316,8 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 	}
 
 	// Initialize and configure GMRES for solving the Schur-complement
-	_gmres.initialize(_disc.nCol * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
-	_gmres.matrixVectorMultiplier(&schurComplementMultiplierGRM, this);
+	_gmres.initialize(_disc.nPoints * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
+	_gmres.matrixVectorMultiplier(&schurComplementMultiplierGRM_DGFV, this);
 	_schurSafety = paramProvider.getDouble("SCHUR_SAFETY");
 
 	// Allocate space for initial conditions
@@ -315,7 +325,7 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 	_initCp.resize(_disc.nComp * _disc.nParType);
 	_initQ.resize(nTotalBound);
 
-	// Determine whether surface diffusion optimization is applied (decreases Jacobian size)
+	// Determine whether surface diffusion optimization is applied (decreases Jacobian size) //@TODO?
 	const bool optimizeParticleJacobianBandwidth = paramProvider.exists("OPTIMIZE_PAR_BANDWIDTH") ? paramProvider.getBool("OPTIMIZE_PAR_BANDWIDTH") : true;
 
 	// Create nonlinear solver for consistent initialization
@@ -418,7 +428,17 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 		_hasSurfaceDiffusion = std::vector<bool>(_disc.nParType, true);
 	}
 
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nCol);
+	// @TODO: needed, or only convDispOpBASE??
+	const bool transportSuccess1 = _convDispOp.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nPoints);
+	const bool transportSuccess2 = _convDispOpB.configureModelDiscretization(paramProvider, _disc.nComp, _disc.nPoints, 0); // strideCell not needed for DG, so just set to zero
+
+	_disc.dispersion = Eigen::VectorXd::Zero(_disc.nComp); // fill later on with convDispOpB (section and component dependent)
+
+	_disc.velocity = static_cast<double>(_convDispOp.currentVelocity()); // updated later on with convDispOpB (section dependent)
+	_disc.curSection = -1;
+
+	_disc.length_ = paramProvider.getDouble("COL_LENGTH");
+	_disc.deltaZ = _disc.length_ / _disc.nCol;
 
 	// ==== Construct and configure binding model
 	clearBindingModels();
@@ -522,14 +542,25 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 	// Allocate memory
 	_tempState = new double[numDofs()];
 
-	_jacInlet.resize(_disc.nComp);
+	if (_disc.exactInt)
+		_jacInlet.resize(_disc.nNodes, 1); // first cell depends on inlet concentration (same for every component)
+	else
+		_jacInlet.resize(1, 1); // first node depends on inlet concentration (same for every component)
+	_jacC.resize(_disc.nComp * _disc.nPoints, _disc.nComp * _disc.nPoints);
+	_jacCdisc.resize(_disc.nComp * _disc.nPoints, _disc.nComp * _disc.nPoints);
+	setConvDispJacPattern(_jacC);
+	setConvDispJacPattern(_jacCdisc);
 
-	_jacP = new linalg::BandMatrix[_disc.nCol * _disc.nParType];
-	_jacPdisc = new linalg::FactorizableBandMatrix[_disc.nCol * _disc.nParType];
+	// the solver repetitively solves the linear system with a static pattern of the jacobian (set above). 
+	// The goal of analyzePattern() is to reorder the nonzero elements of the matrix, such that the factorization step creates less fill-in
+	_bulkSolver.analyzePattern(_jacCdisc);
+
+	_jacP = new linalg::BandMatrix[_disc.nPoints * _disc.nParType];
+	_jacPdisc = new linalg::FactorizableBandMatrix[_disc.nPoints * _disc.nParType];
 	for (unsigned int j = 0; j < _disc.nParType; ++j)
 	{
-		linalg::BandMatrix* const ptrJac = _jacP + _disc.nCol * j;
-		linalg::FactorizableBandMatrix* const ptrJacDisc = _jacPdisc + _disc.nCol * j;
+		linalg::BandMatrix* const ptrJac = _jacP + _disc.nPoints * j;
+		linalg::FactorizableBandMatrix* const ptrJacDisc = _jacPdisc + _disc.nPoints * j;
 
 		// Base case: No surface diffusion -> Need to reach same element in previous and next cell
 		const unsigned int cellSize = _disc.nComp + _disc.strideBound[j];
@@ -577,19 +608,19 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 
 		LOG(Debug) << "Jacobian bandwidth particle type " << j << ": " << lowerBandwidth << "+1+" << upperBandwidth;
 
-		for (unsigned int i = 0; i < _disc.nCol; ++i)
+		for (unsigned int i = 0; i < _disc.nPoints; ++i)
 		{
 			ptrJac[i].resize(_disc.nParCell[j] * cellSize, lowerBandwidth, upperBandwidth);
 			ptrJacDisc[i].resize(_disc.nParCell[j] * cellSize, lowerBandwidth, upperBandwidth);
 		}
 	}
 
-	_jacPF = new linalg::DoubleSparseMatrix[_disc.nCol * _disc.nParType];
-	_jacFP = new linalg::DoubleSparseMatrix[_disc.nCol * _disc.nParType];
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nParType; ++i)
+	_jacPF = new linalg::DoubleSparseMatrix[_disc.nPoints * _disc.nParType];
+	_jacFP = new linalg::DoubleSparseMatrix[_disc.nPoints * _disc.nParType];
+	for (unsigned int i = 0; i < _disc.nPoints * _disc.nParType; ++i)
 	{
 		_jacPF[i].resize(_disc.nComp);
-		const int type = i / _disc.nCol;
+		const int type = i / _disc.nPoints;
 
 		int nonZeroFP = _disc.nComp;
 		if (_hasSurfaceDiffusion[type] && _binding[type]->hasQuasiStationaryReactions() && (_disc.nParCell[type] > 1))
@@ -606,22 +637,23 @@ bool GeneralRateModel::configureModelDiscretization(IParameterProvider& paramPro
 		_jacFP[i].resize(nonZeroFP);
 	}
 
-	_jacCF.resize(_disc.nComp * _disc.nCol * _disc.nParType);
-	_jacFC.resize(_disc.nComp * _disc.nCol * _disc.nParType);
+	_jacCF.resize(_disc.nComp * _disc.nPoints* _disc.nParType);
+	_jacFC.resize(_disc.nComp * _disc.nPoints* _disc.nParType);
 
 	_discParFlux.resize(sizeof(active) * _disc.nComp);
 
 	// Set whether analytic Jacobian is used
 	useAnalyticJacobian(analyticJac);
 
-	return transportSuccess && parSurfDiffDepConfSuccess && bindingConfSuccess && reactionConfSuccess;
+	return transportSuccess1 && transportSuccess2 && parSurfDiffDepConfSuccess && bindingConfSuccess && reactionConfSuccess;
 }
 
-bool GeneralRateModel::configure(IParameterProvider& paramProvider)
+bool GeneralRateModelDGFV::configure(IParameterProvider& paramProvider)
 {
 	_parameters.clear();
 
-	const bool transportSuccess = _convDispOp.configure(_unitOpIdx, paramProvider, _parameters);
+	const bool transportSuccess1 = _convDispOp.configure(_unitOpIdx, paramProvider, _parameters);
+	const bool transportSuccess2 = _convDispOpB.configure(_unitOpIdx, paramProvider, _parameters);
 
 	// Read geometry parameters
 	_colPorosity = paramProvider.getDouble("COL_POROSITY");
@@ -650,8 +682,8 @@ bool GeneralRateModel::configure(IParameterProvider& paramProvider)
 			_axiallyConstantParTypeVolFrac = true;
 
 			// Expand to all axial cells
-			_parTypeVolFrac.resize(_disc.nCol * _disc.nParType, 1.0);
-			for (unsigned int i = 1; i < _disc.nCol; ++i)
+			_parTypeVolFrac.resize(_disc.nPoints * _disc.nParType, 1.0);
+			for (unsigned int i = 1; i < _disc.nPoints; ++i)
 				std::copy(_parTypeVolFrac.begin(), _parTypeVolFrac.begin() + _disc.nParType, _parTypeVolFrac.begin() + _disc.nParType * i);
 		}
 		else
@@ -659,14 +691,14 @@ bool GeneralRateModel::configure(IParameterProvider& paramProvider)
 	}
 	else
 	{
-		_parTypeVolFrac.resize(_disc.nCol, 1.0);
+		_parTypeVolFrac.resize(_disc.nPoints, 1.0);
 		_axiallyConstantParTypeVolFrac = false;
 	}
 
 	// Check whether all sizes are matched
 	if (_disc.nParType != _parRadius.size())
 		throw InvalidParameterException("Number of elements in field PAR_RADIUS does not match number of particle types");
-	if (_disc.nParType * _disc.nCol != _parTypeVolFrac.size())
+	if (_disc.nParType * _disc.nPoints != _parTypeVolFrac.size())
 		throw InvalidParameterException("Number of elements in field PAR_TYPE_VOLFRAC does not match number of particle types times number of axial cells");
 	if (_disc.nParType != _parPorosity.size())
 		throw InvalidParameterException("Number of elements in field PAR_POROSITY does not match number of particle types");
@@ -674,7 +706,7 @@ bool GeneralRateModel::configure(IParameterProvider& paramProvider)
 		throw InvalidParameterException("Number of elements in field PAR_CORERADIUS does not match number of particle types");
 
 	// Check that particle volume fractions sum to 1.0
-	for (unsigned int i = 0; i < _disc.nCol; ++i)
+	for (unsigned int i = 0; i < _disc.nPoints; ++i)
 	{
 		const double volFracSum = std::accumulate(_parTypeVolFrac.begin() + i * _disc.nParType, _parTypeVolFrac.begin() + (i+1) * _disc.nParType, 0.0,
 			[](double a, const active& b) -> double { return a + static_cast<double>(b); });
@@ -838,10 +870,10 @@ bool GeneralRateModel::configure(IParameterProvider& paramProvider)
 		}
 	}
 
-	return transportSuccess && parSurfDiffDepConfSuccess && bindingConfSuccess && dynReactionConfSuccess;
+	return transportSuccess1 && transportSuccess2 && parSurfDiffDepConfSuccess && bindingConfSuccess && dynReactionConfSuccess;
 }
 
-unsigned int GeneralRateModel::threadLocalMemorySize() const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::threadLocalMemorySize() const CADET_NOEXCEPT
 {
 	LinearMemorySizer lms;
 
@@ -884,7 +916,7 @@ unsigned int GeneralRateModel::threadLocalMemorySize() const CADET_NOEXCEPT
 	return lms.bufferSize();
 }
 
-unsigned int GeneralRateModel::numAdDirsForJacobian() const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::numAdDirsForJacobian() const CADET_NOEXCEPT
 {
 	// We need as many directions as the highest bandwidth of the diagonal blocks:
 	// The bandwidth of the column block depends on the size of the WENO stencil, whereas
@@ -894,13 +926,13 @@ unsigned int GeneralRateModel::numAdDirsForJacobian() const CADET_NOEXCEPT
 	int maxStride = 0;
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		maxStride = std::max(maxStride, _jacP[type * _disc.nCol].stride());
+		maxStride = std::max(maxStride, _jacP[type * _disc.nPoints].stride());
 	}
 
 	return std::max(_convDispOp.requiredADdirs(), maxStride);
 }
 
-void GeneralRateModel::useAnalyticJacobian(const bool analyticJac)
+void GeneralRateModelDGFV::useAnalyticJacobian(const bool analyticJac)
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	_analyticJac = analyticJac;
@@ -915,7 +947,7 @@ void GeneralRateModel::useAnalyticJacobian(const bool analyticJac)
 #endif
 }
 
-void GeneralRateModel::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
+void GeneralRateModelDGFV::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
 	// Setup flux Jacobian blocks at the beginning of the simulation or in case of
 	// section dependent film or particle diffusion coefficients
@@ -925,53 +957,54 @@ void GeneralRateModel::notifyDiscontinuousSectionTransition(double t, unsigned i
 	Indexer idxr(_disc);
 
 	// ConvectionDispersionOperator tells us whether flow direction has changed
-	if (!_convDispOp.notifyDiscontinuousSectionTransition(t, secIdx, adJac))
+	if (!_convDispOpB.notifyDiscontinuousSectionTransition(t, secIdx)) // !_convDispOp.notifyDiscontinuousSectionTransition(t, secIdx, adJac)
 		return;
 
-	// Setup the matrix connecting inlet DOFs to first column cells
-	_jacInlet.clear();
-	const double h = static_cast<double>(_convDispOp.columnLength()) / static_cast<double>(_disc.nCol);
-	const double u = static_cast<double>(_convDispOp.currentVelocity());
+	// @TODO: backwards flow
+	//// Setup the matrix connecting inlet DOFs to first column cells
+	//_jacInlet.clear();
+	//const double h = static_cast<double>(_convDispOp.columnLength()) / static_cast<double>(_disc.nPoints);
+	//const double u = static_cast<double>(_convDispOp.currentVelocity());
 
-	if (u >= 0.0)
-	{
-		// Forwards flow
+	//if (u >= 0.0)
+	//{
+	//	// Forwards flow
 
-		// Place entries for inlet DOF to first column cell conversion
-		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			_jacInlet.addElement(comp * idxr.strideColComp(), comp, -u / h);
-	}
-	else
-	{
-		// Backwards flow
+	//	// Place entries for inlet DOF to first column cell conversion
+	//	for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//		_jacInlet.addElement(comp * idxr.strideColComp(), comp, -u / h);
+	//}
+	//else
+	//{
+	//	// Backwards flow
 
-		// Place entries for inlet DOF to last column cell conversion
-		const unsigned int offset = (_disc.nCol - 1) * idxr.strideColCell();
-		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			_jacInlet.addElement(offset + comp * idxr.strideColComp(), comp, u / h);
-	}
+	//	// Place entries for inlet DOF to last column cell conversion
+	//	const unsigned int offset = (_disc.nPoints - 1) * idxr.strideColNode();
+	//	for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//		_jacInlet.addElement(offset + comp * idxr.strideColComp(), comp, u / h);
+	//}
 }
 
-void GeneralRateModel::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
+void GeneralRateModelDGFV::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 {
 	_convDispOp.setFlowRates(in[0], out[0], _colPorosity);
 }
 
-void GeneralRateModel::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
+void GeneralRateModelDGFV::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
 {
 	Exporter expr(_disc, *this, solution);
 	recorder.beginUnitOperation(_unitOpIdx, *this, expr);
 	recorder.endUnitOperation();
 }
 
-void GeneralRateModel::reportSolutionStructure(ISolutionRecorder& recorder) const
+void GeneralRateModelDGFV::reportSolutionStructure(ISolutionRecorder& recorder) const
 {
 	Exporter expr(_disc, *this, nullptr);
 	recorder.unitOperationStructure(_unitOpIdx, *this, expr);
 }
 
 
-unsigned int GeneralRateModel::requiredADdirs() const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::requiredADdirs() const CADET_NOEXCEPT
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	return _jacobianAdDirs;
@@ -981,7 +1014,7 @@ unsigned int GeneralRateModel::requiredADdirs() const CADET_NOEXCEPT
 #endif
 }
 
-void GeneralRateModel::prepareADvectors(const AdJacobianParams& adJac) const
+void GeneralRateModelDGFV::prepareADvectors(const AdJacobianParams& adJac) const
 {
 	// Early out if AD is disabled
 	if (!adJac.adY)
@@ -995,10 +1028,10 @@ void GeneralRateModel::prepareADvectors(const AdJacobianParams& adJac) const
 	// Particle blocks
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		const unsigned int lowerParBandwidth = _jacP[type * _disc.nCol].lowerBandwidth();
-		const unsigned int upperParBandwidth = _jacP[type * _disc.nCol].upperBandwidth();
+		const unsigned int lowerParBandwidth = _jacP[type * _disc.nPoints].lowerBandwidth();
+		const unsigned int upperParBandwidth = _jacP[type * _disc.nPoints].upperBandwidth();
 
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			ad::prepareAdVectorSeedsForBandMatrix(adJac.adY + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adJac.adDirOffset, idxr.strideParBlock(type), lowerParBandwidth, upperParBandwidth, lowerParBandwidth);
 		}
@@ -1010,7 +1043,7 @@ void GeneralRateModel::prepareADvectors(const AdJacobianParams& adJac) const
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
+void GeneralRateModelDGFV::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
 {
 	Indexer idxr(_disc);
 
@@ -1020,9 +1053,9 @@ void GeneralRateModel::extractJacobianFromAD(active const* const adRes, unsigned
 	// Particles
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.nCol * type + pblk];
+			linalg::BandMatrix& jacMat = _jacP[_disc.nPoints * type + pblk];
 			ad::extractBandedJacobianFromAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
 		}
 	}
@@ -1036,7 +1069,7 @@ void GeneralRateModel::extractJacobianFromAD(active const* const adRes, unsigned
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
+void GeneralRateModelDGFV::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
 {
 	Indexer idxr(_disc);
 
@@ -1049,9 +1082,9 @@ void GeneralRateModel::checkAnalyticJacobianAgainstAd(active const* const adRes,
 	double maxDiffPar = 0.0;
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.nCol * type + pblk];
+			linalg::BandMatrix& jacMat = _jacP[_disc.nPoints * type + pblk];
 			const double localDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
 			LOG(Debug) << "-> Par type " << type << " block " << pblk << " diff: " << localDiff;
 			maxDiffPar = std::max(maxDiffPar, localDiff);
@@ -1061,7 +1094,7 @@ void GeneralRateModel::checkAnalyticJacobianAgainstAd(active const* const adRes,
 
 #endif
 
-int GeneralRateModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1069,7 +1102,7 @@ int GeneralRateModel::residual(const SimulationTime& simTime, const ConstSimulat
 	return residualImpl<double, double, double, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, res, threadLocalMem);
 }
 
-int GeneralRateModel::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1077,7 +1110,7 @@ int GeneralRateModel::residualWithJacobian(const SimulationTime& simTime, const 
 	return residual(simTime, simState, res, adJac, threadLocalMem, true, false);
 }
 
-int GeneralRateModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
+int GeneralRateModelDGFV::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
 	const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem, bool updateJacobian, bool paramSensitivity)
 {
 	if (updateJacobian)
@@ -1184,25 +1217,21 @@ int GeneralRateModel::residual(const SimulationTime& simTime, const ConstSimulat
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
+	// determine wether we have a section switch. If so, set velocity, dispersion, newStaticJac(bulk)
+	updateSection(secIdx);
+
+	residualBulk<StateType, ResidualType, ParamType, wantJac>(t, secIdx, y, yDot, res, threadLocalMem);
+
 	BENCH_START(_timerResidualPar);
 
-#ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nParType + 1), [&](std::size_t pblk)
-#else
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nParType + 1; ++pblk)
-#endif
+	for (unsigned int pblk = 0; pblk < _disc.nPoints * _disc.nParType; ++pblk)
 	{
-		if (cadet_unlikely(pblk == 0))
-			residualBulk<StateType, ResidualType, ParamType, wantJac>(t, secIdx, y, yDot, res, threadLocalMem);
-		else
-		{
-			const unsigned int type = (pblk - 1) / _disc.nCol;
-			const unsigned int par = (pblk - 1) % _disc.nCol;
+			const unsigned int type = pblk / _disc.nPoints;
+			const unsigned int par = pblk % _disc.nPoints;
 			residualParticle<StateType, ResidualType, ParamType, wantJac>(t, type, par, secIdx, y, yDot, res, threadLocalMem);
-		}
-	} CADET_PARFOR_END;
+	}
 
 	BENCH_STOP(_timerResidualPar);
 
@@ -1214,47 +1243,103 @@ int GeneralRateModel::residualImpl(double t, unsigned int secIdx, StateType cons
 		res[i] = y[i];
 	}
 
+	//Eigen::Map<const VectorXd> y_(reinterpret_cast<const double*>(y), numDofs());
+	//Eigen::Map<VectorXd> res_(reinterpret_cast<double*>(res), numDofs());
+	//Indexer idxr(_disc);
+	//if(!yDot)
+	//	std::cout << "consistent initialization" << std::endl;
+	//std::cout << "y,  res" << std::endl;
+	//std::cout << "inlet + bulk" << std::endl;
+	//for (int i = 0; i < _disc.nComp * (1+_disc.nPoints); i++) {
+	//	std::cout << y_[i] << ",  " << res_[i] << std::endl;
+	//}
+	//std::cout << "particle" << std::endl;
+	//for (int i = idxr.offsetCp(); i < idxr.offsetJf(); i++) {
+	//	std::cout << y_[i] << ",  " << res_[i] << std::endl;
+	//}
+	//std::cout << "flux" << std::endl;
+	//for (int i = idxr.offsetJf(); i < numDofs(); i++) {
+	//	std::cout << y_[i] << ",  " << res_[i] << std::endl;
+	//}
+
 	return 0;
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
-	_convDispOp.residual(t, secIdx, yBase, yDotBase, resBase, wantJac, typename ParamSens<ParamType>::enabled());
+	Indexer idxr(_disc);
+
+	if (wantJac && _disc.newStaticJac) { // ConvDisp static (per section) jacobian
+
+		bool success = calcStaticAnaBulkJacobian(t, secIdx, reinterpret_cast<const double*>(yBase), threadLocalMem);
+		_disc.newStaticJac = false;
+		if (cadet_unlikely(!success))
+			LOG(Error) << "Jacobian pattern did not fit the Jacobian estimation";
+
+	}
+
+	// Eigen access to data pointers
+	const double* yPtr = reinterpret_cast<const double*>(yBase);
+	const double* const ypPtr = reinterpret_cast<const double* const>(yDotBase);
+	double* const resPtr = reinterpret_cast<double* const>(resBase);
+	Eigen::Map<const Eigen::VectorXd> y(yPtr, numDofs());
+	Eigen::Map<const Eigen::VectorXd> yp(ypPtr, numDofs());
+	Eigen::Map<Eigen::VectorXd> res(resPtr, numDofs());
+
+	for (unsigned int comp = 0; comp < _disc.nComp; comp++) {
+
+		// extract current component mobile phase, mobile phase residual, mobile phase derivative (discontinous memory blocks)
+		Eigen::Map<const VectorXd, 0, InnerStride<Dynamic>> C_comp(yPtr + idxr.offsetC() + comp, _disc.nPoints, InnerStride<Dynamic>(idxr.strideColNode()));
+		Eigen::Map<VectorXd, 0, InnerStride<Dynamic>>		cRes_comp(resPtr + idxr.offsetC() + comp, _disc.nPoints, InnerStride<Dynamic>(idxr.strideColNode()));
+		Eigen::Map<const VectorXd, 0, InnerStride<Dynamic>> cDot_comp(ypPtr + idxr.offsetC() + comp, _disc.nPoints, InnerStride<Dynamic>(idxr.strideColNode()));
+
+		/*	convection dispersion RHS	*/
+
+		_disc.boundary[0] = yPtr[comp]; // copy inlet DOFs to ghost node
+		ConvDisp_DG(C_comp, cRes_comp, t, comp);
+
+		/*	residual	*/
+
+		if (ypPtr) // NULLpointer for consistent initialization
+			cRes_comp = cDot_comp - cRes_comp;
+	}
+
 	if (!_dynReactionBulk || (_dynReactionBulk->numReactionsLiquid() == 0))
 		return 0;
 
-	// Get offsets
-	Indexer idxr(_disc);
-	StateType const* y = yBase + idxr.offsetC();
-	ResidualType* res = resBase + idxr.offsetC();
-	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
+	// @TODO: dynamic reactions
 
-	for (unsigned int col = 0; col < _disc.nCol; ++col, y += idxr.strideColCell(), res += idxr.strideColCell())
-	{
-		const ColumnPosition colPos{(0.5 + static_cast<double>(col)) / static_cast<double>(_disc.nCol), 0.0, 0.0};
-		_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
+	//// Get offsets
+	//Indexer idxr(_disc);
+	//StateType const* y = yBase + idxr.offsetC();
+	//ResidualType* res = resBase + idxr.offsetC();
+	//LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
-		if (wantJac)
-		{
-			// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y), -1.0, _convDispOp.jacobian().row(col * idxr.strideColCell()), tlmAlloc);
-		}
-	}
+	//for (unsigned int col = 0; col < _disc.nPoints; ++col, y += idxr.strideColNode(), res += idxr.strideColNode())
+	//{
+	//	const ColumnPosition colPos{(0.5 + static_cast<double>(col)) / static_cast<double>(_disc.nPoints), 0.0, 0.0};
+	//	_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
 
+	//	if (wantJac)
+	//	{
+	//		// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
+	//		_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y), -1.0, _convDispOp.jacobian().row(col * idxr.strideColNode()), tlmAlloc);
+	//	}
+	//}
 	return 0;
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase,
+int GeneralRateModelDGFV::residualParticle(double t, unsigned int parType, unsigned int colNode, unsigned int secIdx, StateType const* yBase,
 	double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	Indexer idxr(_disc);
 
 	// Go to the particle block of the given column cell
-	StateType const* y = yBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
-	double const* yDot = yDotBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
-	ResidualType* res = resBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
+	StateType const* y = yBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
+	double const* yDot = yDotBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
+	ResidualType* res = resBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
 
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
@@ -1265,19 +1350,20 @@ int GeneralRateModel::residualParticle(double t, unsigned int parType, unsigned 
 	// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
 	active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
 
-	// Midpoint of current column cell (z coordinate) - needed in externally dependent adsorption kinetic
-	const double z = (0.5 + static_cast<double>(colCell)) / static_cast<double>(_disc.nCol);
+	// z coordinate of current node (column length normed to 1) - needed in externally dependent adsorption kinetic
+	const double z = (_disc.deltaZ * std::floor(colNode / _disc.nNodes)
+				   + 0.5 * _disc.deltaZ * (1 + _disc.nodes[colNode % _disc.nNodes])) / _disc.length_;
 
 	// Reset Jacobian
 	if (wantJac)
-		_jacP[_disc.nCol * parType + colCell].setAll(0.0);
+		_jacP[_disc.nPoints * parType + colNode].setAll(0.0);
 
 	// The RowIterator is always centered on the main diagonal.
 	// This means that jac[0] is the main diagonal, jac[-1] is the first lower diagonal,
 	// and jac[1] is the first upper diagonal. We can also access the rows from left to
 	// right beginning with the last lower diagonal moving towards the main diagonal and
 	// continuing to the last upper diagonal by using the native() method.
-	linalg::BandMatrix::RowIterator jac = _jacP[_disc.nCol * parType + colCell].row(0);
+	linalg::BandMatrix::RowIterator jac = _jacP[_disc.nPoints * parType + colNode].row(0);
 
 	active const* const outerSurfPerVol = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
 	active const* const innerSurfPerVol = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
@@ -1810,7 +1896,7 @@ int GeneralRateModel::residualParticle(double t, unsigned int parType, unsigned 
 }
 
 template <typename StateType, typename ResidualType, typename ParamType>
-int GeneralRateModel::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
+int GeneralRateModelDGFV::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
 {
 	Indexer idxr(_disc);
 
@@ -1824,7 +1910,7 @@ int GeneralRateModel::residualFlux(double t, unsigned int secIdx, StateType cons
 	StateType const* const yFlux = yBase + idxr.offsetJf();
 
 	// J_f block (identity matrix), adds flux state to flux equation
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nCol * _disc.nParType; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.nPoints * _disc.nParType; ++i)
 		resFlux[i] = yFlux[i];
 
 	// Discretized film diffusion kf for finite volumes
@@ -1866,38 +1952,38 @@ int GeneralRateModel::residualFlux(double t, unsigned int secIdx, StateType cons
 		}
 
 		// J_{0,f} block, adds flux to column void / bulk volume equations
-		for (unsigned int i = 0; i < _disc.nCol * _disc.nComp; ++i)
+		for (unsigned int i = 0; i < _disc.nPoints * _disc.nComp; ++i)
 		{
-			const unsigned int colCell = i / _disc.nComp;
-			resCol[i] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + colCell * _disc.nParType]) * yFluxType[i];
+			const unsigned int colNode = i / _disc.nComp;
+			resCol[i] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + colNode * _disc.nParType]) * yFluxType[i];
 		}
 
 		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int bnd = 0; bnd < _disc.nCol; ++bnd)
+		for (unsigned int bnd = 0; bnd < _disc.nPoints; ++bnd)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = bnd * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = bnd * idxr.strideColNode() + comp * idxr.strideColComp();
 				resFluxType[eq] -= kf_FV[comp] * yCol[eq];
 			}
 		}
 
 		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 				resParType[pblk * idxr.strideParBlock(type) + comp] += jacPF_val / static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * yFluxType[eq];
 			}
 		}
 
 		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 				resFluxType[eq] += kf_FV[comp] * yParType[comp + pblk * idxr.strideParBlock(type)];
 			}
 		}
@@ -1915,14 +2001,14 @@ int GeneralRateModel::residualFlux(double t, unsigned int secIdx, StateType cons
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				kf_FV[comp] = (1.0 - static_cast<ParamType>(_parPorosity[type])) / (1.0 + epsP * static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<ParamType>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<ParamType>(filmDiff[comp])));
 
-			for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 			{
-				const ColumnPosition colPos{(0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nCol), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
+				const ColumnPosition colPos{ _disc.deltaZ * std::floor(pblk / _disc.nNodes) + 0.5 * _disc.deltaZ * (1 + _disc.nodes[pblk % _disc.nNodes]), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
 				const ParamType dr = static_cast<ParamType>(parCenterRadius[0]) - static_cast<ParamType>(parCenterRadius[1]);
 
 				for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				{
-					const unsigned int eq = pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+					const unsigned int eq = pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 					const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
 
 					for (unsigned int i = 0; i < nBound; ++i)
@@ -1955,7 +2041,7 @@ int GeneralRateModel::residualFlux(double t, unsigned int secIdx, StateType cons
 	return 0;
 }
 
-parts::cell::CellParameters GeneralRateModel::makeCellResidualParams(unsigned int parType, int const* qsReaction) const
+parts::cell::CellParameters GeneralRateModelDGFV::makeCellResidualParams(unsigned int parType, int const* qsReaction) const
 {
 	return parts::cell::CellParameters
 		{
@@ -1979,12 +2065,12 @@ parts::cell::CellParameters GeneralRateModel::makeCellResidualParams(unsigned in
  * @param [in] secIdx Index of the current section
  * @param [in] vecStateY Current state vector
  */
-void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double const* vecStateY)
+void GeneralRateModelDGFV::assembleOffdiagJac(double t, unsigned int secIdx, double const* vecStateY)
 {
 	// Clear matrices for new assembly
 	_jacCF.clear();
 	_jacFC.clear();
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nParType; ++pblk)
+	for (unsigned int pblk = 0; pblk < _disc.nPoints * _disc.nParType; ++pblk)
 	{
 		_jacPF[pblk].clear();
 		_jacFP[pblk].clear();
@@ -2001,7 +2087,7 @@ void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double 
 
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		const unsigned int typeOffset = type * _disc.nCol * _disc.nComp;
+		const unsigned int typeOffset = type * _disc.nPoints * _disc.nComp;
 		const double epsP = static_cast<double>(_parPorosity[type]);
 
 		// Ordering of diffusion:
@@ -2030,7 +2116,7 @@ void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double 
 		}
 
 		// J_{0,f} block, adds flux to column void / bulk volume equations
-		for (unsigned int eq = 0; eq < _disc.nCol * _disc.nComp; ++eq)
+		for (unsigned int eq = 0; eq < _disc.nPoints * _disc.nComp; ++eq)
 		{
 			const unsigned int colCell = eq / _disc.nComp;
 
@@ -2039,34 +2125,34 @@ void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double 
 		}
 
 		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int col = 0; col < _disc.nCol; ++col)
+		for (unsigned int point = 0; point < _disc.nPoints; ++point)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
 				// Main diagonal corresponds to c_i state variable in each column cell
-				const unsigned int eq = col * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = point * idxr.strideColNode() + comp * idxr.strideColComp();
 				_jacFC.addElement(eq + typeOffset, eq, -kf_FV[comp]);
 			}
 		}
 
 		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		linalg::DoubleSparseMatrix* const jacPFtype = _jacPF + type * _disc.nCol;
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		linalg::DoubleSparseMatrix* const jacPFtype = _jacPF + type * _disc.nPoints;
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = typeOffset + pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = typeOffset + pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 				jacPFtype[pblk].addElement(comp, eq, jacPF_val / static_cast<double>(_poreAccessFactor[comp]));
 			}
 		}
 
 		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.nCol;
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.nPoints;
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = typeOffset + pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = typeOffset + pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 				jacFPtype[pblk].addElement(eq, comp, kf_FV[comp]);
 			}
 		}
@@ -2084,16 +2170,16 @@ void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double 
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				kf_FV[comp] = (1.0 - static_cast<double>(_parPorosity[type])) / (1.0 + epsP * static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<double>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<double>(filmDiff[comp])));
 
-			for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 			{
-				const ColumnPosition colPos{(0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nCol), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
+				const ColumnPosition colPos{(0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nPoints), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
 				const double dr = static_cast<double>(parCenterRadius[0]) - static_cast<double>(parCenterRadius[1]);
 
 				double const* const yCell = vecStateY + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk});
 
 				for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				{
-					const unsigned int eq = typeOffset + pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+					const unsigned int eq = typeOffset + pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 					const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
 
 					for (unsigned int i = 0; i < nBound; ++i)
@@ -2158,9 +2244,9 @@ void GeneralRateModel::assembleOffdiagJac(double t, unsigned int secIdx, double 
  * @param [in] secIdx Index of the current section
  * @param [in] vecStateY Current state vector
  */
-void GeneralRateModel::assembleOffdiagJacFluxParticle(double t, unsigned int secIdx, double const* vecStateY)
+void GeneralRateModelDGFV::assembleOffdiagJacFluxParticle(double t, unsigned int secIdx, double const* vecStateY)
 {
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nParType; ++pblk)
+	for (unsigned int pblk = 0; pblk < _disc.nPoints * _disc.nParType; ++pblk)
 		_jacFP[pblk].clear();
 
 	Indexer idxr(_disc);
@@ -2172,7 +2258,7 @@ void GeneralRateModel::assembleOffdiagJacFluxParticle(double t, unsigned int sec
 
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		const unsigned int typeOffset = type * _disc.nCol * _disc.nComp;
+		const unsigned int typeOffset = type * _disc.nPoints * _disc.nComp;
 		const double epsP = static_cast<double>(_parPorosity[type]);
 
 		// Ordering of diffusion:
@@ -2195,12 +2281,12 @@ void GeneralRateModel::assembleOffdiagJacFluxParticle(double t, unsigned int sec
 		}
 
 		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.nCol;
-		for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.nPoints;
+		for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
-				const unsigned int eq = typeOffset + pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+				const unsigned int eq = typeOffset + pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 				jacFPtype[pblk].addElement(eq, comp, kf_FV[comp]);
 			}
 		}
@@ -2218,16 +2304,16 @@ void GeneralRateModel::assembleOffdiagJacFluxParticle(double t, unsigned int sec
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				kf_FV[comp] = (1.0 - static_cast<double>(_parPorosity[type])) / (1.0 + epsP * static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<double>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<double>(filmDiff[comp])));
 
-			for (unsigned int pblk = 0; pblk < _disc.nCol; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.nPoints; ++pblk)
 			{
-				const ColumnPosition colPos{(0.5 + static_cast<double>(pblk)) / static_cast<double>(_disc.nCol), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
+				const ColumnPosition colPos{ _disc.deltaZ * std::floor(pblk / _disc.nNodes) + 0.5 * _disc.deltaZ * (1 + _disc.nodes[pblk % _disc.nNodes]), 0.0, static_cast<double>(parCenterRadius[0]) / static_cast<double>(_parRadius[type])};
 				const double dr = static_cast<double>(parCenterRadius[0]) - static_cast<double>(parCenterRadius[1]);
 
 				double const* const yCell = vecStateY + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk});
 
 				for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				{
-					const unsigned int eq = typeOffset + pblk * idxr.strideColCell() + comp * idxr.strideColComp();
+					const unsigned int eq = typeOffset + pblk * idxr.strideColNode() + comp * idxr.strideColComp();
 					const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
 
 					for (unsigned int i = 0; i < nBound; ++i)
@@ -2284,7 +2370,7 @@ void GeneralRateModel::assembleOffdiagJacFluxParticle(double t, unsigned int sec
 	_discParFlux.destroy<double>();
 }
 
-int GeneralRateModel::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -2293,7 +2379,7 @@ int GeneralRateModel::residualSensFwdWithJacobian(const SimulationTime& simTime,
 	return residual(simTime, simState, nullptr, adJac, threadLocalMem, true, true);
 }
 
-int GeneralRateModel::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
+int GeneralRateModelDGFV::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -2301,7 +2387,7 @@ int GeneralRateModel::residualSensFwdAdOnly(const SimulationTime& simTime, const
 	return residualImpl<double, active, active, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, adRes, threadLocalMem);
 }
 
-int GeneralRateModel::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
+int GeneralRateModelDGFV::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
 	const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes,
 	double* const tmp1, double* const tmp2, double* const tmp3)
 {
@@ -2352,59 +2438,59 @@ int GeneralRateModel::residualSensFwdCombine(const SimulationTime& simTime, cons
  * @param [in] beta Factor @f$ \beta @f$ in front of @f$ z @f$
  * @param [in,out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
+void GeneralRateModelDGFV::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
 {
 	Indexer idxr(_disc);
 
-	// Handle identity matrix of inlet DOFs
-	for (unsigned int i = 0; i < _disc.nComp; ++i)
-	{
-		ret[i] = alpha * yS[i] + beta * ret[i];
-	}
-
-#ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nParType + 1), [&](std::size_t idx)
-#else
-	for (unsigned int idx = 0; idx < _disc.nCol * _disc.nParType + 1; ++idx)
-#endif
-	{
-		if (cadet_unlikely(idx == 0))
-		{
-			_convDispOp.jacobian().multiplyVector(yS + idxr.offsetC(), alpha, beta, ret + idxr.offsetC());
-			_jacCF.multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + idxr.offsetC());
-		}
-		else
-		{
-			const unsigned int pblk = idx - 1;
-			const unsigned int type = pblk / _disc.nCol;
-			const unsigned int par = pblk % _disc.nCol;
-
-			const int localOffset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
-			_jacP[pblk].multiplyVector(yS + localOffset, alpha, beta, ret + localOffset);
-			_jacPF[pblk].multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + localOffset);
-		}
-	} CADET_PARFOR_END;
-
-	// Handle flux equation
-
-	// Set fluxes(ret) = fluxes(yS)
-	// This applies the identity matrix in the bottom right corner of the Jaocbian (flux equation)
-	for (unsigned int i = idxr.offsetJf(); i < numDofs(); ++i)
-		ret[i] = alpha * yS[i] + beta * ret[i];
-
-	double* const retJf = ret + idxr.offsetJf();
-	_jacFC.multiplyVector(yS + idxr.offsetC(), alpha, 1.0, retJf);
-
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		for (unsigned int par = 0; par < _disc.nCol; ++par)
-		{
-			_jacFP[type * _disc.nCol + par].multiplyVector(yS + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), alpha, 1.0, retJf);
-		}
-	}
-
-	// Map inlet DOFs to the column inlet (first bulk cells)
-	_jacInlet.multiplyAdd(yS, ret + idxr.offsetC(), alpha);
+//	// Handle identity matrix of inlet DOFs
+//	for (unsigned int i = 0; i < _disc.nComp; ++i)
+//	{
+//		ret[i] = alpha * yS[i] + beta * ret[i];
+//	}
+//
+//#ifdef CADET_PARALLELIZE
+//	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nPoints * _disc.nParType + 1), [&](std::size_t idx)
+//#else
+//	for (unsigned int idx = 0; idx < _disc.nPoints * _disc.nParType + 1; ++idx)
+//#endif
+//	{
+//		if (cadet_unlikely(idx == 0))
+//		{
+//			_convDispOp.jacobian().multiplyVector(yS + idxr.offsetC(), alpha, beta, ret + idxr.offsetC());
+//			_jacCF.multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + idxr.offsetC());
+//		}
+//		else
+//		{
+//			const unsigned int pblk = idx - 1;
+//			const unsigned int type = pblk / _disc.nPoints;
+//			const unsigned int par = pblk % _disc.nPoints;
+//
+//			const int localOffset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
+//			_jacP[pblk].multiplyVector(yS + localOffset, alpha, beta, ret + localOffset);
+//			_jacPF[pblk].multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + localOffset);
+//		}
+//	} CADET_PARFOR_END;
+//
+//	// Handle flux equation
+//
+//	// Set fluxes(ret) = fluxes(yS)
+//	// This applies the identity matrix in the bottom right corner of the Jaocbian (flux equation)
+//	for (unsigned int i = idxr.offsetJf(); i < numDofs(); ++i)
+//		ret[i] = alpha * yS[i] + beta * ret[i];
+//
+//	double* const retJf = ret + idxr.offsetJf();
+//	_jacFC.multiplyVector(yS + idxr.offsetC(), alpha, 1.0, retJf);
+//
+//	for (unsigned int type = 0; type < _disc.nParType; ++type)
+//	{
+//		for (unsigned int par = 0; par < _disc.nPoints; ++par)
+//		{
+//			_jacFP[type * _disc.nPoints + par].multiplyVector(yS + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), alpha, 1.0, retJf);
+//		}
+//	}
+//
+//	// Map inlet DOFs to the column inlet (first bulk cells)
+//	_jacInlet.multiplyAdd(yS, ret + idxr.offsetC(), alpha);
 }
 
 /**
@@ -2416,14 +2502,14 @@ void GeneralRateModel::multiplyWithJacobian(const SimulationTime& simTime, const
  * @param [in] sDot Vector @f$ x @f$ that is transformed by the Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$
  * @param [out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
+void GeneralRateModelDGFV::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
 {
 	Indexer idxr(_disc);
 
 #ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nParType + 1), [&](std::size_t idx)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nPoints * _disc.nParType + 1), [&](std::size_t idx)
 #else
-	for (unsigned int idx = 0; idx < _disc.nCol * _disc.nParType + 1; ++idx)
+	for (unsigned int idx = 0; idx < _disc.nPoints * _disc.nParType + 1; ++idx)
 #endif
 	{
 		if (cadet_unlikely(idx == 0))
@@ -2433,8 +2519,8 @@ void GeneralRateModel::multiplyWithDerivativeJacobian(const SimulationTime& simT
 		else
 		{
 			const unsigned int idxParLoop = idx - 1;
-			const unsigned int pblk = idxParLoop % _disc.nCol;
-			const unsigned int type = idxParLoop / _disc.nCol;
+			const unsigned int pblk = idxParLoop % _disc.nPoints;
+			const unsigned int type = idxParLoop / _disc.nPoints;
 
 			const double invBetaP = (1.0 / static_cast<double>(_parPorosity[type]) - 1.0);
 			unsigned int const* const nBound = _disc.nBound + type * _disc.nComp;
@@ -2456,13 +2542,13 @@ void GeneralRateModel::multiplyWithDerivativeJacobian(const SimulationTime& simT
 
 	// Handle fluxes (all algebraic)
 	double* const dFdyDot = ret + idxr.offsetJf();
-	std::fill(dFdyDot, dFdyDot + _disc.nCol * _disc.nComp * _disc.nParType, 0.0);
+	std::fill(dFdyDot, dFdyDot + _disc.nPoints * _disc.nComp * _disc.nParType, 0.0);
 
 	// Handle inlet DOFs (all algebraic)
 	std::fill_n(ret, _disc.nComp, 0.0);
 }
 
-void GeneralRateModel::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
+void GeneralRateModelDGFV::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
 {
 	for (IBindingModel* bm : _binding)
 	{
@@ -2471,34 +2557,34 @@ void GeneralRateModel::setExternalFunctions(IExternalFunction** extFuns, unsigne
 	}
 }
 
-unsigned int GeneralRateModel::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Inlets are duplicated so need to be accounted for
-	if (static_cast<double>(_convDispOp.currentVelocity()) >= 0.0)
+	if (_convDispOp.forwardFlow())
 		// Forward Flow: outlet is last cell
-		return _disc.nComp + (_disc.nCol - 1) * _disc.nComp;
+		return _disc.nComp + (_disc.nPoints - 1) * _disc.nComp;
 	else
 		// Backward flow: Outlet is first cell
 		return _disc.nComp;
 }
 
-unsigned int GeneralRateModel::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Always 0 due to dedicated inlet DOFs
 	return 0;
 }
 
-unsigned int GeneralRateModel::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-unsigned int GeneralRateModel::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int GeneralRateModelDGFV::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-void GeneralRateModel::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
+void GeneralRateModelDGFV::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
 {
 	// @todo Write this function
 }
@@ -2506,7 +2592,7 @@ void GeneralRateModel::expandErrorTol(double const* errorSpec, unsigned int erro
 /**
  * @brief Computes equidistant radial nodes in the beads
  */
-void GeneralRateModel::setEquidistantRadialDisc(unsigned int parType)
+void GeneralRateModelDGFV::setEquidistantRadialDisc(unsigned int parType)
 {
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
@@ -2569,7 +2655,7 @@ void GeneralRateModel::setEquidistantRadialDisc(unsigned int parType)
 /**
  * @brief Computes the radial nodes in the beads in such a way that all shells have the same volume
  */
-void GeneralRateModel::setEquivolumeRadialDisc(unsigned int parType)
+void GeneralRateModelDGFV::setEquivolumeRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2651,7 +2737,7 @@ void GeneralRateModel::setEquivolumeRadialDisc(unsigned int parType)
  * @brief Computes all helper quantities for radial bead discretization from given radial cell boundaries
  * @details Calculates surface areas per volume for every shell and the radial shell centers.
  */
-void GeneralRateModel::setUserdefinedRadialDisc(unsigned int parType)
+void GeneralRateModelDGFV::setUserdefinedRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2717,7 +2803,7 @@ void GeneralRateModel::setUserdefinedRadialDisc(unsigned int parType)
 	}
 }
 
-void GeneralRateModel::updateRadialDisc()
+void GeneralRateModelDGFV::updateRadialDisc()
 {
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
 	{
@@ -2730,7 +2816,7 @@ void GeneralRateModel::updateRadialDisc()
 	}
 }
 
-bool GeneralRateModel::setParameter(const ParameterId& pId, double value)
+bool GeneralRateModelDGFV::setParameter(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2756,7 +2842,7 @@ bool GeneralRateModel::setParameter(const ParameterId& pId, double value)
 			if (pId.particleType >= _disc.nParType)
 				return false;
 
-			for (unsigned int i = 0; i < _disc.nCol; ++i)
+			for (unsigned int i = 0; i < _disc.nPoints; ++i)
 				_parTypeVolFrac[i * _disc.nParType + pId.particleType].setValue(value);
 
 			return true;
@@ -2785,7 +2871,7 @@ bool GeneralRateModel::setParameter(const ParameterId& pId, double value)
 	return result;
 }
 
-bool GeneralRateModel::setParameter(const ParameterId& pId, int value)
+bool GeneralRateModelDGFV::setParameter(const ParameterId& pId, int value)
 {
 	if ((pId.unitOperation != _unitOpIdx) && (pId.unitOperation != UnitOpIndep))
 		return false;
@@ -2796,7 +2882,7 @@ bool GeneralRateModel::setParameter(const ParameterId& pId, int value)
 	return UnitOperationBase::setParameter(pId, value);
 }
 
-bool GeneralRateModel::setParameter(const ParameterId& pId, bool value)
+bool GeneralRateModelDGFV::setParameter(const ParameterId& pId, bool value)
 {
 	if ((pId.unitOperation != _unitOpIdx) && (pId.unitOperation != UnitOpIndep))
 		return false;
@@ -2807,7 +2893,7 @@ bool GeneralRateModel::setParameter(const ParameterId& pId, bool value)
 	return UnitOperationBase::setParameter(pId, value);
 }
 
-void GeneralRateModel::setSensitiveParameterValue(const ParameterId& pId, double value)
+void GeneralRateModelDGFV::setSensitiveParameterValue(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2833,7 +2919,7 @@ void GeneralRateModel::setSensitiveParameterValue(const ParameterId& pId, double
 			if (!contains(_sensParams, &_parTypeVolFrac[pId.particleType]))
 				return;
 
-			for (unsigned int i = 0; i < _disc.nCol; ++i)
+			for (unsigned int i = 0; i < _disc.nPoints; ++i)
 				_parTypeVolFrac[i * _disc.nParType + pId.particleType].setValue(value);
 
 			return;
@@ -2860,7 +2946,7 @@ void GeneralRateModel::setSensitiveParameterValue(const ParameterId& pId, double
 		updateRadialDisc();
 }
 
-bool GeneralRateModel::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
+bool GeneralRateModelDGFV::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
@@ -2909,7 +2995,7 @@ bool GeneralRateModel::setSensitiveParameter(const ParameterId& pId, unsigned in
 
 			// Register parameter and set AD seed / direction
 			_sensParams.insert(&_parTypeVolFrac[pId.particleType]);
-			for (unsigned int i = 0; i < _disc.nCol; ++i)
+			for (unsigned int i = 0; i < _disc.nPoints; ++i)
 				_parTypeVolFrac[i * _disc.nParType + pId.particleType].setADValue(adDirection, adValue);
 
 			return true;
@@ -2957,7 +3043,7 @@ bool GeneralRateModel::setSensitiveParameter(const ParameterId& pId, unsigned in
 	return result;
 }
 
-std::unordered_map<ParameterId, double> GeneralRateModel::getAllParameterValues() const
+std::unordered_map<ParameterId, double> GeneralRateModelDGFV::getAllParameterValues() const
 {
 	std::unordered_map<ParameterId, double> data = UnitOperationBase::getAllParameterValues();
 	model::getAllParameterValues(data, _parDepSurfDiffusion, _singleParDepSurfDiffusion);
@@ -2965,7 +3051,7 @@ std::unordered_map<ParameterId, double> GeneralRateModel::getAllParameterValues(
 	return data;
 }
 
-double GeneralRateModel::getParameterDouble(const ParameterId& pId) const
+double GeneralRateModelDGFV::getParameterDouble(const ParameterId& pId) const
 {
 	double val = 0.0;
 	if (model::getParameterDouble(pId, _parDepSurfDiffusion, _singleParDepSurfDiffusion, val))
@@ -2975,7 +3061,7 @@ double GeneralRateModel::getParameterDouble(const ParameterId& pId) const
 	return UnitOperationBase::getParameterDouble(pId);
 }
 
-bool GeneralRateModel::hasParameter(const ParameterId& pId) const
+bool GeneralRateModelDGFV::hasParameter(const ParameterId& pId) const
 {
 	if (model::hasParameter(pId, _parDepSurfDiffusion, _singleParDepSurfDiffusion))
 		return true;
@@ -2983,15 +3069,14 @@ bool GeneralRateModel::hasParameter(const ParameterId& pId) const
 	return UnitOperationBase::hasParameter(pId);
 }
 
-
-int GeneralRateModel::Exporter::writeMobilePhase(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeMobilePhase(double* buffer) const
 {
 	const int blockSize = numMobilePhaseDofs();
 	std::copy_n(_idx.c(_data), blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel::Exporter::writeSolidPhase(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeSolidPhase(double* buffer) const
 {
 	int numWritten = 0;
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
@@ -3003,7 +3088,7 @@ int GeneralRateModel::Exporter::writeSolidPhase(double* buffer) const
 	return numWritten;
 }
 
-int GeneralRateModel::Exporter::writeParticleMobilePhase(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeParticleMobilePhase(double* buffer) const
 {
 	int numWritten = 0;
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
@@ -3015,12 +3100,12 @@ int GeneralRateModel::Exporter::writeParticleMobilePhase(double* buffer) const
 	return numWritten;
 }
 
-int GeneralRateModel::Exporter::writeSolidPhase(unsigned int parType, double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeSolidPhase(unsigned int parType, double* buffer) const
 {
 	cadet_assert(parType < _disc.nParType);
 
 	const unsigned int stride = _disc.nComp + _disc.strideBound[parType];
-	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType}) + _disc.nComp;
+	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{ parType }) + _disc.nComp;
 	for (unsigned int i = 0; i < _disc.nCol; ++i)
 	{
 		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
@@ -3033,12 +3118,12 @@ int GeneralRateModel::Exporter::writeSolidPhase(unsigned int parType, double* bu
 	return _disc.nCol * _disc.nParCell[parType] * _disc.strideBound[parType];
 }
 
-int GeneralRateModel::Exporter::writeParticleMobilePhase(unsigned int parType, double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeParticleMobilePhase(unsigned int parType, double* buffer) const
 {
 	cadet_assert(parType < _disc.nParType);
 
 	const unsigned int stride = _disc.nComp + _disc.strideBound[parType];
-	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType});
+	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{ parType });
 	for (unsigned int i = 0; i < _disc.nCol; ++i)
 	{
 		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
@@ -3051,60 +3136,73 @@ int GeneralRateModel::Exporter::writeParticleMobilePhase(unsigned int parType, d
 	return _disc.nCol * _disc.nParCell[parType] * _disc.nComp;
 }
 
-int GeneralRateModel::Exporter::writeParticleFlux(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeParticleFlux(double* buffer) const
 {
 	const int blockSize = numParticleFluxDofs();
 	std::copy_n(_idx.jf(_data), blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel::Exporter::writeParticleFlux(unsigned int parType, double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeParticleFlux(unsigned int parType, double* buffer) const
 {
 	const unsigned int blockSize = _disc.nComp * _disc.nCol;
 	std::copy_n(_idx.jf(_data) + blockSize * parType, blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel::Exporter::writeInlet(unsigned int port, double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeInlet(unsigned int port, double* buffer) const
 {
 	cadet_assert(port == 0);
 	std::copy_n(_data, _disc.nComp, buffer);
 	return _disc.nComp;
 }
 
-int GeneralRateModel::Exporter::writeInlet(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeInlet(double* buffer) const
 {
 	std::copy_n(_data, _disc.nComp, buffer);
 	return _disc.nComp;
 }
 
-int GeneralRateModel::Exporter::writeOutlet(unsigned int port, double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeOutlet(unsigned int port, double* buffer) const
 {
 	cadet_assert(port == 0);
 
-	if (_model._convDispOp.currentVelocity() >= 0)
-		std::copy_n(&_idx.c(_data, _disc.nCol - 1, 0), _disc.nComp, buffer);
+	if (_model._convDispOpB.forwardFlow())
+		std::copy_n(&_idx.c(_data, _disc.nPoints - 1, 0), _disc.nComp, buffer);
 	else
 		std::copy_n(&_idx.c(_data, 0, 0), _disc.nComp, buffer);
 
 	return _disc.nComp;
 }
 
-int GeneralRateModel::Exporter::writeOutlet(double* buffer) const
+int GeneralRateModelDGFV::Exporter::writeOutlet(double* buffer) const
 {
-	if (_model._convDispOp.currentVelocity() >= 0)
-		std::copy_n(&_idx.c(_data, _disc.nCol - 1, 0), _disc.nComp, buffer);
+	if (_model._convDispOpB.currentVelocity() >= 0)
+		std::copy_n(&_idx.c(_data, _disc.nPoints - 1, 0), _disc.nComp, buffer);
 	else
 		std::copy_n(&_idx.c(_data, 0, 0), _disc.nComp, buffer);
 
 	return _disc.nComp;
 }
 
+}  // namespace model
 
-void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+}  // namespace cadet
+
+
+#include "model/GeneralRateModelDGFV-InitialConditions.cpp"
+#include "model/GeneralRateModelDGFV-LinearSolver.cpp"
+
+namespace cadet
 {
-	models[GeneralRateModel::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModel(uoId); };
-	models["GRM"] = [](UnitOpIdx uoId) { return new GeneralRateModel(uoId); };
+
+namespace model
+{
+
+void registerGeneralRateModelDGFV(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+{
+	models[GeneralRateModelDGFV::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModelDGFV(uoId); };
+	models["GRM_DGFV"] = [](UnitOpIdx uoId) { return new GeneralRateModelDGFV(uoId); };
 }
 
 }  // namespace model

@@ -34,8 +34,12 @@ namespace cadet
 		void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 
 		void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerGeneralRateModelDG(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerGeneralRateModelDGFV(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerLumpedRateModelWithPoresDG(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerLumpedRateModelWithoutPoresDG(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 		void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
 #ifdef ENABLE_GRM_2D
 		void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
@@ -59,8 +63,12 @@ namespace cadet
 		model::registerInletModel(_modelCreators);
 		model::registerOutletModel(_modelCreators);
 		model::registerGeneralRateModel(_modelCreators);
+		model::registerGeneralRateModelDG(_modelCreators);
+		model::registerGeneralRateModelDGFV(_modelCreators);
 		model::registerLumpedRateModelWithPores(_modelCreators);
+		model::registerLumpedRateModelWithPoresDG(_modelCreators);
 		model::registerLumpedRateModelWithoutPores(_modelCreators);
+		model::registerLumpedRateModelWithoutPoresDG(_modelCreators);
 		model::registerCSTRModel(_modelCreators);
 
 #ifdef ENABLE_GRM_2D

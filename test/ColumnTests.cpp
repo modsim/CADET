@@ -200,6 +200,34 @@ namespace column
 			jpp.popScope();
 	}
 
+	void setDG(cadet::JsonParameterProvider& jpp, std::string basis, unsigned int polyDeg, unsigned int nCol)
+	{
+		int level = 0;
+
+		if (jpp.exists("model"))
+		{
+			jpp.pushScope("model");
+			++level;
+		}
+		if (jpp.exists("unit_000"))
+		{
+			jpp.pushScope("unit_000");
+			++level;
+		}
+
+		jpp.pushScope("discretization");
+
+		// Set discretization parameters
+		jpp.set("NCOL", static_cast<int>(nCol));
+		jpp.set("NNODES", static_cast<int>(polyDeg + 1));
+		jpp.set("POLYNOMIAL_BASIS", basis);
+
+		jpp.popScope();
+
+		for (int l = 0; l < level; ++l)
+			jpp.popScope();
+	}
+
 	void setWenoOrder(cadet::JsonParameterProvider& jpp, int order)
 	{
 		int level = 0;
@@ -344,6 +372,44 @@ namespace column
 			// Setup simulation
 			cadet::JsonParameterProvider jpp = createLinearBenchmark(dynamicBinding, false, uoType);
 			setNumAxialCells(jpp, nCol);
+			if (!forwardFlow)
+				reverseFlow(jpp);
+
+			// Run simulation
+			cadet::Driver drv;
+			drv.configure(jpp);
+			drv.run();
+
+			// Read reference data from test file
+			const std::string refFile = std::string(getTestDirectory()) + std::string(refFileRelPath);
+			ReferenceDataReader rd(refFile.c_str());
+			const std::vector<double> time = rd.time();
+			const std::vector<double> ref = (dynamicBinding ? rd.analyticDynamic() : rd.analyticQuasiStationary());
+
+			// Get data from simulation
+			cadet::InternalStorageUnitOpRecorder const* const simData = drv.solution()->unitOperation(0);
+			double const* outlet = (forwardFlow ? simData->outlet() : simData->inlet());
+
+			// Compare
+			for (unsigned int i = 0; i < simData->numDataPoints() * simData->numComponents() * simData->numInletPorts(); ++i, ++outlet)
+			{
+				// Note that the simulation only saves the chromatogram at multiples of 2 (i.e., 0s, 2s, 4s, ...)
+				// whereas the reference solution is given at every second (0s, 1s, 2s, 3s, ...)
+				// Thus, we only take the even indices of the reference array
+				CAPTURE(time[2 * i]);
+				CHECK((*outlet) == makeApprox(ref[2 * i], relTol, absTol));
+			}
+		}
+	}
+
+	void testAnalyticBenchmark_DG(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, std::string basis, unsigned int polyDeg, unsigned int nCol, double absTol, double relTol)
+	{
+		const std::string fwdStr = (forwardFlow ? "forward" : "backward");
+		SECTION("Analytic " + fwdStr + " flow with " + (dynamicBinding ? "dynamic" : "quasi-stationary") + " binding")
+		{
+			// Setup simulation
+			cadet::JsonParameterProvider jpp = createLinearBenchmark(dynamicBinding, false, uoType);
+			setDG(jpp, basis, polyDeg, nCol);
 			if (!forwardFlow)
 				reverseFlow(jpp);
 

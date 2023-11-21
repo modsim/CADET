@@ -517,7 +517,6 @@ void GeneralRateModel::addTimeDerivativeToJacobianParticleShell(linalg::Factoriz
 		_poreAccessFactor.data() + _disc.nComp * parType, _disc.strideBound[parType], _disc.boundOffset + _disc.nComp * parType, _binding[parType]->reactionQuasiStationarity());
 }
 
-
 }  // namespace model
 
 }  // namespace cadet

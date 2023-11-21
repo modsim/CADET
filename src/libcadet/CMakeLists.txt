@@ -163,6 +163,9 @@ set (LIBCADET_NONLINALG_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/nonlin/CompositeSolver.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/nonlin/Solver.cpp
 )
+if (ENABLE_DG)
+	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/BandedEigenSparseRowIterator.hpp)
+endif()
 
 if (ENABLE_GRM_2D)
 	set(LIBCADET_NONLINALG_SPARSE_SOURCES)
@@ -187,6 +190,15 @@ else()
 	set(SPARSE_INT_TYPE "int")
 endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/linalg/SparseSolverInterface.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/SparseSolverInterface.hpp" @ONLY)
+
+if (ENABLE_DG)
+	list (APPEND LIBCADET_SOURCES
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithoutPoresDG.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModelDG.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModelDGFV.cpp
+	)
+endif()
 
 # Preprocess binding and reaction models
 foreach(BM IN LISTS LIBCADET_BINDINGMODEL_SOURCES)
@@ -239,11 +251,10 @@ if (LAPACK_FOUND)
 		endif()
 	endif()
 
-
 	# Add the build target for CADET object library
 	add_library(libcadet_object OBJECT ${LIBCADET_SOURCES})
 	target_compile_definitions(libcadet_object PRIVATE libcadet_EXPORTS ${LIB_LAPACK_DEFINE})
-	target_link_libraries(libcadet_object PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET})
+	target_link_libraries(libcadet_object PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
 
 	# ---------------------------------------------------
 	#   Build the static library
@@ -251,7 +262,7 @@ if (LAPACK_FOUND)
 
 	add_library(libcadet_static STATIC $<TARGET_OBJECTS:libcadet_object>)
 	set_target_properties(libcadet_static PROPERTIES OUTPUT_NAME cadet_static)
-	target_link_libraries(libcadet_static PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET})
+	target_link_libraries(libcadet_static PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
 
 	# ---------------------------------------------------
 	#   Build the shared library
@@ -259,7 +270,7 @@ if (LAPACK_FOUND)
 
 	add_library(libcadet_shared SHARED $<TARGET_OBJECTS:libcadet_object>)
 	set_target_properties(libcadet_shared PROPERTIES OUTPUT_NAME cadet)
-	target_link_libraries (libcadet_shared PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET})
+	target_link_libraries (libcadet_shared PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
 
 	list(APPEND LIBCADET_TARGETS libcadet_nonlinalg_static libcadet_object libcadet_static libcadet_shared)
 
@@ -323,7 +334,7 @@ if (ENABLE_CADET_MEX)
 		LINK_SEARCH_END_STATIC ON
 	)
 	target_compile_definitions(libcadet_mex PRIVATE CADET_MATLABMEX MATLAB_MEX_FILE ${MATLAB_LAPACK_DEFINE} libcadet_mex_EXPORTS)
-	target_link_libraries(libcadet_mex PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_mex SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${Matlab_TBB_TARGET})
+	target_link_libraries(libcadet_mex PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_mex SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${Matlab_TBB_TARGET} ${EIGEN_TARGET})
 
 	# Enable usage of Matlab's LAPACK libs
 	if ((NOT MATLAB_USE_SYSTEM_LAPACK) AND Matlab_LAPACK_LIBRARY_FOUND)

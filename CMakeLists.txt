@@ -105,6 +105,9 @@ add_feature_info(ENABLE_DEBUG_THREADING ENABLE_DEBUG_THREADING "Use multi-thread
 option(ENABLE_GRM_2D "Build 2D general rate model" ON)
 add_feature_info(ENABLE_GRM_2D ENABLE_GRM_2D "Build 2D general rate model")
 
+option(ENABLE_DG "Build DG variants of models" ON)
+add_feature_info(ENABLE_DG ENABLE_DG "Build DG variants of models")
+
 option(ENABLE_SUNDIALS_OPENMP "Prefer OpenMP vector implementation of SUNDIALS if available (for large problems)" OFF)
 add_feature_info(ENABLE_SUNDIALS_OPENMP ENABLE_SUNDIALS_OPENMP "Prefer OpenMP vector implementation of SUNDIALS if available (for large problems)")
 
@@ -397,6 +400,19 @@ if (ENABLE_GRM_2D)
 	)
 endif()
 
+set(EIGEN_TARGET "")
+if (ENABLE_DG)
+	find_package(Eigen3 3.3)
+
+	# Disable DG if Eigen is not present
+	if (NOT TARGET Eigen3::Eigen)
+		message(STATUS "Disabling DG support because Eigen3 could not be found")
+		set(ENABLE_DG OFF)
+	else()
+		set(EIGEN_TARGET "Eigen3::Eigen")
+	endif()
+endif()
+
 if (ENABLE_CADET_MEX)
 
 	# Set Matlab_ROOT_DIR from MATLAB_ROOT environment variable
@@ -666,6 +682,15 @@ if (ENABLE_GRM_2D)
 		message("  Version ${UMFPACK_VERSION}")
 		message("  Includes ${UMFPACK_INCLUDE_DIRS}")
 		message("  Libs ${UMFPACK_LIBRARIES}")
+	endif()
+endif()
+
+if (ENABLE_DG)
+	message("Found Eigen3: ${Eigen3_FOUND}")
+	if (TARGET Eigen3::Eigen)
+		get_target_property(Eigen3_INCLUDE_DIRS Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+		message("  Version ${Eigen3_VERSION}")
+		message("  Includes ${Eigen3_INCLUDE_DIRS}")
 	endif()
 endif()
 

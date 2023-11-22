@@ -10,6 +10,8 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
+#include <iostream>
+
 #include <catch.hpp>
 #include <json.hpp>
 
@@ -31,7 +33,7 @@ namespace
 {
 	using json = nlohmann::json;
 
-	json createMCTModelJson(const std::vector<double>& crossSectionAreas, const std::vector<double>& exchangeMatrix)
+	json createMCTModelJson(const std::vector<double>& crossSectionAreas, const std::vector<double>& velocity, const std::vector<double>& exchangeMatrix)
 	{
 		json config;
 		config["UNIT_TYPE"] = "MULTI_CHANNEL_TRANSPORT";
@@ -42,6 +44,7 @@ namespace
 		// Geometry
 		config["COL_LENGTH"] = 200;
 		config["CHANNEL_CROSS_SECTION_AREAS"] = crossSectionAreas;
+		config["VELOCITY"] = velocity;
 
 		// Initial conditions
 		config["INIT_C"] = {0.0};
@@ -70,16 +73,16 @@ namespace
 		return config;
 	}
 
-	json createMCTJson(const std::vector<double>& volFlowRate, const std::vector<double>& concentrationIn, const std::vector<double>& crossSectionAreas, const std::vector<double>& exchangeMatrix)
+	json createMCTJson(const std::vector<double>& volFlowRate, const std::vector<double>& velocity, const std::vector<double>& concentrationIn, const std::vector<double>& crossSectionAreas, const std::vector<double>& exchangeMatrix)
 	{
 		json config;
 		// Model
 		{
 			json model;
 			model["NUNITS"] = 2;
-			model["unit_000"] = createMCTModelJson(crossSectionAreas, exchangeMatrix);
+			model["unit_000"] = createMCTModelJson(crossSectionAreas, velocity, exchangeMatrix);
 
-			// Inlet - unit 001
+			// Inlet - unit 001 ... unitXXX
 			for (unsigned int i = 0; i < volFlowRate.size(); ++i)
 			{
 				json inlet;
@@ -237,21 +240,19 @@ namespace
 		return config;
 	}
 
-	cadet::JsonParameterProvider createMCT(const std::vector<double>& volFlowRate, const std::vector<double>& concentrationIn, const std::vector<double>& crossSectionAreas, const std::vector<double>& exchangeMatrix)
+	cadet::JsonParameterProvider createMCT(const std::vector<double>& volFlowRate, const std::vector<double>& velocity, const std::vector<double>& concentrationIn, const std::vector<double>& crossSectionAreas, const std::vector<double>& exchangeMatrix)
 	{
-		return cadet::JsonParameterProvider(createMCTJson(volFlowRate, concentrationIn, crossSectionAreas, exchangeMatrix));
+		return cadet::JsonParameterProvider(createMCTJson(volFlowRate, velocity, concentrationIn, crossSectionAreas, exchangeMatrix));
 	}
 }
 
 TEST_CASE("MCT two channels without exchange yield same result", "[MCT],[Simulation]")
 {
-//	const double relTol = 1e-6;
-//	const double absTol = 1e-10;
 	const double relTol = 1e-10;
 	const double absTol = 1e-14;
 
 	// Setup simulation
-	cadet::JsonParameterProvider jpp = createMCT({1.0, 1.0}, {1.0, 1.0}, {1.0, 1.0}, {0.0, 0.0, 0.0, 0.0});
+	cadet::JsonParameterProvider jpp = createMCT({ 1.0, 1.0 }, {1.0, 1.0}, {1.0, 1.0}, {1.0, 1.0}, {0.0, 0.0, 0.0, 0.0});
 
 	// Run simulation
 	cadet::Driver drv;
@@ -274,20 +275,99 @@ TEST_CASE("MCT two channels without exchange yield same result", "[MCT],[Simulat
 	{
 		INFO("Time " << time[i] << " time point idx " << i);
 		CHECK(outlet[1] == cadet::test::makeApprox(outlet[0], relTol, absTol));
-
-//		const bool relativeOK = std::abs(*bwdInlet - *fwdOutlet) <= relTol * std::abs(*fwdOutlet);
-//		if (relativeOK)
-//			++numPassed;
-//		CHECK()
 	}
 }
 
-/*
-TEST_CASE("MCT LWE forward vs backward flow", "[MCT],[Simulation]")
+TEST_CASE("Two MCT's with forward/backward flow yield same result", "[MCT],[Simulation]")
 {
-	// Test all WENO orders
-	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		cadet::test::column::testWenoForwardBackward("MULTI_CHANNEL_TRANSPORT", i, 1e-9, 2e-4);
+	const double relTol = 1e-6;
+	const double absTol = 1e-10;
+
+	// Setup forward exchange simulation
+	cadet::JsonParameterProvider jppFwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.0, 0.0 });
+
+	// Run simulation
+	cadet::Driver drvFwdEx;
+	drvFwdEx.configure(jppFwdEx);
+	drvFwdEx.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const FwdExData = drvFwdEx.solution()->unitOperation(0);
+	
+	// Setup backward exchange simulation
+	cadet::JsonParameterProvider jppBwdEx = createMCT({ 1.0, 1.0 }, { -1.0, -1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.0, 0.0 });
+
+	// Run simulation
+	cadet::Driver drvBwdEx;
+	drvBwdEx.configure(jppBwdEx);
+	drvBwdEx.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const BwdExData = drvBwdEx.solution()->unitOperation(0);
+
+	const unsigned int nComp = FwdExData->numComponents();
+	const unsigned int nPorts = FwdExData->numInletPorts();
+
+	CHECK(nComp == 1);
+	CHECK(nPorts == 2);
+
+	const unsigned int nDataPoints = FwdExData->numDataPoints() * nComp * nPorts;
+	double const* const time = drvFwdEx.solution()->time();
+	double const* FwdOutlet = FwdExData->outlet();
+	double const* BwdOutlet = BwdExData->outlet();
+
+	for (int i = 0; i < FwdExData->numDataPoints(); ++i, FwdOutlet += 2, BwdOutlet += 2)
+	{
+		INFO("Time " << time[i] << " time point idx " << i);
+		CHECK(FwdOutlet[0] == cadet::test::makeApprox(BwdOutlet[0], relTol, absTol));
+		CHECK(FwdOutlet[1] == cadet::test::makeApprox(BwdOutlet[1], relTol, absTol));
+	}
+}
+
+TEST_CASE("MCT two channels with forward/backward exchange yield same output in opposite ports", "[MCT],[Simulation]")
+{
+	const double relTol = 1e-6;
+	const double absTol = 1e-10;
+
+	// Setup forward exchange simulation
+	cadet::JsonParameterProvider jppFwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.01, 0.0, 0.0 });
+
+	// Run simulation
+	cadet::Driver drvFwdEx;
+	drvFwdEx.configure(jppFwdEx);
+	drvFwdEx.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const FwdExData = drvFwdEx.solution()->unitOperation(0);
+
+	// Setup backward exchange simulation
+	cadet::JsonParameterProvider jppBwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.01, 0.0 });
+
+	// Run simulation
+	cadet::Driver drvBwdEx;
+	drvBwdEx.configure(jppBwdEx);
+	drvBwdEx.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const BwdExData = drvBwdEx.solution()->unitOperation(0);
+
+	const unsigned int nComp = FwdExData->numComponents();
+	const unsigned int nPorts = FwdExData->numInletPorts();
+
+	CHECK(nComp == 1);
+	CHECK(nPorts == 2);
+
+	const unsigned int nDataPoints = FwdExData->numDataPoints() * nComp * nPorts;
+	double const* const time = drvFwdEx.solution()->time();
+	double const* FwdOutlet = FwdExData->outlet();
+	double const* BwdOutlet = BwdExData->outlet();
+
+	for (int i = 0; i < FwdExData->numDataPoints(); ++i, FwdOutlet += 2, BwdOutlet += 2)
+	{
+		INFO("Time " << time[i] << " time point idx " << i);
+		CHECK(FwdOutlet[0] == cadet::test::makeApprox(BwdOutlet[1], relTol, absTol));
+		CHECK(FwdOutlet[1] == cadet::test::makeApprox(BwdOutlet[0], relTol, absTol));
+	}
 }
 
 TEST_CASE("MCT Jacobian forward vs backward flow", "[MCT],[UnitOp],[Residual],[Jacobian]")
@@ -356,4 +436,4 @@ TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD bulk and modifie
 {
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", true, true, true, 1e-6, 1e-14, 8e-4);
 }
-*/
+

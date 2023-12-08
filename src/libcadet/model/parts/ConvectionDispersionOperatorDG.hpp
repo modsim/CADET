@@ -21,7 +21,9 @@
 #include "ParamIdUtil.hpp"
 #include "AutoDiff.hpp"
 #include "Memory.hpp"
-#include "Weno_DG.hpp"
+#include "SmoothnessIndicator.hpp"
+#include "WenoDG.hpp"
+#include "DGSubcellLimiterFV.hpp"
 #include "SimulationTypes.hpp"
 #include <ParamReaderHelper.hpp>
 #include "linalg/BandedEigenSparseRowIterator.hpp"
@@ -120,13 +122,11 @@ namespace cadet
 				inline unsigned int nNodes() const CADET_NOEXCEPT { return _nNodes; }
 				inline unsigned int nPoints() const CADET_NOEXCEPT { return _nPoints; }
 				inline bool exactInt() const CADET_NOEXCEPT { return _exactInt; }
-				inline bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return static_cast<bool>(_OSmode); } // only zero if no oscillation suppression
+				inline bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return _calc_smoothness_indicator; }
 				inline double* smoothnessIndicator() const CADET_NOEXCEPT
 				{
-					if (_OSmode == 1)
-						return _weno.troubledCells();
-					//else if (_OSmode == 2) // todo subcell limiting
-					//	return _subcell.troubledCells();
+					if (hasSmoothnessIndicator())
+						return _troubledCells;
 					else
 						return nullptr;
 				}
@@ -187,8 +187,13 @@ namespace cadet
 
 				// non-linear oscillation prevention mechanism
 				int _OSmode; //!< oscillation suppression mode; 0 : none, 1 : WENO, 2 : Subcell limiting
+				double _maxBlending; //!< maximal blending coefficient of oscillation suppression mechanism
+				double _blendingThreshold; //!< Threshold to clip-off blending coefficient (in both directions)
 				WenoDG _weno; //!< WENO operator
-				//SucellLimiter _subcellLimiter; // todo
+				DGSubcellLimiterFV _subcellLimiter; //!< FV subcell limiting operator
+				std::unique_ptr<SmoothnessIndicator> _smoothnessIndicator; //!< smoothness/troubled-element indicator
+				double* _troubledCells; //!< troubled-element indicator values
+				bool _calc_smoothness_indicator; //!< Determines whether or not the smoothness indicator is evaluated
 
 				// Simulation parameters
 				active _colLength; //!< Column length \f$ L \f$
@@ -200,15 +205,9 @@ namespace cadet
 				active _curVelocity; //!< Current interstitial velocity \f$ u \f$ in this time section
 				int _dir; //!< Current flow direction in this time section
 
-				// needed?
+				// todo still needed?
 				int _curSection; //!< current section index
 				bool _newStaticJac; //!< determines wether static analytical jacobian needs to be computed (every section)
-
-				// todo weno
-				//ArrayPool _stencilMemory; //!< Provides memory for the stencil
-				//double* _wenoDerivatives; //!< Holds derivatives of the WENO scheme
-				//Weno _weno; //!< The WENO scheme implementation
-				//double _wenoEpsilon; //!< The @f$ \varepsilon @f$ of the WENO scheme (prevents division by zero)
 
 				bool _dispersionCompIndep; //!< Determines whether dispersion is component independent
 
@@ -570,16 +569,165 @@ namespace cadet
 					else { // collocated numerical integration -> diagonal mass matrix
 						for (unsigned int Cell = 0; Cell < _nCells; Cell++) {
 							// strong surface integral -> M^-1 B [state - state*]
-							stateDer[Cell * strideCell_stateDer] // first cell, node
+							stateDer[Cell * strideCell_stateDer] // first node
 								-= static_cast<ResidualType>(_invWeights[0]
 									* (state[Cell * strideCell_state] - _surfaceFlux(Cell)));
 
-							stateDer[Cell * strideCell_stateDer + _polyDeg * strideNode_stateDer] // last cell, node
+							stateDer[Cell * strideCell_stateDer + _polyDeg * strideNode_stateDer] // last node
 								+= static_cast<ResidualType>(_invWeights[_polyDeg]
 									* (state[Cell * strideCell_state + _polyDeg * strideNode_state] - _surfaceFlux(Cell + 1)));
 						}
 					}
 				}
+				/**
+				 * @brief calculates the subcell FV fluxes for convection and dispersion
+				 * @param [in] blending pointer to DG element-wise blending coeffcients
+				 * @param [in] _C pointer to state vector at component of interest
+				 * @param [in] stateDer pointer to residual vector at component of interest
+				 * @param [in] d_ax axial dispersion coefficient of current component
+				 */
+				template<typename StateType, typename ResidualType, typename ParamType>
+				void subcellFVconvDispIntegral(const StateType* _C, ResidualType* stateDer, ParamType d_ax)
+				{
+
+					double blending = 1.0; // no blending with DG possible for this implementation using FD approximation of dispersion
+					const StateType* localC = _C;
+					StateType upwindState = 0.0;
+					ResidualType* localStateDer = stateDer;
+					ResidualType flux = 0.0;
+					ResidualType derivative = 0.0;
+
+					bool forward = (_dir == 1);
+					// Subcell inner faces
+					for (unsigned int cell = 0; cell < _nCells; cell++, localC += _strideNode, localStateDer += _strideNode) {
+
+						for (int interface = 1; interface < _nNodes; interface++, localC += _strideNode, localStateDer += _strideNode) {
+
+							if (cell == 0 && interface == 1)
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(static_cast<StateType>(_boundary[0]), localC[0], localC[_strideNode], interface - 1, forward);
+							else if (cell == _nCells - 1 && interface == _nNodes - 1)
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[0], interface - 1, forward);
+							else
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[_strideNode], interface - 1, forward);
+
+							// Approximate derivative by central finite difference. Only central (2nd order) for N_d = 1, otherwise some weighted central. We have distance between the two points as h = 0.5 * summed cell sizes * reference element mapping
+							derivative = (localC[_strideNode] - localC[0]) / (0.5 * (_subcellLimiter.LGLweights(interface - 1) + _subcellLimiter.LGLweights(interface)) * 0.5 * static_cast<ParamType>(_deltaZ));
+
+							flux = blending * (2.0 / static_cast<ParamType>(_deltaZ)) * // blending coefficient and mapping
+								(static_cast<ParamType>(_curVelocity) * upwindState // upwind flux for convection
+									- d_ax * derivative); // central FD approximation of c_x
+
+							// add flux divided by respective cell volume. Note that mapping was already applied
+							localStateDer[0] += flux * _invWeights[interface - 1];
+							localStateDer[_strideNode] -= flux * _invWeights[interface];
+						}
+					}
+
+					// DG element faces
+					// Inlet boundary BC
+					flux = blending * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ResidualType>(_curVelocity * _boundary[0]);
+					if (_dir == 1)
+						stateDer[0] -= flux * _invWeights[0];
+					else
+						stateDer[(_nPoints - 1) * _strideNode] -= flux * _invWeights[_polyDeg];
+
+					// Inner DG element faces
+					localC = _C + _strideNode * (_nNodes - 1);
+					localStateDer = stateDer + _strideNode * (_nNodes - 1);
+
+					for (unsigned int elemFace = 1; elemFace < _nCells; elemFace++, localC += _nNodes * _strideNode, localStateDer += _nNodes * _strideNode) {
+
+						upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[_strideNode], _polyDeg, forward);
+
+						derivative = (localC[_strideNode] - localC[0]) / (0.5 * (_subcellLimiter.LGLweights(0) + _subcellLimiter.LGLweights(_polyDeg)) * 0.5 * static_cast<ParamType>(_deltaZ));
+
+						flux = blending * (2.0 / static_cast<ParamType>(_deltaZ)) *
+							(static_cast<ParamType>(_curVelocity) * upwindState // upwind flux for convection
+								- d_ax * derivative); // central FD approximation of c_x
+
+						localStateDer[0] += flux * _invWeights[_polyDeg];
+						localStateDer[_strideNode] -= flux * _invWeights[0];
+					}
+					// outlet boundary BC
+					flux = blending * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ParamType>(_curVelocity) * (_dir == 1 ? _C[_nCells * (_strideNode * _nNodes) - _strideNode] : _C[0]); // upwind flux for convection
+
+					if (_dir == 1)
+						stateDer[_nCells * (_strideNode * _nNodes) - _strideNode] += flux * _invWeights[_polyDeg];
+					else
+						stateDer[0] += flux * _invWeights[0];
+
+				}
+				/**
+				 * @brief calculates the subcell FV fluxes for convection
+				 * @detail Only inner subcell FV fluxes are computed, DG-element fluxes need to be computed elsewhere.
+				 * @param [in] blending pointer to DG element-wise blending coeffcients
+				 * @param [in] _C pointer to state vector at component of interest
+				 * @param [in] stateDer pointer to residual vector at component of interest
+				 * @param [in] d_ax axial dispersion coefficient of current component
+				 */
+				template<typename StateType, typename ResidualType, typename ParamType>
+				void subcellFVconvectionIntegral(double* blending, const StateType* _C, ResidualType* stateDer)
+				{
+					const StateType* localC = _C;
+					StateType upwindState = 0.0;
+					ResidualType* localStateDer = stateDer;
+					ResidualType flux = 0.0;
+
+					bool forward = (_dir == 1); // todo test backward flow
+					// inner subcell interfaces
+					for (unsigned int cell = 0; cell < _nCells; cell++, localC += _strideNode, localStateDer += _strideNode) {
+
+						for (int interface = 1; interface < _nNodes; interface++, localC += _strideNode, localStateDer += _strideNode) {
+
+							// upwind state for convection
+							if (cell == 0 && interface == 1)
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(static_cast<StateType>(_boundary[0]), localC[0], localC[_strideNode], interface - 1, forward);
+							else if (cell == _nCells - 1 && interface == _nNodes - 1)
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[0], interface - 1, forward);
+							else
+								upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[_strideNode], interface - 1, forward);
+
+							flux = blending[cell * _nComp] * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ParamType>(_curVelocity) * upwindState;
+
+							// add flux divided by respective cell volume. Note that mapping was already applied
+							localStateDer[0] += flux * _invWeights[interface - 1];
+							localStateDer[_strideNode] -= flux * _invWeights[interface];
+						}
+					}
+
+					/* DG element interfaces, i.e. subcell FV outer/element boundary faces */
+					// Not needed when computed in DG surface integral.
+					
+					//// Inlet boundary BC
+					//flux = troubledCells[0] * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ResidualType>(_curVelocity * _boundary[0]);
+					//if (_dir == 1)
+					//	stateDer[0] -= flux * _invWeights[0];
+					//else
+					//	stateDer[(_nPoints - 1) * _strideNode] -= flux * _invWeights[_polyDeg];
+
+					//// Inner DG element faces
+					//localC = _C + _strideNode * (_nNodes - 1);
+					//localStateDer = stateDer + _strideNode * (_nNodes - 1);
+
+					//for (unsigned int elemFace = 1; elemFace < _nCells; elemFace++, localC += _nNodes * _strideNode, localStateDer += _nNodes * _strideNode) {
+
+					//	upwindState = _subcellLimiter.reconstructedInterfaceValue<StateType>(*(localC - _strideNode), localC[0], localC[_strideNode], _polyDeg, forward);
+
+					//	flux = troubledCells[elemFace-1] * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ParamType>(_curVelocity) * upwindState;
+
+					//	localStateDer[0] += flux * _invWeights[_polyDeg];
+					//	localStateDer[_strideNode] -= flux * _invWeights[0];
+					//}
+					//// outlet boundary BC
+					//flux = troubledCells[_nCells-1] * (2.0 / static_cast<ParamType>(_deltaZ)) * static_cast<ParamType>(_curVelocity) * (_dir == 1 ? _C[_nCells * (_strideNode * _nNodes) - _strideNode] : _C[0]);
+
+					//if (_dir == 1)
+					//	stateDer[_nCells * (_strideNode * _nNodes) - _strideNode] += flux * _invWeights[_polyDeg];
+					//else
+					//	stateDer[0] += flux * _invWeights[0];
+
+				}
+
 				/**
 				 * @brief computes ghost nodes to implement boundary conditions
 				 * @detail to implement Danckwert boundary conditions, we only need to set the solid wall BC values for auxiliary variable
@@ -599,7 +747,7 @@ namespace cadet
 				/**
 				 * @brief sets the sparsity pattern of the convection dispersion Jacobian for the nodal DG scheme
 				 */
-				int ConvDispNodalPattern(std::vector<T>& tripletList, const int offC = 0) {
+				int ConvDispCollocationDGPattern(std::vector<T>& tripletList, const int offC = 0) {
 
 					/*======================================================*/
 					/*			Define Convection Jacobian Block			*/
@@ -727,7 +875,7 @@ namespace cadet
 				/**
 				* @brief sets the sparsity pattern of the convection dispersion Jacobian for the exact integration (her: modal) DG scheme
 				*/
-				int ConvDispModalPattern(std::vector<T>& tripletList, const int offC = 0) {
+				int ConvDispExIntDGPattern(std::vector<T>& tripletList, const int offC = 0) {
 
 					/*======================================================*/
 					/*			Define Convection Jacobian Block			*/

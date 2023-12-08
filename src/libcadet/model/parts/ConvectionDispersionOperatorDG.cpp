@@ -17,8 +17,6 @@
 #include "ParamReaderHelper.hpp"
 #include "AdUtils.hpp"
 #include "SimulationTypes.hpp"
-//#include "model/parts/AxialConvectionDispersionKernelDG.hpp" // todo radial flow DG and outsource residual implementation to kernel
-//#include "model/parts/RadialConvectionDispersionKernelDG.hpp"
 #include "model/ParameterDependence.hpp"
 #include "SensParamUtil.hpp"
 #include "ConfigurationHelper.hpp"
@@ -125,12 +123,68 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 
 	paramProvider.pushScope("discretization");
 	_OSmode = 0;
+	_maxBlending = 1.0;
+	_blendingThreshold = 0.0;
+	_troubledCells = nullptr;
+
 	// Read oscillation suppression settings and apply them
 	if (paramProvider.exists("oscillation_suppression")) {
 
 		paramProvider.pushScope("oscillation_suppression");
 
-		 std::string osMethod = paramProvider.getString("METHOD");
+		/* Configure smoothness/troubled cell indicator, i.e. shock detection */
+
+		const bool write_smoothness_indicator = paramProvider.exists("RETURN_SMOOTHNESS_INDICATOR") ? static_cast<bool>(paramProvider.getInt("RETURN_SMOOTHNESS_INDICATOR")) : false;
+		if (write_smoothness_indicator)
+		{
+			_troubledCells = new double[nCells * nComp];
+			std::fill(_troubledCells, _troubledCells + nCells * nComp, 0.0);
+		}
+
+		std::string smoothness_indicator = paramProvider.exists("SMOOTHNESS_INDICATOR") ? paramProvider.getString("SMOOTHNESS_INDICATOR") : "MODAL_ENERGY_LEGENDRE";
+
+		if (smoothness_indicator == "MODAL_ENERGY_LEGENDRE" || smoothness_indicator == "MODAL_ENERGY_LEGENDRE_HARD_SWITCH")
+		{
+			_blendingThreshold = paramProvider.exists("BLENDING_THRESHOLD") ? paramProvider.getDouble("BLENDING_THRESHOLD") : 0.0; // 0.01; // todo default value
+			if (_blendingThreshold < 0.0 || _blendingThreshold > 1.0)
+				throw InvalidParameterException("Blending threshold must be >= 0.0 and <= 1.0, but was specified as " + std::to_string(_blendingThreshold));
+
+			double nodalCoefThreshold = paramProvider.exists("NODAL_COEFFICIENT_THRESHOLD") ? paramProvider.getDouble("NODAL_COEFFICIENT_THRESHOLD") : 0.0; // 1e-12; // todo default value
+			double nodalCoefShift = paramProvider.exists("NODAL_COEFFICIENT_SHIFT") ? paramProvider.getDouble("NODAL_COEFFICIENT_SHIFT") : 0.0; // 0.1; // todo default value
+			int numModes = paramProvider.exists("NUM_MODES") ? paramProvider.getInt("NUM_MODES") : 2; // todo default value
+			if (numModes != 1 && numModes != 2)
+				throw InvalidParameterException("Number of modes to compare modal energy must be 1 or 2, but was specified as " + std::to_string(numModes));
+
+			double timeRelaxation = paramProvider.exists("TIME_RELAXATION") ? paramProvider.getDouble("TIME_RELAXATION") : 0.0; // todo default value (0.7 was chosen in https://doi.org/10.1016/j.jcp.2021.110580)
+			
+			if (smoothness_indicator == "MODAL_ENERGY_LEGENDRE")
+				_smoothnessIndicator = std::make_unique<ModalEnergyIndicator>(_polyDeg, getVandermonde_LEGENDRE().inverse(), numModes, nodalCoefThreshold, nodalCoefShift, timeRelaxation);
+			else if (smoothness_indicator == "MODAL_ENERGY_LEGENDRE_HARD_SWITCH")
+			{
+				if (paramProvider.exists("FV_SWITCH_AT"))
+				{
+					double FVswitchAt = paramProvider.getDouble("FV_SWITCH_AT");
+					_smoothnessIndicator = std::make_unique<ModalEnergyIndicatorHardSwitch>(_polyDeg, getVandermonde_LEGENDRE().inverse(), numModes, nodalCoefThreshold, nodalCoefShift, timeRelaxation, FVswitchAt);
+				}
+				else
+					throw InvalidParameterException("Field FV_SWITCH_AT must be specifiec for MODAL_ENERGY_LEGENDRE_HARD_SWITCH smoothness indicator");
+			}
+		}
+		else if (smoothness_indicator == "SLOPE_LIMITER")
+		{
+			const std::string limiter = paramProvider.exists("INDICATOR_LIMITER") ? paramProvider.getString("INDICATOR_LIMITER") : "MINMOD"; // todo choose default
+			// todo time relaxation not required for this indicator (either 1 or zero) ?
+			//double timeRelaxation = paramProvider.exists("TIME_RELAXATION") ? paramProvider.getDouble("TIME_RELAXATION") : 0.0; // todo default value (0.7 was chosen in https://doi.org/10.1016/j.jcp.2021.110580)
+			double timeRelaxation = 0.0;
+			// note that deltaZ is set in configure()
+			_smoothnessIndicator = std::make_unique<SlopeIndicator>(_polyDeg, _nCells, 0.0, _invWeights.cwiseInverse(), _polyDerM, limiter, timeRelaxation);
+		}
+		else if (smoothness_indicator == "ALL_ELEMENTS")
+			_smoothnessIndicator = std::make_unique<AllElementsIndicator>();
+		else
+			throw InvalidParameterException("Unknown smoothness indicator " + smoothness_indicator);
+
+		std::string osMethod = paramProvider.getString("METHOD");
 
 		 if (osMethod == "WENO")
 		 {
@@ -140,25 +194,49 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 			 double eps = paramProvider.exists("WENO_EPS") ? paramProvider.getDouble("WENO_EPS") : 1e-6;
 			 double r = paramProvider.exists("WENO_R") ? paramProvider.getDouble("WENO_R") : 2.0;
 			 double gamma = paramProvider.exists("WENO_GAMMA") ? paramProvider.getDouble("WENO_GAMMA") : 0.998;
-			 bool write_smoothness_indicator = paramProvider.exists("RETURN_SMOOTHNESS_INDICATOR") ? static_cast<bool>(paramProvider.getInt("RETURN_SMOOTHNESS_INDICATOR")) : false;
 
-			 _weno.init(eps, r, gamma, _nCells, _nComp, write_smoothness_indicator);
+			 std::string limiter = paramProvider.exists("WENO_LIMITER") ? paramProvider.getString("WENO_LIMITER") : "MINMOD";
+
+			 _weno.init(limiter, eps, r, gamma, &_invWeights[0], _polyDerM, _nCells, _nNodes, _nComp);
 		 }
-		 else if (osMethod == "SUBCELL_LIMITING")
+		 else if (osMethod == "SUBCELL_FV_LIMITING" || osMethod == "SUBCELL_FV")
 		 {
-			 LOG(Debug) << "Subcell limiting used as oscillation suppression mechanism.";
+			 if (osMethod == "SUBCELL_FV_LIMITING") {
+				 LOG(Debug) << "Subcell FV limiting used as oscillation suppression mechanism for advection.";
+				 _OSmode = 2;
+			 }
+			 else if (osMethod == "SUBCELL_FV") {
+				 LOG(Debug) << "Subcell FV for advection and dispersion used on DG grid.";
+				 _OSmode = 4;
+			 }
 
-			 _OSmode = 2;
-			 int order = paramProvider.getInt("FV_ORDER");
-			 //  @TODO Subcell limiting
-			 throw InvalidParameterException("Oscillation suppression mechanism " + osMethod + " not implemented yet");
+			 const int _FVorder = paramProvider.exists("SUBCELL_FV_ORDER") ? paramProvider.getInt("SUBCELL_FV_ORDER") : 1; // todo choose default
+			 if (_FVorder <= 0)
+				 throw InvalidParameterException("Subcell FV order must be > 0, but was specified as " + std::to_string(_FVorder));
 
+			 _maxBlending = paramProvider.exists("SUBCELL_FV_MAX_BLENDING") ? paramProvider.getDouble("SUBCELL_FV_MAX_BLENDING") : 1.0; // todo choose default
+			 if(_maxBlending < 0.0 || _maxBlending > 1.0)
+				 throw InvalidParameterException("Low order blending factor must be >= 0.0 and <= 1.0, but was specified as " + std::to_string(_maxBlending));
+
+			 const std::string limiter = paramProvider.exists("SUBCELL_FV_LIMITER") ? paramProvider.getString("SUBCELL_FV_LIMITER") : "MINMOD"; // todo choose default
+
+			 const int _FVboundaryTreatment = paramProvider.exists("SUBCELL_FV_BOUNDARY_TREATMENT") ? paramProvider.getInt("SUBCELL_FV_BOUNDARY_TREATMENT") : 0; // todo choose default
+
+			 _subcellLimiter.init(limiter, _FVorder, _FVboundaryTreatment, _nNodes, &_nodes[0], &_invWeights[0], _nCells, _nComp);
 		 }
 		 else if (osMethod != "NONE")
 			throw InvalidParameterException("Unknown oscillation suppression mechanism " + osMethod + " in oscillation_suppression_mode");
 
+		 _calc_smoothness_indicator = write_smoothness_indicator || (_OSmode != 0 && _OSmode != 4);
+
 		paramProvider.popScope();
 	}
+	else
+	{
+		_smoothnessIndicator = nullptr;
+		_calc_smoothness_indicator = false;
+	}
+
 	paramProvider.popScope();
 
 	return true;
@@ -177,6 +255,10 @@ bool AxialConvectionDispersionOperatorBaseDG::configure(UnitOpIdx unitOpIdx, IPa
 	// Read geometry parameters
 	_colLength = paramProvider.getDouble("COL_LENGTH");
 	_deltaZ = _colLength / _nCells;
+	if (_OSmode == 1)
+		_weno.setDeltaZ(_deltaZ);
+	if (_OSmode)
+		_smoothnessIndicator->configure(paramProvider);
 
 	/* compute dispersion jacobian blocks(without parameters except element spacing, i.e. static entries) */
 	// we only need unique dispersion blocks, which are given by cells 1, 2, nCol for inexact integration DG and by cells 1, 2, 3, nCol-1, nCol for eaxct integration DG
@@ -322,6 +404,8 @@ bool AxialConvectionDispersionOperatorBaseDG::notifyDiscontinuousSectionTransiti
 			_curVelocity *= -1.0;
 	}
 
+	_subcellLimiter.notifyDiscontinuousSectionTransition(_dir);
+
 	// Remaining case: _velocity is empty and _crossSection <= 0.0
 	// _curVelocity is goverend by network flow rate provided in setFlowRates().
 	// Direction never changes (always forward, that is, _dir = 1)-
@@ -422,41 +506,36 @@ int AxialConvectionDispersionOperatorBaseDG::residualImpl(const IModel& model, d
 {
 	for (unsigned int comp = 0; comp < _nComp; comp++) {
 
-		// create Eigen objects
+		_boundary[0] = y[comp]; // copy inlet DOFs to ghost node
+
+		// Create Eigen objects
 		Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> _C(y + offsetC() + comp, _nPoints, InnerStride<Dynamic>(_strideNode));
 		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _resC(res + offsetC() + comp, _nPoints, InnerStride<Dynamic>(_strideNode));
 		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _h(reinterpret_cast<ResidualType*>(_subsState), _nPoints, InnerStride<>(1));
 		Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g(reinterpret_cast<StateType*>(_auxState), _nPoints, InnerStride<>(1));
 
-		////ResidualType _pAvg0 = reinterpret_cast<ResidualType>(_weno._pAvg0);
-		////ResidualType _pAvg1 = reinterpret_cast<ResidualType>(_weno._pAvg1);
-		////ResidualType _pAvg2 = reinterpret_cast<ResidualType>(_weno._pAvg2);
+		// Calculate smoothness indicator if oscillation suppression is active
+		if (_calc_smoothness_indicator)
+		{
+			double oldIndicator = 0.0;
 
-		//// calculate smoothness indicator, if oscillation suppression is active
-		//if (_OSmode != 0)
-		//{
-		//	if (_OSmode == 1) // WENO
-		//	{
-		//		for (unsigned int cell = 0; cell < _nCells; cell++)
-		//		{
-		//			if (cell > 0 && cell < _nCells - 1) // todo boundary treatment
-		//			{
-		//				// todo store weights additionally to inverse
-		//				// todo overwrite values instead of recalculation
-		//				_weno._pAvg0 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment((cell - 1) * _nNodes, _nNodes).array()).sum();
-		//				_weno._pAvg1 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment(cell       * _nNodes, _nNodes).array()).sum();
-		//				_weno._pAvg2 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment((cell + 1) * _nNodes, _nNodes).array()).sum();
+			for (unsigned int cell = 0; cell < _nCells; cell++)
+			{
+				oldIndicator = _troubledCells[comp + cell * _nComp];
 
-
-		//				// mark troubled cell
-		//				if (true)
-		//				{
-		//					int hm = 0;
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
+				_troubledCells[comp + cell * _nComp] = std::min(_maxBlending, _smoothnessIndicator->calcSmoothness(y + offsetC() + comp + cell * _strideCell, _strideNode, _nComp, cell));
+				if (_troubledCells[comp + cell * _nComp] < _blendingThreshold)
+					_troubledCells[comp + cell * _nComp] = 0.0;
+				else if (1.0 - _troubledCells[comp + cell * _nComp] < _blendingThreshold)
+					_troubledCells[comp + cell * _nComp] = 1.0;
+				else if (_smoothnessIndicator->timeRelaxation()) // note: 0.0 <-> no time relaxation
+					_troubledCells[comp + cell * _nComp] = std::max(_smoothnessIndicator->timeRelaxation() * oldIndicator, _troubledCells[comp + cell * _nComp]);
+			}
+			//if (_OSmode == 1) // WENO
+			//{
+			//	// todo: calculate and store reconstructed polynomial in h, calculate g from h and then set h = 2.0 / deltaZ * (-u * h + d_ax * (-2.0 / deltaZ) * g);
+			//}
+		}
 
 		// Add time derivative to bulk residual
 		if (yDot)
@@ -470,48 +549,73 @@ int AxialConvectionDispersionOperatorBaseDG::residualImpl(const IModel& model, d
 		const ParamType u = static_cast<ParamType>(_curVelocity);
 		const ParamType d_ax = static_cast<ParamType>(getSectionDependentSlice(_colDispersion, _nComp, secIdx)[comp]);
 
+		double DGblending = 1.0 - _maxBlending;
+
+		if (_OSmode == 2 && _maxBlending > 0.0) // Element-wise  lower order subcell FV blending for advection, treat dispersion with high order DG.
+			subcellFVconvectionIntegral<StateType, ResidualType, ParamType>(_troubledCells + comp, y + offsetC() + comp, res + offsetC() + comp);
+		// else if (_OSmode == 3) // todo ? subcell limiting with subelement-wise blending
+
+		else if (_OSmode == 4) // Subcell FV for both, advection and dispersion and without blending, i.e. pure FV // todo enable blending? -> ensure mass conservation for dispersive flux across DG elements
+		{
+			subcellFVconvDispIntegral<StateType, ResidualType, ParamType>(y + offsetC() + comp, res + offsetC() + comp, d_ax);
+			continue;
+		}
+
 		// ===================================//
-		// reset cache                        //
+		// Reset cache                        //
 		// ===================================//
 
 		_h.setZero();
 		_g.setZero();
-		_boundary[0] = y[comp]; // copy inlet DOFs to ghost node
 
-		// ======================================//
-		// solve auxiliary system g = d c / d x  //
-		// ======================================//
+		// ========================================//
+		// Compute auxiliary system g = d c / d x  //
+		// ========================================//
 
-		 // DG volume integral in strong form
+		// DG volume integral in strong form
 		volumeIntegral<StateType, StateType>(_C, _g);
 
-		// calculate numerical flux values c*
+		// Calculate numerical flux values c*
 		InterfaceFluxAuxiliary<StateType>(y + offsetC() + comp, _strideNode, _strideCell);
 
 		// DG surface integral in strong form
-		surfaceIntegral<StateType, StateType>(y + offsetC() + comp, &_g[0], _strideNode, _strideCell, 1u, _nNodes);
+		surfaceIntegral<StateType, StateType>(y + offsetC() + comp, reinterpret_cast<StateType*>(&_g[0]), _strideNode, _strideCell, 1u, _nNodes);
 
-		// ======================================//
-		// solve main equation RHS  d h / d x    //
-		// ======================================//
+		// ========================================//
+		// Compute main equation RHS  d h / d x    //
+		// ========================================//
 
-		// calculate the substitute h(g(c), c) and apply inverse mapping jacobian (reference space)
-		_h = 2.0 / static_cast<ParamType>(_deltaZ) * (-u * _C + d_ax * (-2.0 / static_cast<ParamType>(_deltaZ)) * _g).template cast<ResidualType>();
+		// Calculate the substitute h(g(c), c) and apply inverse mapping jacobian (reference space)
+		if (_OSmode != 0)
+		{
+			if (DGblending < 1.0)
+			{
+				for (int cell = 0; cell < _nCells; cell++)
+					_h.segment(cell * _nNodes, _nNodes) = 2.0 / static_cast<ParamType>(_deltaZ) * (-u * _C.segment(cell * _nNodes, _nNodes) * (1.0 - _troubledCells[comp + cell * _nComp])).template cast<ResidualType>();
+				_h += (2.0 / static_cast<ParamType>(_deltaZ) * d_ax * (-2.0 / static_cast<ParamType>(_deltaZ)) * _g).template cast<ResidualType>();
+			}
+			else
+				_h = 2.0 / static_cast<ParamType>(_deltaZ) * (-u * _C * DGblending + d_ax * (-2.0 / static_cast<ParamType>(_deltaZ)) * _g).template cast<ResidualType>();
+		}
+		else
+			_h = 2.0 / static_cast<ParamType>(_deltaZ) * (-u * _C + d_ax * (-2.0 / static_cast<ParamType>(_deltaZ)) * _g).template cast<ResidualType>();
 
 		// DG volume integral in strong form
 		volumeIntegral<ResidualType, ResidualType>(_h, _resC);
 
-		// update boundary values for auxiliary variable g (solid wall)
+		// Update boundary values for auxiliary variable g (solid wall)
 		calcBoundaryValues<StateType>();
 
-		// calculate numerical flux values h*
+		// Calculate numerical flux values h*
 		InterfaceFlux<StateType, ParamType>(y + offsetC() + comp, d_ax);
 
-		// DG surface integral in strong form
-		surfaceIntegral<ResidualType, ResidualType>(&_h[0], res + offsetC() + comp,
-			1u, _nNodes, _strideNode, _strideCell);
-	}
+		// By leaving the following out, the surface integral computes B (h^* - \hat{h}) with \hat{h} = h - \alpha u c, i.e. \hat{h} equals the substitute h minus the subcell (convection) part.
+		// This way we can leave out any interface flux computations at DG-element boundaries in the subcell FV scheme.
+		// _h += 2.0 / static_cast<ParamType>(_deltaZ) * (-u * _C * FVblending).template cast<ResidualType>();
 
+		// DG surface integral in strong form
+		surfaceIntegral<ResidualType, ResidualType>(&_h[0], res + offsetC() + comp, 1u, _nNodes, _strideNode, _strideCell);
+	}
 	return 0;
 }
 /**
@@ -555,9 +659,9 @@ unsigned int AxialConvectionDispersionOperatorBaseDG::nConvDispEntries(bool pure
 void model::parts::AxialConvectionDispersionOperatorBaseDG::convDispJacPattern(std::vector<T>& tripletList, const int bulkOffset)
 {
 	if (_exactInt)
-		ConvDispModalPattern(tripletList, bulkOffset);
+		ConvDispExIntDGPattern(tripletList, bulkOffset);
 	else
-		ConvDispNodalPattern(tripletList, bulkOffset);
+		ConvDispCollocationDGPattern(tripletList, bulkOffset);
 }
 /**
  * @brief Multiplies the time derivative Jacobian @f$ \frac{\partial F}{\partial \dot{y}}\left(t, y, \dot{y}\right) @f$ with a given vector

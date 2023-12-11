@@ -115,7 +115,7 @@ Multichannel Transport model (MCT model)
 
    **Unit:** :math:`\mathrm{s}^{-1}`
 
-   Ordered list containing all exchange rates :math:`e_{ij}` from compartment :math:`i` to :math:`j` based on the exchange matrix :math:`E`. One row after the other is noted in the list. 
+   Ordered list containing all exchange rates :math:`e_{ij}` from compartment :math:`i` to :math:`j` based on the exchange matrix :math:`E` for each component. 
 
    .. math::
     
@@ -127,7 +127,7 @@ Multichannel Transport model (MCT model)
     \end{bmatrix}    
 
    ================  ========================  ===============================================
-   **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\texttt{NCHANNEL}*\texttt{NCHANNEL}`
+   **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\texttt{NCHANNEL}*\texttt{NCHANNEL}*\texttt{NCOMP}`
    ================  ========================  ===============================================
 
 ``NCOL``

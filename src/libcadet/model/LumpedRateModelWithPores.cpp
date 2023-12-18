@@ -1762,16 +1762,18 @@ namespace model
 template class LumpedRateModelWithPores<parts::AxialConvectionDispersionOperator>;
 template class LumpedRateModelWithPores<parts::RadialConvectionDispersionOperator>;
 
-void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+IUnitOperation* createAxialFVLRMP(UnitOpIdx uoId)
 {
 	typedef LumpedRateModelWithPores<parts::AxialConvectionDispersionOperator> AxialLRMP;
+
+	return new AxialLRMP(uoId);
+}
+
+IUnitOperation* createRadialFVLRMP(UnitOpIdx uoId)
+{
 	typedef LumpedRateModelWithPores<parts::RadialConvectionDispersionOperator> RadialLRMP;
 
-	models[AxialLRMP::identifier()] = [](UnitOpIdx uoId) { return new AxialLRMP(uoId); };
-	models["LRMP"] = [](UnitOpIdx uoId) { return new AxialLRMP(uoId); };
-
-	models[RadialLRMP::identifier()] = [](UnitOpIdx uoId) { return new RadialLRMP(uoId); };
-	models["RLRMP"] = [](UnitOpIdx uoId) { return new RadialLRMP(uoId); };
+	return new RadialLRMP(uoId);
 }
 
 }  // namespace model

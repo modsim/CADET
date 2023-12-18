@@ -98,19 +98,33 @@ namespace cadet
 
 			paramProvider.pushScope("discretization");
 
-			const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
-			_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
-
+			if (paramProvider.exists("POLYDEG"))
+				_disc.polyDeg = paramProvider.getInt("POLYDEG");
+			else
+				_disc.polyDeg = 4u; // default value
 			if (paramProvider.getInt("POLYDEG") < 1)
 				throw InvalidParameterException("Polynomial degree must be at least 1!");
-			_disc.polyDeg = paramProvider.getInt("POLYDEG");
-			_disc.nNodes = _disc.polyDeg + 1u;
+			else if (_disc.polyDeg < 3)
+				LOG(Warning) << "Polynomial degree > 2 in bulk discretization (cf. POLYDEG) is always recommended for performance reasons.";
 
-			if (paramProvider.getInt("NCOL") < 1)
-				throw InvalidParameterException("Number of column cells must be at least 1!");
-			_disc.nCol = paramProvider.getInt("NCOL");
+			_disc.nNodes = _disc.polyDeg + 1;
+
+			if (paramProvider.exists("NELEM"))
+				_disc.nCol = paramProvider.getInt("NELEM");
+			else if (paramProvider.exists("NCOL"))
+				_disc.nCol = std::max(1u, paramProvider.getInt("NCOL") / _disc.nNodes); // number of elements is rounded down
+			else
+				throw InvalidParameterException("Specify field NELEM (or NCOL)");
+
+			if (_disc.nCol < 1)
+				throw InvalidParameterException("Number of column elements must be at least 1!");
 
 			_disc.nPoints = _disc.nNodes * _disc.nCol;
+
+			int polynomial_integration_mode = 0;
+			if (paramProvider.exists("EXACT_INTEGRATION"))
+				polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+			_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 			const std::vector<int> nBound = paramProvider.getIntArray("NBOUND");
 			if (nBound.size() < _disc.nComp)
@@ -1870,13 +1884,6 @@ namespace cadet
 				std::copy_n(&_idx.c(_data, 0, 0), _disc.nComp, buffer);
 
 			return _disc.nComp;
-		}
-
-		void registerLumpedRateModelWithoutPoresDG(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
-		{
-			models[LumpedRateModelWithoutPoresDG::identifier()] = [](UnitOpIdx uoId) { return new LumpedRateModelWithoutPoresDG(uoId); };
-			models["LRM_DG"] = [](UnitOpIdx uoId) { return new LumpedRateModelWithoutPoresDG(uoId); };
-			models["DPFR_DG"] = [](UnitOpIdx uoId) { return new LumpedRateModelWithoutPoresDG(uoId); };
 		}
 
 	}  // namespace model

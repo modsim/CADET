@@ -3180,16 +3180,18 @@ namespace model
 template class GeneralRateModel<parts::AxialConvectionDispersionOperator>;
 template class GeneralRateModel<parts::RadialConvectionDispersionOperator>;
 
-void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+IUnitOperation* createAxialFVGRM(UnitOpIdx uoId)
 {
 	typedef GeneralRateModel<parts::AxialConvectionDispersionOperator> AxialGRM;
+
+	return new AxialGRM(uoId);
+}
+
+IUnitOperation* createRadialFVGRM(UnitOpIdx uoId)
+{
 	typedef GeneralRateModel<parts::RadialConvectionDispersionOperator> RadialGRM;
 
-	models[AxialGRM::identifier()] = [](UnitOpIdx uoId) { return new AxialGRM(uoId); };
-	models["GRM"] = [](UnitOpIdx uoId) { return new AxialGRM(uoId); };
-
-	models[RadialGRM::identifier()] = [](UnitOpIdx uoId) { return new RadialGRM(uoId); };
-	models["RGRM"] = [](UnitOpIdx uoId) { return new RadialGRM(uoId); };
+	return new RadialGRM(uoId);
 }
 
 }  // namespace model

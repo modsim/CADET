@@ -103,18 +103,32 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 
 	paramProvider.pushScope("discretization");
 
-	if (paramProvider.getInt("NCOL") < 1)
-		throw InvalidParameterException("Number of column cells must be at least 1!");
-	_disc.nCol = paramProvider.getInt("NCOL");
-
+	if (paramProvider.exists("POLYDEG"))
+		_disc.polyDeg = paramProvider.getInt("POLYDEG");
+	else
+		_disc.polyDeg = 4u; // default value
 	if (paramProvider.getInt("POLYDEG") < 1)
 		throw InvalidParameterException("Polynomial degree must be at least 1!");
-	else
-		_disc.polyDeg = paramProvider.getInt("POLYDEG");
+	else if (_disc.polyDeg < 3)
+		LOG(Warning) << "Polynomial degree > 2 in bulk discretization (cf. POLYDEG) is always recommended for performance reasons.";
+
 	_disc.nNodes = _disc.polyDeg + 1;
+
+	if (paramProvider.exists("NELEM"))
+		_disc.nCol = paramProvider.getInt("NELEM");
+	else if (paramProvider.exists("NCOL"))
+		_disc.nCol = std::max(1u, paramProvider.getInt("NCOL") / _disc.nNodes); // number of elements is rounded down
+	else
+		throw InvalidParameterException("Specify field NELEM (or NCOL)");
+
+	if (_disc.nCol < 1)
+		throw InvalidParameterException("Number of column elements must be at least 1!");
+
 	_disc.nPoints = _disc.nNodes * _disc.nCol;
 
-	const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+	int polynomial_integration_mode = 0;
+	if(paramProvider.exists("EXACT_INTEGRATION"))
+		polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
 	_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 	const std::vector<int> nBound = paramProvider.getIntArray("NBOUND");
@@ -1508,22 +1522,5 @@ int LumpedRateModelWithPoresDG::Exporter::writeOutlet(double* buffer) const
 
 }  // namespace cadet
 
-
 #include "model/LumpedRateModelWithPoresDG-InitialConditions.cpp"
 #include "model/LumpedRateModelWithPoresDG-LinearSolver.cpp"
-
-namespace cadet
-{
-
-namespace model
-{
-
-void registerLumpedRateModelWithPoresDG(std::unordered_map<std::string, std::function<IUnitOperation* (UnitOpIdx)>>& models)
-{
-	models[LumpedRateModelWithPoresDG::identifier()] = [](UnitOpIdx uoId) { return new LumpedRateModelWithPoresDG(uoId); };
-	models["LRMPDG"] = [](UnitOpIdx uoId) { return new LumpedRateModelWithPoresDG(uoId); };
-}
-
-}  // namespace model
-
-}  // namespace cadet

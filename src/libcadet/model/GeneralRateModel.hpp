@@ -520,6 +520,9 @@ protected:
 extern template class GeneralRateModel<parts::AxialConvectionDispersionOperator>;
 extern template class GeneralRateModel<parts::RadialConvectionDispersionOperator>;
 
+IUnitOperation* createAxialFVGRM(UnitOpIdx uoId);
+IUnitOperation* createRadialFVGRM(UnitOpIdx uoId);
+
 } // namespace model
 } // namespace cadet
 

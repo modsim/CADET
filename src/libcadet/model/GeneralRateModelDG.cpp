@@ -134,95 +134,106 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 
 	paramProvider.pushScope("discretization");
 
-	_disc.nCol = paramProvider.getInt("NCOL");
-	if (_disc.nCol < 1)
-		throw InvalidParameterException("Number of column cells must be at least 1!");
-
+	if (paramProvider.exists("POLYDEG"))
+		_disc.polyDeg = paramProvider.getInt("POLYDEG");
+	else
+		_disc.polyDeg = 4u; // default value
 	if (paramProvider.getInt("POLYDEG") < 1)
 		throw InvalidParameterException("Polynomial degree must be at least 1!");
-	else
-		_disc.polyDeg = paramProvider.getInt("POLYDEG");
-
-	if (_disc.polyDeg < 3)
+	else if (_disc.polyDeg < 3)
 		LOG(Warning) << "Polynomial degree > 2 in bulk discretization (cf. POLYDEG) is always recommended for performance reasons.";
-	_disc.nNodes = _disc.polyDeg + 1u;
-	_disc.nPoints = _disc.nNodes * _disc.nCol;
-	const int polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
-	_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
-	const std::vector<int> nParCell = paramProvider.getIntArray("NPARCELL");
-	const std::vector<int> parPolyDeg = paramProvider.getIntArray("PARPOLYDEG");
-	const std::vector<bool> parExactInt = paramProvider.getBoolArray("PAR_EXACT_INTEGRATION");
+	_disc.nNodes = _disc.polyDeg + 1;
+
+	if (paramProvider.exists("NELEM"))
+		_disc.nCol = paramProvider.getInt("NELEM");
+	else if (paramProvider.exists("NCOL"))
+		_disc.nCol = std::max(1u, paramProvider.getInt("NCOL") / _disc.nNodes); // number of elements is rounded down
+	else
+		throw InvalidParameterException("Specify field NELEM (or NCOL)");
+
+	if (_disc.nCol < 1)
+		throw InvalidParameterException("Number of column elements must be at least 1!");
+
+	_disc.nPoints = _disc.nNodes * _disc.nCol;
+
+	int polynomial_integration_mode = 0;
+	if (paramProvider.exists("EXACT_INTEGRATION"))
+		polynomial_integration_mode = paramProvider.getInt("EXACT_INTEGRATION");
+	_disc.exactInt = static_cast<bool>(polynomial_integration_mode); // only integration mode 0 applies the inexact collocated diagonal LGL mass matrix
 
 	const std::vector<int> nBound = paramProvider.getIntArray("NBOUND");
 	if (nBound.size() < _disc.nComp)
 		throw InvalidParameterException("Field NBOUND contains too few elements (NCOMP = " + std::to_string(_disc.nComp) + " required)");
+	if ((nBound.size() > _disc.nComp) && (nBound.size() < _disc.nComp * _disc.nParType))
+		throw InvalidParameterException("Field NBOUND must have NCOMP (" + std::to_string(_disc.nComp) + ") or NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ") entries");
 
 	if (paramProvider.exists("NPARTYPE"))
 		_disc.nParType = paramProvider.getInt("NPARTYPE");
-	else
-	{
-		// Infer number of particle types
-		_disc.nParType = std::max({ nBound.size() / _disc.nComp, nParCell.size(), parPolyDeg.size(), parExactInt.size() });
-	}
+	else // Infer number of particle types
+		_disc.nParType = nBound.size() / _disc.nComp;
 
-	if ((parExactInt.size() > 1) && (parExactInt.size() < _disc.nParType))
-		throw InvalidParameterException("Field PAR_EXACT_INTEGRATION must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
-	if ((nParCell.size() > 1) && (nParCell.size() < _disc.nParType))
-		throw InvalidParameterException("Field NPARCELL must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
-	if ((parPolyDeg.size() > 1) && (parPolyDeg.size() < _disc.nParType))
-		throw InvalidParameterException("Field PARPOLYDEG must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
-
-	_disc.nParCell = new unsigned int[_disc.nParType];
-	if (nParCell.size() < _disc.nParType)
-	{
-		// Multiplex number of particle cells to all particle types
-		for (unsigned int i = 0; i < _disc.nParType; ++i)
-			std::fill(_disc.nParCell, _disc.nParCell + _disc.nParType, nParCell[0]);
-	}
-	else
-		std::copy_n(nParCell.begin(), _disc.nParType, _disc.nParCell);
-
+	std::vector<int> parPolyDeg(_disc.nParType);
+	std::vector<int> ParNelem(_disc.nParType);
+	std::vector<bool> parExactInt(_disc.nParType);
 	_disc.parPolyDeg = new unsigned int[_disc.nParType];
-	if (parPolyDeg.size() < _disc.nParType)
+	_disc.nParCell = new unsigned int[_disc.nParType];
+	_disc.parExactInt = new bool[_disc.nParType];
+
+	if (paramProvider.exists("PAR_POLYDEG"))
 	{
-		if (parPolyDeg[0] < 1) {
-			throw InvalidParameterException("Particle polynomial degree must be at least 1!");
-		}
-		else {
-			// Multiplex polynomial degree of particle elements to all particle types
+		parPolyDeg = paramProvider.getIntArray("PAR_POLYDEG");
+		if ((std::any_of(parPolyDeg.begin(), parPolyDeg.end(), [](int value) { return value < 1; })))
+			throw InvalidParameterException("Particle polynomial degrees must be at least 1!");
+		ParNelem = paramProvider.getIntArray("PAR_NELEM");
+		if ((std::any_of(ParNelem.begin(), ParNelem.end(), [](int value) { return value < 1; })))
+			throw InvalidParameterException("Particle number of elements must be at least 1!");
+		parExactInt = paramProvider.getBoolArray("PAR_EXACT_INTEGRATION");
+		if ((std::any_of(parExactInt.begin(), parExactInt.end(), [](bool value) { return !value; })))
+			LOG(Warning) << "Inexact integration method (cf. PAR_EXACT_INTEGRATION) in particles might add severe! stiffness to the system and disables consistent initialization!";
+
+		if (parPolyDeg.size() == 1)
+		{
+			// Multiplex number of particle shells to all particle types
 			for (unsigned int i = 0; i < _disc.nParType; ++i)
 				std::fill(_disc.parPolyDeg, _disc.parPolyDeg + _disc.nParType, parPolyDeg[0]);
-
 		}
-	}
-	else {
-		for (unsigned int parType = 0; parType < _disc.nParType; parType++)
+		else if (parPolyDeg.size() < _disc.nParType)
+			throw InvalidParameterException("Field PAR_POLYDEG must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
+		else
+			std::copy_n(parPolyDeg.begin(), _disc.nParType, _disc.parPolyDeg);
+		if (ParNelem.size() == 1)
 		{
-			if (parPolyDeg[parType] < 1)
-				throw InvalidParameterException("Particle polynomial degree(s) must be at least 1!");
-			if (_disc.nParCell[parType] < 1)
-				throw InvalidParameterException("Number of particle cell(s) must be at least 1!");
-
-			_disc.parPolyDeg[parType] = parPolyDeg[parType];
+			// Multiplex number of particle shells to all particle types
+			for (unsigned int i = 0; i < _disc.nParType; ++i)
+				std::fill(_disc.nParCell, _disc.nParCell + _disc.nParType, ParNelem[0]);
 		}
+		else if (ParNelem.size() < _disc.nParType)
+			throw InvalidParameterException("Field PAR_NELEM must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
+		else
+			std::copy_n(ParNelem.begin(), _disc.nParType, _disc.nParCell);
+		if (parExactInt.size() == 1)
+		{
+			// Multiplex number of particle shells to all particle types
+			for (unsigned int i = 0; i < _disc.nParType; ++i)
+				std::fill(_disc.parExactInt, _disc.parExactInt + _disc.nParType, parExactInt[0]);
+		}
+		else if (parExactInt.size() < _disc.nParType)
+			throw InvalidParameterException("Field PAR_EXACT_INTEGRATION must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
+		else
+			std::copy_n(parExactInt.begin(), _disc.nParType, _disc.parExactInt);
 	}
-
-	_disc.parExactInt = new bool[_disc.nParType];
-	if (parExactInt.size() < _disc.nParType)
+	else if (paramProvider.exists("NPAR"))
 	{
-		// Multiplex exact/inexact integration of particle elements to all particle types
-		for (unsigned int i = 0; i < _disc.nParType; ++i) {
-			std::fill(_disc.parExactInt, _disc.parExactInt + _disc.nParType, parExactInt[0]);
-			if (!_disc.parExactInt[i])
-				LOG(Warning) << "Inexact integration method (cf. PAR_EXACT_INTEGRATION) in particles might add severe! stiffness to the system and disables consistent initialization!";
-		}
+		const std::vector<int> nParPoints = paramProvider.getIntArray("NPAR");
+		if ((nParPoints.size() > 1) && (nParPoints.size() < _disc.nParType))
+			throw InvalidParameterException("Field NPAR must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
+
+		for (unsigned int par = 0; par < _disc.nParType; par++)
+			parPolyDeg[par] = std::max(1, std::min(nParPoints[par] - 1, 4));
 	}
 	else
-		std::copy_n(parExactInt.begin(), _disc.nParType, _disc.parExactInt);
-
-	if ((nBound.size() > _disc.nComp) && (nBound.size() < _disc.nComp * _disc.nParType))
-		throw InvalidParameterException("Field NBOUND must have NCOMP (" + std::to_string(_disc.nComp) + ") or NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ") entries");
+		throw InvalidParameterException("Specify field PAR_POLYDEG (or NPAR)");
 
 	// Compute discretization operators and initialize containers
 	_disc.initializeDG();
@@ -2408,18 +2419,3 @@ int GeneralRateModelDG::Exporter::writeOutlet(double* buffer) const
 #include "model/GeneralRateModelDG-InitialConditions.cpp"
 #include "model/GeneralRateModelDG-LinearSolver.cpp"
 
-namespace cadet
-{
-
-namespace model
-{
-
-void registerGeneralRateModelDG(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
-{
-	models[GeneralRateModelDG::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModelDG(uoId); };
-	models["GRM_DG"] = [](UnitOpIdx uoId) { return new GeneralRateModelDG(uoId); };
-}
-
-}  // namespace model
-
-}  // namespace cadet

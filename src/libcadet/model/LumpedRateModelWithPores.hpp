@@ -443,6 +443,9 @@ protected:
 extern template class LumpedRateModelWithPores<parts::AxialConvectionDispersionOperator>;
 extern template class LumpedRateModelWithPores<parts::RadialConvectionDispersionOperator>;
 
+IUnitOperation* createAxialFVLRMP(UnitOpIdx uoId);
+IUnitOperation* createRadialFVLRMP(UnitOpIdx uoId);
+
 } // namespace model
 } // namespace cadet
 

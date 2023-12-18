@@ -2568,10 +2568,10 @@ int GeneralRateModel2D::Exporter::writeOutlet(double* buffer) const
 }
 
 
-void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {
-	models[GeneralRateModel2D::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModel2D(uoId); };
-	models["GRM2D"] = [](UnitOpIdx uoId) { return new GeneralRateModel2D(uoId); };
+	models[GeneralRateModel2D::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new GeneralRateModel2D(uoId); };
+	models["GRM2D"] = [](UnitOpIdx uoId, IParameterProvider&) { return new GeneralRateModel2D(uoId); };
 }
 
 }  // namespace model

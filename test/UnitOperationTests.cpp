@@ -49,7 +49,7 @@ namespace unitoperation
 	cadet::IUnitOperation* createAndConfigureUnit(const std::string& uoType, cadet::IModelBuilder& mb, cadet::JsonParameterProvider& jpp)
 	{
 		// Create a unit
-		cadet::IModel* const iUnit = mb.createUnitOperation(uoType, 0);
+		cadet::IModel* const iUnit = mb.createUnitOperation(jpp, 0);
 		REQUIRE(nullptr != iUnit);
 
 		cadet::IUnitOperation* const unit = reinterpret_cast<cadet::IUnitOperation*>(iUnit);

@@ -3192,19 +3192,3 @@ int GeneralRateModelDGFV::Exporter::writeOutlet(double* buffer) const
 
 #include "model/GeneralRateModelDGFV-InitialConditions.cpp"
 #include "model/GeneralRateModelDGFV-LinearSolver.cpp"
-
-namespace cadet
-{
-
-namespace model
-{
-
-void registerGeneralRateModelDGFV(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
-{
-	models[GeneralRateModelDGFV::identifier()] = [](UnitOpIdx uoId) { return new GeneralRateModelDGFV(uoId); };
-	models["GRM_DGFV"] = [](UnitOpIdx uoId) { return new GeneralRateModelDGFV(uoId); };
-}
-
-}  // namespace model
-
-}  // namespace cadet

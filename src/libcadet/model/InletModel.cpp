@@ -444,9 +444,9 @@ int InletModel::Exporter::writeOutlet(double* buffer) const
 }
 
 
-void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {
-	models[InletModel::identifier()] = [](UnitOpIdx uoId) { return new InletModel(uoId); };
+	models[InletModel::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new InletModel(uoId); };
 }
 
 }  // namespace model

@@ -1911,18 +1911,18 @@ int LumpedRateModelWithoutPores<ConvDispOperator>::Exporter::writeOutlet(double*
 	return _disc.nComp;
 }
 
-
-void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+IUnitOperation* createAxialFVLRM(UnitOpIdx uoId)
 {
 	typedef LumpedRateModelWithoutPores<parts::AxialConvectionDispersionOperatorBase> AxialLRM;
+
+	return new AxialLRM(uoId);
+}
+
+IUnitOperation* createRadialFVLRM(UnitOpIdx uoId)
+{
 	typedef LumpedRateModelWithoutPores<parts::RadialConvectionDispersionOperatorBase> RadialLRM;
 
-	models[AxialLRM::identifier()] = [](UnitOpIdx uoId) { return new AxialLRM(uoId); };
-	models["LRM"] = [](UnitOpIdx uoId) { return new AxialLRM(uoId); };
-	models["DPFR"] = [](UnitOpIdx uoId) { return new AxialLRM(uoId); };
-
-	models[RadialLRM::identifier()] = [](UnitOpIdx uoId) { return new RadialLRM(uoId); };
-	models["RLRM"] = [](UnitOpIdx uoId) { return new RadialLRM(uoId); };
+	return new RadialLRM(uoId);
 }
 
 }  // namespace model

@@ -20,11 +20,11 @@
 
 #include "common/JsonParameterProvider.hpp"
 
-cadet::JsonParameterProvider createColumnWithSMA(const std::string& uoType);
-cadet::JsonParameterProvider createColumnWithTwoCompLinearBinding(const std::string& uoType);
-cadet::JsonParameterProvider createLWE(const std::string& uoType);
-cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoType, bool dynamicBinding);
-cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool nonBinding, const std::string& uoType);
+cadet::JsonParameterProvider createColumnWithSMA(const std::string& uoType, const std::string& spatialScheme);
+cadet::JsonParameterProvider createColumnWithTwoCompLinearBinding(const std::string& uoType, const std::string& spatialScheme);
+cadet::JsonParameterProvider createLWE(const std::string& uoType, const std::string& spatialScheme);
+cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoType, const std::string& spatialScheme, bool dynamicBinding);
+cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool nonBinding, const std::string& uoType, const std::string& spatialScheme);
 cadet::JsonParameterProvider createCSTR(unsigned int nComp);
 cadet::JsonParameterProvider createCSTRBenchmark(unsigned int nSec, double endTime, double interval);
 

@@ -44,8 +44,7 @@ namespace parts
  * @brief Creates an AxialConvectionDispersionOperatorBaseDG
  */
 AxialConvectionDispersionOperatorBaseDG::AxialConvectionDispersionOperatorBaseDG() :
-	/*_stencilMemory(sizeof(active) * Weno::maxStencilSize()), _wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(),*/ // todo weno
-	_dispersionDep(nullptr)
+	_dispersionDep(nullptr), _DGjacAxDispBlocks(nullptr)
 {
 }
 

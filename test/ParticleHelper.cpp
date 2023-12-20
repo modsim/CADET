@@ -208,10 +208,10 @@ namespace particle
 		cadet::test::particle::setParticleTypeVolumeFractions(jpp, volFrac);		
 	}
 
-	void testOneVsTwoIdenticalParticleTypes(const char* uoType, double absTol, double relTol)
+	void testOneVsTwoIdenticalParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol)
 	{
 		// Use Load-Wash-Elution test case
-		cadet::JsonParameterProvider jpp = createLWE(uoType);
+		cadet::JsonParameterProvider jpp = createLWE(uoType, spatialMethod);
 		testOneVsTwoIdenticalParticleTypes(jpp, absTol, relTol);
 	}
 
@@ -245,10 +245,10 @@ namespace particle
 		}
 	}
 
-	void testSeparateIdenticalParticleTypes(const char* uoType, double absTol, double relTol)
+	void testSeparateIdenticalParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol)
 	{
 		// Use Load-Wash-Elution test case
-		cadet::JsonParameterProvider jpp = createLWE(uoType);
+		cadet::JsonParameterProvider jpp = createLWE(uoType, spatialMethod);
 		testSeparateIdenticalParticleTypes(jpp, absTol, relTol);
 	}
 
@@ -351,9 +351,9 @@ namespace particle
 		}
 	}
 
-	void testLinearMixedParticleTypes(const char* uoType, double absTol, double relTol)
+	void testLinearMixedParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol)
 	{
-		cadet::JsonParameterProvider jpp = createPulseInjectionColumn(uoType, true);
+		cadet::JsonParameterProvider jpp = createPulseInjectionColumn(uoType, spatialMethod, true);
 		testLinearMixedParticleTypesImpl(jpp, absTol, relTol, [](cadet::JsonParameterProvider& jpp) { });
 	}
 
@@ -362,15 +362,15 @@ namespace particle
 		testLinearMixedParticleTypesImpl(jpp, absTol, relTol, [](cadet::JsonParameterProvider& jpp) { });
 	}
 
-	void testLinearSpatiallyMixedParticleTypes(const char* uoType, double absTol, double relTol)
+	void testLinearSpatiallyMixedParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol)
 	{
-		cadet::JsonParameterProvider jpp = createPulseInjectionColumn(uoType, true);
+		cadet::JsonParameterProvider jpp = createPulseInjectionColumn(uoType, spatialMethod, true);
 		testLinearMixedParticleTypesImpl(jpp, absTol, relTol, [](cadet::JsonParameterProvider& jpp) { scrambleParticleTypeFractionsSpatially(jpp, 3); });
 	}
 
-	void testJacobianMixedParticleTypes(const std::string& uoType)
+	void testJacobianMixedParticleTypes(const std::string& uoType, const std::string& spatialMethod)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
 		testJacobianMixedParticleTypes(jpp);
 	}
 
@@ -383,9 +383,9 @@ namespace particle
 		unitoperation::testJacobianAD(jpp);
 	}
 
-	void testJacobianSpatiallyMixedParticleTypes(const std::string& uoType)
+	void testJacobianSpatiallyMixedParticleTypes(const std::string& uoType, const std::string& spatialMethod)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
 
 		// Add more particle types (such that we have a total of 3 types)
 		extendModelToManyParticleTypes(jpp, {0.9, 0.8}, nullptr);
@@ -396,9 +396,9 @@ namespace particle
 		unitoperation::testJacobianAD(jpp);
 	}
 
-	void testTimeDerivativeJacobianMixedParticleTypesFD(const std::string& uoType, double h, double absTol, double relTol)
+	void testTimeDerivativeJacobianMixedParticleTypesFD(const std::string& uoType, const std::string& spatialMethod, double h, double absTol, double relTol)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
 		testTimeDerivativeJacobianMixedParticleTypesFD(jpp, h, absTol, relTol);
 	}
 
@@ -412,7 +412,7 @@ namespace particle
 
 	void testArrowHeadJacobianSpatiallyMixedParticleTypes(const std::string& uoType, double h, double absTol, double relTol)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, "FV");
 
 		// Add more particle types (such that we have a total of 3 types)
 		extendModelToManyParticleTypes(jpp, {0.9, 0.8}, nullptr);

@@ -121,7 +121,7 @@ namespace
 	inline cadet::active* createAndConfigureOperator(OperatorType& convDispOp, int& nComp, int& nCol, int wenoOrder)
 	{
 		// Obtain parameters from some test case
-		cadet::JsonParameterProvider jpp = createColumnWithSMA("GENERAL_RATE_MODEL");
+		cadet::JsonParameterProvider jpp = createColumnWithSMA("GENERAL_RATE_MODEL", "FV");
 		cadet::test::column::setWenoOrder(jpp, wenoOrder);
 
 		nComp = jpp.getInt("NCOMP");

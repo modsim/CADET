@@ -117,7 +117,7 @@ namespace particle
 	 * @param [in] absTols Array with absolute error tolerances
 	 * @param [in] relTols Array with relative error tolerances
 	 */
-	void testOneVsTwoIdenticalParticleTypes(const char* uoType, double absTol, double relTol);
+	void testOneVsTwoIdenticalParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol);
 
 	/**
 	 * @brief Checks whether, when using two separate identical particle types, results of one type match the other
@@ -141,7 +141,7 @@ namespace particle
 	 * @param [in] absTols Array with absolute error tolerances
 	 * @param [in] relTols Array with relative error tolerances
 	 */
-	void testSeparateIdenticalParticleTypes(const char* uoType, double absTol, double relTol);
+	void testSeparateIdenticalParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol);
 
 	/**
 	 * @brief Checks whether a linear binding model with multiple identical particle types produces the same as result as a single type model
@@ -165,7 +165,7 @@ namespace particle
 	 * @param [in] absTols Array with absolute error tolerances
 	 * @param [in] relTols Array with relative error tolerances
 	 */
-	void testLinearMixedParticleTypes(const char* uoType, double absTol, double relTol);
+	void testLinearMixedParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol);
 
 	/**
 	 * @brief Checks the full analytic Jacobian against AD for a model with multiple particle types
@@ -185,19 +185,19 @@ namespace particle
 	 * @param [in] absTols Array with absolute error tolerances
 	 * @param [in] relTols Array with relative error tolerances
 	 */
-	void testLinearSpatiallyMixedParticleTypes(const char* uoType, double absTol, double relTol);
+	void testLinearSpatiallyMixedParticleTypes(const char* uoType, const char* spatialMethod, double absTol, double relTol);
 
 	/**
 	 * @brief Checks the full analytic Jacobian against AD for a model with multiple particle types
 	 * @param [in] uoType Unit operation type
 	 */
-	void testJacobianMixedParticleTypes(const std::string& uoType);
+	void testJacobianMixedParticleTypes(const std::string& uoType, const std::string& spatialMethod);
 
 	/**
 	 * @brief Checks the full analytic Jacobian against AD for a model with multiple particle types and spatial dependence of volume fractions
 	 * @param [in] uoType Unit operation type
 	 */
-	void testJacobianSpatiallyMixedParticleTypes(const std::string& uoType);
+	void testJacobianSpatiallyMixedParticleTypes(const std::string& uoType, const std::string& spatialMethod);
 
 	/**
 	 * @brief Checks the (analytic) time derivative Jacobian against FD for a model with multiple particle types
@@ -217,7 +217,7 @@ namespace particle
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testTimeDerivativeJacobianMixedParticleTypesFD(const std::string& uoType, double h, double absTol, double relTol);
+	void testTimeDerivativeJacobianMixedParticleTypesFD(const std::string& uoType, const std::string& spatialMethod, double h, double absTol, double relTol);
 
 	/**
 	 * @brief Checks the bottom macro row and right macro column of the Jacobian against FD for a model with multiple particle types

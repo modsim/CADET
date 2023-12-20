@@ -144,7 +144,7 @@ namespace reaction
 	 * @param [in] particle Determines whether reactions are added to each particle type
 	 * @param [in] particleModifiers Determines whether reaction rates in particles are modified by the respective other phase
 	 */
-	void testUnitJacobianDynamicReactionsAD(const std::string& uoType, bool bulk, bool particle, bool particleModifiers);
+	void testUnitJacobianDynamicReactionsAD(const std::string& uoType, const std::string& spatialMethod, bool bulk, bool particle, bool particleModifiers);
 
 	/**
 	 * @brief Checks the (analytic) time derivative Jacobian against FD for a model with dynamic reactions
@@ -170,7 +170,7 @@ namespace reaction
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testTimeDerivativeJacobianDynamicReactionsFD(const std::string& uoType, bool bulk, bool particle, bool particleModifiers, double h, double absTol, double relTol);
+	void testTimeDerivativeJacobianDynamicReactionsFD(const std::string& uoType, const std::string& spatialMethod, bool bulk, bool particle, bool particleModifiers, double h, double absTol, double relTol);
 
 } // namespace reaction
 } // namespace test

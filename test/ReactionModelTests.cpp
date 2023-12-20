@@ -416,9 +416,9 @@ namespace reaction
 		unitoperation::testJacobianAD(jpp);
 	}
 
-	void testUnitJacobianDynamicReactionsAD(const std::string& uoType, bool bulk, bool particle, bool particleModifiers)
+	void testUnitJacobianDynamicReactionsAD(const std::string& uoType, const std::string& spatialMethod, bool bulk, bool particle, bool particleModifiers)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
 		testUnitJacobianDynamicReactionsAD(jpp, bulk, particle, particleModifiers);
 	}
 
@@ -428,9 +428,9 @@ namespace reaction
 		unitoperation::testTimeDerivativeJacobianFD(jpp, h, absTol, relTol);
 	}
 
-	void testTimeDerivativeJacobianDynamicReactionsFD(const std::string& uoType, bool bulk, bool particle, bool particleModifiers, double h, double absTol, double relTol)
+	void testTimeDerivativeJacobianDynamicReactionsFD(const std::string& uoType, const std::string& spatialMethod, bool bulk, bool particle, bool particleModifiers, double h, double absTol, double relTol)
 	{
-		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType);
+		cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
 		testTimeDerivativeJacobianDynamicReactionsFD(jpp, bulk, particle, particleModifiers, h, absTol, relTol);
 	}
 

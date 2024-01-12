@@ -169,6 +169,11 @@ set (LIBCADET_NONLINALG_SOURCES
 )
 if (ENABLE_DG)
 	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/BandedEigenSparseRowIterator.hpp)
+	if (ENABLE_2D_MODELS_DG)
+		list (APPEND LIBCADET_SOURCES
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/TwoDimensionalConvectionDispersionOperatorDG.cpp
+		)
+	endif()
 endif()
 
 if (ENABLE_2D_MODELS)

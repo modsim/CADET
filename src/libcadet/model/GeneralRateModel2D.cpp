@@ -2600,13 +2600,6 @@ int GeneralRateModel2D::Exporter::writeOutlet(double* buffer) const
 	return _disc.nComp * _disc.nRad;
 }
 
-
-void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
-{
-	models[GeneralRateModel2D::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new GeneralRateModel2D(uoId); };
-	models["GRM2D"] = [](UnitOpIdx uoId, IParameterProvider&) { return new GeneralRateModel2D(uoId); };
-}
-
 }  // namespace model
 
 }  // namespace cadet

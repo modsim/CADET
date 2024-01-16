@@ -197,6 +197,7 @@ if (ENABLE_2D_MODELS)
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-LinearSolver.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-InitialConditions.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2DBuilder.cpp
 	)
 
 	if (NOT SUPERLU_FOUND)

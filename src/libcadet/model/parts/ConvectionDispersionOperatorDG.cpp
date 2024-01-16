@@ -102,12 +102,12 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 
 	_newStaticJac = true;
 
-	lglNodesWeights();
-	invMMatrix();
-	derivativeMatrix();
+	dgtoolbox::lglNodesWeights(_polyDeg, _nodes, _invWeights, true);
+	_invMM = dgtoolbox::invMMatrix(_polyDeg, _nodes);
+	_polyDerM = dgtoolbox::derivativeMatrix(_polyDeg, _nodes);
 
 	if(polynomial_integration_mode == 2) // use Gauss quadrature for exact integration
-		_invMM = gaussQuadratureMMatrix(_nodes, _nNodes).inverse();
+		_invMM = dgtoolbox::gaussQuadratureMMatrix(_nodes, _nNodes).inverse();
 
 	if (paramProvider.exists("COL_DISPERSION_DEP"))
 	{

@@ -139,7 +139,6 @@ set(LIBCADET_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModelBuilder.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/ParameterMultiplexing.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/ConvectionDispersionOperator.cpp
-	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/ConvectionDispersionOperatorDG.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/AxialConvectionDispersionKernel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/RadialConvectionDispersionKernel.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ReactionModelBase.cpp
@@ -196,6 +195,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/linalg/SparseSolverInterface.hpp.in"
 
 if (ENABLE_DG)
 	list (APPEND LIBCADET_SOURCES
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/DGToolbox.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/ConvectionDispersionOperatorDG.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithoutPoresDG.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModelDG.cpp

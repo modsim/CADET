@@ -365,9 +365,9 @@ protected:
 
 			for (int parType = 0; parType < nParType; parType++)
 			{
-				lglNodesWeights(parPolyDeg[parType], parNodes[parType], parInvWeights[parType]);
-				derivativeMatrix(parPolyDeg[parType], parPolyDerM[parType], parNodes[parType]);
-				parInvMM_Leg[parType] = invMMatrix(nParNode[parType], parNodes[parType], 0.0, 0.0);
+				parts::dgtoolbox::lglNodesWeights(parPolyDeg[parType], parNodes[parType], parInvWeights[parType], true);
+				parPolyDerM[parType] = parts::dgtoolbox::derivativeMatrix(parPolyDeg[parType], parNodes[parType]);
+				parInvMM_Leg[parType] = parts::dgtoolbox::invMMatrix(parPolyDeg[parType], parNodes[parType], 0.0, 0.0);
 			}
 		}
 
@@ -385,173 +385,6 @@ protected:
 
 	private:
 
-		/* ===================================================================================
-		*   Polynomial Basis operators and auxiliary functions
-		* =================================================================================== */
-
-		/**
-		* @brief computes the Legendre polynomial L_N and q = L_N+1 - L_N-2 and q' at point x
-		* @param [in] polyDeg polynomial degree of spatial Discretization
-		* @param [in] x evaluation point
-		* @param [in] L <- L(x)
-		* @param [in] q <- q(x) = L_N+1 (x) - L_N-2(x)
-		* @param [in] qder <- q'(x) = [L_N+1 (x) - L_N-2(x)]'
-		*/
-		void qAndL(const int _polyDeg, const double x, double& L, double& q, double& qder) {
-			
-			double L_2 = 1.0;
-			double L_1 = x;
-			double Lder_2 = 0.0;
-			double Lder_1 = 1.0;
-			double Lder = 0.0;
-
-			for (double k = 2; k <= _polyDeg; k++) { // note that this function is only called for polyDeg >= 2.
-				L = ((2 * k - 1) * x * L_1 - (k - 1) * L_2) / k;
-				Lder = Lder_2 + (2 * k - 1) * L_1;
-				L_2 = L_1;
-				L_1 = L;
-				Lder_2 = Lder_1;
-				Lder_1 = Lder;
-			}
-			q = ((2.0 * _polyDeg + 1) * x * L - _polyDeg * L_2) / (_polyDeg + 1.0) - L_2;
-			qder = Lder_1 + (2.0 * _polyDeg + 1) * L_1 - Lder_2;
-		}
-
-		/**
-		 * @brief computes the Legendre-Gauss-Lobatto nodes and (inverse) quadrature weights
-		 * @detail inexact LGL-quadrature leads to a diagonal mass matrix (mass lumping), defined by the quadrature weights
-		 */
-		void lglNodesWeights(const int _polyDeg, Eigen::VectorXd& _nodes, Eigen::VectorXd& _invWeights) {
-			
-			// tolerance and max #iterations for Newton iteration
-			int nIterations = 10;
-			double tolerance = 1e-15;
-
-			// Legendre polynomial and derivative
-			double L = 0;
-			double q = 0;
-			double qder = 0;
-
-			switch (_polyDeg) {
-			case 0:
-				throw std::invalid_argument("Polynomial degree must be at least 1 !");
-				break;
-			case 1:
-				_nodes[0] = -1;
-				_invWeights[0] = 1;
-				_nodes[1] = 1;
-				_invWeights[1] = 1;
-				break;
-			default:
-				_nodes[0] = -1;
-				_nodes[_polyDeg] = 1;
-				_invWeights[0] = 2.0 / (_polyDeg * (_polyDeg + 1.0));
-				_invWeights[_polyDeg] = _invWeights[0];
-
-				// use symmetrie, only compute half of points and weights
-				for (unsigned int j = 1; j <= floor((_polyDeg + 1) / 2) - 1; j++) {
-					//  first guess for Newton iteration
-					_nodes[j] = -cos(M_PI * (j + 0.25) / _polyDeg - 3 / (8.0 * _polyDeg * M_PI * (j + 0.25)));
-					// Newton iteration to find roots of Legendre Polynomial
-					for (unsigned int k = 0; k <= nIterations; k++) {
-						qAndL(_polyDeg, _nodes[j], L, q, qder);
-						_nodes[j] = _nodes[j] - q / qder;
-						if (abs(q / qder) <= tolerance * abs(_nodes[j])) {
-							break;
-						}
-					}
-					// calculate weights
-					qAndL(_polyDeg, _nodes[j], L, q, qder);
-					_invWeights[j] = 2.0 / (_polyDeg * (_polyDeg + 1.0) * pow(L, 2.0));
-					_nodes[_polyDeg - j] = -_nodes[j]; // copy to second half of points and weights
-					_invWeights[_polyDeg - j] = _invWeights[j];
-				}
-			}
-
-			if (_polyDeg % 2 == 0) { // for even polyDeg we have an odd number of points which include 0.0
-				qAndL(_polyDeg, 0.0, L, q, qder);
-				_nodes[_polyDeg / 2] = 0;
-				_invWeights[_polyDeg / 2] = 2.0 / (_polyDeg * (_polyDeg + 1.0) * pow(L, 2.0));
-			}
-
-			_invWeights = _invWeights.cwiseInverse(); // we need the inverse of the weights
-		}
-
-		/**
-		 * @brief computation of barycentric weights for fast polynomial evaluation
-		 * @param [in] baryWeights vector to store barycentric weights. Must already be initialized with ones!
-		 */
-		void barycentricWeights(Eigen::VectorXd& baryWeights, const Eigen::VectorXd& _nodes, const int _polyDeg) {
-
-			for (unsigned int j = 1; j <= _polyDeg; j++) {
-				for (unsigned int k = 0; k <= j - 1; k++) {
-					baryWeights[k] = baryWeights[k] * (_nodes[k] - _nodes[j]) * 1.0;
-					baryWeights[j] = baryWeights[j] * (_nodes[j] - _nodes[k]) * 1.0;
-				}
-			}
-
-			for (unsigned int j = 0; j <= _polyDeg; j++) {
-				baryWeights[j] = 1 / baryWeights[j];
-			}
-		}
-
-		/**
-		 * @brief computation of nodal (lagrange) polynomial derivative matrix
-		 */
-		void derivativeMatrix(const int _polyDeg, Eigen::MatrixXd& _polyDerM, const Eigen::VectorXd& _nodes) {
-
-			Eigen::VectorXd baryWeights = Eigen::VectorXd::Ones(_polyDeg + 1u);
-			barycentricWeights(baryWeights, _nodes, _polyDeg);
-
-			for (unsigned int i = 0; i <= _polyDeg; i++) {
-				for (unsigned int j = 0; j <= _polyDeg; j++) {
-					if (i != j) {
-						_polyDerM(i, j) = baryWeights[j] / (baryWeights[i] * (_nodes[i] - _nodes[j]));
-						_polyDerM(i, i) += -_polyDerM(i, j);
-					}
-				}
-			}
-		}
-
-		/**
-		 * @brief factor to normalize legendre polynomials
-		*/
-		double orthonFactor(const int _polyDeg, double a, double b) {
-
-			double n = static_cast<double> (_polyDeg);
-			return std::sqrt(((2.0 * n + a + b + 1.0) * std::tgamma(n + 1.0) * std::tgamma(n + a + b + 1.0))
-				/ (std::pow(2.0, a + b + 1.0) * std::tgamma(n + a + 1.0) * std::tgamma(n + b + 1.0)));
-		}
-		/**
-		 * @brief calculates the Vandermonde matrix of the normalized legendre polynomials
-		*/
-		Eigen::MatrixXd getVandermonde_JACOBI(const int _nNodes, const Eigen::VectorXd _nodes, double a, double b) {
-
-			Eigen::MatrixXd V(_nNodes, _nNodes);
-
-			// degree 0
-			V.block(0, 0, _nNodes, 1) = VectorXd::Ones(_nNodes) * orthonFactor(0, a, b);
-			// degree 1
-			for (int node = 0; node < static_cast<int>(_nNodes); node++) {
-				V(node, 1) = ((_nodes[node] - 1.0) / 2.0 * (a + b + 2.0) + (a + 1.0)) * orthonFactor(1, a, b);
-			}
-
-			for (int deg = 2; deg <= static_cast<int>(_nNodes - 1); deg++) {
-
-				for (int node = 0; node < static_cast<int>(_nNodes); node++) {
-
-					double orthn_1 = orthonFactor(deg, a, b) / orthonFactor(deg - 1, a, b);
-					double orthn_2 = orthonFactor(deg, a, b) / orthonFactor(deg - 2, a, b);
-
-					// recurrence relation
-					V(node, deg) = orthn_1 * ((2.0 * deg + a + b - 1.0) * ((2.0 * deg + a + b) * (2.0 * deg + a + b - 2.0) * _nodes[node] + a * a - b * b) * V(node, deg - 1));
-					V(node, deg) -= orthn_2 * (2.0 * (deg + a - 1.0) * (deg + b - 1.0) * (2.0 * deg + a + b) * V(node, deg - 2));
-					V(node, deg) /= 2.0 * deg * (deg + a + b) * (2.0 * deg + a + b - 2.0);
-				}
-			}
-
-			return V;
-		}
 		/**
 		 * @brief calculates the DG Jacobian auxiliary block
 		 * @param [in] exInt true if exact integration DG scheme
@@ -664,15 +497,6 @@ protected:
 
 			return -dispBlock; // *-1 for residual
 		}
-	public:
-		/**
-		 * @brief calculates the inverse mass matrix for exact integration
-		 * @detail calculation via transformation of Lagrange to Jacobi polynomial coefficients
-		*/
-		MatrixXd invMMatrix(const int _nnodes, const Eigen::VectorXd _nodes, double alpha, double beta) {
-			return (getVandermonde_JACOBI(_nnodes, _nodes, alpha, beta) * (getVandermonde_JACOBI(_nnodes, _nodes, alpha, beta).transpose()));
-		}
-
 	};
 
 	enum class ParticleDiscretizationMode : int

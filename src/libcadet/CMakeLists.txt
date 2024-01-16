@@ -191,6 +191,7 @@ if (ENABLE_GRM_2D)
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D-LinearSolver.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2D-InitialConditions.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2DBuilder.cpp
 	)
 
 	if (NOT SUPERLU_FOUND)

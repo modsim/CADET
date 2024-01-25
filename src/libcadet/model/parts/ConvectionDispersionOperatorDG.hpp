@@ -170,8 +170,8 @@ namespace cadet
 				Eigen::MatrixXd* _DGjacAxDispBlocks; //!< Unique Jacobian blocks for axial dispersion
 				Eigen::MatrixXd _DGjacAxConvBlock; //!< Unique Jacobian blocks for axial convection
 
-				Eigen::Vector<active, Eigen::Dynamic> _g; //!< auxiliary variable
-				Eigen::Vector<active, Eigen::Dynamic> _h; //!< auxiliary substitute
+				active* _auxState; //!< auxiliary variable
+				active* _subsState; //!< auxiliary substitute
 				Eigen::Vector<active, Eigen::Dynamic> _surfaceFlux; //!< stores the surface flux values
 				Eigen::Vector<active, 4> _boundary; //!< stores the boundary values from Danckwert boundary conditions
 
@@ -434,7 +434,7 @@ namespace cadet
 				template<typename StateType, typename ParamType>
 				void InterfaceFlux(const StateType* C, ParamType _dispersion) {
 
-					StateType* g = reinterpret_cast<StateType*>(&_g[0]);
+					StateType* g = reinterpret_cast<StateType*>(_auxState);
 
 					// component-wise strides
 					unsigned int strideNode = _strideNode;
@@ -566,8 +566,8 @@ namespace cadet
 				void calcBoundaryValues() {
 					//cache.boundary[0] = c_in -> inlet DOF already set
 					//_boundary[1] = (_velocity >= 0.0) ? C[_nPoints - 1] : C[0]; // c_r outlet not required in Danckwerts BC
-					_boundary[2] = -reinterpret_cast<StateType*>(&_g[0])[0]; // g_l left boundary (inlet/outlet for forward/backward flow)
-					_boundary[3] = -reinterpret_cast<StateType*>(&_g[0])[_nPoints - 1]; // g_r right boundary (outlet/inlet for forward/backward flow)
+					_boundary[2] = -reinterpret_cast<StateType*>(_auxState)[0]; // g_l left boundary (inlet/outlet for forward/backward flow)
+					_boundary[3] = -reinterpret_cast<StateType*>(_auxState)[_nPoints - 1]; // g_r right boundary (outlet/inlet for forward/backward flow)
 				}
 
 				// ==========================================================================================================================================================  //

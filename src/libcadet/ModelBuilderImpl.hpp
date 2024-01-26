@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * ModelBuilder implementation
  */
 
@@ -41,7 +41,6 @@ class IInletProfile;
 class ModelBuilder : public IModelBuilder, public IConfigHelper
 {
 public:
-
 	ModelBuilder();
 
 	virtual ~ModelBuilder() CADET_NOEXCEPT;
@@ -68,33 +67,30 @@ public:
 	virtual IExternalFunction* createExternalFunction(const std::string& type) const;
 
 protected:
-
 	/**
 	 * @brief Registers an IUnitOperation
 	 * @param [in] name Name of the model
 	 * @tparam UnitOpModel_t Type of the model
 	 */
-	template <class UnitOpModel_t>
-	void registerModel(const std::string& name);
+	template <class UnitOpModel_t> void registerModel(const std::string& name);
 
 	/**
 	 * @brief Registers an IUnitOperation
 	 * @details The name of the model is inferred from the static function IUnitOperation::identifier().
 	 * @tparam UnitOpModel_t Type of the model
 	 */
-	template <class UnitOpModel_t>
-	void registerModel();
+	template <class UnitOpModel_t> void registerModel();
 
-	BindingModelFactory _bindingModels; //!< Factory for IBindingModel implementations
-	ReactionModelFactory _reactionModels; //!< Factory for IDynamicReactionModel implementations
+	BindingModelFactory _bindingModels;    //!< Factory for IBindingModel implementations
+	ReactionModelFactory _reactionModels;  //!< Factory for IDynamicReactionModel implementations
 	ParameterDependenceFactory _paramDeps; //!< Factory for IParameterDependence implementations
 
 	typedef std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>> ModelFactoryContainer_t;
 	typedef std::unordered_map<std::string, std::function<IInletProfile*(void)>> InletFactoryContainer_t;
 	typedef std::unordered_map<std::string, std::function<IExternalFunction*(void)>> ExternalFunctionFactoryContainer_t;
 
-	ModelFactoryContainer_t _modelCreators; //!< Map with factory functions for models
-	InletFactoryContainer_t _inletCreators; //!< Map with factory functions for inlet profiles
+	ModelFactoryContainer_t _modelCreators;             //!< Map with factory functions for models
+	InletFactoryContainer_t _inletCreators;             //!< Map with factory functions for inlet profiles
 	ExternalFunctionFactoryContainer_t _extFunCreators; //!< Map with factory functions for external functions
 
 	std::vector<IModelSystem*> _models; //!< Models
@@ -102,4 +98,4 @@ protected:
 
 } // namespace cadet
 
-#endif  // LIBCADET_MODELBUILDER_IMPL_HPP_
+#endif // LIBCADET_MODELBUILDER_IMPL_HPP_

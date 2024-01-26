@@ -32,7 +32,6 @@ namespace cadet
 class JsonParameterProvider : public cadet::IParameterProvider
 {
 public:
-
 	JsonParameterProvider(const char* data);
 	JsonParameterProvider(const std::string& data);
 	JsonParameterProvider(const nlohmann::json& data);
@@ -77,11 +76,18 @@ public:
 
 	void copy(const std::string& src, const std::string& dest);
 
-	inline nlohmann::json* data() { return _root; }
-	inline nlohmann::json const* data() const { return _root; }
+	inline nlohmann::json* data()
+	{
+		return _root;
+	}
+	inline nlohmann::json const* data() const
+	{
+		return _root;
+	}
 
 	void toFile(const std::string& fileName) const;
 	static JsonParameterProvider fromFile(const std::string& fileName);
+
 private:
 	JsonParameterProvider();
 	JsonParameterProvider(nlohmann::json* data);
@@ -97,4 +103,4 @@ private:
 std::ostream& operator<<(std::ostream& out, const JsonParameterProvider& jpp);
 } // namespace cadet
 
-#endif  // CADET_JSONPARAMETERPROVIDER_HPP_
+#endif // CADET_JSONPARAMETERPROVIDER_HPP_

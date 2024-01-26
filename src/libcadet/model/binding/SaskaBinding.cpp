@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -48,7 +48,10 @@ namespace cadet
 namespace model
 {
 
-inline const char* SaskaParamHandler::identifier() CADET_NOEXCEPT { return "SASKA"; }
+inline const char* SaskaParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "SASKA";
+}
 
 inline bool SaskaParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
@@ -58,7 +61,10 @@ inline bool SaskaParamHandler::validateConfig(unsigned int nComp, unsigned int c
 	return true;
 }
 
-inline const char* ExtSaskaParamHandler::identifier() CADET_NOEXCEPT { return "EXT_SASKA"; }
+inline const char* ExtSaskaParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "EXT_SASKA";
+}
 
 inline bool ExtSaskaParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
@@ -68,32 +74,40 @@ inline bool ExtSaskaParamHandler::validateConfig(unsigned int nComp, unsigned in
 	return true;
 }
 
-
 /**
  * @brief Defines the Saska binding model
- * @details Implements the Saska adsorption model: \f[ \begin{align} 
- *              \frac{\mathrm{d} q_i}{\mathrm{d} t} = H_i c_{p,i} + \sum_{j=1}^{N_{\text{comp}}} k_{ij} c_{p,i} c_{p,j} - q_i,
- *          \end{align} \f]
- *          where @f$ H_i @f$ denotes the Henry coefficient and @f$ k_{ij} @f$ the quadratic factor.
- *          Multiple bound states are not supported. However, the quadratic factors use the bound phase parameter index for @f$ j @f$. 
- *          Components without bound state (i.e., non-binding components) are supported.
- *          
+ * @details Implements the Saska adsorption model: \f[ \begin{align}
+ *              \frac{\mathrm{d} q_i}{\mathrm{d} t} = H_i c_{p,i} + \sum_{j=1}^{N_{\text{comp}}} k_{ij} c_{p,i} c_{p,j}
+ * - q_i, \end{align} \f] where @f$ H_i @f$ denotes the Henry coefficient and @f$ k_{ij} @f$ the quadratic factor.
+ *          Multiple bound states are not supported. However, the quadratic factors use the bound phase parameter index
+ * for @f$ j @f$. Components without bound state (i.e., non-binding components) are supported.
+ *
  *          See @cite Saska1992.
  * @tparam ParamHandler_t Type that can add support for external function dependence
  */
-template <class ParamHandler_t>
-class SaskaBindingBase : public ParamHandlerBindingModelBase<ParamHandler_t>
+template <class ParamHandler_t> class SaskaBindingBase : public ParamHandlerBindingModelBase<ParamHandler_t>
 {
 public:
+	SaskaBindingBase()
+	{
+	}
+	virtual ~SaskaBindingBase() CADET_NOEXCEPT
+	{
+	}
 
-	SaskaBindingBase() { }
-	virtual ~SaskaBindingBase() CADET_NOEXCEPT { }
+	static const char* identifier()
+	{
+		return ParamHandler_t::identifier();
+	}
 
-	static const char* identifier() { return ParamHandler_t::identifier(); }
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT
+	{
+		return true;
+	}
 
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
-
-	virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const
+	virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos,
+													 double const* yCp, double const* y, double* dResDt,
+													 LinearBufferAllocator workSpace) const
 	{
 		if (!this->hasQuasiStationaryReactions())
 			return;
@@ -137,9 +151,10 @@ protected:
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,
-		CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
+				 CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
 	{
-		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		// Protein fluxes: -H_i c_{p,i} - \sum_j k_{ij} c_{p,i} c_{p,j} + q_i
 		unsigned int bndIdx = 0;
@@ -165,9 +180,11 @@ protected:
 	}
 
 	template <typename RowIterator>
-	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
+	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp,
+					  int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
 	{
-		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		// Protein fluxes: -H_i c_{p,i} - \sum_j k_{ij} c_{p,i} c_{p,j} + q_i
 		int bndIdx = 0;
@@ -183,13 +200,13 @@ protected:
 			// dres_i / dc_{p,j}
 			for (int j = 0; j < _nComp; ++j)
 				jac[j - bndIdx - offsetCp] = -static_cast<double>(kSlice[j]) * yCp[i];
-				// Getting to c_{p,i}: -bndIdx takes us to q_0, another -offsetCp to c_{p,0} and a +j to c_{p,j}.
-				//                     This means jac[j - bndIdx - offsetCp] corresponds to c_{p,j}.
+			// Getting to c_{p,i}: -bndIdx takes us to q_0, another -offsetCp to c_{p,0} and a +j to c_{p,j}.
+			//                     This means jac[j - bndIdx - offsetCp] corresponds to c_{p,j}.
 
 			// dres_i / dc_{p,i}
 			for (int j = 0; j < _nComp; ++j)
 				jac[i - bndIdx - offsetCp] -= static_cast<double>(kSlice[j]) * yCp[j];
-			
+
 			jac[i - bndIdx - offsetCp] -= h;
 
 			// dres_i / dq_i
@@ -202,19 +219,18 @@ protected:
 	}
 };
 
-
 typedef SaskaBindingBase<SaskaParamHandler> SaskaBinding;
 typedef SaskaBindingBase<ExtSaskaParamHandler> ExternalSaskaBinding;
 
 namespace binding
 {
-	void registerSaskaModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
-	{
-		bindings[SaskaBinding::identifier()] = []() { return new SaskaBinding(); };
-		bindings[ExternalSaskaBinding::identifier()] = []() { return new ExternalSaskaBinding(); };
-	}
-}  // namespace binding
+void registerSaskaModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
+{
+	bindings[SaskaBinding::identifier()] = []() { return new SaskaBinding(); };
+	bindings[ExternalSaskaBinding::identifier()] = []() { return new ExternalSaskaBinding(); };
+}
+} // namespace binding
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

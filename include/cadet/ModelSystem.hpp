@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines model system interfaces.
  */
 
@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <tuple>
 #ifdef CADET_BENCHMARK_MODE
-	#include <vector>
+#include <vector>
 #endif
 
 #include "cadet/LibExportImport.hpp"
@@ -43,8 +43,9 @@ class IExternalFunction;
 class CADET_API IModelSystem
 {
 public:
-
-	virtual ~IModelSystem() CADET_NOEXCEPT { }
+	virtual ~IModelSystem() CADET_NOEXCEPT
+	{
+	}
 
 	/**
 	 * @brief Returns the highest unit operation index in the model system
@@ -55,10 +56,10 @@ public:
 	/**
 	 * @brief Sets a parameter value
 	 * @details The parameter identified by its unique parameter is set to the given value.
-	 * 
+	 *
 	 * @param [in] pId ParameterId that identifies the parameter uniquely
 	 * @param [in] value Value of the parameter
-	 * 
+	 *
 	 * @return @c true if the parameter has been successfully set to the given value,
 	 *         otherwise @c false (e.g., if the parameter is not available in this model)
 	 */
@@ -164,10 +165,10 @@ public:
 	virtual void removeExternalFunction(IExternalFunction const* extFun) = 0;
 
 	/**
-	* @brief Returns the start and end indices of a unit operation's local slice in the global state vector
-	* @param [in] unitOp Unit operation ID for which local state position is required
-	* @return Start and end indices of the local slice of model @p unitOp
-	*/
+	 * @brief Returns the start and end indices of a unit operation's local slice in the global state vector
+	 * @param [in] unitOp Unit operation ID for which local state position is required
+	 * @return Start and end indices of the local slice of model @p unitOp
+	 */
 	virtual std::tuple<unsigned int, unsigned int> getModelStateOffsets(UnitOpIdx unitOp) const CADET_NOEXCEPT = 0;
 
 #ifdef CADET_BENCHMARK_MODE
@@ -188,4 +189,4 @@ public:
 
 } // namespace cadet
 
-#endif  // LIBCADET_MODELSYSTEM_HPP_
+#endif // LIBCADET_MODELSYSTEM_HPP_

@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines model interfaces.
  */
 
@@ -20,7 +20,7 @@
 
 #include <unordered_map>
 #ifdef CADET_BENCHMARK_MODE
-	#include <vector>
+#include <vector>
 #endif
 
 #include "cadet/LibExportImport.hpp"
@@ -40,8 +40,9 @@ namespace cadet
 class CADET_API IModel
 {
 public:
-
-	virtual ~IModel() CADET_NOEXCEPT { }
+	virtual ~IModel() CADET_NOEXCEPT
+	{
+	}
 
 	/**
 	 * @brief Returns the unit operation Id, which is just an index
@@ -59,10 +60,10 @@ public:
 	/**
 	 * @brief Sets a parameter value
 	 * @details The parameter identified by its unique parameter is set to the given value.
-	 * 
+	 *
 	 * @param [in] pId ParameterId that identifies the parameter uniquely
 	 * @param [in] value Value of the parameter
-	 * 
+	 *
 	 * @return @c true if the parameter has been successfully set to the given value,
 	 *         otherwise @c false (e.g., if the parameter is not available in this model)
 	 */
@@ -93,7 +94,7 @@ public:
 
 	/**
 	 * @brief Determines whether analytical Jacobians are used instead of AD Jacobians
-	 * 
+	 *
 	 * @param [in] analyticJac @c true if analytic Jacobians should be used (recommended), @c false for AD Jacobians
 	 */
 	virtual void useAnalyticJacobian(const bool analyticJac) = 0;
@@ -116,4 +117,4 @@ public:
 
 } // namespace cadet
 
-#endif  // LIBCADET_MODEL_HPP_
+#endif // LIBCADET_MODEL_HPP_

@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides an implementation of the cadet::IParameterProvider interface
  */
 
@@ -25,12 +25,12 @@
 namespace cadet
 {
 
-template <class Reader_t>
-class ParameterProviderImpl : public cadet::IParameterProvider
+template <class Reader_t> class ParameterProviderImpl : public cadet::IParameterProvider
 {
 public:
-
-	ParameterProviderImpl(Reader_t& reader) : ParameterProviderImpl(reader, true) { }
+	ParameterProviderImpl(Reader_t& reader) : ParameterProviderImpl(reader, true)
+	{
+	}
 
 	ParameterProviderImpl(Reader_t& reader, bool inputPrefix) : _reader(reader)
 	{
@@ -38,7 +38,9 @@ public:
 			_reader.setGroup("input");
 	}
 
-	virtual ~ParameterProviderImpl() CADET_NOEXCEPT { }
+	virtual ~ParameterProviderImpl() CADET_NOEXCEPT
+	{
+	}
 
 	virtual double getDouble(const std::string& paramName)
 	{
@@ -146,10 +148,11 @@ public:
 		LOG(Debug) << "SCOPE POP";
 		_reader.popGroup();
 	}
+
 private:
 	Reader_t& _reader;
 };
 
 } // namespace cadet
 
-#endif  // CADET_PARAMPROVIDER_HPP_
+#endif // CADET_PARAMPROVIDER_HPP_

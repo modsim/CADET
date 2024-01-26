@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -33,15 +33,15 @@
 
 namespace
 {
-	inline cadet::model::IParameterDependence* createParameterDependence(const char* name)
-	{
-		cadet::ParameterDependenceFactory pdf;
-		cadet::model::IParameterDependence* const pd = pdf.create(name);
-		
-		REQUIRE(nullptr != pd);
-		return pd;
-	}
+inline cadet::model::IParameterDependence* createParameterDependence(const char* name)
+{
+	cadet::ParameterDependenceFactory pdf;
+	cadet::model::IParameterDependence* const pd = pdf.create(name);
+
+	REQUIRE(nullptr != pd);
+	return pd;
 }
+} // namespace
 
 namespace cadet
 {
@@ -58,7 +58,8 @@ ConfiguredParameterDependence::~ConfiguredParameterDependence()
 	delete _paramDep;
 }
 
-ConfiguredParameterDependence ConfiguredParameterDependence::create(const char* name, unsigned int nComp, unsigned int const* nBound, const char* config)
+ConfiguredParameterDependence ConfiguredParameterDependence::create(const char* name, unsigned int nComp,
+																	unsigned int const* nBound, const char* config)
 {
 	cadet::model::IParameterDependence* const pd = createParameterDependence(name);
 
@@ -67,7 +68,7 @@ ConfiguredParameterDependence ConfiguredParameterDependence::create(const char* 
 	boundOffset[0] = 0;
 	for (unsigned int i = 1; i < nComp; ++i)
 	{
-		boundOffset[i] = boundOffset[i-1] + nBound[i-1];
+		boundOffset[i] = boundOffset[i - 1] + nBound[i - 1];
 	}
 	const unsigned int totalBoundStates = boundOffset[nComp - 1] + nBound[nComp - 1];
 
@@ -82,7 +83,8 @@ ConfiguredParameterDependence ConfiguredParameterDependence::create(const char* 
 	return ConfiguredParameterDependence(pd, nComp, nBound, boundOffset);
 }
 
-void testLiquidJacobianAD(const char* modelName, unsigned int nComp, unsigned int const* nBound, const char* config, double const* point, double absTol, double relTol)
+void testLiquidJacobianAD(const char* modelName, unsigned int nComp, unsigned int const* nBound, const char* config,
+						  double const* point, double absTol, double relTol)
 {
 	ConfiguredParameterDependence cpd = ConfiguredParameterDependence::create(modelName, nComp, nBound, config);
 	const unsigned int numDofs = cpd.nComp();
@@ -93,7 +95,8 @@ void testLiquidJacobianAD(const char* modelName, unsigned int nComp, unsigned in
 	jacAna.resize(numDofs, numDofs);
 
 	for (unsigned int comp = 0; comp < nComp; ++comp)
-		cpd.model().analyticJacobianLiquidAdd(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, comp, factor, 0, jacAna.row(comp));
+		cpd.model().analyticJacobianLiquidAdd(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, comp, factor, 0,
+											  jacAna.row(comp));
 
 	// Enable AD
 	cadet::ad::setDirections(cadet::ad::getMaxDirections());
@@ -139,7 +142,8 @@ void testLiquidJacobianAD(const char* modelName, unsigned int nComp, unsigned in
 	}
 }
 
-void testCombinedJacobianAD(const char* modelName, unsigned int nComp, unsigned int const* nBound, const char* config, double const* point, double absTol, double relTol)
+void testCombinedJacobianAD(const char* modelName, unsigned int nComp, unsigned int const* nBound, const char* config,
+							double const* point, double absTol, double relTol)
 {
 	ConfiguredParameterDependence cpd = ConfiguredParameterDependence::create(modelName, nComp, nBound, config);
 	const unsigned int numDofs = cpd.nComp() + cpd.numBoundStates();
@@ -150,9 +154,11 @@ void testCombinedJacobianAD(const char* modelName, unsigned int nComp, unsigned 
 	jacAna.resize(numDofs, numDofs);
 
 	for (unsigned int comp = 0; comp < nComp; ++comp)
-		cpd.model().analyticJacobianCombinedAddLiquid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, point + nComp, comp, factor, 0, jacAna.row(comp));
+		cpd.model().analyticJacobianCombinedAddLiquid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, point + nComp, comp,
+													  factor, 0, jacAna.row(comp));
 	for (unsigned int bnd = 0; bnd < cpd.numBoundStates(); ++bnd)
-		cpd.model().analyticJacobianCombinedAddSolid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, point + nComp, bnd, factor, 0, jacAna.row(nComp + bnd));
+		cpd.model().analyticJacobianCombinedAddSolid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, point, point + nComp, bnd,
+													 factor, 0, jacAna.row(nComp + bnd));
 
 	// Enable AD
 	cadet::ad::setDirections(cadet::ad::getMaxDirections());
@@ -164,9 +170,11 @@ void testCombinedJacobianAD(const char* modelName, unsigned int nComp, unsigned 
 	ad::copyToAd(point, adY, numDofs);
 
 	for (unsigned int comp = 0; comp < nComp; ++comp)
-		adRes[comp] = factor * cpd.model().combinedParameterLiquid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, adY, adY + nComp, comp);
+		adRes[comp] =
+			factor * cpd.model().combinedParameterLiquid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, adY, adY + nComp, comp);
 	for (unsigned int bnd = 0; bnd < cpd.numBoundStates(); ++bnd)
-		adRes[nComp + bnd] = factor * cpd.model().combinedParameterSolid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, adY, adY + nComp, bnd);
+		adRes[nComp + bnd] =
+			factor * cpd.model().combinedParameterSolid(ColumnPosition{0.0, 0.0, 0.0}, 2.1, adY, adY + nComp, bnd);
 
 	// Extract Jacobian
 	cadet::linalg::DenseMatrix jacAD;

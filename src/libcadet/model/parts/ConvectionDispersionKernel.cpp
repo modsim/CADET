@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Implements the kernel of the convection dispersion transport operator.
  */
 
@@ -34,16 +34,22 @@ namespace convdisp
 namespace impl
 {
 
-	class DummyStencil
+class DummyStencil
+{
+public:
+	DummyStencil()
 	{
-	public:
-		DummyStencil() { }
-		inline double operator[](const int idx) const { return 0.0; }
-	};
+	}
+	inline double operator[](const int idx) const
+	{
+		return 0.0;
+	}
+};
 
 } // namespace impl
 
-void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno)
+void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell,
+					 double u, Weno& weno)
 {
 	impl::DummyStencil stencil;
 
@@ -87,7 +93,8 @@ void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nC
 				{
 					for (int i = 0; i < 2 * wenoOrder - 1; ++i)
 						// Note that we have an offset of -1 here (compared to the right cell face below), since
-						// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
+						// the reconstructed value depends on the previous stencil (which has now been moved by one
+						// cell)
 						jac.centered((i - wenoOrder) * strideCell);
 				}
 
@@ -144,7 +151,8 @@ void sparsityPattern(linalg::SparsityPatternRowIterator itBegin, unsigned int nC
 				{
 					for (int i = 0; i < 2 * wenoOrder - 1; ++i)
 						// Note that we have an offset of +1 here (compared to the left cell face below), since
-						// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
+						// the reconstructed value depends on the previous stencil (which has now been moved by one
+						// cell)
 						jac.centered((wenoOrder - i) * strideCell);
 				}
 

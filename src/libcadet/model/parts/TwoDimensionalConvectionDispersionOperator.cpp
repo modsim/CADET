@@ -22,10 +22,10 @@
 #include "model/parts/ConvectionDispersionKernel.hpp"
 
 #ifdef SUPERLU_FOUND
-	#include "linalg/SuperLUSparseMatrix.hpp"
+#include "linalg/SuperLUSparseMatrix.hpp"
 #endif
 #ifdef UMFPACK_FOUND
-	#include "linalg/UMFPackSparseMatrix.hpp"
+#include "linalg/UMFPackSparseMatrix.hpp"
 #endif
 
 #include "linalg/BandMatrix.hpp"
@@ -39,7 +39,10 @@
 namespace
 {
 
-cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters, std::vector<cadet::active>& values, const std::string& name, unsigned int nComp, unsigned int nRad, cadet::UnitOpIdx uoi)
+cadet::model::MultiplexMode readAndRegisterMultiplexParam(
+	cadet::IParameterProvider& paramProvider, std::unordered_map<cadet::ParameterId, cadet::active*>& parameters,
+	std::vector<cadet::active>& values, const std::string& name, unsigned int nComp, unsigned int nRad,
+	cadet::UnitOpIdx uoi)
 {
 	cadet::model::MultiplexMode mode = cadet::model::MultiplexMode::Independent;
 	readParameterMatrix(values, paramProvider, name, nComp * nRad, 1);
@@ -51,25 +54,30 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		{
 			mode = cadet::model::MultiplexMode::Independent;
 			if (values.size() > 1)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be 1)");
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " +
+													   name + "_MULTIPLEX (should be 1)");
 		}
 		else if (modeConfig == 1)
 		{
 			mode = cadet::model::MultiplexMode::Radial;
 			if (values.size() != nRad)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nRad) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " +
+													   name + "_MULTIPLEX (should be " + std::to_string(nRad) + ")");
 		}
 		else if (modeConfig == 2)
 		{
 			mode = cadet::model::MultiplexMode::Component;
 			if (values.size() != nComp)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nComp) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " +
+													   name + "_MULTIPLEX (should be " + std::to_string(nComp) + ")");
 		}
 		else if (modeConfig == 3)
 		{
 			mode = cadet::model::MultiplexMode::ComponentRadial;
 			if (values.size() != nComp * nRad)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " + name + "_MULTIPLEX (should be " + std::to_string(nComp * nRad) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name + " inconsistent with " +
+													   name + "_MULTIPLEX (should be " + std::to_string(nComp * nRad) +
+													   ")");
 		}
 		else if (modeConfig == 4)
 		{
@@ -80,7 +88,9 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		{
 			mode = cadet::model::MultiplexMode::RadialSection;
 			if (values.size() % nRad != 0)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NRAD (" + std::to_string(nRad) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name +
+													   " is not a positive multiple of NRAD (" + std::to_string(nRad) +
+													   ")");
 
 			nSec = values.size() / nRad;
 		}
@@ -88,7 +98,9 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		{
 			mode = cadet::model::MultiplexMode::ComponentSection;
 			if (values.size() % nComp != 0)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NCOMP (" + std::to_string(nComp) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name +
+													   " is not a positive multiple of NCOMP (" +
+													   std::to_string(nComp) + ")");
 
 			nSec = values.size() / nComp;
 		}
@@ -96,7 +108,9 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 		{
 			mode = cadet::model::MultiplexMode::ComponentRadialSection;
 			if (values.size() % (nComp * nRad) != 0)
-				throw cadet::InvalidParameterException("Number of elements in field " + name + " is not a positive multiple of NCOMP * NRAD (" + std::to_string(nComp * nRad) + ")");
+				throw cadet::InvalidParameterException("Number of elements in field " + name +
+													   " is not a positive multiple of NCOMP * NRAD (" +
+													   std::to_string(nComp * nRad) + ")");
 
 			nSec = values.size() / (nComp * nRad);
 		}
@@ -127,7 +141,8 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 			nSec = values.size() / (nComp * nRad);
 		}
 		else
-			throw cadet::InvalidParameterException("Could not infer multiplex mode of field " + name + ", set " + name + "_MULTIPLEX or change number of elements");
+			throw cadet::InvalidParameterException("Could not infer multiplex mode of field " + name + ", set " + name +
+												   "_MULTIPLEX or change number of elements");
 
 		// Do not infer cadet::model::MultiplexMode::Section in case of no matches (might hide specification errors)
 	}
@@ -135,321 +150,339 @@ cadet::model::MultiplexMode readAndRegisterMultiplexParam(cadet::IParameterProvi
 	const cadet::StringHash nameHash = cadet::hashStringRuntime(name);
 	switch (mode)
 	{
-		case cadet::model::MultiplexMode::Independent:
-		case cadet::model::MultiplexMode::Section:
-			{
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int s = 0; s < nSec; ++s)
-					std::fill(p.begin() + s * nRad * nComp, p.begin() + (s+1) * nRad * nComp, values[s]);
+	case cadet::model::MultiplexMode::Independent:
+	case cadet::model::MultiplexMode::Section: {
+		std::vector<cadet::active> p(nComp * nRad * nSec);
+		for (unsigned int s = 0; s < nSec; ++s)
+			std::fill(p.begin() + s * nRad * nComp, p.begin() + (s + 1) * nRad * nComp, values[s]);
 
-				values = std::move(p);
+		values = std::move(p);
 
-				for (unsigned int s = 0; s < nSec; ++s)
-					parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Independent) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp];
-			}
-			break;
-		case cadet::model::MultiplexMode::Component:
-		case cadet::model::MultiplexMode::ComponentSection:
-			{
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int s = 0; s < nSec; ++s)
-				{
-					for (unsigned int i = 0; i < nComp; ++i)
-						std::copy(values.begin() + s * nComp, values.begin() + (s+1) * nComp, p.begin() + i * nComp + s * nComp * nRad);
-				}
+		for (unsigned int s = 0; s < nSec; ++s)
+			parameters[cadet::makeParamId(
+				nameHash, uoi, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep,
+				(mode == cadet::model::MultiplexMode::Independent) ? cadet::SectionIndep : s)] =
+				&values[s * nRad * nComp];
+	}
+	break;
+	case cadet::model::MultiplexMode::Component:
+	case cadet::model::MultiplexMode::ComponentSection: {
+		std::vector<cadet::active> p(nComp * nRad * nSec);
+		for (unsigned int s = 0; s < nSec; ++s)
+		{
+			for (unsigned int i = 0; i < nComp; ++i)
+				std::copy(values.begin() + s * nComp, values.begin() + (s + 1) * nComp,
+						  p.begin() + i * nComp + s * nComp * nRad);
+		}
 
-				values = std::move(p);
+		values = std::move(p);
 
-				for (unsigned int s = 0; s < nSec; ++s)
-				{
-					for (unsigned int i = 0; i < nComp; ++i)
-						parameters[cadet::makeParamId(nameHash, uoi, i, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Component) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp + i];
-				}
-			}
-			break;
-		case cadet::model::MultiplexMode::Radial:
-		case cadet::model::MultiplexMode::RadialSection:
-			{
-				std::vector<cadet::active> p(nComp * nRad * nSec);
-				for (unsigned int i = 0; i < nRad * nSec; ++i)
-					std::fill(p.begin() + i * nComp, p.begin() + (i+1) * nComp, values[i]);
+		for (unsigned int s = 0; s < nSec; ++s)
+		{
+			for (unsigned int i = 0; i < nComp; ++i)
+				parameters[cadet::makeParamId(
+					nameHash, uoi, i, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep,
+					(mode == cadet::model::MultiplexMode::Component) ? cadet::SectionIndep : s)] =
+					&values[s * nRad * nComp + i];
+		}
+	}
+	break;
+	case cadet::model::MultiplexMode::Radial:
+	case cadet::model::MultiplexMode::RadialSection: {
+		std::vector<cadet::active> p(nComp * nRad * nSec);
+		for (unsigned int i = 0; i < nRad * nSec; ++i)
+			std::fill(p.begin() + i * nComp, p.begin() + (i + 1) * nComp, values[i]);
 
-				values = std::move(p);
+		values = std::move(p);
 
-				for (unsigned int s = 0; s < nSec; ++s)
-				{
-					for (unsigned int i = 0; i < nRad; ++i)
-						parameters[cadet::makeParamId(nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep, (mode == cadet::model::MultiplexMode::Radial) ? cadet::SectionIndep : s)] = &values[s * nRad * nComp + i * nComp];
-				}
-			}
-			break;
-		case cadet::model::MultiplexMode::ComponentRadial:
-		case cadet::model::MultiplexMode::ComponentRadialSection:
-			cadet::registerParam3DArray(parameters, values, [=](bool multi, unsigned int sec, unsigned int compartment, unsigned int comp) { return cadet::makeParamId(nameHash, uoi, comp, compartment, cadet::BoundStateIndep, cadet::ReactionIndep, multi ? sec : cadet::SectionIndep); }, nComp, nRad);
-			break;
-		case cadet::model::MultiplexMode::Axial:
-		case cadet::model::MultiplexMode::AxialRadial:
-		case cadet::model::MultiplexMode::Type:
-		case cadet::model::MultiplexMode::ComponentType:
-		case cadet::model::MultiplexMode::ComponentSectionType:
-			cadet_assert(false);
-			break;
+		for (unsigned int s = 0; s < nSec; ++s)
+		{
+			for (unsigned int i = 0; i < nRad; ++i)
+				parameters[cadet::makeParamId(
+					nameHash, uoi, cadet::CompIndep, i, cadet::BoundStateIndep, cadet::ReactionIndep,
+					(mode == cadet::model::MultiplexMode::Radial) ? cadet::SectionIndep : s)] =
+					&values[s * nRad * nComp + i * nComp];
+		}
+	}
+	break;
+	case cadet::model::MultiplexMode::ComponentRadial:
+	case cadet::model::MultiplexMode::ComponentRadialSection:
+		cadet::registerParam3DArray(
+			parameters, values,
+			[=](bool multi, unsigned int sec, unsigned int compartment, unsigned int comp) {
+				return cadet::makeParamId(nameHash, uoi, comp, compartment, cadet::BoundStateIndep,
+										  cadet::ReactionIndep, multi ? sec : cadet::SectionIndep);
+			},
+			nComp, nRad);
+		break;
+	case cadet::model::MultiplexMode::Axial:
+	case cadet::model::MultiplexMode::AxialRadial:
+	case cadet::model::MultiplexMode::Type:
+	case cadet::model::MultiplexMode::ComponentType:
+	case cadet::model::MultiplexMode::ComponentSectionType:
+		cadet_assert(false);
+		break;
 	}
 
 	return mode;
 }
 
-bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nRad, double value, std::unordered_set<cadet::active*> const* sensParams)
+bool multiplexParameterValue(const cadet::ParameterId& pId, cadet::StringHash nameHash,
+							 cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp,
+							 unsigned int nRad, double value, std::unordered_set<cadet::active*> const* sensParams)
 {
 	if (pId.name != nameHash)
 		return false;
 
 	switch (mode)
 	{
-		case cadet::model::MultiplexMode::Independent:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+	case cadet::model::MultiplexMode::Independent: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[0]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[0]))
+			return false;
 
-				for (std::size_t i = 0; i < data.size(); ++i)
-					data[i].setValue(value);
+		for (std::size_t i = 0; i < data.size(); ++i)
+			data[i].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Section:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Section: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nComp * nRad]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.section * nComp * nRad]))
+			return false;
 
-				for (unsigned int i = 0; i < nComp * nRad; ++i)
-					data[i + pId.section * nComp * nRad].setValue(value);
+		for (unsigned int i = 0; i < nComp * nRad; ++i)
+			data[i + pId.section * nComp * nRad].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Component:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Component: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.component]))
+			return false;
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component].setValue(value);
+		for (unsigned int i = 0; i < nRad; ++i)
+			data[i * nComp + pId.component].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentSection:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentSection: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.section * nComp * nRad]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.section * nComp * nRad]))
+			return false;
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component + pId.section * nComp * nRad].setValue(value);
+		for (unsigned int i = 0; i < nRad; ++i)
+			data[i * nComp + pId.component + pId.section * nComp * nRad].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Radial:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Radial: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp]))
+			return false;
 
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp].setValue(value);
+		for (unsigned int i = 0; i < nComp; ++i)
+			data[i + pId.particleType * nComp].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::RadialSection:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::RadialSection: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp + pId.section * nComp * nRad]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.particleType * nComp + pId.section * nComp * nRad]))
+			return false;
 
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
+		for (unsigned int i = 0; i < nComp; ++i)
+			data[i + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentRadial:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentRadial: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp]))
-					return false;
+		if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp]))
+			return false;
 
-				data[pId.component + pId.particleType * nComp].setValue(value);
+		data[pId.component + pId.particleType * nComp].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentRadialSection:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentRadialSection: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				if (sensParams && !cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]))
-					return false;
+		if (sensParams &&
+			!cadet::contains(*sensParams, &data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]))
+			return false;
 
-				data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
+		data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setValue(value);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Axial:
-		case cadet::model::MultiplexMode::AxialRadial:
-		case cadet::model::MultiplexMode::Type:
-		case cadet::model::MultiplexMode::ComponentType:
-		case cadet::model::MultiplexMode::ComponentSectionType:
-			cadet_assert(false);
-			break;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Axial:
+	case cadet::model::MultiplexMode::AxialRadial:
+	case cadet::model::MultiplexMode::Type:
+	case cadet::model::MultiplexMode::ComponentType:
+	case cadet::model::MultiplexMode::ComponentSectionType:
+		cadet_assert(false);
+		break;
 	}
 
 	return false;
 }
 
-bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode, std::vector<cadet::active>& data, unsigned int nComp, unsigned int nRad, unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
+bool multiplexParameterAD(const cadet::ParameterId& pId, cadet::StringHash nameHash, cadet::model::MultiplexMode mode,
+						  std::vector<cadet::active>& data, unsigned int nComp, unsigned int nRad,
+						  unsigned int adDirection, double adValue, std::unordered_set<cadet::active*>& sensParams)
 {
 	if (pId.name != nameHash)
 		return false;
 
 	switch (mode)
 	{
-		case cadet::model::MultiplexMode::Independent:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+	case cadet::model::MultiplexMode::Independent: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[0]);
+		sensParams.insert(&data[0]);
 
-				for (std::size_t i = 0; i < data.size(); ++i)
-					data[i].setADValue(adDirection, adValue);
+		for (std::size_t i = 0; i < data.size(); ++i)
+			data[i].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Section:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Section: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.section * nComp * nRad]);
+		sensParams.insert(&data[pId.section * nComp * nRad]);
 
-				for (unsigned int i = 0; i < nComp * nRad; ++i)
-					data[i + pId.section * nComp * nRad].setADValue(adDirection, adValue);
+		for (unsigned int i = 0; i < nComp * nRad; ++i)
+			data[i + pId.section * nComp * nRad].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Component:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Component: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.component]);
+		sensParams.insert(&data[pId.component]);
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component].setADValue(adDirection, adValue);
+		for (unsigned int i = 0; i < nRad; ++i)
+			data[i * nComp + pId.component].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentSection:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentSection: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType != cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.component + pId.section * nComp * nRad]);
+		sensParams.insert(&data[pId.component + pId.section * nComp * nRad]);
 
-				for (unsigned int i = 0; i < nRad; ++i)
-					data[i * nComp + pId.component + pId.section * nComp * nRad].setADValue(adDirection, adValue);
+		for (unsigned int i = 0; i < nRad; ++i)
+			data[i * nComp + pId.component + pId.section * nComp * nRad].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Radial:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Radial: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.particleType * nComp]);
+		sensParams.insert(&data[pId.particleType * nComp]);
 
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp].setADValue(adDirection, adValue);
+		for (unsigned int i = 0; i < nComp; ++i)
+			data[i + pId.particleType * nComp].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::RadialSection:
-			{
-				if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::RadialSection: {
+		if ((pId.component != cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.particleType * nComp + pId.section * nComp * nRad]);
+		sensParams.insert(&data[pId.particleType * nComp + pId.section * nComp * nRad]);
 
-				for (unsigned int i = 0; i < nComp; ++i)
-					data[i + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
+		for (unsigned int i = 0; i < nComp; ++i)
+			data[i + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentRadial:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section != cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentRadial: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section != cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.component + pId.particleType * nComp]);
+		sensParams.insert(&data[pId.component + pId.particleType * nComp]);
 
-				data[pId.component + pId.particleType * nComp].setADValue(adDirection, adValue);
+		data[pId.component + pId.particleType * nComp].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::ComponentRadialSection:
-			{
-				if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) || (pId.boundState != cadet::BoundStateIndep)
-					|| (pId.reaction != cadet::ReactionIndep) || (pId.section == cadet::SectionIndep))
-					return false;
+		return true;
+	}
+	case cadet::model::MultiplexMode::ComponentRadialSection: {
+		if ((pId.component == cadet::CompIndep) || (pId.particleType == cadet::ParTypeIndep) ||
+			(pId.boundState != cadet::BoundStateIndep) || (pId.reaction != cadet::ReactionIndep) ||
+			(pId.section == cadet::SectionIndep))
+			return false;
 
-				sensParams.insert(&data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]);
+		sensParams.insert(&data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad]);
 
-				data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
+		data[pId.component + pId.particleType * nComp + pId.section * nComp * nRad].setADValue(adDirection, adValue);
 
-				return true;
-			}
-		case cadet::model::MultiplexMode::Axial:
-		case cadet::model::MultiplexMode::AxialRadial:
-		case cadet::model::MultiplexMode::Type:
-		case cadet::model::MultiplexMode::ComponentType:
-		case cadet::model::MultiplexMode::ComponentSectionType:
-			cadet_assert(false);
-			break;
+		return true;
+	}
+	case cadet::model::MultiplexMode::Axial:
+	case cadet::model::MultiplexMode::AxialRadial:
+	case cadet::model::MultiplexMode::Type:
+	case cadet::model::MultiplexMode::ComponentType:
+	case cadet::model::MultiplexMode::ComponentSectionType:
+		cadet_assert(false);
+		break;
 	}
 
 	return false;
 }
 
-}  // namespace
+} // namespace
 
 namespace cadet
 {
@@ -463,26 +496,34 @@ namespace parts
 class TwoDimensionalConvectionDispersionOperator::LinearSolver
 {
 public:
+	virtual ~LinearSolver() CADET_NOEXCEPT
+	{
+	}
 
-	virtual ~LinearSolver() CADET_NOEXCEPT { }
-
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno) = 0;
+	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad,
+							const Weno& weno) = 0;
 	virtual void setSparsityPattern(const cadet::linalg::SparsityPattern& pattern) = 0;
 	virtual void assembleDiscretizedJacobian(double alpha) = 0;
 	virtual bool factorize() = 0;
-	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const = 0;
+	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init,
+										  double outerTol) const = 0;
 };
 
 int schurComplementMultiplier2DCDO(void* userData, double const* x, double* z);
 
-class TwoDimensionalConvectionDispersionOperator::GmresSolver : public TwoDimensionalConvectionDispersionOperator::LinearSolver
+class TwoDimensionalConvectionDispersionOperator::GmresSolver
+	: public TwoDimensionalConvectionDispersionOperator::LinearSolver
 {
 public:
+	GmresSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC)
+	{
+	}
+	virtual ~GmresSolver() CADET_NOEXCEPT
+	{
+	}
 
-	GmresSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
-	virtual ~GmresSolver() CADET_NOEXCEPT { }
-
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
+	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad,
+							const Weno& weno)
 	{
 		_gmres.initialize(nCol * nComp * nRad, 0, linalg::toOrthogonalization(1), 0);
 		_gmres.matrixVectorMultiplier(&schurComplementMultiplier2DCDO, this);
@@ -491,16 +532,21 @@ public:
 		return true;
 	}
 
-	virtual void setSparsityPattern(const linalg::SparsityPattern& pattern) { }
+	virtual void setSparsityPattern(const linalg::SparsityPattern& pattern)
+	{
+	}
 
 	virtual void assembleDiscretizedJacobian(double alpha)
 	{
 		_alpha = alpha;
 	}
 
-	virtual bool factorize() { return true; }
+	virtual bool factorize()
+	{
+		return true;
+	}
 
-	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const 
+	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const
 	{
 		if (init)
 			std::copy(init, init + _cache.size(), _cache.begin());
@@ -514,7 +560,7 @@ public:
 protected:
 	linalg::CompressedSparseMatrix const* const _jacC;
 	double _alpha;
-	mutable linalg::Gmres _gmres; //!< GMRES algorithm for the Schur-complement in linearSolve()
+	mutable linalg::Gmres _gmres;       //!< GMRES algorithm for the Schur-complement in linearSolve()
 	mutable std::vector<double> _cache; //!< GMRES cache for result
 
 	int schurComplementMatrixVector(double const* x, double* z) const
@@ -530,70 +576,81 @@ protected:
 
 int schurComplementMultiplier2DCDO(void* userData, double const* x, double* z)
 {
-	TwoDimensionalConvectionDispersionOperator::GmresSolver* const cdo = static_cast<TwoDimensionalConvectionDispersionOperator::GmresSolver*>(userData);
+	TwoDimensionalConvectionDispersionOperator::GmresSolver* const cdo =
+		static_cast<TwoDimensionalConvectionDispersionOperator::GmresSolver*>(userData);
 	return cdo->schurComplementMatrixVector(x, z);
 }
 
-#if defined(UMFPACK_FOUND) || defined(SUPERLU_FOUND) 
+#if defined(UMFPACK_FOUND) || defined(SUPERLU_FOUND)
 
-	template <typename sparse_t>
-	class TwoDimensionalConvectionDispersionOperator::SparseDirectSolver : public TwoDimensionalConvectionDispersionOperator::LinearSolver
+template <typename sparse_t>
+class TwoDimensionalConvectionDispersionOperator::SparseDirectSolver
+	: public TwoDimensionalConvectionDispersionOperator::LinearSolver
+{
+public:
+	SparseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC)
 	{
-	public:
+	}
+	virtual ~SparseDirectSolver() CADET_NOEXCEPT
+	{
+	}
 
-		SparseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
-		virtual ~SparseDirectSolver() CADET_NOEXCEPT { }
+	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad,
+							const Weno& weno)
+	{
+		return true;
+	}
 
-		virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
-		{
-			return true;
-		}
+	virtual void setSparsityPattern(const linalg::SparsityPattern& pattern)
+	{
+		_jacCdisc.assignPattern(pattern);
+		_jacCdisc.prepare();
+	}
 
-		virtual void setSparsityPattern(const linalg::SparsityPattern& pattern)
-		{
-			_jacCdisc.assignPattern(pattern);
-			_jacCdisc.prepare();
-		}
+	virtual void assembleDiscretizedJacobian(double alpha)
+	{
+		// Copy normal matrix over to factorizable matrix
+		_jacCdisc.copyFromSamePattern(*_jacC);
 
-		virtual void assembleDiscretizedJacobian(double alpha)
-		{
-			// Copy normal matrix over to factorizable matrix
-			_jacCdisc.copyFromSamePattern(*_jacC);
+		for (int i = 0; i < _jacC->rows(); ++i)
+			_jacCdisc.centered(i, 0) += alpha;
+	}
 
-			for (int i = 0; i < _jacC->rows(); ++i)
-				_jacCdisc.centered(i, 0) += alpha;
-		}
+	virtual bool factorize()
+	{
+		return _jacCdisc.factorize();
+	}
 
-		virtual bool factorize()
-		{
-			return _jacCdisc.factorize();
-		}
+	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const
+	{
+		return _jacCdisc.solve(rhs);
+	}
 
-		virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const 
-		{
-			return _jacCdisc.solve(rhs);
-		}
-
-	protected:
-		linalg::CompressedSparseMatrix const* const _jacC;
-		sparse_t _jacCdisc;
-	};
+protected:
+	linalg::CompressedSparseMatrix const* const _jacC;
+	sparse_t _jacCdisc;
+};
 
 #endif
 
-class TwoDimensionalConvectionDispersionOperator::DenseDirectSolver : public TwoDimensionalConvectionDispersionOperator::LinearSolver
+class TwoDimensionalConvectionDispersionOperator::DenseDirectSolver
+	: public TwoDimensionalConvectionDispersionOperator::LinearSolver
 {
 public:
+	DenseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC)
+	{
+	}
+	virtual ~DenseDirectSolver() CADET_NOEXCEPT
+	{
+	}
 
-	DenseDirectSolver(linalg::CompressedSparseMatrix const* jacC) : _jacC(jacC) { }
-	virtual ~DenseDirectSolver() CADET_NOEXCEPT { }
-
-	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, const Weno& weno)
+	virtual bool initialize(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad,
+							const Weno& weno)
 	{
 		// Note that we have to increase the lower bandwidth by 1 because the WENO stencil is applied to the
-		// right cell face (lower + 1 + upper) and to the left cell face (shift the stencil by -1 because influx of cell i
-		// is outflux of cell i-1)
-		// We also have to make sure that there's at least one sub and super diagonal for the dispersion term
+		// right cell face (lower + 1 + upper) and to the left cell face (shift the stencil by -1 because influx of cell
+		// i is outflux of cell i-1) We also have to make sure that there's at least one sub and super diagonal for the
+		// dispersion term
 		const unsigned int lb = std::max(weno.lowerBandwidth() + 1u, 1u) * nComp * nRad;
 
 		// We have to make sure that there's at least one sub and super diagonal for the dispersion term
@@ -608,7 +665,9 @@ public:
 		return true;
 	}
 
-	virtual void setSparsityPattern(const linalg::SparsityPattern& pattern) { }
+	virtual void setSparsityPattern(const linalg::SparsityPattern& pattern)
+	{
+	}
 
 	virtual void assembleDiscretizedJacobian(double alpha)
 	{
@@ -629,7 +688,7 @@ public:
 				jac[diag] = vals[c];
 			}
 
-			// Add time derivative			
+			// Add time derivative
 			jac[0] += alpha;
 		}
 	}
@@ -639,7 +698,7 @@ public:
 		return _jacCdisc.factorize();
 	}
 
-	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const 
+	virtual bool solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const
 	{
 		return _jacCdisc.solve(rhs);
 	}
@@ -649,12 +708,12 @@ protected:
 	linalg::FactorizableBandMatrix _jacCdisc;
 };
 
-
 /**
  * @brief Creates a TwoDimensionalConvectionDispersionOperator
  */
-TwoDimensionalConvectionDispersionOperator::TwoDimensionalConvectionDispersionOperator() : _colPorosities(0), _dir(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()), 
-	_wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _linearSolver(nullptr)
+TwoDimensionalConvectionDispersionOperator::TwoDimensionalConvectionDispersionOperator()
+	: _colPorosities(0), _dir(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()),
+	  _wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _linearSolver(nullptr)
 {
 }
 
@@ -673,7 +732,9 @@ TwoDimensionalConvectionDispersionOperator::~TwoDimensionalConvectionDispersionO
  * @param [in] dynamicReactions Determines whether the sparsity pattern accounts for dynamic reactions
  * @return @c true if configuration went fine, @c false otherwise
  */
-bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, bool dynamicReactions)
+bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IParameterProvider& paramProvider,
+																			  unsigned int nComp, unsigned int nCol,
+																			  unsigned int nRad, bool dynamicReactions)
 {
 	_nComp = nComp;
 	_nCol = nCol;
@@ -716,17 +777,18 @@ bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IP
 		_linearSolver = new SparseDirectSolver<linalg::UMFPackSparseMatrix>(&_jacC);
 #elif defined(SUPERLU_FOUND)
 		_linearSolver = new SparseDirectSolver<linalg::SuperLUSparseMatrix>(&_jacC);
-#else		
+#else
 		_linearSolver = new DenseDirectSolver(&_jacC);
 #endif
-//		LOG(Info) << "Default to dense banded linear solver due to invalid or missing LINEAR_SOLVER_BULK setting";
+		//		LOG(Info) << "Default to dense banded linear solver due to invalid or missing LINEAR_SOLVER_BULK
+		// setting";
 	}
 
 	paramProvider.popScope();
 
 	_radialEdges.resize(nRad + 1);
 	_radialCenters.resize(nRad);
-//	_radialCentroids.resize(nRad);
+	//	_radialCentroids.resize(nRad);
 	_crossSections.resize(nRad);
 	_curVelocity.resize(nRad);
 
@@ -743,7 +805,8 @@ bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IP
  * @param [out] parameters Map in which local parameters are inserted
  * @return @c true if configuration went fine, @c false otherwise
  */
-bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IParameterProvider& paramProvider, std::unordered_map<ParameterId, active*>& parameters)
+bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IParameterProvider& paramProvider,
+														   std::unordered_map<ParameterId, active*>& parameters)
 {
 	// Read geometry parameters
 	_colLength = paramProvider.getDouble("COL_LENGTH");
@@ -751,7 +814,8 @@ bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, 
 	readScalarParameterOrArray(_colPorosities, paramProvider, "COL_POROSITY", 1);
 
 	if ((_colPorosities.size() != 1) && (_colPorosities.size() != _nRad))
-		throw InvalidParameterException("Number of elements in field COL_POROSITY is neither 1 nor NRAD (" + std::to_string(_nRad) + ")");
+		throw InvalidParameterException("Number of elements in field COL_POROSITY is neither 1 nor NRAD (" +
+										std::to_string(_nRad) + ")");
 
 	_singlePorosity = (_colPorosities.size() == 1);
 	if (_singlePorosity)
@@ -768,9 +832,13 @@ bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, 
 		readScalarParameterOrArray(_radialEdges, paramProvider, "RADIAL_COMPARTMENTS", 1);
 
 		if (_radialEdges.size() < _nRad + 1)
-			throw InvalidParameterException("Number of elements in field RADIAL_COMPARTMENTS is less than NRAD + 1 (" + std::to_string(_nRad + 1) + ")");
+			throw InvalidParameterException("Number of elements in field RADIAL_COMPARTMENTS is less than NRAD + 1 (" +
+											std::to_string(_nRad + 1) + ")");
 
-		registerParam1DArray(parameters, _radialEdges, [=](bool multi, unsigned int i) { return makeParamId(hashString("RADIAL_COMPARTMENTS"), unitOpIdx, CompIndep, i, BoundStateIndep, ReactionIndep, SectionIndep); });
+		registerParam1DArray(parameters, _radialEdges, [=](bool multi, unsigned int i) {
+			return makeParamId(hashString("RADIAL_COMPARTMENTS"), unitOpIdx, CompIndep, i, BoundStateIndep,
+							   ReactionIndep, SectionIndep);
+		});
 	}
 	else
 		_radialDiscretizationMode = RadialDiscretizationMode::Equidistant;
@@ -803,11 +871,16 @@ bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, 
 				_singleVelocity = false;
 
 			if (!_singleVelocity && (_velocity.size() % _nRad != 0))
-				throw InvalidParameterException("Number of elements in field VELOCITY is not a positive multiple of NRAD (" + std::to_string(_nRad) + ")");
+				throw InvalidParameterException(
+					"Number of elements in field VELOCITY is not a positive multiple of NRAD (" +
+					std::to_string(_nRad) + ")");
 			if ((mode == 0) && (_velocity.size() != 1))
-				throw InvalidParameterException("Number of elements in field VELOCITY inconsistent with VELOCITY_MULTIPLEX (should be 1)");
+				throw InvalidParameterException(
+					"Number of elements in field VELOCITY inconsistent with VELOCITY_MULTIPLEX (should be 1)");
 			if ((mode == 1) && (_velocity.size() != _nRad))
-				throw InvalidParameterException("Number of elements in field VELOCITY inconsistent with VELOCITY_MULTIPLEX (should be " + std::to_string(_nRad) + ")");
+				throw InvalidParameterException(
+					"Number of elements in field VELOCITY inconsistent with VELOCITY_MULTIPLEX (should be " +
+					std::to_string(_nRad) + ")");
 		}
 		else
 		{
@@ -839,26 +912,41 @@ bool TwoDimensionalConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, 
 		{
 			// Register only the first item in each section
 			for (std::size_t i = 0; i < _velocity.size() / _nRad; ++i)
-				parameters[makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, i)] = &_velocity[i * _nRad];
+				parameters[makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep,
+									   ReactionIndep, i)] = &_velocity[i * _nRad];
 		}
 		else
 		{
 			// We have only one parameter
-			parameters[makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = &_velocity[0];
+			parameters[makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep,
+								   ReactionIndep, SectionIndep)] = &_velocity[0];
 		}
 	}
 	else
-		registerParam2DArray(parameters, _velocity, [=](bool multi, unsigned int sec, unsigned int compartment) { return makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, compartment, BoundStateIndep, ReactionIndep, multi ? sec : SectionIndep); }, _nRad);
+		registerParam2DArray(
+			parameters, _velocity,
+			[=](bool multi, unsigned int sec, unsigned int compartment) {
+				return makeParamId(hashString("VELOCITY"), unitOpIdx, CompIndep, compartment, BoundStateIndep,
+								   ReactionIndep, multi ? sec : SectionIndep);
+			},
+			_nRad);
 
 	_dir = std::vector<int>(_nRad, 1);
 
-	_axialDispersionMode = readAndRegisterMultiplexParam(paramProvider, parameters, _axialDispersion, "COL_DISPERSION", _nComp, _nRad, unitOpIdx);
-	_radialDispersionMode = readAndRegisterMultiplexParam(paramProvider, parameters, _radialDispersion, "COL_DISPERSION_RADIAL", _nComp, _nRad, unitOpIdx);
+	_axialDispersionMode = readAndRegisterMultiplexParam(paramProvider, parameters, _axialDispersion, "COL_DISPERSION",
+														 _nComp, _nRad, unitOpIdx);
+	_radialDispersionMode = readAndRegisterMultiplexParam(paramProvider, parameters, _radialDispersion,
+														  "COL_DISPERSION_RADIAL", _nComp, _nRad, unitOpIdx);
 
 	// Add parameters to map
-	parameters[makeParamId(hashString("COL_LENGTH"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = &_colLength;
-	parameters[makeParamId(hashString("COL_RADIUS"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = &_colRadius;
-	registerParam1DArray(parameters, _colPorosities, [=](bool multi, unsigned int i) { return makeParamId(hashString("COL_POROSITY"), unitOpIdx, CompIndep, multi ? i : ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
+	parameters[makeParamId(hashString("COL_LENGTH"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep,
+						   SectionIndep)] = &_colLength;
+	parameters[makeParamId(hashString("COL_RADIUS"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep,
+						   SectionIndep)] = &_colRadius;
+	registerParam1DArray(parameters, _colPorosities, [=](bool multi, unsigned int i) {
+		return makeParamId(hashString("COL_POROSITY"), unitOpIdx, CompIndep, multi ? i : ParTypeIndep, BoundStateIndep,
+						   ReactionIndep, SectionIndep);
+	});
 
 	return true;
 }
@@ -907,7 +995,8 @@ bool TwoDimensionalConvectionDispersionOperator::notifyDiscontinuousSectionTrans
  * @param [in] in Total volumetric inlet flow rate
  * @param [in] out Total volumetric outlet flow rate
  */
-void TwoDimensionalConvectionDispersionOperator::setFlowRates(int compartment, const active& in, const active& out) CADET_NOEXCEPT
+void TwoDimensionalConvectionDispersionOperator::setFlowRates(int compartment, const active& in,
+															  const active& out) CADET_NOEXCEPT
 {
 	_curVelocity[compartment] = _dir[compartment] * in / (_crossSections[compartment] * _colPorosities[compartment]);
 }
@@ -924,12 +1013,14 @@ double TwoDimensionalConvectionDispersionOperator::inletFactor(unsigned int idxS
 	return -std::abs(static_cast<double>(_curVelocity[idxRad])) / h;
 }
 
-const active& TwoDimensionalConvectionDispersionOperator::axialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT
+const active& TwoDimensionalConvectionDispersionOperator::axialDispersion(unsigned int idxSec, int idxRad,
+																		  int idxComp) const CADET_NOEXCEPT
 {
 	return *(getSectionDependentSlice(_axialDispersion, _nRad * _nComp, idxSec) + idxRad * _nComp + idxComp);
 }
 
-const active& TwoDimensionalConvectionDispersionOperator::radialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT
+const active& TwoDimensionalConvectionDispersionOperator::radialDispersion(unsigned int idxSec, int idxRad,
+																		   int idxComp) const CADET_NOEXCEPT
 {
 	return *(getSectionDependentSlice(_radialDispersion, _nRad * _nComp, idxSec) + idxRad * _nComp + idxComp);
 }
@@ -944,7 +1035,9 @@ const active& TwoDimensionalConvectionDispersionOperator::radialDispersion(unsig
  * @param [in] wantJac Determines whether the Jacobian is computed or not
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y,
+														 double const* yDot, double* res, bool wantJac,
+														 WithoutParamSensitivity)
 {
 	if (wantJac)
 		return residualImpl<double, double, double, true>(t, secIdx, y, yDot, res);
@@ -952,7 +1045,9 @@ int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int 
 		return residualImpl<double, double, double, false>(t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y,
+														 double const* yDot, active* res, bool wantJac,
+														 WithoutParamSensitivity)
 {
 	if (wantJac)
 		return residualImpl<active, active, double, true>(t, secIdx, y, yDot, res);
@@ -960,7 +1055,9 @@ int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int 
 		return residualImpl<active, active, double, false>(t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y,
+														 double const* yDot, active* res, bool wantJac,
+														 WithParamSensitivity)
 {
 	if (wantJac)
 		return residualImpl<double, active, active, true>(t, secIdx, y, yDot, res);
@@ -968,7 +1065,9 @@ int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int 
 		return residualImpl<double, active, active, false>(t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y,
+														 double const* yDot, active* res, bool wantJac,
+														 WithParamSensitivity)
 {
 	if (wantJac)
 		return residualImpl<active, active, active, true>(t, secIdx, y, yDot, res);
@@ -977,7 +1076,8 @@ int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int 
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
+int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned int secIdx, StateType const* y,
+															 double const* yDot, ResidualType* res)
 {
 	if (wantJac)
 	{
@@ -999,17 +1099,19 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 			&_weno,
 			&_stencilMemory,
 			_wenoEpsilon,
-			static_cast<int>(_nComp * _nRad),  // Stride between two cells
+			static_cast<int>(_nComp * _nRad), // Stride between two cells
 			_nComp,
 			_nCol,
-			_nComp * i,                        // Offset to the first component of the inlet DOFs in the local state vector
-			_nComp * (_nRad + i)               // Offset to the first component of the first bulk cell in the local state vector
+			_nComp * i,          // Offset to the first component of the inlet DOFs in the local state vector
+			_nComp * (_nRad + i) // Offset to the first component of the first bulk cell in the local state vector
 		};
 
 		if (wantJac)
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, true>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, true>(
+				SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 		else
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(
+				SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 	}
 
 	// Handle radial dispersion
@@ -1033,16 +1135,18 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 
 			active const* const localD_rho = d_rho + rad * _nComp;
 			const ParamType invEps = 1.0 / static_cast<ParamType>(_colPorosities[rad]);
-			const ParamType deltaRho = static_cast<ParamType>(_radialEdges[rad+1]) - static_cast<ParamType>(_radialEdges[rad]);
+			const ParamType deltaRho =
+				static_cast<ParamType>(_radialEdges[rad + 1]) - static_cast<ParamType>(_radialEdges[rad]);
 			const ParamType rho = static_cast<ParamType>(_radialCenters[rad]);
-//			const ParamType rhoCentroid = static_cast<ParamType>(_radialCentroids[rad]);
+			//			const ParamType rhoCentroid = static_cast<ParamType>(_radialCentroids[rad]);
 
 			for (unsigned int comp = 0; comp < _nComp; ++comp)
 			{
 				const unsigned int offsetCur = offsetColRadBlock + comp;
 				ResidualType* const resCur = resColRadBlock + comp;
 				StateType const* const yCur = yColRadBlock + comp;
-				const ParamType curFluxCoeff = static_cast<ParamType>(_colPorosities[rad]) * static_cast<ParamType>(localD_rho[comp]);
+				const ParamType curFluxCoeff =
+					static_cast<ParamType>(_colPorosities[rad]) * static_cast<ParamType>(localD_rho[comp]);
 
 				if (cadet_unlikely(curFluxCoeff <= 0.0))
 					continue;
@@ -1050,16 +1154,30 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 				if (cadet_likely(rad > 0))
 				{
 					// Flow from inner cell
-					const ParamType centerDiffRho = rho - static_cast<ParamType>(_radialCenters[rad-1]);
-//					const ParamType centerDiffRho = rhoCentroid - static_cast<ParamType>(_radialCentroids[rad-1]);
-					const ParamType innerFluxCoeff = static_cast<ParamType>(_colPorosities[rad-1]) * static_cast<ParamType>(localD_rho[-static_cast<int>(_nComp) + static_cast<int>(comp)]);
+					const ParamType centerDiffRho = rho - static_cast<ParamType>(_radialCenters[rad - 1]);
+					//					const ParamType centerDiffRho = rhoCentroid -
+					// static_cast<ParamType>(_radialCentroids[rad-1]);
+					const ParamType innerFluxCoeff =
+						static_cast<ParamType>(_colPorosities[rad - 1]) *
+						static_cast<ParamType>(localD_rho[-static_cast<int>(_nComp) + static_cast<int>(comp)]);
 
 					if (cadet_likely(innerFluxCoeff > 0.0))
 					{
-//						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff * innerFluxCoeff) / (curFluxCoeff * (static_cast<ParamType>(_radialEdges[rad]) - static_cast<ParamType>(_radialCentroids[rad-1])) + innerFluxCoeff * (rhoCentroid - static_cast<ParamType>(_radialEdges[rad])));
-						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff * innerFluxCoeff) / (curFluxCoeff * (static_cast<ParamType>(_radialEdges[rad]) - static_cast<ParamType>(_radialCenters[rad-1])) + innerFluxCoeff * (rho - static_cast<ParamType>(_radialEdges[rad])));
-//						const ParamType fluxCoeff = static_cast<ParamType>(_colPorosities[0]) * static_cast<ParamType>(d_rho[0]);
-						const ParamType finalFactor = invEps * (static_cast<ParamType>(_radialEdges[rad]) * fluxCoeff / centerDiffRho) / (rho * deltaRho);
+						//						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff *
+						// innerFluxCoeff)
+						/// (curFluxCoeff * (static_cast<ParamType>(_radialEdges[rad]) -
+						// static_cast<ParamType>(_radialCentroids[rad-1])) + innerFluxCoeff * (rhoCentroid -
+						// static_cast<ParamType>(_radialEdges[rad])));
+						const ParamType fluxCoeff =
+							(centerDiffRho * curFluxCoeff * innerFluxCoeff) /
+							(curFluxCoeff * (static_cast<ParamType>(_radialEdges[rad]) -
+											 static_cast<ParamType>(_radialCenters[rad - 1])) +
+							 innerFluxCoeff * (rho - static_cast<ParamType>(_radialEdges[rad])));
+						//						const ParamType fluxCoeff = static_cast<ParamType>(_colPorosities[0]) *
+						// static_cast<ParamType>(d_rho[0]);
+						const ParamType finalFactor =
+							invEps * (static_cast<ParamType>(_radialEdges[rad]) * fluxCoeff / centerDiffRho) /
+							(rho * deltaRho);
 
 						*resCur += finalFactor * (yCur[0] - yCur[-static_cast<int>(_nComp)]);
 						if (wantJac)
@@ -1073,16 +1191,29 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 				if (cadet_likely(rad < _nRad - 1))
 				{
 					// Flow from outer cell
-					const ParamType centerDiffRho = static_cast<ParamType>(_radialCenters[rad+1]) - rho;
-//					const ParamType centerDiffRho = static_cast<ParamType>(_radialCentroids[rad+1]) - rhoCentroid;
-					const ParamType outerFluxCoeff = static_cast<ParamType>(_colPorosities[rad+1]) * static_cast<ParamType>(localD_rho[_nComp + comp]);
+					const ParamType centerDiffRho = static_cast<ParamType>(_radialCenters[rad + 1]) - rho;
+					//					const ParamType centerDiffRho = static_cast<ParamType>(_radialCentroids[rad+1])
+					//- rhoCentroid;
+					const ParamType outerFluxCoeff = static_cast<ParamType>(_colPorosities[rad + 1]) *
+													 static_cast<ParamType>(localD_rho[_nComp + comp]);
 
 					if (cadet_likely(outerFluxCoeff > 0.0))
 					{
-//						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff * outerFluxCoeff) / (curFluxCoeff * (static_cast<ParamType>(_radialCentroids[rad+1] - static_cast<ParamType>(_radialEdges[rad+1]))) + outerFluxCoeff * (static_cast<ParamType>(_radialEdges[rad+1]) - rhoCentroid));
-						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff * outerFluxCoeff) / (curFluxCoeff * (static_cast<ParamType>(_radialCenters[rad+1] - static_cast<ParamType>(_radialEdges[rad+1]))) + outerFluxCoeff * (static_cast<ParamType>(_radialEdges[rad+1]) - rho));
-//						const ParamType fluxCoeff = static_cast<ParamType>(_colPorosities[0]) * static_cast<ParamType>(d_rho[0]);
-						const ParamType finalFactor = invEps * (static_cast<ParamType>(_radialEdges[rad+1]) * fluxCoeff / centerDiffRho) / (rho * deltaRho);
+						//						const ParamType fluxCoeff = (centerDiffRho * curFluxCoeff *
+						// outerFluxCoeff)
+						/// (curFluxCoeff * (static_cast<ParamType>(_radialCentroids[rad+1] -
+						// static_cast<ParamType>(_radialEdges[rad+1]))) + outerFluxCoeff *
+						//(static_cast<ParamType>(_radialEdges[rad+1]) - rhoCentroid));
+						const ParamType fluxCoeff =
+							(centerDiffRho * curFluxCoeff * outerFluxCoeff) /
+							(curFluxCoeff * (static_cast<ParamType>(_radialCenters[rad + 1] -
+																	static_cast<ParamType>(_radialEdges[rad + 1]))) +
+							 outerFluxCoeff * (static_cast<ParamType>(_radialEdges[rad + 1]) - rho));
+						//						const ParamType fluxCoeff = static_cast<ParamType>(_colPorosities[0]) *
+						// static_cast<ParamType>(d_rho[0]);
+						const ParamType finalFactor =
+							invEps * (static_cast<ParamType>(_radialEdges[rad + 1]) * fluxCoeff / centerDiffRho) /
+							(rho * deltaRho);
 
 						*resCur += finalFactor * (yCur[0] - yCur[_nComp]);
 						if (wantJac)
@@ -1112,7 +1243,8 @@ void TwoDimensionalConvectionDispersionOperator::setSparsityPattern()
 
 	// Handle convection, axial dispersion (WENO)
 	for (unsigned int i = 0; i < _nRad; ++i)
-		cadet::model::parts::convdisp::sparsityPattern(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nRad, static_cast<double>(_curVelocity[i]), _weno);
+		cadet::model::parts::convdisp::sparsityPattern(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nRad,
+													   static_cast<double>(_curVelocity[i]), _weno);
 
 	// Handle radial dispersion
 	if (_nRad > 1)
@@ -1172,17 +1304,20 @@ void TwoDimensionalConvectionDispersionOperator::setSparsityPattern()
 }
 
 /**
- * @brief Multiplies the time derivative Jacobian @f$ \frac{\partial F}{\partial \dot{y}}\left(t, y, \dot{y}\right) @f$ with a given vector
+ * @brief Multiplies the time derivative Jacobian @f$ \frac{\partial F}{\partial \dot{y}}\left(t, y, \dot{y}\right) @f$
+ * with a given vector
  * @details The operation @f$ z = \frac{\partial F}{\partial \dot{y}} x @f$ is performed.
  *          The matrix-vector multiplication is performed matrix-free (i.e., no matrix is explicitly formed).
- *          
+ *
  *          Note that this function only performs multiplication with the Jacobian of the (axial) transport equations.
- *          The input vectors are assumed to point to the beginning (including inlet DOFs) of the respective unit operation's arrays.
+ *          The input vectors are assumed to point to the beginning (including inlet DOFs) of the respective unit
+ * operation's arrays.
  * @param [in] simTime Simulation time information (time point, section index, pre-factor of time derivatives)
  * @param [in] sDot Vector @f$ x @f$ that is transformed by the Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$
  * @param [out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void TwoDimensionalConvectionDispersionOperator::multiplyWithDerivativeJacobian(const SimulationTime& simTime, double const* sDot, double* ret) const
+void TwoDimensionalConvectionDispersionOperator::multiplyWithDerivativeJacobian(const SimulationTime& simTime,
+																				double const* sDot, double* ret) const
 {
 	double* localRet = ret + _nComp * _nRad;
 	double const* localSdot = sDot + _nComp * _nRad;
@@ -1192,16 +1327,13 @@ void TwoDimensionalConvectionDispersionOperator::multiplyWithDerivativeJacobian(
 
 /**
  * @brief Assembles the axial transport Jacobian @f$ J_0 @f$ of the time-discretized equations
- * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x = b \f]
- *          has to be solved. The system Jacobian of the original equations,
- *          \f[ \frac{\partial F}{\partial y}, \f]
- *          is already computed (by AD or manually in residualImpl() with @c wantJac = true). This function is responsible
- *          for adding
- *          \f[ \alpha \frac{\partial F}{\partial \dot{y}} \f]
- *          to the system Jacobian, which yields the Jacobian of the time-discretized equations
- *          \f[ F\left(t, y_0, \sum_{k=0}^N \alpha_k y_k \right) = 0 \f]
- *          when a BDF method is used. The time integrator needs to solve this equation for @f$ y_0 @f$, which requires
- *          the solution of the linear system mentioned above (@f$ \alpha_0 = \alpha @f$ given in @p alpha).
+ * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x =
+ * b \f] has to be solved. The system Jacobian of the original equations, \f[ \frac{\partial F}{\partial y}, \f] is
+ * already computed (by AD or manually in residualImpl() with @c wantJac = true). This function is responsible for
+ * adding \f[ \alpha \frac{\partial F}{\partial \dot{y}} \f] to the system Jacobian, which yields the Jacobian of the
+ * time-discretized equations \f[ F\left(t, y_0, \sum_{k=0}^N \alpha_k y_k \right) = 0 \f] when a BDF method is used.
+ * The time integrator needs to solve this equation for @f$ y_0 @f$, which requires the solution of the linear system
+ * mentioned above (@f$ \alpha_0 = \alpha @f$ given in @p alpha).
  *
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  */
@@ -1227,11 +1359,12 @@ bool TwoDimensionalConvectionDispersionOperator::assembleAndFactorizeDiscretized
  * @details The (time discretized) Jacobian matrix has to be factorized before calling this function.
  *          Note that the given right hand side vector @p rhs is not shifted by the inlet DOFs. That
  *          is, it is assumed to point directly to the first axial DOF.
- * 
+ *
  * @param [in,out] rhs On entry, right hand side of the equation system. On exit, solution of the system.
  * @return @c true if the system was solved correctly, otherwise @c false
  */
-bool TwoDimensionalConvectionDispersionOperator::solveDiscretizedJacobian(double* rhs, double const* weight, double const* init, double outerTol) const
+bool TwoDimensionalConvectionDispersionOperator::solveDiscretizedJacobian(double* rhs, double const* weight,
+																		  double const* init, double outerTol) const
 {
 	return _linearSolver->solveDiscretizedJacobian(rhs, weight, init, outerTol);
 }
@@ -1244,7 +1377,8 @@ bool TwoDimensionalConvectionDispersionOperator::solveDiscretizedJacobian(double
  * @param [in,out] rhs On entry, right hand side. On exit, solution of the system.
  * @return @c true if the system was solved correctly, @c false otherwise
  */
-bool TwoDimensionalConvectionDispersionOperator::solveTimeDerivativeSystem(const SimulationTime& simTime, double* const rhs)
+bool TwoDimensionalConvectionDispersionOperator::solveTimeDerivativeSystem(const SimulationTime& simTime,
+																		   double* const rhs)
 {
 	return true;
 }
@@ -1259,13 +1393,14 @@ void TwoDimensionalConvectionDispersionOperator::setEquidistantRadialDisc()
 	{
 		// Set last edge to _colRadius for exact geometry
 		if (r == _nRad - 1)
-			_radialEdges[r+1] = _colRadius;
+			_radialEdges[r + 1] = _colRadius;
 		else
-			_radialEdges[r+1] = h * (r + 1);
+			_radialEdges[r + 1] = h * (r + 1);
 
-		_crossSections[r] = pi * (_radialEdges[r+1] * _radialEdges[r+1] - _radialEdges[r] * _radialEdges[r]);
-		_radialCenters[r] = 0.5 * (_radialEdges[r+1] + _radialEdges[r]);
-//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] + _radialEdges[r]) + _radialEdges[r]);
+		_crossSections[r] = pi * (_radialEdges[r + 1] * _radialEdges[r + 1] - _radialEdges[r] * _radialEdges[r]);
+		_radialCenters[r] = 0.5 * (_radialEdges[r + 1] + _radialEdges[r]);
+		//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] +
+		//_radialEdges[r]) + _radialEdges[r]);
 	}
 }
 
@@ -1279,13 +1414,14 @@ void TwoDimensionalConvectionDispersionOperator::setEquivolumeRadialDisc()
 	{
 		// Set last edge to _colRadius for exact geometry
 		if (r == _nRad - 1)
-			_radialEdges[r+1] = _colRadius;
+			_radialEdges[r + 1] = _colRadius;
 		else
-			_radialEdges[r+1] = sqrt(volPerCompartment + _radialEdges[r] * _radialEdges[r]);
+			_radialEdges[r + 1] = sqrt(volPerCompartment + _radialEdges[r] * _radialEdges[r]);
 
 		_crossSections[r] = pi * volPerCompartment;
-		_radialCenters[r] = 0.5 * (_radialEdges[r+1] + _radialEdges[r]);
-//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] + _radialEdges[r]) + _radialEdges[r]);
+		_radialCenters[r] = 0.5 * (_radialEdges[r + 1] + _radialEdges[r]);
+		//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] +
+		//_radialEdges[r]) + _radialEdges[r]);
 	}
 }
 
@@ -1294,9 +1430,10 @@ void TwoDimensionalConvectionDispersionOperator::setUserdefinedRadialDisc()
 	const double pi = 3.1415926535897932384626434;
 	for (unsigned int r = 0; r < _nRad; ++r)
 	{
-		_crossSections[r] = pi * (_radialEdges[r+1] * _radialEdges[r+1] - _radialEdges[r] * _radialEdges[r]);
-		_radialCenters[r] = 0.5 * (_radialEdges[r+1] + _radialEdges[r]);
-//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] + _radialEdges[r]) + _radialEdges[r]);
+		_crossSections[r] = pi * (_radialEdges[r + 1] * _radialEdges[r + 1] - _radialEdges[r] * _radialEdges[r]);
+		_radialCenters[r] = 0.5 * (_radialEdges[r + 1] + _radialEdges[r]);
+		//		_radialCentroids[r] = 2.0 / 3.0 * ( _radialEdges[r+1] * _radialEdges[r+1] / (_radialEdges[r+1] +
+		//_radialEdges[r]) + _radialEdges[r]);
 	}
 }
 
@@ -1312,15 +1449,17 @@ void TwoDimensionalConvectionDispersionOperator::updateRadialDisc()
 
 bool TwoDimensionalConvectionDispersionOperator::setParameter(const ParameterId& pId, double value)
 {
-	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep)
-		&& (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) && (pId.particleType == ParTypeIndep))
+	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) &&
+		(pId.particleType == ParTypeIndep))
 	{
 		for (unsigned int i = 0; i < _nRad; ++i)
 			_colPorosities[i].setValue(value);
 		return true;
 	}
 
-	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
+	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
 	{
 		if (_velocity.size() > _nRad)
 		{
@@ -1342,21 +1481,25 @@ bool TwoDimensionalConvectionDispersionOperator::setParameter(const ParameterId&
 		}
 	}
 
-	const bool ad = multiplexParameterValue(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion, _nComp, _nRad, value, nullptr);
+	const bool ad = multiplexParameterValue(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion,
+											_nComp, _nRad, value, nullptr);
 	if (ad)
 		return true;
 
-	const bool adr = multiplexParameterValue(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode, _radialDispersion, _nComp, _nRad, value, nullptr);
+	const bool adr = multiplexParameterValue(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode,
+											 _radialDispersion, _nComp, _nRad, value, nullptr);
 	if (adr)
 		return true;
 
 	return false;
 }
 
-bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameterValue(const std::unordered_set<active*>& sensParams, const ParameterId& pId, double value)
+bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameterValue(
+	const std::unordered_set<active*>& sensParams, const ParameterId& pId, double value)
 {
-	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep)
-		&& (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) && (pId.particleType == ParTypeIndep))
+	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) &&
+		(pId.particleType == ParTypeIndep))
 	{
 		if (contains(sensParams, &_colPorosities[0]))
 		{
@@ -1366,7 +1509,8 @@ bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameterValue(cons
 		}
 	}
 
-	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
+	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
 	{
 		if (_velocity.size() > _nRad)
 		{
@@ -1388,21 +1532,26 @@ bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameterValue(cons
 		}
 	}
 
-	const bool ad = multiplexParameterValue(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion, _nComp, _nRad, value, &sensParams);
+	const bool ad = multiplexParameterValue(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion,
+											_nComp, _nRad, value, &sensParams);
 	if (ad)
 		return true;
 
-	const bool adr = multiplexParameterValue(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode, _radialDispersion, _nComp, _nRad, value, &sensParams);
+	const bool adr = multiplexParameterValue(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode,
+											 _radialDispersion, _nComp, _nRad, value, &sensParams);
 	if (adr)
 		return true;
 
 	return false;
 }
 
-bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameter(std::unordered_set<active*>& sensParams, const ParameterId& pId, unsigned int adDirection, double adValue)
+bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameter(std::unordered_set<active*>& sensParams,
+																	   const ParameterId& pId, unsigned int adDirection,
+																	   double adValue)
 {
-	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep)
-		&& (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) && (pId.particleType == ParTypeIndep))
+	if (_singlePorosity && (pId.name == hashString("COL_POROSITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep) && (pId.section == SectionIndep) &&
+		(pId.particleType == ParTypeIndep))
 	{
 		sensParams.insert(&_colPorosities[0]);
 		for (unsigned int i = 0; i < _nRad; ++i)
@@ -1411,7 +1560,8 @@ bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameter(std::unor
 		return true;
 	}
 
-	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) && (pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
+	if (_singleVelocity && (pId.name == hashString("VELOCITY")) && (pId.component == CompIndep) &&
+		(pId.boundState == BoundStateIndep) && (pId.reaction == ReactionIndep))
 	{
 		if (_velocity.size() > _nRad)
 		{
@@ -1435,19 +1585,21 @@ bool TwoDimensionalConvectionDispersionOperator::setSensitiveParameter(std::unor
 		}
 	}
 
-	const bool ad = multiplexParameterAD(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion, _nComp, _nRad, adDirection, adValue, sensParams);
+	const bool ad = multiplexParameterAD(pId, hashString("COL_DISPERSION"), _axialDispersionMode, _axialDispersion,
+										 _nComp, _nRad, adDirection, adValue, sensParams);
 	if (ad)
 		return true;
 
-	const bool adr = multiplexParameterAD(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode, _radialDispersion, _nComp, _nRad, adDirection, adValue, sensParams);
+	const bool adr = multiplexParameterAD(pId, hashString("COL_DISPERSION_RADIAL"), _radialDispersionMode,
+										  _radialDispersion, _nComp, _nRad, adDirection, adValue, sensParams);
 	if (adr)
 		return true;
 
 	return false;
 }
 
-}  // namespace parts
+} // namespace parts
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

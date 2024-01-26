@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -22,7 +22,9 @@ namespace cadet
 namespace nonlin
 {
 
-CompositeSolver::CompositeSolver() { }
+CompositeSolver::CompositeSolver()
+{
+}
 CompositeSolver::~CompositeSolver()
 {
 	for (std::vector<Solver*>::iterator it = _solvers.begin(); it != _solvers.end(); ++it)
@@ -41,7 +43,7 @@ bool CompositeSolver::configure(IParameterProvider& paramProvider)
 			if (s)
 				_solvers.push_back(s);
 		}
-	}	
+	}
 
 	// Configure all solvers (including previously added solvers)
 	bool success = true;
@@ -53,8 +55,10 @@ bool CompositeSolver::configure(IParameterProvider& paramProvider)
 	return success;
 }
 
-bool CompositeSolver::solve(std::function<bool(double const* const, double* const)> residual, std::function<bool(double const* const, linalg::detail::DenseMatrixBase& jac)> jacobian,
-		double tol, double* const point, double* const workingMemory, linalg::detail::DenseMatrixBase& jacMatrix, unsigned int size) const
+bool CompositeSolver::solve(std::function<bool(double const* const, double* const)> residual,
+							std::function<bool(double const* const, linalg::detail::DenseMatrixBase& jac)> jacobian,
+							double tol, double* const point, double* const workingMemory,
+							linalg::detail::DenseMatrixBase& jacMatrix, unsigned int size) const
 {
 	bool success = true;
 	for (std::vector<Solver*>::const_iterator it = _solvers.begin(); it != _solvers.end(); ++it)
@@ -70,7 +74,7 @@ unsigned int CompositeSolver::workspaceSize(unsigned int problemSize) const
 		ws = std::max(ws, (*it)->workspaceSize(problemSize));
 	return ws;
 }
-		
+
 unsigned int CompositeSolver::numTuningParameters() const
 {
 	unsigned int ntp = 0;

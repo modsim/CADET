@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Interfaces the compressed sparse matrix with the UMFPACK solver
  */
 
@@ -75,23 +75,24 @@ public:
 	/**
 	 * @brief Uses the factorized matrix to solve the equation @f$ Ax = b @f$ with LAPACK
 	 * @details Before the equation can be solved, the matrix has to be factorized first by calling factorize().
-	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the solution @f$ x @f$
+	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the
+	 * solution @f$ x @f$
 	 * @return @c true if the solution process was successful, otherwise @c false
 	 */
 	bool solve(double* rhs) const;
 
 protected:
-	void* _symbolic; //!< Symbolic info for UMFPACK (orderings)
-	void* _numeric; //!< Factorization from UMFPACK (L, U factors)
-	mutable std::vector<double> _info; //!< UMFPACK statistics
-	std::vector<double> _options; //!< UMFPACK options
-	mutable std::vector<double> _result; //!< Result cache
+	void* _symbolic;                                 //!< Symbolic info for UMFPACK (orderings)
+	void* _numeric;                                  //!< Factorization from UMFPACK (L, U factors)
+	mutable std::vector<double> _info;               //!< UMFPACK statistics
+	std::vector<double> _options;                    //!< UMFPACK options
+	mutable std::vector<double> _result;             //!< Result cache
 	mutable std::vector<sparse_int_t> _workSpaceIdx; //!< UMFPACK workspace for solving linear system
-	mutable std::vector<double> _workSpace; //!< UMFPACK workspace for solving linear system
+	mutable std::vector<double> _workSpace;          //!< UMFPACK workspace for solving linear system
 };
 
 } // namespace linalg
 
 } // namespace cadet
 
-#endif  // LIBCADET_UMFPACKSPARSEMATRIX_HPP_
+#endif // LIBCADET_UMFPACKSPARSEMATRIX_HPP_

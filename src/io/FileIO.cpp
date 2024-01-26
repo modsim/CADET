@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -27,7 +27,6 @@
 
 using json = nlohmann::json;
 
-
 namespace
 {
 
@@ -36,12 +35,15 @@ namespace
  * @details Wraps a generic file reading class providing the IFileReader interface.
  * @tparam reader_t Generic file reader class
  */
-template <typename reader_t>
-class FileReader : public cadet::io::IFileReader
+template <typename reader_t> class FileReader : public cadet::io::IFileReader
 {
 public:
-	FileReader() { }
-	virtual ~FileReader() CADET_NOEXCEPT { }
+	FileReader()
+	{
+	}
+	virtual ~FileReader() CADET_NOEXCEPT
+	{
+	}
 
 	virtual double getDouble(const std::string& paramName)
 	{
@@ -122,30 +124,35 @@ protected:
 	reader_t _io;
 };
 
-
 /**
  * @brief Implements writing capabilities from a generic file writer class
  * @details Wraps a generic file writing class providing the IFileWriter interface.
  * @tparam writer_t Generic file writer class
  */
-template <typename writer_t>
-class FileWriter : public cadet::io::IFileWriter
+template <typename writer_t> class FileWriter : public cadet::io::IFileWriter
 {
 public:
-	FileWriter() { }
-	virtual ~FileWriter() CADET_NOEXCEPT { }
-	
-	virtual void writeTensorDouble(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	FileWriter()
+	{
+	}
+	virtual ~FileWriter() CADET_NOEXCEPT
+	{
+	}
+
+	virtual void writeTensorDouble(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								   const double* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template tensor<double>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeTensorInt(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorInt(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								const int* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template tensor<int>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeTensorBool(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorBool(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								 const bool* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		// Compute buffer size
 		std::size_t bufSize = 1;
@@ -164,22 +171,26 @@ public:
 		_io.template tensor<int>(dataSetName, rank, dims, bd.data(), 1, 1);
 	}
 
-	virtual void writeTensorString(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorString(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								   const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template tensor<std::string>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixDouble(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixDouble(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								   const double* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template matrix<double>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixInt(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixInt(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								const int* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template matrix<int>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixBool(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixBool(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								 const bool* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		// Compute buffer size
 		const std::size_t bufSize = rows * cols;
@@ -194,22 +205,26 @@ public:
 		_io.template matrix<int>(dataSetName, rows, cols, bd.data(), 1, 1);
 	}
 
-	virtual void writeMatrixString(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixString(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								   const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template matrix<std::string>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorDouble(const std::string& dataSetName, const std::size_t length, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorDouble(const std::string& dataSetName, const std::size_t length, const double* buffer,
+								   const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template vector<double>(dataSetName, length, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorInt(const std::string& dataSetName, const std::size_t length, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorInt(const std::string& dataSetName, const std::size_t length, const int* buffer,
+								const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template vector<int>(dataSetName, length, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorBool(const std::string& dataSetName, const std::size_t length, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorBool(const std::string& dataSetName, const std::size_t length, const bool* buffer,
+								 const std::size_t stride, const std::size_t blockSize)
 	{
 		// Convert buffer to int
 		std::vector<int> bd(length);
@@ -221,7 +236,8 @@ public:
 		_io.template vector<int>(dataSetName, length, bd.data(), 1, 1);
 	}
 
-	virtual void writeVectorString(const std::string& dataSetName, const std::size_t length, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorString(const std::string& dataSetName, const std::size_t length, const std::string* buffer,
+								   const std::size_t stride, const std::size_t blockSize)
 	{
 		_io.template vector<std::string>(dataSetName, length, buffer, stride, blockSize);
 	}
@@ -260,16 +276,16 @@ protected:
 	writer_t _io;
 };
 
-
 /**
  * @brief Implements file IO and navigation functions on top of FileReader or FileWriter
  * @tparam base_t FileReader or FileWriter class
  */
-template <typename base_t>
-class BaseIOWrapper : public base_t
+template <typename base_t> class BaseIOWrapper : public base_t
 {
 public:
-	BaseIOWrapper() { }
+	BaseIOWrapper()
+	{
+	}
 
 	virtual void openFile(const std::string& fileName, const char* mode)
 	{
@@ -322,16 +338,16 @@ public:
 	}
 };
 
-
 /**
  * @brief Implements JSON IO functions on top of some other class
  * @tparam base_t Base class that is augmented with JSON IO functions
  */
-template <typename base_t>
-class JSONBaseIOWrapper : public base_t
+template <typename base_t> class JSONBaseIOWrapper : public base_t
 {
 public:
-	JSONBaseIOWrapper() { }
+	JSONBaseIOWrapper()
+	{
+	}
 
 	virtual void pushGroup(const std::string& scope)
 	{
@@ -367,7 +383,7 @@ public:
 		}
 
 		// Don't care for a preceding delimiter
-		if (scope[0] == delimiter[0]) 
+		if (scope[0] == delimiter[0])
 			++start;
 
 		while (end != std::string::npos)
@@ -379,7 +395,7 @@ public:
 
 			// If at end, use start = maxSize.  Else use start = end + delimiter.
 			start = ((end > (std::string::npos - delimiter.size())) ? std::string::npos : end + delimiter.size());
-		}		
+		}
 	}
 
 	virtual bool exists(const std::string& paramName)
@@ -550,7 +566,7 @@ public:
 		std::vector<std::string> names;
 		names.reserve(base_t::_opened.top()->size());
 		for (json::iterator it = base_t::_opened.top()->begin(); it != base_t::_opened.top()->end(); ++it)
-		names.push_back(it.key());
+			names.push_back(it.key());
 		return names;
 	}
 
@@ -574,15 +590,15 @@ public:
 		if (p.is_array())
 		{
 			if (p.is_number_float())
-				return std::vector<std::size_t>({ p.template get<std::vector<double>>().size() });
+				return std::vector<std::size_t>({p.template get<std::vector<double>>().size()});
 			else if (p.is_number_integer())
-				return std::vector<std::size_t>({ p.template get<std::vector<int>>().size() });
+				return std::vector<std::size_t>({p.template get<std::vector<int>>().size()});
 			else if (p.is_string())
-				return std::vector<std::size_t>({ p.template get<std::string>().size() });
+				return std::vector<std::size_t>({p.template get<std::string>().size()});
 			else if (p.is_boolean())
-				return std::vector<std::size_t>({ p.template get<std::vector<bool>>().size() });
+				return std::vector<std::size_t>({p.template get<std::vector<bool>>().size()});
 
-			return std::vector<std::size_t>({ 0 });
+			return std::vector<std::size_t>({0});
 		}
 		else
 			return std::vector<std::size_t>();
@@ -596,62 +612,74 @@ public:
 		return base_t::_opened.top()->at(elementName).size();
 	}
 
-	virtual void writeTensorDouble(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorDouble(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								   const double* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeTensor<double, double>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeTensorInt(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorInt(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								const int* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeTensor<int, int>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeTensorBool(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorBool(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								 const bool* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeTensor<bool, int>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeTensorString(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeTensorString(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+								   const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeTensor<std::string, std::string>(dataSetName, rank, dims, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixDouble(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixDouble(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								   const double* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeMatrix<double, double>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixInt(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixInt(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								const int* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeMatrix<int, int>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixBool(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixBool(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								 const bool* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeMatrix<bool, int>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeMatrixString(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeMatrixString(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+								   const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		writeMatrix<std::string, std::string>(dataSetName, rows, cols, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorDouble(const std::string& dataSetName, const std::size_t length, const double* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorDouble(const std::string& dataSetName, const std::size_t length, const double* buffer,
+								   const std::size_t stride, const std::size_t blockSize)
 	{
 		writeVector<double, double>(dataSetName, length, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorInt(const std::string& dataSetName, const std::size_t length, const int* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorInt(const std::string& dataSetName, const std::size_t length, const int* buffer,
+								const std::size_t stride, const std::size_t blockSize)
 	{
 		writeVector<int, int>(dataSetName, length, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorBool(const std::string& dataSetName, const std::size_t length, const bool* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorBool(const std::string& dataSetName, const std::size_t length, const bool* buffer,
+								 const std::size_t stride, const std::size_t blockSize)
 	{
 		writeVector<bool, int>(dataSetName, length, buffer, stride, blockSize);
 	}
 
-	virtual void writeVectorString(const std::string& dataSetName, const std::size_t length, const std::string* buffer, const std::size_t stride, const std::size_t blockSize)
+	virtual void writeVectorString(const std::string& dataSetName, const std::size_t length, const std::string* buffer,
+								   const std::size_t stride, const std::size_t blockSize)
 	{
 		writeVector<std::string, std::string>(dataSetName, length, buffer, stride, blockSize);
 	}
@@ -686,13 +714,19 @@ public:
 		base_t::_opened.top()->erase(dsName);
 	}
 
-	inline nlohmann::json* data() { return base_t::_root; }
-	inline nlohmann::json const* data() const { return base_t::_root; }
+	inline nlohmann::json* data()
+	{
+		return base_t::_root;
+	}
+	inline nlohmann::json const* data() const
+	{
+		return base_t::_root;
+	}
 
 protected:
-
 	template <typename source_t, typename target_t>
-	void writeVector(const std::string& dataSetName, const std::size_t length, const source_t* buffer, const std::size_t stride, const std::size_t blockSize)
+	void writeVector(const std::string& dataSetName, const std::size_t length, const source_t* buffer,
+					 const std::size_t stride, const std::size_t blockSize)
 	{
 		std::vector<target_t> d(length);
 		for (std::size_t i = 0; i < length / blockSize; ++i)
@@ -705,7 +739,8 @@ protected:
 	}
 
 	template <typename source_t, typename target_t>
-	void writeMatrix(const std::string& dataSetName, const std::size_t rows, const std::size_t cols, const source_t* buffer, const std::size_t stride, const std::size_t blockSize)
+	void writeMatrix(const std::string& dataSetName, const std::size_t rows, const std::size_t cols,
+					 const source_t* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		std::vector<target_t> d(rows * cols);
 		for (std::size_t i = 0; i < d.size() / blockSize; ++i)
@@ -720,7 +755,8 @@ protected:
 	}
 
 	template <typename source_t, typename target_t>
-	void writeTensor(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims, const source_t* buffer, const std::size_t stride, const std::size_t blockSize)
+	void writeTensor(const std::string& dataSetName, const std::size_t rank, const std::size_t* dims,
+					 const source_t* buffer, const std::size_t stride, const std::size_t blockSize)
 	{
 		// Handle scalars
 		if (rank == 0)
@@ -765,7 +801,6 @@ protected:
 	}
 };
 
-
 /**
  * @brief Root class for implementing IMemoryIO using JSON
  * @details Serves as root class for JSONBaseIOWrapper.
@@ -773,7 +808,6 @@ protected:
 class JSONMemoryReaderWriterImpl : public cadet::io::IMemoryIO
 {
 public:
-
 	JSONMemoryReaderWriterImpl() : _root(new json())
 	{
 		_opened.push(_root);
@@ -789,17 +823,14 @@ protected:
 	std::stack<nlohmann::json*> _opened;
 };
 
-
 /**
  * @brief Root class for JSON FileReader and FileWriter implementations
  * @details Serves as root class for JSONBaseIOWrapper.
  * @tparam iface_t Interface to implement, either IFileReader or IFileWriter
  */
-template <class iface_t>
-class JSONFileIOProxy : public iface_t
+template <class iface_t> class JSONFileIOProxy : public iface_t
 {
 public:
-
 	JSONFileIOProxy() : _writeBack(false), _root(new json())
 	{
 		_opened.push(_root);
@@ -851,7 +882,6 @@ protected:
 	nlohmann::json* _root;
 	std::stack<nlohmann::json*> _opened;
 };
-
 
 } // namespace
 
@@ -908,4 +938,3 @@ IFileWriter* createWriter(const std::string& fileExt)
 
 } // namespace io
 } // namespace cadet
-

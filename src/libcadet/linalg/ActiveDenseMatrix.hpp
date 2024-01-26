@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a rectangular dense matrix comprised of AD elements
  */
 
@@ -30,8 +30,6 @@ namespace cadet
 namespace linalg
 {
 
-
-
 /**
  * @brief Represents a dense matrix base class providing common functionality
  * @details This class uses row-major storage ordering. It does not provide
@@ -40,18 +38,20 @@ namespace linalg
 class ActiveDenseMatrix
 {
 public:
-
 	/**
 	 * @brief Creates an empty, unitialized matrix
 	 * @details No memory is allocated for the matrix. Users have to call resize() first.
 	 */
-	ActiveDenseMatrix() CADET_NOEXCEPT : _data(nullptr), _rows(0), _cols(0) { }
+	ActiveDenseMatrix() CADET_NOEXCEPT : _data(nullptr), _rows(0), _cols(0)
+	{
+	}
 	~ActiveDenseMatrix() CADET_NOEXCEPT
 	{
 		delete[] _data;
 	}
 
-	ActiveDenseMatrix(const ActiveDenseMatrix& cpy) : ActiveDenseMatrix(new active[cpy.stride() * cpy._rows], cpy._rows, cpy._cols)
+	ActiveDenseMatrix(const ActiveDenseMatrix& cpy)
+		: ActiveDenseMatrix(new active[cpy.stride() * cpy._rows], cpy._rows, cpy._cols)
 	{
 		copyValues(cpy._data);
 	}
@@ -99,7 +99,7 @@ public:
 	 * @details It is assumed that the matrix has enough memory to hold the given copy @p cpy.
 	 *          All current data is lost in this operation.
 	 *          The matrix is resized to match the size of @p cpy.
-	 * 
+	 *
 	 * @param cpy Matrix to be copied
 	 */
 	inline void copyFrom(const ActiveDenseMatrix& cpy)
@@ -118,7 +118,7 @@ public:
 	/**
 	 * @brief Resizes the matrix to the given size
 	 * @details All data is lost in this operation.
-	 * 
+	 *
 	 * @param [in] rows The number of rows
 	 * @param [in] cols The number of columns
 	 */
@@ -145,24 +145,30 @@ public:
 	/**
 	 * @brief Accesses an element in a diagonal of the matrix where the main diagonal has index @c 0
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal of the matrix is retrieved.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] diagonal Index of the diagonal
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline active& diagonalElement(int row, int diagonal) { return (*this)(row, diagonal); }
-	inline const active& diagonalElement(int row, int diagonal) const { return (*this)(row, diagonal); }
+	inline active& diagonalElement(int row, int diagonal)
+	{
+		return (*this)(row, diagonal);
+	}
+	inline const active& diagonalElement(int row, int diagonal) const
+	{
+		return (*this)(row, diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the matrix
 	 * @details In contrast to diagonalElement(), the indices do not refer to diagonals but to columns of the matrix.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] col Index of the column (from @c 0 to @c columns)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline active& native(int row, int col)
@@ -199,32 +205,50 @@ public:
 	 * @brief Returns the number of elements in the matrix
 	 * @return Number of elements in the matrix
 	 */
-	inline int elements() const CADET_NOEXCEPT { return _cols * _rows; }
+	inline int elements() const CADET_NOEXCEPT
+	{
+		return _cols * _rows;
+	}
 
 	/**
 	 * @brief Returns the number of columns
 	 * @return Number of columns
 	 */
-	inline int columns() const CADET_NOEXCEPT { return _cols; }
+	inline int columns() const CADET_NOEXCEPT
+	{
+		return _cols;
+	}
 
 	/**
 	 * @brief Returns the number of rows
 	 * @return Number of rows
 	 */
-	inline int rows() const CADET_NOEXCEPT { return _rows; }
-	
+	inline int rows() const CADET_NOEXCEPT
+	{
+		return _rows;
+	}
+
 	/**
 	 * @brief Provides direct access to the underlying memory
 	 * @return Pointer to the first element of the underlying array
 	 */
-	inline active* data() CADET_NOEXCEPT { return _data; }
-	inline active const* data() const CADET_NOEXCEPT { return _data; }
+	inline active* data() CADET_NOEXCEPT
+	{
+		return _data;
+	}
+	inline active const* data() const CADET_NOEXCEPT
+	{
+		return _data;
+	}
 
 	/**
 	 * @brief Returns the number of elements in an array row
 	 * @return Number of elements in a matrix row
 	 */
-	inline int stride() const CADET_NOEXCEPT { return _cols; }
+	inline int stride() const CADET_NOEXCEPT
+	{
+		return _cols;
+	}
 
 	/**
 	 * @brief Provides access to the underlying data in the given row
@@ -251,7 +275,8 @@ public:
 			y[r] = 0.0;
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
@@ -269,7 +294,8 @@ public:
 			y[r] = 0.0;
 			active const* const col = _data + r;
 			for (int c = 0; c < _cols; ++c)
-				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
@@ -289,7 +315,8 @@ public:
 			y[r] *= beta;
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
@@ -307,7 +334,8 @@ public:
 		{
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
@@ -325,12 +353,15 @@ public:
 		{
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(alpha) * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += static_cast<typename DoubleDemoter<result_t>::type>(alpha) *
+						static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
 	/**
-	 * @brief Multiplies the transpose of the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another vector
+	 * @brief Multiplies the transpose of the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another
+	 * vector
 	 * @details Computes @f$ y = \alpha A^T x + \beta y @f$, where @f$ A @f$ is this matrix and @f$ x @f$ is given.
 	 * @param [in] x Vector this matrix is multiplied with
 	 * @param [in] alpha Factor @f$ \alpha @f$ in front of @f$ A^T x @f$
@@ -345,12 +376,14 @@ public:
 			y[r] *= beta;
 			active const* const col = _data + r;
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
 	/**
-	 * @brief Multiplies the transpose of the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another vector
+	 * @brief Multiplies the transpose of the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another
+	 * vector
 	 * @details Computes @f$ y = \alpha A^T x + y @f$, where @f$ A @f$ is this matrix and @f$ x @f$ is given.
 	 * @param [in] x Vector this matrix is multiplied with
 	 * @param [in] alpha Factor @f$ \alpha @f$ in front of @f$ A^T x @f$
@@ -363,14 +396,15 @@ public:
 		{
 			active const* const col = _data + r;
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha * static_cast<typename DoubleDemoter<result_t>::type>(col[c * stride()]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
 	/**
 	 * @brief Multiplies the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another vector
 	 * @details For given vector @f$ x @f$, compute
-	 *          @f[ \begin{align} 
+	 *          @f[ \begin{align}
 	 *                  y_1 &= \alpha_1 (Ax)_1 + \beta y_1 \\
 	 *                  y_2 &= \alpha_2 (Ax)_2 + \beta y_2,
 	 *          \end{align} @f]
@@ -383,14 +417,16 @@ public:
 	 * @param [out] y Result of the matrix-vector multiplication
 	 */
 	template <typename operand_t, typename result_t, typename numeric_t>
-	void multiplyVectorSplit(const operand_t* const x, double alpha1, const numeric_t& alpha2, double beta, int idxSplit, result_t* const y) const
+	void multiplyVectorSplit(const operand_t* const x, double alpha1, const numeric_t& alpha2, double beta,
+							 int idxSplit, result_t* const y) const
 	{
 		for (int r = 0; r < idxSplit; ++r)
 		{
 			y[r] *= beta;
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha1 * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha1 * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 
 		for (int r = idxSplit; r < _rows; ++r)
@@ -398,7 +434,8 @@ public:
 			y[r] *= beta;
 			active const* const row = _data + r * stride();
 			for (int c = 0; c < _cols; ++c)
-				y[r] += alpha2 * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) * static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
+				y[r] += alpha2 * static_cast<typename DoubleDemoter<result_t>::type>(row[c]) *
+						static_cast<typename DoubleActiveDemoter<result_t, operand_t>::type>(x[c]);
 		}
 	}
 
@@ -422,7 +459,7 @@ public:
 	 *          The user has to take care that the memory is big enough to hold all
 	 *          elements (beware of access violations).
 	 *          All data is lost during this operation, the selected area is zeroed.
-	 * 
+	 *
 	 * @param [in] rows The number of rows
 	 * @param [in] cols The number of columns
 	 */
@@ -434,8 +471,8 @@ public:
 
 protected:
 	active* _data; //!< Pointer to the array in which the matrix is stored
-	int _rows; //!< Number of rows
-	int _cols; //!< Number of columns
+	int _rows;     //!< Number of rows
+	int _cols;     //!< Number of columns
 
 	/**
 	 * @brief Initializes the matrix with the given memory of the given size
@@ -443,7 +480,9 @@ protected:
 	 * @param [in] rows Number of rows
 	 * @param [in] cols Number of columns
 	 */
-	ActiveDenseMatrix(active* const data, int rows, int cols) CADET_NOEXCEPT : _data(data), _rows(rows), _cols(cols) { }
+	ActiveDenseMatrix(active* const data, int rows, int cols) CADET_NOEXCEPT : _data(data), _rows(rows), _cols(cols)
+	{
+	}
 
 	/**
 	 * @brief Copies all values from the source to the local array
@@ -459,4 +498,4 @@ protected:
 
 } // namespace cadet
 
-#endif  // LIBCADET_ACTIVEDENSEMATRIX_HPP_
+#endif // LIBCADET_ACTIVEDENSEMATRIX_HPP_

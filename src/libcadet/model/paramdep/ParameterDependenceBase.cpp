@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -26,12 +26,15 @@ namespace cadet
 namespace model
 {
 
-ParameterDependenceBase::ParameterDependenceBase() : _nComp(0), _nBoundStates(nullptr) { }
+ParameterDependenceBase::ParameterDependenceBase() : _nComp(0), _nBoundStates(nullptr)
+{
+}
 ParameterDependenceBase::~ParameterDependenceBase() CADET_NOEXCEPT
 {
 }
 
-bool ParameterDependenceBase::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset)
+bool ParameterDependenceBase::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp,
+														   unsigned int const* nBound, unsigned int const* boundOffset)
 {
 	_nComp = nComp;
 	_nBoundStates = nBound;
@@ -45,7 +48,8 @@ bool ParameterDependenceBase::configureModelDiscretization(IParameterProvider& p
 	return true;
 }
 
-bool ParameterDependenceBase::configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, const std::string& name)
+bool ParameterDependenceBase::configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx,
+										ParticleTypeIdx parTypeIdx, const std::string& name)
 {
 	// Clear all parameters and reconfigure
 	_parameters.clear();
@@ -56,7 +60,9 @@ std::unordered_map<ParameterId, double> ParameterDependenceBase::getAllParameter
 {
 	std::unordered_map<ParameterId, double> data;
 	std::transform(_parameters.begin(), _parameters.end(), std::inserter(data, data.end()),
-	               [](const std::pair<const ParameterId, active*>& p) { return std::make_pair(p.first, static_cast<double>(*p.second)); });
+				   [](const std::pair<const ParameterId, active*>& p) {
+					   return std::make_pair(p.first, static_cast<double>(*p.second));
+				   });
 	return data;
 }
 
@@ -98,6 +104,6 @@ active* ParameterDependenceBase::getParameter(const ParameterId& pId)
 	return nullptr;
 }
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

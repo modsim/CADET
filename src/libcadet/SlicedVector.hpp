@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a SlicedVector which replaces vectors of vectors
  */
 
@@ -36,8 +36,7 @@ namespace util
  *          and end of each slice are saved in a separate vector.
  * @tparam T Type of the saved data
  */
-template <typename T>
-class SlicedVector
+template <typename T> class SlicedVector
 {
 public:
 	typedef typename std::vector<T>::size_type size_type;
@@ -45,8 +44,12 @@ public:
 	/**
 	 * @brief Creates an empty SlicedVector
 	 */
-	SlicedVector() : _index(1, 0) { }
-	~SlicedVector() CADET_NOEXCEPT { }
+	SlicedVector() : _index(1, 0)
+	{
+	}
+	~SlicedVector() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and move mechanisms
 	SlicedVector(const SlicedVector<T>& cpy) = default;
@@ -64,8 +67,11 @@ public:
 	 * @brief Checks whether this SlicedVector is empty
 	 * @return @c true if it is empty, otherwise @c false
 	 */
-	inline bool empty() const { return _index.size() == 1; }
-	
+	inline bool empty() const
+	{
+		return _index.size() == 1;
+	}
+
 	/**
 	 * @brief Clears the SlicedVector and deletes all stored items
 	 */
@@ -98,7 +104,7 @@ public:
 	}
 
 	/**
-	 * @brief Appends a given slice 
+	 * @brief Appends a given slice
 	 * @param [in] slice Slice to append
 	 */
 	inline void pushBackSlice(const std::vector<T>& slice)
@@ -108,7 +114,7 @@ public:
 	}
 
 	/**
-	 * @brief Appends a given slice 
+	 * @brief Appends a given slice
 	 * @param [in] data Pointer to the first element of the slice
 	 * @param [in] size Size of the slice
 	 */
@@ -125,7 +131,7 @@ public:
 	inline void pushBackInLastSlice(const T& value)
 	{
 		cadet_assert(!empty());
-		
+
 		// Increase end index of last slice
 		++_index.back();
 		_values.push_back(value);
@@ -168,21 +174,30 @@ public:
 	 * @brief Returns the number of slices
 	 * @return Number of slices
 	 */
-	inline size_type slices() const CADET_NOEXCEPT { return _index.size() - 1; }
+	inline size_type slices() const CADET_NOEXCEPT
+	{
+		return _index.size() - 1;
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T const* operator[](size_type idxSlice) const { return _values.data() + _index[idxSlice]; }
+	inline T const* operator[](size_type idxSlice) const
+	{
+		return _values.data() + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T* operator[](size_type idxSlice) { return _values.data() + _index[idxSlice]; }
+	inline T* operator[](size_type idxSlice)
+	{
+		return _values.data() + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -190,7 +205,10 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline const T& operator()(size_type idxSlice, size_type idxElem) const { return _values[_index[idxSlice] + idxElem]; }
+	inline const T& operator()(size_type idxSlice, size_type idxElem) const
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -198,21 +216,30 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline T& operator()(size_type idxSlice, size_type idxElem) { return _values[_index[idxSlice] + idxElem]; }
+	inline T& operator()(size_type idxSlice, size_type idxElem)
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given linear index
 	 * @param [in] idx Linear index of the requested element
 	 * @return Element at the given linear index
 	 */
-	inline T& native(size_type idx) { return _values[idx]; }
+	inline T& native(size_type idx)
+	{
+		return _values[idx];
+	}
 
 	/**
 	 * @brief Returns the element at the given linear index
 	 * @param [in] idx Linear index of the requested element
 	 * @return Element at the given linear index
 	 */
-	inline const T& native(size_type idx) const { return _values[idx]; }
+	inline const T& native(size_type idx) const
+	{
+		return _values[idx];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -220,7 +247,10 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline const T& at(size_type idxSlice, size_type idxElem) const { return _values[_index[idxSlice] + idxElem]; }
+	inline const T& at(size_type idxSlice, size_type idxElem) const
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -228,32 +258,41 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline T& at(size_type idxSlice, size_type idxElem) { return _values[_index[idxSlice] + idxElem]; }
+	inline T& at(size_type idxSlice, size_type idxElem)
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T const* at(size_type idxSlice) const { return _values.data() + _index[idxSlice]; }
+	inline T const* at(size_type idxSlice) const
+	{
+		return _values.data() + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T* at(size_type idxSlice) { return _values.data() + _index[idxSlice]; }
+	inline T* at(size_type idxSlice)
+	{
+		return _values.data() + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of the last slice
 	 * @return Pointer to the first element of the last slice
 	 */
-	inline T const* back() const 
+	inline T const* back() const
 	{
 		cadet_assert(!empty());
 		return &_values[_index[_index.size() - 2]];
 	}
-	
+
 	inline T* back()
 	{
 		cadet_assert(!empty());
@@ -265,26 +304,32 @@ public:
 	 * @param [in] idxSlice Index of the slice
 	 * @return Number of elmenets in the slice
 	 */
-	inline size_type sliceSize(size_type idxSlice) const { return _index[idxSlice + 1] - _index[idxSlice]; }
+	inline size_type sliceSize(size_type idxSlice) const
+	{
+		return _index[idxSlice + 1] - _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns the total number of stored items
 	 * @details All items in every slice are counted.
 	 * @return Total number of stored items
 	 */
-	inline size_type size() const CADET_NOEXCEPT { return _values.size(); }
+	inline size_type size() const CADET_NOEXCEPT
+	{
+		return _values.size();
+	}
 
 	/**
 	 * @brief Finds the slice that contains a given item
 	 * @param [in] value Item to be found
-	 * @return Index of the slice that contains the requested @p value, 
+	 * @return Index of the slice that contains the requested @p value,
 	 *         or a value larger than slices() if @p value was not found
 	 */
 	inline size_type findSlice(const T& value) const
 	{
 		for (size_type i = 0; i < slices(); ++i)
 		{
-			for (size_type j = _index[i]; j < _index[i+1]; ++j)
+			for (size_type j = _index[i]; j < _index[i + 1]; ++j)
 			{
 				if (_values[j] == value)
 				{
@@ -306,11 +351,11 @@ public:
 	{
 		for (size_type i = 0; i < slices(); ++i)
 		{
-			for (size_type j = _index[i]; j < _index[i+1]; ++j)
+			for (size_type j = _index[i]; j < _index[i + 1]; ++j)
 			{
 				if (_values[j] == value)
 				{
-					len = _index[i+1] - _index[i];
+					len = _index[i + 1] - _index[i];
 					return &_values[_index[i]];
 				}
 			}
@@ -323,14 +368,14 @@ public:
 	 * @param [in] value Item to be found
 	 * @param [out] index Index of the item in the slice, if found
 	 * @param [out] linearIndex Index of the item in the linearized array, if found
-	 * @return Index of the slice that contains the requested @p value, 
+	 * @return Index of the slice that contains the requested @p value,
 	 *         or a value larger than slices() if @p value was not found
 	 */
 	inline size_type findElementAndSlice(const T& value, size_type& index, size_type& linearIndex) const
 	{
 		for (size_type i = 0; i < slices(); ++i)
 		{
-			for (size_type j = _index[i]; j < _index[i+1]; ++j)
+			for (size_type j = _index[i]; j < _index[i + 1]; ++j)
 			{
 				if (_values[j] == value)
 				{
@@ -364,7 +409,10 @@ public:
 	 * @param [in] idx Index of the slice
 	 * @return Offset of the given slice in the linearized storage
 	 */
-	inline size_type sliceOffset(size_type idx) const { return _index[idx]; }
+	inline size_type sliceOffset(size_type idx) const
+	{
+		return _index[idx];
+	}
 
 	/**
 	 * @brief Reserves memory without initializing it
@@ -426,11 +474,11 @@ public:
 	}
 
 protected:
-	std::vector<T> _values; //!< Holds all values in a linearized fashion
+	std::vector<T> _values;        //!< Holds all values in a linearized fashion
 	std::vector<size_type> _index; //!< Holds starting indices of slices
 };
 
 } // namespace util
 } // namespace cadet
 
-#endif  // LIBCADET_SLICEDVECTOR_HPP_
+#endif // LIBCADET_SLICEDVECTOR_HPP_

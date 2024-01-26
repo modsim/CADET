@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 #ifndef MATLAB_MEX_FILE
-	#define MATLAB_MEX_FILE
+#define MATLAB_MEX_FILE
 #endif
 
 #include <mex.h>
@@ -30,10 +30,10 @@
 
 // Take care of namespace pollution / macros
 #ifdef min
-	#undef min
+#undef min
 #endif
 #ifdef max
-	#undef max
+#undef max
 #endif
 
 #include "cadet/cadet.hpp"
@@ -44,126 +44,135 @@
 
 namespace std
 {
-	template<>
-	struct hash<cadet::ParameterId>
+template <> struct hash<cadet::ParameterId>
+{
+	inline std::size_t operator()(const cadet::ParameterId& pId) const CADET_NOEXCEPT
 	{
-		inline std::size_t operator()(const cadet::ParameterId& pId) const CADET_NOEXCEPT
-		{
-			return cadet::hashParameter(pId);
-		}
-	};
+		return cadet::hashParameter(pId);
+	}
+};
 } // namespace std
 
 namespace
 {
+/**
+ * @brief Automatically converts Matlab data to a given target type
+ * @details Checks whether the Matlab data is of type double or a given native Matlab type
+ *          and performs automatic type conversion. Supports iterating via the braces [] operator.
+ *
+ * @tparam Target_t Target type that is used for processing
+ * @tparam Matlab_t Accepted native Matlab type
+ */
+template <typename Target_t, typename Matlab_t> class MatlabAutoConverter
+{
+public:
 	/**
-	 * @brief Automatically converts Matlab data to a given target type
-	 * @details Checks whether the Matlab data is of type double or a given native Matlab type
-	 *          and performs automatic type conversion. Supports iterating via the braces [] operator.
+	 * @brief Creates a MatlabAutoConverter on the given Matlab data
+	 * @details If the data is neither of double nor of the specified native type, an exception is thrown.
 	 *
-	 * @tparam Target_t Target type that is used for processing
-	 * @tparam Matlab_t Accepted native Matlab type
+	 * @param [in] data Matlab data handle
+	 * @param [in] errMsg Error message thrown if the data is neither of type double, nor of the accepted native type
 	 */
-	template <typename Target_t, typename Matlab_t>
-	class MatlabAutoConverter
+	MatlabAutoConverter(mxArray const* const data, const char* errMsg)
+		: _data(data), _doubleData(nullptr), _nativeData(nullptr)
 	{
-	public:
-
-		/**
-		 * @brief Creates a MatlabAutoConverter on the given Matlab data
-		 * @details If the data is neither of double nor of the specified native type, an exception is thrown.
-		 *
-		 * @param [in] data Matlab data handle
-		 * @param [in] errMsg Error message thrown if the data is neither of type double, nor of the accepted native type
-		 */
-		MatlabAutoConverter(mxArray const* const data, const char* errMsg) : _data(data), _doubleData(nullptr), _nativeData(nullptr)
-		{
-			if (cadet::mex::io::isType<double>(data))
-				_doubleData = cadet::mex::io::data<double>(data);
-			else if (cadet::mex::io::isType<Matlab_t>(data))
-				_nativeData = cadet::mex::io::data<Matlab_t>(data);
-			else
-				mexErrMsgIdAndTxt("CADET:mexError", errMsg);
-		}
-
-		Target_t operator[](int idx) const
-		{
-			if (_doubleData)
-				return static_cast<Target_t>(_doubleData[idx]);
-			else
-				return _nativeData[idx];
-		}
-
-	protected:
-		mxArray const* const _data;
-		double const* _doubleData;
-		Matlab_t const* _nativeData;
-	};
-
-	inline void checkInputArgs(int nrhs, int required, const char* cmdName)
-	{
-		if (nrhs != required)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires %d input arguments.\n", cmdName, required);
+		if (cadet::mex::io::isType<double>(data))
+			_doubleData = cadet::mex::io::data<double>(data);
+		else if (cadet::mex::io::isType<Matlab_t>(data))
+			_nativeData = cadet::mex::io::data<Matlab_t>(data);
+		else
+			mexErrMsgIdAndTxt("CADET:mexError", errMsg);
 	}
 
-	inline void checkOutputArgs(int nlhs, int required, const char* cmdName)
+	Target_t operator[](int idx) const
 	{
-		if (nlhs != required)
-		{
-			if (required == 0)
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' does not return anything.\n", cmdName);
-			else
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires exactly %d output arguments.\n", cmdName, required);
-		}
+		if (_doubleData)
+			return static_cast<Target_t>(_doubleData[idx]);
+		else
+			return _nativeData[idx];
 	}
 
-	inline void requireConfiguredSimulator(cadet::ISimulator* sim, const char* funcName)
-	{
-		if (!sim)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a configured simulator.\n", funcName);
-	}
+protected:
+	mxArray const* const _data;
+	double const* _doubleData;
+	Matlab_t const* _nativeData;
+};
 
-	inline void requireConfiguredSimulatorAndModel(cadet::ISimulator* sim, const char* funcName)
-	{
-		requireConfiguredSimulator(sim, funcName);
-		if (!sim->model())
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a configured model.\n", funcName);
-	}
-
-	inline void printParam(const cadet::ParameterId& pId)
-	{
-		std::stringstream out;
-		out << "{" << cadet::hashParameter(pId) << " = " << pId.name << ", Unit " << static_cast<unsigned int>(pId.unitOperation) << " Comp " << static_cast<unsigned int>(pId.component)
-		     << " BoundState " << static_cast<unsigned int>(pId.boundState) << " Reaction " << static_cast<unsigned int>(pId.reaction) << " Section " << static_cast<unsigned int>(pId.section) << "}";
-		mexPrintf("%s\n", out.str().c_str());
-	}
-
-	inline void printParam(const cadet::ParameterId& pId, double value)
-	{
-		std::stringstream out;
-		out << "{" << cadet::hashParameter(pId) << " = " << pId.name << ", Unit " << static_cast<unsigned int>(pId.unitOperation) << " Comp " << static_cast<unsigned int>(pId.component)
-		     << " BoundState " << static_cast<unsigned int>(pId.boundState) << " Reaction " << static_cast<unsigned int>(pId.reaction) << " Section " << static_cast<unsigned int>(pId.section) << "}";
-		mexPrintf("%s = %g\n", out.str().c_str(), value);
-	}
-
-	inline mxArray* createParamStructArray(unsigned int nElements)
-	{
-		const char* fieldNames[] = {"NAMEHASH", "UNIT", "COMP", "REACTION", "BOUNDPHASE", "PARTYPE", "SECTION"};
-		return mxCreateStructMatrix(nElements, 1, 7, fieldNames);
-	}
-
-	inline void writeParameterToMatlab(mxArray* structArray, unsigned int idx, const cadet::ParameterId& pId)
-	{
-		mxSetFieldByNumber(structArray, idx, 0, cadet::mex::io::scalar<cadet::StringHash, uint64_t>(pId.name));
-		mxSetFieldByNumber(structArray, idx, 1, cadet::mex::io::scalar<cadet::UnitOpIdx, int32_t>(pId.unitOperation, cadet::UnitOpIndep));
-		mxSetFieldByNumber(structArray, idx, 2, cadet::mex::io::scalar<cadet::ComponentIdx, int32_t>(pId.component, cadet::CompIndep));
-		mxSetFieldByNumber(structArray, idx, 3, cadet::mex::io::scalar<cadet::ReactionIdx, int32_t>(pId.reaction, cadet::ReactionIndep));
-		mxSetFieldByNumber(structArray, idx, 4, cadet::mex::io::scalar<cadet::BoundStateIdx, int32_t>(pId.boundState, cadet::BoundStateIndep));
-		mxSetFieldByNumber(structArray, idx, 5, cadet::mex::io::scalar<cadet::ParticleTypeIdx, int32_t>(pId.particleType, cadet::ParTypeIndep));
-		mxSetFieldByNumber(structArray, idx, 6, cadet::mex::io::scalar<cadet::SectionIdx, int32_t>(pId.section, cadet::SectionIndep));
-	}
-
+inline void checkInputArgs(int nrhs, int required, const char* cmdName)
+{
+	if (nrhs != required)
+		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires %d input arguments.\n", cmdName, required);
 }
+
+inline void checkOutputArgs(int nlhs, int required, const char* cmdName)
+{
+	if (nlhs != required)
+	{
+		if (required == 0)
+			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' does not return anything.\n", cmdName);
+		else
+			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires exactly %d output arguments.\n",
+							  cmdName, required);
+	}
+}
+
+inline void requireConfiguredSimulator(cadet::ISimulator* sim, const char* funcName)
+{
+	if (!sim)
+		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a configured simulator.\n", funcName);
+}
+
+inline void requireConfiguredSimulatorAndModel(cadet::ISimulator* sim, const char* funcName)
+{
+	requireConfiguredSimulator(sim, funcName);
+	if (!sim->model())
+		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command '%s' requires a configured model.\n", funcName);
+}
+
+inline void printParam(const cadet::ParameterId& pId)
+{
+	std::stringstream out;
+	out << "{" << cadet::hashParameter(pId) << " = " << pId.name << ", Unit "
+		<< static_cast<unsigned int>(pId.unitOperation) << " Comp " << static_cast<unsigned int>(pId.component)
+		<< " BoundState " << static_cast<unsigned int>(pId.boundState) << " Reaction "
+		<< static_cast<unsigned int>(pId.reaction) << " Section " << static_cast<unsigned int>(pId.section) << "}";
+	mexPrintf("%s\n", out.str().c_str());
+}
+
+inline void printParam(const cadet::ParameterId& pId, double value)
+{
+	std::stringstream out;
+	out << "{" << cadet::hashParameter(pId) << " = " << pId.name << ", Unit "
+		<< static_cast<unsigned int>(pId.unitOperation) << " Comp " << static_cast<unsigned int>(pId.component)
+		<< " BoundState " << static_cast<unsigned int>(pId.boundState) << " Reaction "
+		<< static_cast<unsigned int>(pId.reaction) << " Section " << static_cast<unsigned int>(pId.section) << "}";
+	mexPrintf("%s = %g\n", out.str().c_str(), value);
+}
+
+inline mxArray* createParamStructArray(unsigned int nElements)
+{
+	const char* fieldNames[] = {"NAMEHASH", "UNIT", "COMP", "REACTION", "BOUNDPHASE", "PARTYPE", "SECTION"};
+	return mxCreateStructMatrix(nElements, 1, 7, fieldNames);
+}
+
+inline void writeParameterToMatlab(mxArray* structArray, unsigned int idx, const cadet::ParameterId& pId)
+{
+	mxSetFieldByNumber(structArray, idx, 0, cadet::mex::io::scalar<cadet::StringHash, uint64_t>(pId.name));
+	mxSetFieldByNumber(structArray, idx, 1,
+					   cadet::mex::io::scalar<cadet::UnitOpIdx, int32_t>(pId.unitOperation, cadet::UnitOpIndep));
+	mxSetFieldByNumber(structArray, idx, 2,
+					   cadet::mex::io::scalar<cadet::ComponentIdx, int32_t>(pId.component, cadet::CompIndep));
+	mxSetFieldByNumber(structArray, idx, 3,
+					   cadet::mex::io::scalar<cadet::ReactionIdx, int32_t>(pId.reaction, cadet::ReactionIndep));
+	mxSetFieldByNumber(structArray, idx, 4,
+					   cadet::mex::io::scalar<cadet::BoundStateIdx, int32_t>(pId.boundState, cadet::BoundStateIndep));
+	mxSetFieldByNumber(structArray, idx, 5,
+					   cadet::mex::io::scalar<cadet::ParticleTypeIdx, int32_t>(pId.particleType, cadet::ParTypeIndep));
+	mxSetFieldByNumber(structArray, idx, 6,
+					   cadet::mex::io::scalar<cadet::SectionIdx, int32_t>(pId.section, cadet::SectionIndep));
+}
+
+} // namespace
 
 namespace cadet
 {
@@ -172,7 +181,8 @@ namespace mex
 {
 
 /**
- * @brief Runs a full CADET simulation either configuring a new simulator if none exists, or clearing all previous results
+ * @brief Runs a full CADET simulation either configuring a new simulator if none exists, or clearing all previous
+ * results
  * @param [in] drv Driver
  * @param [in] input Matlab struct with input data
  * @param [out] output Matlab struct to write the results to
@@ -244,7 +254,8 @@ void isConfigured(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const 
 void configure(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs != 3)
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'conf' requires a handle and a task (struct) to operate on.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'conf' requires a handle and a task (struct) to operate on.\n");
 	if (nlhs != 0)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'conf' does not return anything.\n");
 
@@ -255,7 +266,8 @@ void configure(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxA
 		drv.configure(pp);
 	}
 	else
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'conf' cannot configure an already existing model (use 'reconf').\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'conf' cannot configure an already existing model (use 'reconf').\n");
 }
 
 /**
@@ -270,11 +282,14 @@ void configure(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxA
 void run(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs != 3)
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'run' requires a handle and a task (struct) to operate on.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'run' requires a handle and a task (struct) to operate on.\n");
 	if (nlhs != 1)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'run' requires exactly one output.\n");
 	if (drv.simulator())
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'run' cannot configure an already existing model (use 'rerun' and 'reconf').\n");
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'run' cannot configure an already existing model (use 'rerun' and 'reconf').\n");
 
 	runFullSimulation(drv, prhs[2], plhs[0]);
 }
@@ -291,7 +306,8 @@ void run(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray**
 void setSensitiveParameterValues(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs != 3)
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparval' requires a vector with parameter values.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsensparval' requires a vector with parameter values.\n");
 	if (nlhs != 0)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparval' does not return anything.\n");
 	requireConfiguredSimulatorAndModel(drv.simulator(), "setsensparval");
@@ -299,7 +315,8 @@ void setSensitiveParameterValues(cadet::Driver& drv, int nlhs, mxArray** plhs, i
 	const mxArray* const matlabVals = prhs[2];
 
 	if (!io::isType<double>(matlabVals))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparval' requires a vector of 'double' parameter values.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsensparval' requires a vector of 'double' parameter values.\n");
 
 	const double* const parVals = io::data<double>(matlabVals);
 	for (unsigned int i = 0; i < io::numElements(matlabVals); ++i)
@@ -318,16 +335,20 @@ void setSensitiveParameterValues(cadet::Driver& drv, int nlhs, mxArray** plhs, i
 void setSensitiveParameterFactors(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs != 4)
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparfactor' requires a sensitivity index and a vector with parameter values.\n");
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'setsensparfactor' requires a sensitivity index and a vector with parameter values.\n");
 	if (nlhs != 0)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparfactor' does not return anything.\n");
 	requireConfiguredSimulatorAndModel(drv.simulator(), "setsensparfactor");
 
-	const MatlabAutoConverter<int32_t, int32_t> idxSens(prhs[2], "CadetMex: Command 'setsensparfactor' requires sensitivity index of type 'int32'.\n");	
+	const MatlabAutoConverter<int32_t, int32_t> idxSens(
+		prhs[2], "CadetMex: Command 'setsensparfactor' requires sensitivity index of type 'int32'.\n");
 	const mxArray* const matlabVals = prhs[3];
 
 	if (!io::isType<double>(matlabVals))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsensparfactor' requires a vector of 'double' parameter values.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsensparfactor' requires a vector of 'double' parameter values.\n");
 
 	const double* const parVals = io::data<double>(matlabVals);
 	drv.simulator()->setSensitiveParameterFactors(idxSens[0], parVals);
@@ -345,7 +366,8 @@ void setSensitiveParameterFactors(cadet::Driver& drv, int nlhs, mxArray** plhs, 
 void setSensitivityErrorTolerance(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs != 4)
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenserror' requires a vector with parameter values.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsenserror' requires a vector with parameter values.\n");
 	if (nlhs != 0)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenserror' does not return anything.\n");
 	requireConfiguredSimulatorAndModel(drv.simulator(), "setsenserror");
@@ -354,13 +376,18 @@ void setSensitivityErrorTolerance(cadet::Driver& drv, int nlhs, mxArray** plhs, 
 		return;
 
 	if (!io::isType<double>(prhs[2]))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenserror' requires a scalar of 'double' as relative tolerance.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsenserror' requires a scalar of 'double' as relative tolerance.\n");
 
 	if (!io::isType<double>(prhs[3]))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenserror' requires a vector of 'double' for absolute tolerances.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsenserror' requires a vector of 'double' for absolute tolerances.\n");
 
 	if (io::numElements(prhs[3]) < drv.simulator()->numSensParams())
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenserror' requires a vector of 'double' for absolute tolerances with %u entries.\n", drv.simulator()->numSensParams());
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'setsenserror' requires a vector of 'double' for absolute tolerances with %u entries.\n",
+			drv.simulator()->numSensParams());
 
 	const double relTol = io::scalar<double>(prhs[2]);
 	const double* const absTol = io::data<double>(prhs[3]);
@@ -394,12 +421,15 @@ void setConsistentInitializationMode(cadet::Driver& drv, int nlhs, mxArray** plh
 		}
 		else
 		{
-			const MatlabAutoConverter<int32_t, int32_t> ci(prhs[2], "CadetMex: Command 'setconsinitmode' requires consistent initialization mode of type 'int32'.\n");
+			const MatlabAutoConverter<int32_t, int32_t> ci(
+				prhs[2],
+				"CadetMex: Command 'setconsinitmode' requires consistent initialization mode of type 'int32'.\n");
 			const int32_t ciVal = ci[0];
 			if (cadet::isValidConsistentInitialization(ciVal))
 				drv.simulator()->setConsistentInitialization(cadet::toConsistentInitialization(ciVal));
 			else
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setconsinitmode' received invalid parameter %d.\n", ciVal);
+				mexErrMsgIdAndTxt("CADET:mexError",
+								  "CadetMex: Command 'setconsinitmode' received invalid parameter %d.\n", ciVal);
 		}
 	}
 
@@ -413,12 +443,15 @@ void setConsistentInitializationMode(cadet::Driver& drv, int nlhs, mxArray** plh
 		}
 		else
 		{
-			const MatlabAutoConverter<int32_t, int32_t> ci(prhs[3], "CadetMex: Command 'setconsinitmode' requires consistent sensitivity initialization mode of type 'int32'.\n");
+			const MatlabAutoConverter<int32_t, int32_t> ci(prhs[3],
+														   "CadetMex: Command 'setconsinitmode' requires consistent "
+														   "sensitivity initialization mode of type 'int32'.\n");
 			const int32_t ciVal = ci[0];
 			if (cadet::isValidConsistentInitialization(ciVal))
 				drv.simulator()->setConsistentInitializationSens(cadet::toConsistentInitialization(ciVal));
 			else
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setconsinitmode' received invalid parameter %d.\n", ciVal);
+				mexErrMsgIdAndTxt("CADET:mexError",
+								  "CadetMex: Command 'setconsinitmode' received invalid parameter %d.\n", ciVal);
 		}
 	}
 }
@@ -435,13 +468,14 @@ void setConsistentInitializationMode(cadet::Driver& drv, int nlhs, mxArray** plh
 void availableParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs > 2)
-		mexWarnMsgIdAndTxt("CADET:mexWarn", "CadetMex: Command 'getallpar' ignores all additional arguments (requires only 2).\n");
+		mexWarnMsgIdAndTxt("CADET:mexWarn",
+						   "CadetMex: Command 'getallpar' ignores all additional arguments (requires only 2).\n");
 	if (nrhs == 0)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'getallpar' requires at least 1 output.\n");
 	if (nrhs > 2)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'getallpar' processes only up to 2 outputs.\n");
 	requireConfiguredSimulatorAndModel(drv.simulator(), "getallpar");
-	
+
 	const std::unordered_map<cadet::ParameterId, double> data = drv.simulator()->getAllParameterValues();
 	plhs[0] = createParamStructArray(data.size());
 
@@ -483,22 +517,34 @@ void setParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const
 	for (unsigned int i = 3; i < 10; ++i)
 	{
 		if (io::numElements(prhs[i]) != nPar)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setparval' requires all additional arguments to be of the same size (failed for argument %d).\n", i + 1);
+			mexErrMsgIdAndTxt("CADET:mexError",
+							  "CadetMex: Command 'setparval' requires all additional arguments to be of the same size "
+							  "(failed for argument %d).\n",
+							  i + 1);
 	}
 
 	const mxArray* const mNames = prhs[2];
-	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(prhs[3], "CadetMex: Command 'setparval' requires unit operation ids of type 'int32'.\n");
-	const MatlabAutoConverter<ComponentIdx, int32_t> comps(prhs[4], "CadetMex: Command 'setparval' requires component ids of type 'int32'.\n");
-	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(prhs[5], "CadetMex: Command 'setparval' requires particle type ids of type 'int32'.\n");
-	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(prhs[6], "CadetMex: Command 'setparval' requires bound state ids of type 'int32'.\n");
-	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(prhs[7], "CadetMex: Command 'setparval' requires reaction ids of type 'int32'.\n");
-	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(prhs[8], "CadetMex: Command 'setparval' requires section ids of type 'int32'.\n");
+	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(
+		prhs[3], "CadetMex: Command 'setparval' requires unit operation ids of type 'int32'.\n");
+	const MatlabAutoConverter<ComponentIdx, int32_t> comps(
+		prhs[4], "CadetMex: Command 'setparval' requires component ids of type 'int32'.\n");
+	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(
+		prhs[5], "CadetMex: Command 'setparval' requires particle type ids of type 'int32'.\n");
+	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(
+		prhs[6], "CadetMex: Command 'setparval' requires bound state ids of type 'int32'.\n");
+	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(
+		prhs[7], "CadetMex: Command 'setparval' requires reaction ids of type 'int32'.\n");
+	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(
+		prhs[8], "CadetMex: Command 'setparval' requires section ids of type 'int32'.\n");
 
 	if (!cadet::mex::io::isType<double>(prhs[9]))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setparval' requires parameter values of type 'double'.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setparval' requires parameter values of type 'double'.\n");
 
 	if (!cadet::mex::io::isCell(mNames) && !cadet::mex::io::isType<uint64_t>(mNames))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setparval' requires parameter names as cell array of strings or hashes (uint64).\n");
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'setparval' requires parameter names as cell array of strings or hashes (uint64).\n");
 
 	uint64_t const* nameHash = nullptr;
 	if (cadet::mex::io::isType<uint64_t>(mNames))
@@ -515,7 +561,10 @@ void setParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const
 		{
 			mxArray* const curCellStr = mxGetCell(mNames, i);
 			if (!mxIsChar(curCellStr))
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setparval' requires all parameter name cells to contain strings (failed for element %d).\n", i + 1);
+				mexErrMsgIdAndTxt("CADET:mexError",
+								  "CadetMex: Command 'setparval' requires all parameter name cells to contain strings "
+								  "(failed for element %d).\n",
+								  i + 1);
 
 			const char* const strName = mxArrayToString(curCellStr);
 			paramName = cadet::hashStringRuntime(strName);
@@ -525,7 +574,8 @@ void setParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const
 			paramName = nameHash[i];
 
 		// Construct parameter ID
-		const ParameterId pId = makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]);
+		const ParameterId pId =
+			makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]);
 
 		// Set the parameter
 		drv.simulator()->setParameterValue(pId, parVals[i]);
@@ -552,19 +602,30 @@ void checkParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, con
 	for (unsigned int i = 3; i < 9; ++i)
 	{
 		if (io::numElements(prhs[i]) != nPar)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'checkpar' requires all additional arguments to be of the same size (failed for argument %d).\n", i + 1);
+			mexErrMsgIdAndTxt("CADET:mexError",
+							  "CadetMex: Command 'checkpar' requires all additional arguments to be of the same size "
+							  "(failed for argument %d).\n",
+							  i + 1);
 	}
 
 	const mxArray* const mNames = prhs[2];
-	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(prhs[3], "CadetMex: Command 'checkpar' requires unit operation ids of type 'int32'.\n");
-	const MatlabAutoConverter<ComponentIdx, int32_t> comps(prhs[4], "CadetMex: Command 'checkpar' requires component ids of type 'int32'.\n");
-	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(prhs[5], "CadetMex: Command 'checkpar' requires particle type ids of type 'int32'.\n");
-	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(prhs[6], "CadetMex: Command 'checkpar' requires bound state ids of type 'int32'.\n");
-	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(prhs[7], "CadetMex: Command 'checkpar' requires reaction ids of type 'int32'.\n");
-	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(prhs[8], "CadetMex: Command 'checkpar' requires section ids of type 'int32'.\n");
+	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(
+		prhs[3], "CadetMex: Command 'checkpar' requires unit operation ids of type 'int32'.\n");
+	const MatlabAutoConverter<ComponentIdx, int32_t> comps(
+		prhs[4], "CadetMex: Command 'checkpar' requires component ids of type 'int32'.\n");
+	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(
+		prhs[5], "CadetMex: Command 'checkpar' requires particle type ids of type 'int32'.\n");
+	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(
+		prhs[6], "CadetMex: Command 'checkpar' requires bound state ids of type 'int32'.\n");
+	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(
+		prhs[7], "CadetMex: Command 'checkpar' requires reaction ids of type 'int32'.\n");
+	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(
+		prhs[8], "CadetMex: Command 'checkpar' requires section ids of type 'int32'.\n");
 
 	if (!cadet::mex::io::isCell(mNames) && !cadet::mex::io::isType<uint64_t>(mNames))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'checkpar' requires parameter names as cell array of strings or hashes (uint64).\n");
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'checkpar' requires parameter names as cell array of strings or hashes (uint64).\n");
 
 	uint64_t const* nameHash = nullptr;
 	if (cadet::mex::io::isType<uint64_t>(mNames))
@@ -582,7 +643,10 @@ void checkParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, con
 		{
 			mxArray* const curCellStr = mxGetCell(mNames, i);
 			if (!mxIsChar(curCellStr))
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'checkpar' requires all parameter name cells to contain strings (failed for element %d).\n", i + 1);
+				mexErrMsgIdAndTxt("CADET:mexError",
+								  "CadetMex: Command 'checkpar' requires all parameter name cells to contain strings "
+								  "(failed for element %d).\n",
+								  i + 1);
 
 			const char* const strName = mxArrayToString(curCellStr);
 			paramName = cadet::hashStringRuntime(strName);
@@ -592,8 +656,9 @@ void checkParameters(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, con
 			paramName = nameHash[i];
 
 		// Construct parameter ID
-		const ParameterId pId = makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]);
-//		printParam(pId);
+		const ParameterId pId =
+			makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]);
+		//		printParam(pId);
 
 		// Check the parameter
 		out[i] = drv.simulator()->hasParameter(pId);
@@ -620,25 +685,38 @@ void makeParameterSensitive(cadet::Driver& drv, int nlhs, mxArray** plhs, int nr
 	for (unsigned int i = 3; i < 10; ++i)
 	{
 		if (io::numElements(prhs[i]) != nPar)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenspar' requires all additional arguments to be of the same size (failed for argument %d).\n", i + 1);
+			mexErrMsgIdAndTxt("CADET:mexError",
+							  "CadetMex: Command 'setsenspar' requires all additional arguments to be of the same size "
+							  "(failed for argument %d).\n",
+							  i + 1);
 	}
 
 	const mxArray* const mNames = prhs[2];
-	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(prhs[3], "CadetMex: Command 'setsenspar' requires unit operation ids of type 'int32'.\n");
-	const MatlabAutoConverter<ComponentIdx, int32_t> comps(prhs[4], "CadetMex: Command 'setsenspar' requires component ids of type 'int32'.\n");
-	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(prhs[5], "CadetMex: Command 'setsenspar' requires particle type ids of type 'int32'.\n");
-	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(prhs[6], "CadetMex: Command 'setsenspar' requires bound state ids of type 'int32'.\n");
-	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(prhs[7], "CadetMex: Command 'setsenspar' requires reaction ids of type 'int32'.\n");
-	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(prhs[8], "CadetMex: Command 'setsenspar' requires section ids of type 'int32'.\n");
+	const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(
+		prhs[3], "CadetMex: Command 'setsenspar' requires unit operation ids of type 'int32'.\n");
+	const MatlabAutoConverter<ComponentIdx, int32_t> comps(
+		prhs[4], "CadetMex: Command 'setsenspar' requires component ids of type 'int32'.\n");
+	const MatlabAutoConverter<ParticleTypeIdx, int32_t> parType(
+		prhs[5], "CadetMex: Command 'setsenspar' requires particle type ids of type 'int32'.\n");
+	const MatlabAutoConverter<BoundStateIdx, int32_t> boundStates(
+		prhs[6], "CadetMex: Command 'setsenspar' requires bound state ids of type 'int32'.\n");
+	const MatlabAutoConverter<ReactionIdx, int32_t> reactIdx(
+		prhs[7], "CadetMex: Command 'setsenspar' requires reaction ids of type 'int32'.\n");
+	const MatlabAutoConverter<SectionIdx, int32_t> secIdx(
+		prhs[8], "CadetMex: Command 'setsenspar' requires section ids of type 'int32'.\n");
 
 	if (!cadet::mex::io::isType<double>(prhs[9]))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenspar' requires linear factors of type 'double'.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsenspar' requires linear factors of type 'double'.\n");
 
 	if (!cadet::mex::io::isType<double>(prhs[10]))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenspar' requires absolute tolerance of type 'double'.\n");
+		mexErrMsgIdAndTxt("CADET:mexError",
+						  "CadetMex: Command 'setsenspar' requires absolute tolerance of type 'double'.\n");
 
 	if (!cadet::mex::io::isCell(mNames) && !cadet::mex::io::isType<uint64_t>(mNames))
-		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsenspar' requires parameter names as cell array of strings or hashes (uint64).\n");
+		mexErrMsgIdAndTxt(
+			"CADET:mexError",
+			"CadetMex: Command 'setsenspar' requires parameter names as cell array of strings or hashes (uint64).\n");
 
 	uint64_t const* nameHash = nullptr;
 	if (cadet::mex::io::isType<uint64_t>(mNames))
@@ -658,7 +736,10 @@ void makeParameterSensitive(cadet::Driver& drv, int nlhs, mxArray** plhs, int nr
 		{
 			mxArray* const curCellStr = mxGetCell(mNames, i);
 			if (!mxIsChar(curCellStr))
-				mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setparval' requires all parameter name cells to contain strings (failed for element %d).\n", i + 1);
+				mexErrMsgIdAndTxt("CADET:mexError",
+								  "CadetMex: Command 'setparval' requires all parameter name cells to contain strings "
+								  "(failed for element %d).\n",
+								  i + 1);
 
 			const char* const strName = mxArrayToString(curCellStr);
 			paramName = cadet::hashStringRuntime(strName);
@@ -668,7 +749,8 @@ void makeParameterSensitive(cadet::Driver& drv, int nlhs, mxArray** plhs, int nr
 			paramName = nameHash[i];
 
 		// Construct parameter ID
-		sensParams.push_back(makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]));
+		sensParams.push_back(
+			makeParamId(paramName, unitOps[i], comps[i], parType[i], boundStates[i], reactIdx[i], secIdx[i]));
 	}
 
 	drv.simulator()->setSensitiveParameter(sensParams.data(), cadet::mex::io::data<double>(prhs[9]), nPar, sensTol);
@@ -686,7 +768,9 @@ void makeParameterSensitive(cadet::Driver& drv, int nlhs, mxArray** plhs, int nr
 void reRun(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray** prhs)
 {
 	if (nrhs > 3)
-		mexWarnMsgIdAndTxt("CADET:mexWarn", "CadetMex: Command 'rerun' ignores all additional arguments (requires only 2, uses at most 3).\n");
+		mexWarnMsgIdAndTxt(
+			"CADET:mexWarn",
+			"CadetMex: Command 'rerun' ignores all additional arguments (requires only 2, uses at most 3).\n");
 	if (nlhs != 1)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'rerun' requires exactly one output.\n");
 
@@ -721,13 +805,13 @@ void reRun(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const mxArray
 
 	drv.run();
 
-	cadet::mex::MatlabReaderWriter writer(&plhs[0]);	
+	cadet::mex::MatlabReaderWriter writer(&plhs[0]);
 	drv.write(writer);
 }
 
 /**
  * @brief Reconfigures a given unit operation model, the model system itself, or the time integrator
- * @details Requires an already configured model. The entity that is configured depends on the 
+ * @details Requires an already configured model. The entity that is configured depends on the
  *          number of input arguments.
  * @param [in] drv Driver
  * @param [in] nlhs Number of left hand side (output) arguments
@@ -740,7 +824,8 @@ void reconfigureModelOrSimulator(cadet::Driver& drv, int nlhs, mxArray** plhs, i
 	if (nrhs < 3)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'reconf' requires at least 3 input arguments.\n");
 	if (nrhs > 4)
-		mexWarnMsgIdAndTxt("CADET:mexWarn", "CadetMex: Command 'reconf' ignores all additional arguments (takes at most 4).\n");
+		mexWarnMsgIdAndTxt("CADET:mexWarn",
+						   "CadetMex: Command 'reconf' ignores all additional arguments (takes at most 4).\n");
 	checkOutputArgs(nlhs, 0, "reconf");
 	requireConfiguredSimulatorAndModel(drv.simulator(), "reconf");
 
@@ -758,7 +843,8 @@ void reconfigureModelOrSimulator(cadet::Driver& drv, int nlhs, mxArray** plhs, i
 	else
 	{
 		// Configure the model
-		const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(prhs[3], "CadetMex: Command 'reconf' requires unit operation ids of type 'int32'.\n");
+		const MatlabAutoConverter<UnitOpIdx, int32_t> unitOps(
+			prhs[3], "CadetMex: Command 'reconf' requires unit operation ids of type 'int32'.\n");
 		const UnitOpIdx uid = unitOps[0];
 		if (uid == UnitOpIndep)
 		{
@@ -823,7 +909,7 @@ void setTimeIntegratorOptions(cadet::Driver& drv, int nlhs, mxArray** plhs, int 
 		const unsigned int numElm = cadet::mex::io::numElements(prhs[3]);
 		if (numElm > 1)
 		{
-			double const * const data = cadet::mex::io::data<double>(prhs[3]);
+			double const* const data = cadet::mex::io::data<double>(prhs[3]);
 			const std::vector<double> val(data, data + numElm);
 			drv.simulator()->setAbsoluteErrorTolerance(val);
 		}
@@ -840,14 +926,14 @@ void setTimeIntegratorOptions(cadet::Driver& drv, int nlhs, mxArray** plhs, int 
 		const double val = cadet::mex::io::scalar<double>(prhs[4]);
 		drv.simulator()->setAlgebraicErrorTolerance(val);
 	}
-	
+
 	// Initial step size (scalar or vector)
 	if (!io::isEmpty(prhs[5]))
 	{
 		const unsigned int numElm = cadet::mex::io::numElements(prhs[5]);
 		if (numElm > 1)
 		{
-			double const * const data = cadet::mex::io::data<double>(prhs[5]);
+			double const* const data = cadet::mex::io::data<double>(prhs[5]);
 			const std::vector<double> val(data, data + numElm);
 			drv.simulator()->setInitialStepSize(val);
 		}
@@ -909,7 +995,7 @@ void setTimeIntegratorSolverOptions(cadet::Driver& drv, int nlhs, mxArray** plhs
 		const unsigned int val = cadet::mex::io::scalar<int32_t>(prhs[3]);
 		drv.simulator()->setMaxNewtonIteration(val);
 	}
-	
+
 	// Maximum number of error test failures
 	if (!io::isEmpty(prhs[4]))
 	{
@@ -945,9 +1031,10 @@ void setSectionTimes(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, con
 	if (nrhs < 3)
 		mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsectimes' requires at least 3 input arguments.\n");
 	if (nrhs > 4)
-		mexWarnMsgIdAndTxt("CADET:mexWarn", "CadetMex: Command 'setsectimes' ignores all additional arguments (takes at most 4).\n");
+		mexWarnMsgIdAndTxt("CADET:mexWarn",
+						   "CadetMex: Command 'setsectimes' ignores all additional arguments (takes at most 4).\n");
 	checkOutputArgs(nlhs, 0, "setsectimes");
-	
+
 	if (!drv.simulator())
 		return;
 
@@ -963,10 +1050,13 @@ void setSectionTimes(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, con
 	{
 		const unsigned int nCont = cadet::mex::io::numElements(prhs[3]);
 		if (nCont < nSections - 2)
-			mexErrMsgIdAndTxt("CADET:mexError", "CadetMex: Command 'setsectimes' requires at least %u section continuity entries.\n", nSections - 2);
+			mexErrMsgIdAndTxt("CADET:mexError",
+							  "CadetMex: Command 'setsectimes' requires at least %u section continuity entries.\n",
+							  nSections - 2);
 
 		std::vector<bool> secCont(nSections - 2);
-		const MatlabAutoConverter<bool, int32_t> secContSource(prhs[3], "CadetMex: Command 'setsectimes' requires section continuity of type 'int32'.\n");
+		const MatlabAutoConverter<bool, int32_t> secContSource(
+			prhs[3], "CadetMex: Command 'setsectimes' requires section continuity of type 'int32'.\n");
 
 		for (std::size_t i = 0; i < secCont.size(); ++i)
 			secCont[i] = secContSource[i];
@@ -987,7 +1077,7 @@ void setSolutionTimes(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, co
 {
 	checkInputArgs(nrhs, 3, "setsoltimes");
 	checkOutputArgs(nlhs, 0, "setsoltimes");
-	
+
 	if (!drv.simulator())
 		return;
 
@@ -1008,7 +1098,7 @@ void setNumThreads(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, const
 {
 	checkInputArgs(nrhs, 3, "setnumthreads");
 	checkOutputArgs(nlhs, 0, "setnumthreads");
-	
+
 	if (!drv.simulator())
 		return;
 
@@ -1092,7 +1182,7 @@ void getSimulationTime(cadet::Driver& drv, int nlhs, mxArray** plhs, int nrhs, c
 CommandMap registeredCommands()
 {
 	CommandMap map;
-	
+
 	map["clearsim"] = &command::clearSimulator;
 	map["isconf"] = &command::isConfigured;
 	map["conf"] = &command::configure;

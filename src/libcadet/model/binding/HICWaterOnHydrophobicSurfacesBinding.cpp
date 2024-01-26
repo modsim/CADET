@@ -58,32 +58,40 @@ namespace cadet
 namespace model
 {
 
-inline const char* HICWHSParamHandler::identifier() CADET_NOEXCEPT { return "HIC_WATER_ON_HYDROPHOBIC_SURFACES"; }
+inline const char* HICWHSParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "HIC_WATER_ON_HYDROPHOBIC_SURFACES";
+}
 
 inline bool HICWHSParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
-	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
+	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _qMax.size()) ||
+		(_kA.size() < nComp))
 		throw InvalidParameterException("HICWHS_KA, HICWHS_KD, HICWHS_NU, and HICWHS_QMAX have to have the same size");
 
 	return true;
 }
 
-inline const char* ExtHICWHSParamHandler::identifier() CADET_NOEXCEPT { return "EXT_HIC_WATER_ON_HYDROPHOBIC_SURFACES"; }
+inline const char* ExtHICWHSParamHandler::identifier() CADET_NOEXCEPT
+{
+	return "EXT_HIC_WATER_ON_HYDROPHOBIC_SURFACES";
+}
 
 inline bool ExtHICWHSParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
 {
-	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
+	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _qMax.size()) ||
+		(_kA.size() < nComp))
 		throw InvalidParameterException("HICWHS_KA, HICWHS_KD, HICWHS_NU, and HICWHS_QMAX have to have the same size");
 
 	return true;
 }
-
 
 /**
  * @brief Defines the HIC Isotherm as described by Wang et al., 2016
  * @details Implements the "water on hydrophobic surfaces" model: \f[ \begin{align}
  *				\beta &= \beta_0 e^{c_{p,0}\beta_1}\\
- *				\frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} \left( 1 - \sum_j \frac{q_j}{q_{max,j}} \right)^{\nu_i}
+ *				\frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} \left( 1 - \sum_j \frac{q_j}{q_{max,j}}
+ *\right)^{\nu_i}
  *              - k_{d,i} q_i  \left(\sum_j q_j \right)^{\nu_i \beta}
  *			\end{align}  \f]
  *          Component @c 0 is assumed to be salt without a bound state. Multiple bound states are not supported.
@@ -92,17 +100,23 @@ inline bool ExtHICWHSParamHandler::validateConfig(unsigned int nComp, unsigned i
  *          See @cite Wang2016.
  * @tparam ParamHandler_t Type that can add support for external function dependence
  */
-template <class ParamHandler_t>
-class HICWHSBase : public ParamHandlerBindingModelBase<ParamHandler_t>
+template <class ParamHandler_t> class HICWHSBase : public ParamHandlerBindingModelBase<ParamHandler_t>
 {
 public:
+	HICWHSBase()
+	{
+	}
+	virtual ~HICWHSBase() CADET_NOEXCEPT
+	{
+	}
 
-	HICWHSBase() { }
-	virtual ~HICWHSBase() CADET_NOEXCEPT { }
+	static const char* identifier()
+	{
+		return ParamHandler_t::identifier();
+	}
 
-	static const char* identifier() { return ParamHandler_t::identifier(); }
-
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset)
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp,
+											  unsigned int const* nBound, unsigned int const* boundOffset)
 	{
 		const bool res = BindingModelBase::configureModelDiscretization(paramProvider, nComp, nBound, boundOffset);
 
@@ -113,19 +127,37 @@ public:
 		return res;
 	}
 
-	virtual bool hasSalt() const CADET_NOEXCEPT { return true; }
-	virtual bool supportsMultistate() const CADET_NOEXCEPT { return false; }
-	virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
-	virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT { return false; }
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
-
-	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const
+	virtual bool hasSalt() const CADET_NOEXCEPT
 	{
-		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		return true;
+	}
+	virtual bool supportsMultistate() const CADET_NOEXCEPT
+	{
+		return false;
+	}
+	virtual bool supportsNonBinding() const CADET_NOEXCEPT
+	{
+		return true;
+	}
+	virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT
+	{
+		return false;
+	}
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT
+	{
 		return true;
 	}
 
-	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const
+	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y,
+										   double const* yCp, LinearBufferAllocator workSpace) const
+	{
+		typename ParamHandler_t::ParamsHandle const p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		return true;
+	}
+
+	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y,
+											double const* yCp, LinearBufferAllocator workSpace) const
 	{
 		preConsistentInitialState(t, secIdx, colPos, y, yCp, workSpace);
 	}
@@ -140,12 +172,13 @@ protected:
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,
-		CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
+				 CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const
 	{
 		using CpStateParamType = typename DoubleActivePromoter<CpStateType, ParamType>::type;
 		using StateParamType = typename DoubleActivePromoter<StateType, ParamType>::type;
 
-		typename ParamHandler_t::ParamsHandle const _p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const _p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		const ParamType beta0 = static_cast<ParamType>(_p->beta0);
 		const ParamType beta1 = static_cast<ParamType>(_p->beta1);
@@ -157,7 +190,7 @@ protected:
 
 		// qSumOverqMax could be calculated as 1-freeBindingSites, but is calculated explicitly for clarity
 		StateParamType qSumOverqMax = 0.0;
-		
+
 		unsigned int bndIdx = 0;
 		for (int i = 0; i < _nComp; ++i)
 		{
@@ -209,9 +242,11 @@ protected:
 	}
 
 	template <typename RowIterator>
-	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
+	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp,
+					  int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
 	{
-		typename ParamHandler_t::ParamsHandle const _p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		typename ParamHandler_t::ParamsHandle const _p =
+			_paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		auto beta0 = static_cast<double>(_p->beta0);
 		auto beta1 = static_cast<double>(_p->beta1);
@@ -260,8 +295,8 @@ protected:
 			if (qSum <= 0.0)
 			{
 				// Compute the Jacobian for the Taylor series defined above
-				
-				// dres_i / dc_{p,0}					
+
+				// dres_i / dc_{p,0}
 				jac[-bndIdx - offsetCp] = 0;
 
 				// dres_i / dc_{p,i}
@@ -270,7 +305,7 @@ protected:
 			else
 			{
 				// todo
-				// dres_i / dc_{p,0}					
+				// dres_i / dc_{p,0}
 				jac[-bndIdx - offsetCp] = kD * y[bndIdx] * beta * beta1 * nu * pow(qSum, nu * beta) * std::log(qSum);
 
 				// dres_i / dc_{p,i}
@@ -296,11 +331,12 @@ protected:
 				{
 					// dres_i / dq_j
 					jac[bndIdx2 - bndIdx] =
-						-kA * yCp[i] * nu * pow(freeBindingSites, nu - 1) / (-static_cast<double>(_p->qMax[j]))
-						+ beta * kD * nu * y[bndIdx] * pow(qSum, nu * beta - 1);
+						-kA * yCp[i] * nu * pow(freeBindingSites, nu - 1) / (-static_cast<double>(_p->qMax[j])) +
+						beta * kD * nu * y[bndIdx] * pow(qSum, nu * beta - 1);
 				}
 
-				// Getting to q_j: -bndIdx takes us to q_0, another +bndIdx2 to q_j. This means jac[bndIdx2 - bndIdx] corresponds to q_j.
+				// Getting to q_j: -bndIdx takes us to q_0, another +bndIdx2 to q_j. This means jac[bndIdx2 - bndIdx]
+				// corresponds to q_j.
 
 				++bndIdx2;
 			}
@@ -328,13 +364,14 @@ typedef HICWHSBase<ExtHICWHSParamHandler> ExternalHICWHS;
 
 namespace binding
 {
-	void registerHICWaterOnHydrophobicSurfacesModel(std::unordered_map<std::string, std::function<model::IBindingModel* ()>>& bindings)
-	{
-		bindings[HICWHS::identifier()] = []() { return new HICWHS(); };
-		bindings[ExternalHICWHS::identifier()] = []() { return new ExternalHICWHS(); };
-	}
-}  // namespace binding
+void registerHICWaterOnHydrophobicSurfacesModel(
+	std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
+{
+	bindings[HICWHS::identifier()] = []() { return new HICWHS(); };
+	bindings[ExternalHICWHS::identifier()] = []() { return new ExternalHICWHS(); };
+}
+} // namespace binding
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

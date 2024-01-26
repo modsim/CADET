@@ -23,71 +23,91 @@
 
 #include "ParallelSupport.hpp"
 #ifdef CADET_PARALLELIZE
-	#include <tbb/parallel_for.h>
+#include <tbb/parallel_for.h>
 #endif
 
 #include "model/ModelSystemImpl-Helper.hpp"
 
 namespace
 {
-	struct FullTag {};
-	struct LeanTag {};
+struct FullTag
+{
+};
+struct LeanTag
+{
+};
 
-	template <class tag_t>
-	struct ConsistentInit {};
+template <class tag_t> struct ConsistentInit
+{
+};
 
-	template <>
-	struct ConsistentInit<FullTag>
+template <> struct ConsistentInit<FullTag>
+{
+	static inline void state(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+							 double* const vecStateY, const cadet::AdJacobianParams& adJac, double errorTol,
+							 cadet::util::ThreadLocalStorage& threadLocalMem)
 	{
-		static inline void state(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, double* const vecStateY, const cadet::AdJacobianParams& adJac, double errorTol, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->consistentInitialState(simTime, vecStateY, adJac, errorTol, threadLocalMem);
-		}
+		model->consistentInitialState(simTime, vecStateY, adJac, errorTol, threadLocalMem);
+	}
 
-		static inline void timeDerivative(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, double* const res, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->consistentInitialTimeDerivative(simTime, vecStateY, vecStateYdot, threadLocalMem);
-		}
-
-		static inline int residualWithJacobian(cadet::model::ModelSystem& ms, const cadet::SimulationTime& simTime, const cadet::ConstSimulationState& simState, double* const res, double* const temp,
-			const cadet::AdJacobianParams& adJac)
-		{
-			return ms.residualWithJacobian(simTime, simState, res, adJac);
-		}
-
-		static inline void parameterSensitivity(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, const cadet::ConstSimulationState& simState,
-			std::vector<double*>& vecSensYlocal, std::vector<double*>& vecSensYdotLocal, cadet::active const* const adRes, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->consistentInitialSensitivity(simTime, simState, vecSensYlocal, vecSensYdotLocal, adRes, threadLocalMem);
-		}
-	};
-
-	template <>
-	struct ConsistentInit<LeanTag>
+	static inline void timeDerivative(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+									  double const* vecStateY, double* const vecStateYdot, double* const res,
+									  cadet::util::ThreadLocalStorage& threadLocalMem)
 	{
-		static inline void state(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, double* const vecStateY, const cadet::AdJacobianParams& adJac, double errorTol, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->leanConsistentInitialState(simTime, vecStateY, adJac, errorTol, threadLocalMem);
-		}
+		model->consistentInitialTimeDerivative(simTime, vecStateY, vecStateYdot, threadLocalMem);
+	}
 
-		static inline void timeDerivative(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, double* const res, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->leanConsistentInitialTimeDerivative(simTime.t, vecStateY, vecStateYdot, res, threadLocalMem);
-		}
+	static inline int residualWithJacobian(cadet::model::ModelSystem& ms, const cadet::SimulationTime& simTime,
+										   const cadet::ConstSimulationState& simState, double* const res,
+										   double* const temp, const cadet::AdJacobianParams& adJac)
+	{
+		return ms.residualWithJacobian(simTime, simState, res, adJac);
+	}
 
-		static inline int residualWithJacobian(cadet::model::ModelSystem& ms, const cadet::SimulationTime& simTime, const cadet::ConstSimulationState& simState, double* const res, double* const temp,
-			const cadet::AdJacobianParams& adJac)
-		{
-			return ms.residualWithJacobian(simTime, simState, temp, adJac);
-		}
+	static inline void parameterSensitivity(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+											const cadet::ConstSimulationState& simState,
+											std::vector<double*>& vecSensYlocal, std::vector<double*>& vecSensYdotLocal,
+											cadet::active const* const adRes,
+											cadet::util::ThreadLocalStorage& threadLocalMem)
+	{
+		model->consistentInitialSensitivity(simTime, simState, vecSensYlocal, vecSensYdotLocal, adRes, threadLocalMem);
+	}
+};
 
-		static inline void parameterSensitivity(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime, const cadet::ConstSimulationState& simState,
-			std::vector<double*>& vecSensYlocal, std::vector<double*>& vecSensYdotLocal, cadet::active const* const adRes, cadet::util::ThreadLocalStorage& threadLocalMem)
-		{
-			model->leanConsistentInitialSensitivity(simTime, simState, vecSensYlocal, vecSensYdotLocal, adRes, threadLocalMem);
-		}
-	};
-}
+template <> struct ConsistentInit<LeanTag>
+{
+	static inline void state(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+							 double* const vecStateY, const cadet::AdJacobianParams& adJac, double errorTol,
+							 cadet::util::ThreadLocalStorage& threadLocalMem)
+	{
+		model->leanConsistentInitialState(simTime, vecStateY, adJac, errorTol, threadLocalMem);
+	}
+
+	static inline void timeDerivative(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+									  double const* vecStateY, double* const vecStateYdot, double* const res,
+									  cadet::util::ThreadLocalStorage& threadLocalMem)
+	{
+		model->leanConsistentInitialTimeDerivative(simTime.t, vecStateY, vecStateYdot, res, threadLocalMem);
+	}
+
+	static inline int residualWithJacobian(cadet::model::ModelSystem& ms, const cadet::SimulationTime& simTime,
+										   const cadet::ConstSimulationState& simState, double* const res,
+										   double* const temp, const cadet::AdJacobianParams& adJac)
+	{
+		return ms.residualWithJacobian(simTime, simState, temp, adJac);
+	}
+
+	static inline void parameterSensitivity(cadet::IUnitOperation* model, const cadet::SimulationTime& simTime,
+											const cadet::ConstSimulationState& simState,
+											std::vector<double*>& vecSensYlocal, std::vector<double*>& vecSensYdotLocal,
+											cadet::active const* const adRes,
+											cadet::util::ThreadLocalStorage& threadLocalMem)
+	{
+		model->leanConsistentInitialSensitivity(simTime, simState, vecSensYlocal, vecSensYdotLocal, adRes,
+												threadLocalMem);
+	}
+};
+} // namespace
 
 namespace cadet
 {
@@ -96,7 +116,7 @@ namespace model
 {
 
 int ModelSystem::dResDpFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
-	const AdJacobianParams& adJac)
+									   const AdJacobianParams& adJac)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -112,7 +132,7 @@ int ModelSystem::dResDpFwdWithJacobian(const SimulationTime& simTime, const Cons
 		const unsigned int offset = _dofOffset[i];
 
 		_errorIndicator[i] = m->residualSensFwdWithJacobian(simTime, applyOffset(simState, offset),
-			applyOffset(adJac, offset), _threadLocalStorage);
+															applyOffset(adJac, offset), _threadLocalStorage);
 
 	} CADET_PARFOR_END;
 
@@ -159,7 +179,8 @@ void ModelSystem::readInitialCondition(IParameterProvider& paramProvider)
 		IUnitOperation* const m = _models[i];
 
 		oss.str("");
-		oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << static_cast<int>(m->unitOperationId());
+		oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0)
+			<< static_cast<int>(m->unitOperationId());
 
 		const std::string subScope = oss.str();
 		if (paramProvider.exists(subScope))
@@ -217,7 +238,7 @@ void ModelSystem::solveCouplingDOF(double* const vec)
 			const unsigned int localStride = m->localInletComponentStride(port);
 			for (unsigned int comp = 0; comp < m->numComponents(); ++comp)
 			{
-				vec[offset + localIndex + comp*localStride] = vec[idxCoupling];
+				vec[offset + localIndex + comp * localStride] = vec[idxCoupling];
 				++idxCoupling;
 			}
 		}
@@ -237,18 +258,19 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 	for (unsigned int i = 0; i < _connections.sliceSize(_curSwitchIndex) / 6; ++i)
 	{
 		// Extract current connection
-		const int uoSource = ptrConn[6*i];
-		const int uoDest = ptrConn[6*i + 1];
-		const int portSource = ptrConn[6*i + 2];
-		const int portDest = ptrConn[6*i + 3];
-		const int compSource = ptrConn[6*i + 4];
-		const int compDest = ptrConn[6*i + 5];
+		const int uoSource = ptrConn[6 * i];
+		const int uoDest = ptrConn[6 * i + 1];
+		const int portSource = ptrConn[6 * i + 2];
+		const int portDest = ptrConn[6 * i + 3];
+		const int compSource = ptrConn[6 * i + 4];
+		const int compDest = ptrConn[6 * i + 5];
 
 		// Obtain index of first connection from uoSource to uoDest
 		unsigned int idx = i;
 		for (unsigned int j = 0; j < i; ++j)
 		{
-			if ((ptrConn[6*j] == uoSource) && (ptrConn[6*j + 1] == uoDest) && (ptrConn[6*j + 2] == portSource) && (ptrConn[6*j + 3] == portDest))
+			if ((ptrConn[6 * j] == uoSource) && (ptrConn[6 * j + 1] == uoDest) && (ptrConn[6 * j + 2] == portSource) &&
+				(ptrConn[6 * j + 3] == portDest))
 			{
 				idx = j;
 				break;
@@ -267,7 +289,9 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 		{
 			for (unsigned int j = 0; j < modelSource->numOutletPorts(); ++j)
 			{
-				const double totInFlow = cubicPoly<double>(_totalInletFlow(uoDest, j), _totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT);
+				const double totInFlow =
+					cubicPoly<double>(_totalInletFlow(uoDest, j), _totalInletFlowLin(uoDest, j),
+									  _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT);
 
 				// Ignore ports with incoming flow rate 0
 				if (totInFlow <= 0.0)
@@ -276,7 +300,8 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 				const unsigned int outletIndex = modelSource->localOutletComponentIndex(j);
 				const unsigned int outletStride = modelSource->localOutletComponentStride(j);
 
-				const double totInFlowOverDt = cubicPolyDeriv<double>(_totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT);
+				const double totInFlowOverDt = cubicPolyDeriv<double>(
+					_totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT);
 				const double inFlow = cubicPoly<double>(ptrRate, ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT);
 				const double inFlowOverDt = cubicPolyDeriv<double>(ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT);
 
@@ -288,14 +313,16 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 					// Connect all components with the same flow rate
 					for (unsigned int comp = 0; comp < modelSource->numComponents(); ++comp)
 					{
-						const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, j, comp)];  // destination coupling DOF
+						const unsigned int row =
+							_couplingIdxMap[std::make_tuple(uoDest, j, comp)]; // destination coupling DOF
 						const unsigned int col = outletIndex + outletStride * comp;
 						dResConDt[row] += dvdt * vecStateY[offset + col];
 					}
 				}
 				else
 				{
-					const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, j, compDest)];  // destination coupling DOF
+					const unsigned int row =
+						_couplingIdxMap[std::make_tuple(uoDest, j, compDest)]; // destination coupling DOF
 					const unsigned int col = outletIndex + outletStride * compSource;
 					dResConDt[row] += dvdt * vecStateY[offset + col];
 				}
@@ -303,7 +330,9 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 		}
 		else
 		{
-			const double totInFlow = cubicPoly<double>(_totalInletFlow(uoDest, portDest), _totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT);
+			const double totInFlow =
+				cubicPoly<double>(_totalInletFlow(uoDest, portDest), _totalInletFlowLin(uoDest, portDest),
+								  _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT);
 
 			// Ignore ports with incoming flow rate 0
 			if (totInFlow <= 0.0)
@@ -312,7 +341,9 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 			const unsigned int outletIndex = modelSource->localOutletComponentIndex(portSource);
 			const unsigned int outletStride = modelSource->localOutletComponentStride(portSource);
 
-			const double totInFlowOverDt = cubicPolyDeriv<double>(_totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT);
+			const double totInFlowOverDt =
+				cubicPolyDeriv<double>(_totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest),
+									   _totalInletFlowCub(uoDest, portDest), secT);
 			const double inFlow = cubicPoly<double>(ptrRate, ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT);
 			const double inFlowOverDt = cubicPolyDeriv<double>(ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT);
 
@@ -324,14 +355,16 @@ void ModelSystem::subtractDresConDt(double t, double* dResConDt, double const* v
 				// Connect all components with the same flow rate
 				for (unsigned int comp = 0; comp < modelSource->numComponents(); ++comp)
 				{
-					const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, portDest, comp)];  // destination coupling DOF
+					const unsigned int row =
+						_couplingIdxMap[std::make_tuple(uoDest, portDest, comp)]; // destination coupling DOF
 					const unsigned int col = outletIndex + outletStride * comp;
 					dResConDt[row] += dvdt * vecStateY[offset + col];
 				}
 			}
 			else
 			{
-				const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, portDest, compDest)];  // destination coupling DOF
+				const unsigned int row =
+					_couplingIdxMap[std::make_tuple(uoDest, portDest, compDest)]; // destination coupling DOF
 				const unsigned int col = outletIndex + outletStride * compSource;
 				dResConDt[row] += dvdt * vecStateY[offset + col];
 			}
@@ -352,18 +385,19 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 	for (unsigned int i = 0; i < _connections.sliceSize(_curSwitchIndex) / 6; ++i)
 	{
 		// Extract current connection
-		const int uoSource = ptrConn[6*i];
-		const int uoDest = ptrConn[6*i + 1];
-		const int portSource = ptrConn[6*i + 2];
-		const int portDest = ptrConn[6*i + 3];
-		const int compSource = ptrConn[6*i + 4];
-		const int compDest = ptrConn[6*i + 5];
+		const int uoSource = ptrConn[6 * i];
+		const int uoDest = ptrConn[6 * i + 1];
+		const int portSource = ptrConn[6 * i + 2];
+		const int portDest = ptrConn[6 * i + 3];
+		const int compSource = ptrConn[6 * i + 4];
+		const int compDest = ptrConn[6 * i + 5];
 
 		// Obtain index of first connection from uoSource to uoDest
 		unsigned int idx = i;
 		for (unsigned int j = 0; j < i; ++j)
 		{
-			if ((ptrConn[6*j] == uoSource) && (ptrConn[6*j + 1] == uoDest) && (ptrConn[6*j + 2] == portSource) && (ptrConn[6*j + 3] == portDest))
+			if ((ptrConn[6 * j] == uoSource) && (ptrConn[6 * j + 1] == uoDest) && (ptrConn[6 * j + 2] == portSource) &&
+				(ptrConn[6 * j + 3] == portDest))
 			{
 				idx = j;
 				break;
@@ -382,7 +416,9 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 		{
 			for (unsigned int j = 0; j < modelSource->numOutletPorts(); ++j)
 			{
-				const double totInFlow = cubicPoly(_totalInletFlow(uoDest, j), _totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT, adDir);
+				const double totInFlow =
+					cubicPoly(_totalInletFlow(uoDest, j), _totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j),
+							  _totalInletFlowCub(uoDest, j), secT, adDir);
 
 				// Ignore ports with incoming flow rate 0
 				if (totInFlow <= 0.0)
@@ -391,7 +427,9 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 				const unsigned int outletIndex = modelSource->localOutletComponentIndex(j);
 				const unsigned int outletStride = modelSource->localOutletComponentStride(j);
 
-				const double totInFlowOverDt = cubicPolyDeriv(_totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j), _totalInletFlowCub(uoDest, j), secT, adDir);
+				const double totInFlowOverDt =
+					cubicPolyDeriv(_totalInletFlowLin(uoDest, j), _totalInletFlowQuad(uoDest, j),
+								   _totalInletFlowCub(uoDest, j), secT, adDir);
 				const double inFlow = cubicPoly(ptrRate, ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT, adDir);
 				const double inFlowOverDt = cubicPolyDeriv(ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT, adDir);
 
@@ -403,14 +441,16 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 					// Connect all components with the same flow rate
 					for (unsigned int comp = 0; comp < modelSource->numComponents(); ++comp)
 					{
-						const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, j, comp)];  // destination coupling DOF
+						const unsigned int row =
+							_couplingIdxMap[std::make_tuple(uoDest, j, comp)]; // destination coupling DOF
 						const unsigned int col = outletIndex + outletStride * comp;
 						dResConDt[row] += dvdt * vecStateY[offset + col];
 					}
 				}
 				else
 				{
-					const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, j, compDest)];  // destination coupling DOF
+					const unsigned int row =
+						_couplingIdxMap[std::make_tuple(uoDest, j, compDest)]; // destination coupling DOF
 					const unsigned int col = outletIndex + outletStride * compSource;
 					dResConDt[row] += dvdt * vecStateY[offset + col];
 				}
@@ -418,7 +458,9 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 		}
 		else
 		{
-			const double totInFlow = cubicPoly(_totalInletFlow(uoDest, portDest), _totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT, adDir);
+			const double totInFlow =
+				cubicPoly(_totalInletFlow(uoDest, portDest), _totalInletFlowLin(uoDest, portDest),
+						  _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT, adDir);
 
 			// Ignore ports with incoming flow rate 0
 			if (totInFlow <= 0.0)
@@ -427,7 +469,9 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 			const unsigned int outletIndex = modelSource->localOutletComponentIndex(portSource);
 			const unsigned int outletStride = modelSource->localOutletComponentStride(portSource);
 
-			const double totInFlowOverDt = cubicPolyDeriv(_totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest), _totalInletFlowCub(uoDest, portDest), secT, adDir);
+			const double totInFlowOverDt =
+				cubicPolyDeriv(_totalInletFlowLin(uoDest, portDest), _totalInletFlowQuad(uoDest, portDest),
+							   _totalInletFlowCub(uoDest, portDest), secT, adDir);
 			const double inFlow = cubicPoly(ptrRate, ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT, adDir);
 			const double inFlowOverDt = cubicPolyDeriv(ptrRateLin, ptrRateQuad, ptrRateCub, idx, secT, adDir);
 
@@ -439,14 +483,16 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 				// Connect all components with the same flow rate
 				for (unsigned int comp = 0; comp < modelSource->numComponents(); ++comp)
 				{
-					const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, portDest, comp)];  // destination coupling DOF
+					const unsigned int row =
+						_couplingIdxMap[std::make_tuple(uoDest, portDest, comp)]; // destination coupling DOF
 					const unsigned int col = outletIndex + outletStride * comp;
 					dResConDt[row] += dvdt * vecStateY[offset + col];
 				}
 			}
 			else
 			{
-				const unsigned int row = _couplingIdxMap[std::make_tuple(uoDest, portDest, compDest)];  // destination coupling DOF
+				const unsigned int row =
+					_couplingIdxMap[std::make_tuple(uoDest, portDest, compDest)]; // destination coupling DOF
 				const unsigned int col = outletIndex + outletStride * compSource;
 				dResConDt[row] += dvdt * vecStateY[offset + col];
 			}
@@ -456,7 +502,7 @@ void ModelSystem::subtractDresConDtDp(double t, unsigned int adDir, double* dRes
 
 template <typename tag_t>
 void ModelSystem::consistentInitialConditionAlgorithm(const SimulationTime& simTime, const SimulationState& simState,
-	const AdJacobianParams& adJac, double errorTol)
+													  const AdJacobianParams& adJac, double errorTol)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -473,7 +519,8 @@ void ModelSystem::consistentInitialConditionAlgorithm(const SimulationTime& simT
 		const unsigned int offset = _dofOffset[i];
 		if (!m->hasInlet())
 		{
-			ConsistentInit<tag_t>::state(m, simTime, simState.vecStateY + offset, applyOffset(adJac, offset), errorTol, _threadLocalStorage);
+			ConsistentInit<tag_t>::state(m, simTime, simState.vecStateY + offset, applyOffset(adJac, offset), errorTol,
+										 _threadLocalStorage);
 		}
 	} CADET_PARFOR_END;
 
@@ -499,7 +546,8 @@ void ModelSystem::consistentInitialConditionAlgorithm(const SimulationTime& simT
 		const unsigned int offset = _dofOffset[i];
 		if (m->hasInlet())
 		{
-			ConsistentInit<tag_t>::state(m, simTime, simState.vecStateY + offset, applyOffset(adJac, offset), errorTol, _threadLocalStorage);
+			ConsistentInit<tag_t>::state(m, simTime, simState.vecStateY + offset, applyOffset(adJac, offset), errorTol,
+										 _threadLocalStorage);
 		}
 	} CADET_PARFOR_END;
 
@@ -523,7 +571,8 @@ void ModelSystem::consistentInitialConditionAlgorithm(const SimulationTime& simT
 	{
 		IUnitOperation* const m = _models[i];
 		const unsigned int offset = _dofOffset[i];
-		ConsistentInit<tag_t>::timeDerivative(m, simTime, simState.vecStateY + offset, simState.vecStateYdot + offset, _tempState + offset, _threadLocalStorage);
+		ConsistentInit<tag_t>::timeDerivative(m, simTime, simState.vecStateY + offset, simState.vecStateYdot + offset,
+											  _tempState + offset, _threadLocalStorage);
 	} CADET_PARFOR_END;
 
 	// Zero out the coupling DOFs (provides right hand side of 0 for solveCouplingDOF())
@@ -544,22 +593,24 @@ void ModelSystem::consistentInitialConditionAlgorithm(const SimulationTime& simT
 }
 
 void ModelSystem::consistentInitialConditions(const SimulationTime& simTime, const SimulationState& simState,
-	const AdJacobianParams& adJac, double errorTol)
+											  const AdJacobianParams& adJac, double errorTol)
 {
 	consistentInitialConditionAlgorithm<FullTag>(simTime, simState, adJac, errorTol);
 }
 
-void ModelSystem::consistentInitialSensitivity(const SimulationTime& simTime,
-	const ConstSimulationState& simState, std::vector<double*>& vecSensY,
-	std::vector<double*>& vecSensYdot, active* const adRes, active* const adY)
+void ModelSystem::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
+											   std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot,
+											   active* const adRes, active* const adY)
 {
 	consistentInitialSensitivityAlgorithm<FullTag>(simTime, simState, vecSensY, vecSensYdot, adRes, adY);
 }
 
 template <typename tag_t>
 void ModelSystem::consistentInitialSensitivityAlgorithm(const SimulationTime& simTime,
-	const ConstSimulationState& simState, std::vector<double*>& vecSensY,
-	std::vector<double*>& vecSensYdot, active* const adRes, active* const adY)
+														const ConstSimulationState& simState,
+														std::vector<double*>& vecSensY,
+														std::vector<double*>& vecSensYdot, active* const adRes,
+														active* const adY)
 {
 	BENCH_SCOPE(_timerConsistentInit);
 
@@ -583,7 +634,8 @@ void ModelSystem::consistentInitialSensitivityAlgorithm(const SimulationTime& si
 				vecSensYdotLocal[j] = vecSensYdot[j] + offset;
 			}
 
-			ConsistentInit<tag_t>::parameterSensitivity(m, simTime, applyOffset(simState, offset), vecSensYlocal, vecSensYdotLocal, adRes + offset, _threadLocalStorage);
+			ConsistentInit<tag_t>::parameterSensitivity(m, simTime, applyOffset(simState, offset), vecSensYlocal,
+														vecSensYdotLocal, adRes + offset, _threadLocalStorage);
 		}
 	}
 
@@ -613,7 +665,8 @@ void ModelSystem::consistentInitialSensitivityAlgorithm(const SimulationTime& si
 				vecSensYdotLocal[j] = vecSensYdot[j] + offset;
 			}
 
-			ConsistentInit<tag_t>::parameterSensitivity(m, simTime, applyOffset(simState, offset), vecSensYlocal, vecSensYdotLocal, adRes + offset, _threadLocalStorage);
+			ConsistentInit<tag_t>::parameterSensitivity(m, simTime, applyOffset(simState, offset), vecSensYlocal,
+														vecSensYdotLocal, adRes + offset, _threadLocalStorage);
 		}
 	}
 
@@ -628,11 +681,13 @@ void ModelSystem::consistentInitialSensitivityAlgorithm(const SimulationTime& si
 		}
 		else
 		{
-			ad::adMatrixVectorMultiply(_jacActiveFN[0], simState.vecStateYdot + _dofOffset[0], vsyd + finalOffset, -1.0, 0.0, i);
+			ad::adMatrixVectorMultiply(_jacActiveFN[0], simState.vecStateYdot + _dofOffset[0], vsyd + finalOffset, -1.0,
+									   0.0, i);
 			for (unsigned int j = 1; j < _models.size(); ++j)
 			{
 				const unsigned int offset = _dofOffset[j];
-				ad::adMatrixVectorMultiply(_jacActiveFN[j], simState.vecStateYdot + offset, vsyd + finalOffset, -1.0, 1.0, i);
+				ad::adMatrixVectorMultiply(_jacActiveFN[j], simState.vecStateYdot + offset, vsyd + finalOffset, -1.0,
+										   1.0, i);
 			}
 		}
 
@@ -652,17 +707,18 @@ void ModelSystem::consistentInitialSensitivityAlgorithm(const SimulationTime& si
 }
 
 void ModelSystem::leanConsistentInitialConditions(const SimulationTime& simTime, const SimulationState& simState,
-	const AdJacobianParams& adJac, double errorTol)
+												  const AdJacobianParams& adJac, double errorTol)
 {
 	consistentInitialConditionAlgorithm<LeanTag>(simTime, simState, adJac, errorTol);
 }
 
 void ModelSystem::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
-	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active* const adRes, active* const adY)
+												   std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot,
+												   active* const adRes, active* const adY)
 {
 	consistentInitialSensitivityAlgorithm<LeanTag>(simTime, simState, vecSensY, vecSensYdot, adRes, adY);
 }
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

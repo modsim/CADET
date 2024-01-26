@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -38,7 +38,6 @@ struct ProgramOptions
 	std::string outSens;
 };
 
-
 int main(int argc, char** argv)
 {
 	ProgramOptions opts;
@@ -49,14 +48,16 @@ int main(int argc, char** argv)
 		TCLAP::CmdLine cmd("Create an HDF5 input file for single component Langmuir benchmark case", ' ', "1.0");
 		cmd.setOutput(&customOut);
 
-		cmd >> (new TCLAP::ValueArg<std::string>("o", "out", "Write output to file (default: SCLang.h5)", false, "SCLang.h5", "File"))->storeIn(&opts.fileName);
+		cmd >> (new TCLAP::ValueArg<std::string>("o", "out", "Write output to file (default: SCLang.h5)", false,
+												 "SCLang.h5", "File"))
+				   ->storeIn(&opts.fileName);
 		addMiscToCmdLine(cmd, opts);
 		addSensitivitiyParserToCmdLine(cmd, opts.sensitivities);
 		addOutputParserToCmdLine(cmd, opts.outSol, opts.outSens);
 
 		cmd.parse(argc, argv);
 	}
-	catch (const TCLAP::ArgException &e)
+	catch (const TCLAP::ArgException& e)
 	{
 		std::cerr << "ERROR: " << e.error() << " for argument " << e.argId() << std::endl;
 		return 1;
@@ -108,9 +109,9 @@ int main(int argc, char** argv)
 			writer.scalar("ADSORPTION_MODEL", std::string("MULTI_COMPONENT_LANGMUIR"));
 			{
 				Scope<cadet::io::HDF5Writer> s2(writer, "adsorption");
-				
+
 				writer.scalar<int>("IS_KINETIC", opts.isKinetic);
-		
+
 				const double kA[] = {1.14};
 				const double kD[] = {0.002};
 				const double qMax[] = {4.88};
@@ -207,10 +208,9 @@ int main(int argc, char** argv)
 	{
 		Scope<cadet::io::HDF5Writer> s(writer, "return");
 		writer.template scalar<int>("WRITE_SOLUTION_TIMES", true);
-	
+
 		Scope<cadet::io::HDF5Writer> s2(writer, "unit_000");
 		parseAndWriteOutputFormatsFromCmdLine(writer, opts.outSol, opts.outSens);
-
 	}
 
 	// Solver

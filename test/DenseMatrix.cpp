@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -76,8 +76,7 @@ inline std::vector<double> randomVector(unsigned int n)
  * @tparam Matrix_t Type of banded matrix to create
  * @return Banded matrix of given shape
  */
-template <typename Matrix_t>
-Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int upper)
+template <typename Matrix_t> Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int upper)
 {
 	Matrix_t bm;
 	bm.resize(rows, lower, upper);
@@ -107,9 +106,11 @@ Matrix_t createBandMatrix(unsigned int rows, unsigned int lower, unsigned int up
  * @tparam Matrix_t Type of banded matrix
  */
 template <typename Matrix_t>
-void testSubMatrixMultiply(const Matrix_t& bm, int startRow, int startDiag, int numRows, int numCols, const std::vector<double>& ref)
+void testSubMatrixMultiply(const Matrix_t& bm, int startRow, int startDiag, int numRows, int numCols,
+						   const std::vector<double>& ref)
 {
-	SECTION("From row " + std::to_string(startRow) + ", diagonal " + std::to_string(startDiag) + " extract " + std::to_string(numRows) + "x" + std::to_string(numCols) + " matrix")
+	SECTION("From row " + std::to_string(startRow) + ", diagonal " + std::to_string(startDiag) + " extract " +
+			std::to_string(numRows) + "x" + std::to_string(numCols) + " matrix")
 	{
 		cadet::linalg::DenseMatrix dm;
 		dm.resize(numRows, numCols);
@@ -122,17 +123,16 @@ void testSubMatrixMultiply(const Matrix_t& bm, int startRow, int startDiag, int 
  * @brief Calls testSubMatrixMultiply() with various sizes and shifts
  * @tparam Matrix_t Type of banded matrix
  */
-template <typename Matrix_t>
-void testDenseSubmatrixFromBanded()
+template <typename Matrix_t> void testDenseSubmatrixFromBanded()
 {
 	const Matrix_t bm = createBandMatrix<Matrix_t>(8, 2, 3);
 
-	testSubMatrixMultiply<Matrix_t>(bm, 0, 0, 4, 4, {1, 2, 3, 4,5, 6, 7, 8,10, 11, 12, 13,0, 16, 17, 18});
-	testSubMatrixMultiply<Matrix_t>(bm, 4, 0, 4, 4, {24, 25, 26, 27,29, 30, 31, 32,33, 34, 35, 36,0, 37, 38, 39});
-	testSubMatrixMultiply<Matrix_t>(bm, 2, 2, 4, 4, {14, 15, 0, 0,19, 20, 21, 0,24, 25, 26, 27,29, 30, 31, 32});
-	testSubMatrixMultiply<Matrix_t>(bm, 2, -1, 4, 4, {11, 12, 13, 14,16, 17, 18, 19,0, 22, 23, 24,0, 0, 28, 29});
-	testSubMatrixMultiply<Matrix_t>(bm, 1, 0, 4, 4, {6, 7, 8, 9,11, 12, 13, 14,16, 17, 18, 19,0, 22, 23, 24});
-	testSubMatrixMultiply<Matrix_t>(bm, 0, 4, 4, 4, {0, 0, 0, 0,9, 0, 0, 0,14, 15, 0, 0,19, 20, 21, 0});
+	testSubMatrixMultiply<Matrix_t>(bm, 0, 0, 4, 4, {1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 0, 16, 17, 18});
+	testSubMatrixMultiply<Matrix_t>(bm, 4, 0, 4, 4, {24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36, 0, 37, 38, 39});
+	testSubMatrixMultiply<Matrix_t>(bm, 2, 2, 4, 4, {14, 15, 0, 0, 19, 20, 21, 0, 24, 25, 26, 27, 29, 30, 31, 32});
+	testSubMatrixMultiply<Matrix_t>(bm, 2, -1, 4, 4, {11, 12, 13, 14, 16, 17, 18, 19, 0, 22, 23, 24, 0, 0, 28, 29});
+	testSubMatrixMultiply<Matrix_t>(bm, 1, 0, 4, 4, {6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 0, 22, 23, 24});
+	testSubMatrixMultiply<Matrix_t>(bm, 0, 4, 4, 4, {0, 0, 0, 0, 9, 0, 0, 0, 14, 15, 0, 0, 19, 20, 21, 0});
 	testSubMatrixMultiply<Matrix_t>(bm, 2, 1, 1, 2, {13, 14});
 	testSubMatrixMultiply<Matrix_t>(bm, 2, -1, 1, 3, {11, 12, 13});
 }
@@ -154,7 +154,7 @@ TEST_CASE("DenseMatrix LU solves", "[DenseMatrix],[LinAlg]")
 	// Probability of obtaining a non-invertible random matrix is 0
 	const DenseMatrix dm = randomMatrix(8, 8);
 	DenseMatrix fdm = dm;
-	
+
 	REQUIRE(fdm.factorize());
 
 	// Prepare some right hand side
@@ -176,7 +176,7 @@ TEST_CASE("DenseMatrix QR solves", "[DenseMatrix],[LinAlg]")
 	// Probability of obtaining a non-invertible random matrix is 0
 	const DenseMatrix dm = randomMatrix(8, 8);
 	DenseMatrix fdm = dm;
-	
+
 	std::vector<double> workingMemory(fdm.robustWorkspaceSize(), 0.0);
 	REQUIRE(fdm.robustFactorize(workingMemory.data()));
 

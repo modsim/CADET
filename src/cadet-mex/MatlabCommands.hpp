@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides commands that can be executed on a cadet::Driver object.
  */
 
@@ -43,7 +43,7 @@ void runFullSimulation(cadet::Driver& drv, mxArray const*& input, mxArray*& outp
 /**
  * @brief Command map type
  */
-typedef std::unordered_map<std::string, void(*)(cadet::Driver&, int, mxArray**, int, const mxArray**)> CommandMap;
+typedef std::unordered_map<std::string, void (*)(cadet::Driver&, int, mxArray**, int, const mxArray**)> CommandMap;
 
 /**
  * @brief Returns a map with all available commands
@@ -56,4 +56,4 @@ CommandMap registeredCommands();
 
 } // namespace cadet
 
-#endif  // CADET_MEX_MATLABCOMMANDS_HPP_
+#endif // CADET_MEX_MATLABCOMMANDS_HPP_

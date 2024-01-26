@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -21,17 +21,22 @@ namespace cadet
 namespace linalg
 {
 
-SuperLUSparseMatrix::SuperLUSparseMatrix() : CompressedSparseMatrix(), _permMat(nullptr), _firstFactorization(true), _permCols(nullptr), _permRows(nullptr), _eTree(nullptr)
+SuperLUSparseMatrix::SuperLUSparseMatrix()
+	: CompressedSparseMatrix(), _permMat(nullptr), _firstFactorization(true), _permCols(nullptr), _permRows(nullptr),
+	  _eTree(nullptr)
 #ifdef LIBCADET_SUPERLU_MANAGE_MEMORY
-	, _memory(0)
+	  ,
+	  _memory(0)
 #endif
 {
 	allocateMatrixStructs();
 }
 
-SuperLUSparseMatrix::SuperLUSparseMatrix(unsigned int numRows, unsigned int numNonZeros) : CompressedSparseMatrix(numRows, numNonZeros), _permMat(nullptr), _firstFactorization(true)
+SuperLUSparseMatrix::SuperLUSparseMatrix(unsigned int numRows, unsigned int numNonZeros)
+	: CompressedSparseMatrix(numRows, numNonZeros), _permMat(nullptr), _firstFactorization(true)
 #ifdef LIBCADET_SUPERLU_MANAGE_MEMORY
-	, _memory(0)
+	  ,
+	  _memory(0)
 #endif
 {
 	allocateMatrixStructs();
@@ -127,7 +132,7 @@ void SuperLUSparseMatrix::prepare()
 
 	/*
 	 * Get column permutation vector _permCols[], according to permc_spec:
-	 *   permc_spec = NATURAL:  natural ordering 
+	 *   permc_spec = NATURAL:  natural ordering
 	 *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
 	 *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
 	 *   permc_spec = COLAMD:   approximate minimum degree column ordering
@@ -153,7 +158,7 @@ void SuperLUSparseMatrix::prepare()
 
 bool SuperLUSparseMatrix::factorize()
 {
-	 // TODO: Compare SamePattern vs SamePattern_SameRowPerm
+	// TODO: Compare SamePattern vs SamePattern_SameRowPerm
 	const fact_t mode = SamePattern_SameRowPerm;
 
 	// Set options
@@ -171,7 +176,8 @@ bool SuperLUSparseMatrix::factorize()
 	{
 		// Guess memory in bytes
 		int memSize = 0;
-		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, nullptr, -1, _permCols, _permRows, _lower, _upper, _globalLU, _stats, &memSize);
+		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, nullptr, -1, _permCols, _permRows, _lower,
+			   _upper, _globalLU, _stats, &memSize);
 
 		// SuperLU returns numer of bytes + rows()
 		_memory.resize(memSize - rows());
@@ -180,7 +186,7 @@ bool SuperLUSparseMatrix::factorize()
 	if (!_firstFactorization && (mode == SamePattern))
 	{
 		Destroy_SuperNode_Matrix(_lower);
-		Destroy_CompCol_Matrix(_upper);		
+		Destroy_CompCol_Matrix(_upper);
 	}
 #endif
 
@@ -190,9 +196,11 @@ bool SuperLUSparseMatrix::factorize()
 	{
 
 #ifdef LIBCADET_SUPERLU_MANAGE_MEMORY
-		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, _memory.data(), _memory.size(), _permCols, _permRows, _lower, _upper, _globalLU, _stats, &info);
+		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, _memory.data(), _memory.size(), _permCols,
+			   _permRows, _lower, _upper, _globalLU, _stats, &info);
 #else
-		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, nullptr, 0, _permCols, _permRows, _lower, _upper, _globalLU, _stats, &info);
+		dgstrf(&options, _permMat, superNodeRelaxation, panelSize, _eTree, nullptr, 0, _permCols, _permRows, _lower,
+			   _upper, _globalLU, _stats, &info);
 #endif
 
 		if (cadet_likely(info == 0))
@@ -200,11 +208,11 @@ bool SuperLUSparseMatrix::factorize()
 			// Matrix factorized successfully
 			_firstFactorization = false;
 
-//			mem_usage_t memInfo;
-//			dQuerySpace(_lower, _upper, &memInfo);
+			//			mem_usage_t memInfo;
+			//			dQuerySpace(_lower, _upper, &memInfo);
 			return true;
 		}
-#ifdef LIBCADET_SUPERLU_MANAGE_MEMORY		
+#ifdef LIBCADET_SUPERLU_MANAGE_MEMORY
 		else if (info > rows())
 		{
 			// Insufficient memory
@@ -232,7 +240,7 @@ bool SuperLUSparseMatrix::factorize()
 		else if (info > 0)
 		{
 			// Diagonal element (info, info) is exactly 0.0
-//			LOG(Debug) << "Diagonal element (" << (info-1) << ", " << (info-1) << ") is exactly 0.0";
+			//			LOG(Debug) << "Diagonal element (" << (info-1) << ", " << (info-1) << ") is exactly 0.0";
 			_firstFactorization = false;
 			return false;
 		}
@@ -255,6 +263,6 @@ bool SuperLUSparseMatrix::solve(double* rhs) const
 	return info == 0;
 }
 
-}  // namespace linalg
+} // namespace linalg
 
-}  // namespace cadet
+} // namespace cadet

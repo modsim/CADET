@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -32,67 +32,114 @@ namespace model
 class DummyParameterDependence : public ParameterDependenceBase
 {
 public:
+	DummyParameterDependence()
+	{
+	}
+	virtual ~DummyParameterDependence() CADET_NOEXCEPT
+	{
+	}
 
-	DummyParameterDependence() { }
-	virtual ~DummyParameterDependence() CADET_NOEXCEPT { }
+	static const char* identifier()
+	{
+		return "DUMMY";
+	}
+	virtual const char* name() const CADET_NOEXCEPT
+	{
+		return DummyParameterDependence::identifier();
+	}
 
-	static const char* identifier() { return "DUMMY"; }
-	virtual const char* name() const CADET_NOEXCEPT { return DummyParameterDependence::identifier(); }
+	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT
+	{
+		return 0;
+	}
+	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT
+	{
+		return 0;
+	}
 
-	virtual int jacobianElementsPerRowLiquid() const CADET_NOEXCEPT { return 0; }
-	virtual int jacobianElementsPerRowCombined() const CADET_NOEXCEPT { return 0; }
-
-	virtual void analyticJacobianLiquidAdd(const ColumnPosition& colPos, double param, double const* y, int comp, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
-	virtual void analyticJacobianCombinedAddLiquid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int comp, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
-	virtual void analyticJacobianCombinedAddSolid(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const { }
+	virtual void analyticJacobianLiquidAdd(const ColumnPosition& colPos, double param, double const* y, int comp,
+										   double factor, int offset, int row, linalg::DoubleSparseMatrix& jac) const
+	{
+	}
+	virtual void analyticJacobianCombinedAddLiquid(const ColumnPosition& colPos, double param, double const* yLiquid,
+												   double const* ySolid, int comp, double factor, int offset, int row,
+												   linalg::DoubleSparseMatrix& jac) const
+	{
+	}
+	virtual void analyticJacobianCombinedAddSolid(const ColumnPosition& colPos, double param, double const* yLiquid,
+												  double const* ySolid, int bnd, double factor, int offset, int row,
+												  linalg::DoubleSparseMatrix& jac) const
+	{
+	}
 
 	CADET_PARAMETERDEPENDENCE_BOILERPLATE
 
 protected:
-
-	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, const std::string& name)
+	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx,
+							   const std::string& name)
 	{
 		return true;
 	}
 
 	template <typename StateType, typename ParamType>
-	typename DoubleActivePromoter<StateType, ParamType>::type liquidParameterImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* y, int comp) const
+	typename DoubleActivePromoter<StateType, ParamType>::type liquidParameterImpl(const ColumnPosition& colPos,
+																				  const ParamType& param,
+																				  StateType const* y, int comp) const
 	{
 		return 0.0;
 	}
 
 	template <typename RowIterator>
-	void analyticJacobianLiquidAddImpl(const ColumnPosition& colPos, double param, double const* y, int comp, double factor, int offset, RowIterator jac) const { }
+	void analyticJacobianLiquidAddImpl(const ColumnPosition& colPos, double param, double const* y, int comp,
+									   double factor, int offset, RowIterator jac) const
+	{
+	}
 
 	template <typename StateType, typename ParamType>
-	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterLiquidImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* yLiquid, StateType const* ySolid, int comp) const
+	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterLiquidImpl(const ColumnPosition& colPos,
+																						  const ParamType& param,
+																						  StateType const* yLiquid,
+																						  StateType const* ySolid,
+																						  int comp) const
 	{
 		return 0.0;
 	}
 
 	template <typename RowIterator>
-	void analyticJacobianCombinedAddLiquidImpl(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int comp, double factor, int offset, RowIterator jac) const { }
+	void analyticJacobianCombinedAddLiquidImpl(const ColumnPosition& colPos, double param, double const* yLiquid,
+											   double const* ySolid, int comp, double factor, int offset,
+											   RowIterator jac) const
+	{
+	}
 
 	template <typename StateType, typename ParamType>
-	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterSolidImpl(const ColumnPosition& colPos, const ParamType& param, StateType const* yLiquid, StateType const* ySolid, int bnd) const
+	typename DoubleActivePromoter<StateType, ParamType>::type combinedParameterSolidImpl(const ColumnPosition& colPos,
+																						 const ParamType& param,
+																						 StateType const* yLiquid,
+																						 StateType const* ySolid,
+																						 int bnd) const
 	{
 		return 0.0;
 	}
 
 	template <typename RowIterator>
-	void analyticJacobianCombinedAddSolidImpl(const ColumnPosition& colPos, double param, double const* yLiquid, double const* ySolid, int bnd, double factor, int offset, RowIterator jac) const { }
+	void analyticJacobianCombinedAddSolidImpl(const ColumnPosition& colPos, double param, double const* yLiquid,
+											  double const* ySolid, int bnd, double factor, int offset,
+											  RowIterator jac) const
+	{
+	}
 };
-
 
 namespace paramdep
 {
-	void registerDummyParamDependence(std::unordered_map<std::string, std::function<model::IParameterDependence*()>>& paramDeps)
-	{
-		paramDeps[DummyParameterDependence::identifier()] = []() { return new DummyParameterDependence(); };
-		paramDeps["NONE"] = []() { return new DummyParameterDependence(); };
-	}
-}  // namespace reaction
+void registerDummyParamDependence(
+	std::unordered_map<std::string, std::function<model::IParameterDependence*()>>& paramDeps)
+{
+	paramDeps[DummyParameterDependence::identifier()] = []() { return new DummyParameterDependence(); };
+	paramDeps["NONE"] = []() { return new DummyParameterDependence(); };
+}
+} // namespace paramdep
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

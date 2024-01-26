@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -19,7 +19,7 @@ TEST_CASE("MassActionLaw kinetic analytic Jacobian vs AD", "[MassActionLaw],[Rea
 	const unsigned int nBound[] = {1, 2, 1};
 	const double point[] = {1.0, 2.0, 1.4, 2.1, 0.2, 1.1, 1.8};
 	cadet::test::reaction::testDynamicJacobianAD("MASS_ACTION_LAW", 3, nBound,
-		R"json({
+												 R"json({
 			"MAL_KFWD_BULK": [1.0, 2.0, 0.4],
 			"MAL_KBWD_BULK": [0.0, 0.2, 1.5],
 			"MAL_STOICHIOMETRY_BULK": [ 1.0, -2.0,  3.0,
@@ -73,6 +73,5 @@ TEST_CASE("MassActionLaw kinetic analytic Jacobian vs AD", "[MassActionLaw],[Rea
 			                                       2.0, 0.0,
 			                                       1.8, 0.0]
 		})json",
-		point, 1e-15, 1e-15
-	);
+												 point, 1e-15, 1e-15);
 }

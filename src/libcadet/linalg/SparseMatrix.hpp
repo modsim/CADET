@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a sparse matrix
  */
 
@@ -36,28 +36,34 @@ namespace linalg
  *          lookup is performed first. If the element is found, it is returned. Otherwise, a new element at the given
  *          position is added. Contrary to operator(), addElement() will always add a new element and does not check if
  *          it already exists.
- *          
+ *
  *          This matrix format is meant as intermediate format for constructing a sparse matrix. Users are encouraged to
  *          convert their SparseMatrix to a CompressedSparseMatrix, which requires significantly less storage.
  * @tparam real_t Type of the stored elements
  */
-template <class real_t>
-class SparseMatrix
+template <class real_t> class SparseMatrix
 {
 public:
 	/**
 	 * @brief Creates an empty SparseMatrix with capacity @c 0
 	 * @details Users have to call resize() prior to populating the matrix.
 	 */
-	SparseMatrix() CADET_NOEXCEPT : _curIdx(0) { }
+	SparseMatrix() CADET_NOEXCEPT : _curIdx(0)
+	{
+	}
 
 	/**
 	 * @brief Creates an empty SparseMatrix with the given capacity
 	 * @param [in] nnz Capacity, that is the maximum number of non-zero elements
 	 */
-	SparseMatrix(unsigned int nnz) : _curIdx(0) { resize(nnz); }
+	SparseMatrix(unsigned int nnz) : _curIdx(0)
+	{
+		resize(nnz);
+	}
 
-	~SparseMatrix() CADET_NOEXCEPT { }
+	~SparseMatrix() CADET_NOEXCEPT
+	{
+	}
 
 	// Default copy and assignment semantics
 	SparseMatrix(const SparseMatrix& cpy) = default;
@@ -70,7 +76,7 @@ public:
 #else
 	SparseMatrix& operator=(SparseMatrix&& cpy) = default;
 #endif
-	
+
 	/**
 	 * @brief Copies a SparseMatrix of different type
 	 * @details The cast from @c otherReal_t to @c real_t has to be possible.
@@ -103,8 +109,7 @@ public:
 	 * @param [in] src Source matrix to be copied
 	 * @tparam otherReal_t Element type of source matrix
 	 */
-	template <class otherReal_t>
-	inline void copyFrom(const SparseMatrix<otherReal_t>& src)
+	template <class otherReal_t> inline void copyFrom(const SparseMatrix<otherReal_t>& src)
 	{
 		_rows = src.rows();
 		_cols = src.cols();
@@ -121,12 +126,15 @@ public:
 	 * @brief Resets all elements to @c 0
 	 * @details The capacity of the SparseMatrix is not changed.
 	 */
-	inline void clear() CADET_NOEXCEPT { _curIdx = 0; }
+	inline void clear() CADET_NOEXCEPT
+	{
+		_curIdx = 0;
+	}
 
 	/**
 	 * @brief Resets the maximum number of non-zero elements / the capacity
 	 * @details The matrix is reset to an empty state. All previous content is lost.
-	 * 
+	 *
 	 * @param [in] nnz Maximum number of non-zero elements
 	 */
 	inline void resize(unsigned int nnz)
@@ -148,7 +156,10 @@ public:
 	 * @details Note that the capacity is not the current number of non-zero elements.
 	 * @return Maximum number of non-zero elements that can be stored in the matrix
 	 */
-	inline unsigned int capacity() const CADET_NOEXCEPT { return _rows.size(); }
+	inline unsigned int capacity() const CADET_NOEXCEPT
+	{
+		return _rows.size();
+	}
 
 	/**
 	 * @brief Inserts a new element at the given position to the given value
@@ -156,7 +167,7 @@ public:
 	 *          a new element is created. As the capacity is not increased by
 	 *          this method, it will fail when the capacity is exhausted and
 	 *          a new element would have to be created.
-	 * 
+	 *
 	 * @param [in] row Row index
 	 * @param [in] col Column index
 	 * @param [in] val Value of the element at the given position
@@ -178,7 +189,7 @@ public:
 	 *          a new element is created. As the capacity is not increased by
 	 *          this method, it will fail when the capacity is exhausted and
 	 *          a new element would have to be created.
-	 * 
+	 *
 	 * @param [in] row Row index
 	 * @param [in] col Column index
 	 * @return Value of the element at the given position
@@ -194,14 +205,14 @@ public:
 
 		// Value not found, so add it
 		cadet_assert(_curIdx < _rows.size());
-		
+
 		_rows[_curIdx] = row;
 		_cols[_curIdx] = col;
 		_values[_curIdx] = 0.0;
 
 		++_curIdx;
 
-		return _values[_curIdx-1];
+		return _values[_curIdx - 1];
 	}
 
 	/**
@@ -353,7 +364,8 @@ public:
 	 * @tparam result_t Type of the vector \f$ y \f$
 	 */
 	template <typename arg_t, typename result_t>
-	inline void multiplySubtract(arg_t const* const x, result_t* const out, unsigned int startRow, unsigned int endRow) const
+	inline void multiplySubtract(arg_t const* const x, result_t* const out, unsigned int startRow,
+								 unsigned int endRow) const
 	{
 		for (unsigned int i = 0; i < _curIdx; ++i)
 		{
@@ -369,7 +381,10 @@ public:
 	 *          elements are used.
 	 * @return Vector with row indices
 	 */
-	inline const std::vector<int>& rows() const CADET_NOEXCEPT { return _rows; }
+	inline const std::vector<int>& rows() const CADET_NOEXCEPT
+	{
+		return _rows;
+	}
 
 	/**
 	 * @brief Returns a vector with column indices
@@ -377,7 +392,10 @@ public:
 	 *          elements are used.
 	 * @return Vector with column indices
 	 */
-	inline const std::vector<int>& cols() const CADET_NOEXCEPT { return _cols; }
+	inline const std::vector<int>& cols() const CADET_NOEXCEPT
+	{
+		return _cols;
+	}
 
 	/**
 	 * @brief Returns a vector with element values
@@ -385,19 +403,25 @@ public:
 	 *          elements are used.
 	 * @return Vector with element values
 	 */
-	inline const std::vector<real_t>& values() const CADET_NOEXCEPT { return _values; }
+	inline const std::vector<real_t>& values() const CADET_NOEXCEPT
+	{
+		return _values;
+	}
 
 	/**
 	 * @brief Returns the number of (structurally) non-zero elements in the matrix
 	 * @return Number of (structurally) non-zero elements in the matrix
 	 */
-	inline unsigned int numNonZero() const CADET_NOEXCEPT { return _curIdx; }
+	inline unsigned int numNonZero() const CADET_NOEXCEPT
+	{
+		return _curIdx;
+	}
 
 private:
-	std::vector<int> _rows; //!< List with row indices of elements
-	std::vector<int> _cols; //!< List with column indices of elements
+	std::vector<int> _rows;      //!< List with row indices of elements
+	std::vector<int> _cols;      //!< List with column indices of elements
 	std::vector<real_t> _values; //!< List with values of elements
-	unsigned int _curIdx; //!< Index of the first unused element
+	unsigned int _curIdx;        //!< Index of the first unused element
 };
 
 typedef SparseMatrix<double> DoubleSparseMatrix;
@@ -408,4 +432,4 @@ std::ostream& operator<<(std::ostream& out, const DoubleSparseMatrix& sm);
 
 } // namespace cadet
 
-#endif  // LIBCADET_SPARSEMATRIX_HPP_
+#endif // LIBCADET_SPARSEMATRIX_HPP_

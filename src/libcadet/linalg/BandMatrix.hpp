@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines a band matrix
  */
 
@@ -35,11 +35,9 @@ namespace linalg
  * @brief Iterates over rows of a banded matrix like BandMatrix or FactorizableBandMatrix
  * @tparam MatrixType Type of the matrix class, one of BandMatrix or FactorizableBandMatrix
  */
-template <class MatrixType>
-class BandedRowIterator
+template <class MatrixType> class BandedRowIterator
 {
 public:
-
 	/**
 	 * @brief Creates an empty BandedRowIterator pointing to nothing
 	 */
@@ -78,7 +76,8 @@ public:
 	 * @param [in] mat MatrixType of the BandedRowIterator
 	 * @param [in] row Index of the row of the iterator points so
 	 */
-	BandedRowIterator(MatrixType& mat, int row) CADET_NOEXCEPT : _matrix(&mat), _pos(_matrix->_data + row * _matrix->stride())
+	BandedRowIterator(MatrixType& mat, int row) CADET_NOEXCEPT : _matrix(&mat),
+																 _pos(_matrix->_data + row * _matrix->stride())
 	{
 #ifdef CADET_DEBUG
 		_row = row;
@@ -91,7 +90,9 @@ public:
 	 * @param [in] row Index of the row of the iterator points so
 	 * @param [in] offset Additional  offset
 	 */
-	BandedRowIterator(MatrixType& mat, int row, int offset) CADET_NOEXCEPT : _matrix(&mat), _pos(_matrix->_data + row * _matrix->stride() + offset)
+	BandedRowIterator(MatrixType& mat, int row, int offset) CADET_NOEXCEPT
+		: _matrix(&mat),
+		  _pos(_matrix->_data + row * _matrix->stride() + offset)
 	{
 #ifdef CADET_DEBUG
 		_row = row;
@@ -104,7 +105,9 @@ public:
 		_row = cpy._row;
 #endif
 	}
-	BandedRowIterator(const BandedRowIterator& cpy, int rowChange) CADET_NOEXCEPT : _matrix(cpy._matrix), _pos(cpy._pos + rowChange * static_cast<int>(cpy._matrix->stride()))
+	BandedRowIterator(const BandedRowIterator& cpy, int rowChange) CADET_NOEXCEPT
+		: _matrix(cpy._matrix),
+		  _pos(cpy._pos + rowChange * static_cast<int>(cpy._matrix->stride()))
 	{
 #ifdef CADET_DEBUG
 		_row = cpy._row + rowChange;
@@ -153,8 +156,7 @@ public:
 	 * @brief Copies a row of another iterator to the row of this iterator
 	 * @param [in] it Iterator pointing to a row of a matrix
 	 */
-	template <typename OtherIterator_t>
-	inline void copyRowFrom(const OtherIterator_t& it)
+	template <typename OtherIterator_t> inline void copyRowFrom(const OtherIterator_t& it)
 	{
 		cadet_assert(it.nonZeroColumnsPerRow() <= nonZeroColumnsPerRow());
 		cadet_assert(it.matrix().lowerBandwidth() == _matrix->lowerBandwidth());
@@ -204,24 +206,30 @@ public:
 	/**
 	 * @brief Accesses an element in the current row where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& centered(int diagonal) { return (*this)(diagonal); }
-	inline double centered(int diagonal) const { return (*this)(diagonal); }
+	inline double& centered(int diagonal)
+	{
+		return (*this)(diagonal);
+	}
+	inline double centered(int diagonal) const
+	{
+		return (*this)(diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the current row where the lowest diagonal is indexed by @c 0
 	 * @details In contrast to centered() the index of the column starts with the lowest diagonal (@c 0).
 	 *          The main diagonal is, thus, retrieved for @c lowerBand and the highest upper diagonal
 	 *          is returned for `lowerBand + upperBand`.
-	 * 
+	 *
 	 * @param [in] col Index of the column (from @c 0 to `lowerBand + upperBand`)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline double& native(int col)
@@ -254,8 +262,14 @@ public:
 		return _pos[diagonal + _matrix->_lowerBand];
 	}
 
-	inline double& operator[](int diagonal) { return (*this)(diagonal); }
-	inline double operator[](int diagonal) const { return (*this)(diagonal); }
+	inline double& operator[](int diagonal)
+	{
+		return (*this)(diagonal);
+	}
+	inline double operator[](int diagonal) const
+	{
+		return (*this)(diagonal);
+	}
 
 	inline BandedRowIterator& operator++() CADET_NOEXCEPT
 	{
@@ -317,25 +331,34 @@ public:
 	 * @brief Returns the underlying matrix this iterator is pointing into
 	 * @return Matrix this iterator is pointing into
 	 */
-	inline const MatrixType& matrix() const CADET_NOEXCEPT { return *_matrix; }
+	inline const MatrixType& matrix() const CADET_NOEXCEPT
+	{
+		return *_matrix;
+	}
 
 	/**
 	 * @brief Returns the number of (potentially) non-zero elements per row (the total bandwidth)
 	 * @return The number of (potentially) non-zero elements per row
 	 */
-	inline int nonZeroColumnsPerRow() const CADET_NOEXCEPT { return _matrix->apparentStride(); }
+	inline int nonZeroColumnsPerRow() const CADET_NOEXCEPT
+	{
+		return _matrix->apparentStride();
+	}
 
 #ifdef CADET_DEBUG
 	/**
 	 * @brief Returns the index of the current row
 	 * @return Index of the current row
 	 */
-	inline int row() const CADET_NOEXCEPT { return _row; }
+	inline int row() const CADET_NOEXCEPT
+	{
+		return _row;
+	}
 #endif
 
 private:
 	MatrixType* _matrix; //!< Underlying matrix
-	double* _pos; //!< Current position, points to the lowest subdiagonal of a row
+	double* _pos;        //!< Current position, points to the lowest subdiagonal of a row
 #ifdef CADET_DEBUG
 	int _row; //!< Index of the current row
 #endif
@@ -345,11 +368,9 @@ private:
  * @brief Iterates over rows of a banded matrix like BandMatrix or FactorizableBandMatrix
  * @tparam MatrixType Type of the matrix class, one of BandMatrix or FactorizableBandMatrix
  */
-template <class MatrixType>
-class ConstBandedRowIterator
+template <class MatrixType> class ConstBandedRowIterator
 {
 public:
-
 	/**
 	 * @brief Creates an empty ConstBandedRowIterator pointing to nothing
 	 * @param [in] mat MatrixType of the ConstBandedRowIterator
@@ -389,7 +410,9 @@ public:
 	 * @param [in] mat MatrixType of the ConstBandedRowIterator
 	 * @param [in] row Index of the row of the iterator points so
 	 */
-	ConstBandedRowIterator(const MatrixType& mat, int row) CADET_NOEXCEPT : _matrix(&mat), _pos(_matrix->_data + row * _matrix->stride())
+	ConstBandedRowIterator(const MatrixType& mat, int row) CADET_NOEXCEPT
+		: _matrix(&mat),
+		  _pos(_matrix->_data + row * _matrix->stride())
 	{
 #ifdef CADET_DEBUG
 		_row = row;
@@ -402,7 +425,9 @@ public:
 	 * @param [in] row Index of the row of the iterator points so
 	 * @param [in] offset Additional  offset
 	 */
-	ConstBandedRowIterator(const MatrixType& mat, int row, int offset) CADET_NOEXCEPT : _matrix(&mat), _pos(_matrix->_data + row * _matrix->stride() + offset)
+	ConstBandedRowIterator(const MatrixType& mat, int row, int offset) CADET_NOEXCEPT
+		: _matrix(&mat),
+		  _pos(_matrix->_data + row * _matrix->stride() + offset)
 	{
 #ifdef CADET_DEBUG
 		_row = row;
@@ -415,7 +440,9 @@ public:
 		_row = cpy._row;
 #endif
 	}
-	ConstBandedRowIterator(const ConstBandedRowIterator& cpy, int rowChange) CADET_NOEXCEPT : _matrix(cpy._matrix), _pos(cpy._pos + rowChange * static_cast<int>(cpy._matrix->stride()))
+	ConstBandedRowIterator(const ConstBandedRowIterator& cpy, int rowChange) CADET_NOEXCEPT
+		: _matrix(cpy._matrix),
+		  _pos(cpy._pos + rowChange * static_cast<int>(cpy._matrix->stride()))
 	{
 #ifdef CADET_DEBUG
 		_row = cpy._row + rowChange;
@@ -453,23 +480,26 @@ public:
 	/**
 	 * @brief Accesses an element in the current row where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double centered(int diagonal) const { return (*this)(diagonal); }
+	inline double centered(int diagonal) const
+	{
+		return (*this)(diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the current row where the lowest diagonal is indexed by @c 0
 	 * @details In contrast to centered() the index of the column starts with the lowest diagonal (@c 0).
 	 *          The main diagonal is, thus, retrieved for @c lowerBand and the highest upper diagonal
 	 *          is returned for `lowerBand + upperBand`.
-	 * 
+	 *
 	 * @param [in] col Index of the column (from @c 0 to `lowerBand + upperBand`)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline double native(int col) const
@@ -487,7 +517,10 @@ public:
 		return _pos[diagonal + _matrix->_lowerBand];
 	}
 
-	inline double operator[](int diagonal) const { return (*this)(diagonal); }
+	inline double operator[](int diagonal) const
+	{
+		return (*this)(diagonal);
+	}
 
 	inline ConstBandedRowIterator& operator++() CADET_NOEXCEPT
 	{
@@ -549,32 +582,40 @@ public:
 	 * @brief Returns the underlying matrix this iterator is pointing into
 	 * @return Matrix this iterator is pointing into
 	 */
-	inline const MatrixType& matrix() const CADET_NOEXCEPT { return *_matrix; }
+	inline const MatrixType& matrix() const CADET_NOEXCEPT
+	{
+		return *_matrix;
+	}
 
 	/**
 	 * @brief Returns the number of (potentially) non-zero elements per row (the total bandwidth)
 	 * @return The number of (potentially) non-zero elements per row
 	 */
-	inline int nonZeroColumnsPerRow() const CADET_NOEXCEPT { return _matrix->apparentStride(); }
+	inline int nonZeroColumnsPerRow() const CADET_NOEXCEPT
+	{
+		return _matrix->apparentStride();
+	}
 
 #ifdef CADET_DEBUG
 	/**
 	 * @brief Returns the index of the current row
 	 * @return Index of the current row
 	 */
-	inline int row() const CADET_NOEXCEPT { return _row; }
+	inline int row() const CADET_NOEXCEPT
+	{
+		return _row;
+	}
 #endif
 
 private:
 	MatrixType const* _matrix; //!< Underlying matrix
-	double const* _pos; //!< Current position, points to the lowest subdiagonal of a row
+	double const* _pos;        //!< Current position, points to the lowest subdiagonal of a row
 #ifdef CADET_DEBUG
 	int _row; //!< Index of the current row
 #endif
 };
 
-template <class MatrixType>
-inline std::ostream& operator<<(std::ostream& out, const BandedRowIterator<MatrixType>& bri)
+template <class MatrixType> inline std::ostream& operator<<(std::ostream& out, const BandedRowIterator<MatrixType>& bri)
 {
 	const int stride = bri.matrix().apparentStride();
 	if (stride == 0)
@@ -591,17 +632,16 @@ inline std::ostream& operator<<(std::ostream& out, const BandedRowIterator<Matri
 	return out;
 }
 
-
 /**
  * @brief Represents a band matrix with given number of rows and diagonals
  * @details LAPACK uses column-major storage, whereas this class uses row-major.
  *          Thus, what we call a row here is actually a column for LAPACK.
- *          Concluding, we have to use the transposed LAPACK operations for 
+ *          Concluding, we have to use the transposed LAPACK operations for
  *          solution and matrix-vector multiplication. The ordering is irrelevant
  *          for the factorization.
- *          
+ *
  *          Because of the transposition induced by the differing ordering,
- *          the number of upper and lower diagonals switches (e.g., upper diagonals 
+ *          the number of upper and lower diagonals switches (e.g., upper diagonals
  *          are transposed lower diagonals). The ordering of the elements inside
  *          one (original) row is maintained (i.e., the first element in a row becomes
  *          the first element in a column and the last element in a row transposes to
@@ -611,7 +651,6 @@ inline std::ostream& operator<<(std::ostream& out, const BandedRowIterator<Matri
 class BandMatrix
 {
 public:
-
 	typedef BandedRowIterator<BandMatrix> RowIterator;
 	friend class BandedRowIterator<BandMatrix>;
 	typedef ConstBandedRowIterator<BandMatrix> ConstRowIterator;
@@ -621,19 +660,25 @@ public:
 	 * @brief Creates an empty, unitialized band matrix
 	 * @details No memory is allocated for the matrix. Users have to call resize() first.
 	 */
-	BandMatrix() CADET_NOEXCEPT : _data(nullptr), _lowerBand(0), _upperBand(0), _rows(0) { }
+	BandMatrix() CADET_NOEXCEPT : _data(nullptr), _lowerBand(0), _upperBand(0), _rows(0)
+	{
+	}
 	~BandMatrix() CADET_NOEXCEPT
 	{
 		delete[] _data;
 	}
 
-	BandMatrix(const BandMatrix& cpy) : _data(new double[cpy.stride() * cpy._rows]),
-		_lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand), _rows(cpy._rows)
+	BandMatrix(const BandMatrix& cpy)
+		: _data(new double[cpy.stride() * cpy._rows]), _lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand),
+		  _rows(cpy._rows)
 	{
 		copyValues(cpy._data);
 	}
 
-	BandMatrix(BandMatrix&& cpy) CADET_NOEXCEPT : _data(cpy._data), _lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand), _rows(cpy._rows)
+	BandMatrix(BandMatrix&& cpy) CADET_NOEXCEPT : _data(cpy._data),
+												  _lowerBand(cpy._lowerBand),
+												  _upperBand(cpy._upperBand),
+												  _rows(cpy._rows)
 	{
 		cpy._data = nullptr;
 	}
@@ -670,7 +715,7 @@ public:
 	 * @brief Resizes the matrix to the given size
 	 * @details All data is lost in this operation. Note that the allocated memory also
 	 *          accounts for the main diagonal which is not counted in @p lowerBand or @p upperBand.
-	 * 
+	 *
 	 * @param [in] rows Number of rows
 	 * @param [in] lowerBand Number of lower diagonals (excluding the main diagonal)
 	 * @param [in] upperBand Number of upper diagonals (excluding the main diagonal)
@@ -693,7 +738,7 @@ public:
 	 * @details The number of nonzero elements per row (i.e., sum of lower and upper bandwidth)
 	 *          must not change. This way, all of the memory is reused.
 	 *          Note that the data is not reset to @c 0.0 by this operation.
-	 *          
+	 *
 	 * @param [in] lowerBand Number of lower diagonals (excluding the main diagonal)
 	 * @param [in] upperBand Number of upper diagonals (excluding the main diagonal)
 	 */
@@ -716,26 +761,32 @@ public:
 	/**
 	 * @brief Accesses an element in the matrix where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& centered(int row, int diagonal) { return (*this)(row, diagonal); }
-	inline double centered(int row, int diagonal) const { return (*this)(row, diagonal); }
+	inline double& centered(int row, int diagonal)
+	{
+		return (*this)(row, diagonal);
+	}
+	inline double centered(int row, int diagonal) const
+	{
+		return (*this)(row, diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the matrix where the lowest diagonal is indexed by @c 0
 	 * @details In contrast to centered() the index of the column starts with the lowest diagonal (@c 0).
 	 *          The main diagonal is, thus, retrieved for @c lowerBand and the highest upper diagonal
 	 *          is returned for `lowerBand + upperBand`.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] col Index of the column (from @c 0 to `lowerBand + upperBand`)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline double& native(int row, int col)
@@ -773,33 +824,51 @@ public:
 	 * @details The lower bandwidth is the number of diagonals below the main diagonal
 	 * @return Number of diagonals below the main diagonal
 	 */
-	inline int lowerBandwidth() const CADET_NOEXCEPT { return _lowerBand; }
-	
+	inline int lowerBandwidth() const CADET_NOEXCEPT
+	{
+		return _lowerBand;
+	}
+
 	/**
 	 * @brief Returns the upper bandwidth
 	 * @details The upper bandwidth is the number of diagonals above the main diagonal
 	 * @return Number of diagonals above the main diagonal
 	 */
-	inline int upperBandwidth() const CADET_NOEXCEPT { return _upperBand; }
-	
+	inline int upperBandwidth() const CADET_NOEXCEPT
+	{
+		return _upperBand;
+	}
+
 	/**
 	 * @brief Returns the number of rows
 	 * @return Number of rows
 	 */
-	inline int rows() const CADET_NOEXCEPT { return _rows; }
+	inline int rows() const CADET_NOEXCEPT
+	{
+		return _rows;
+	}
 
 	/**
 	 * @brief Provides direct access to the underlying memory
 	 * @return Pointer to the first element of the underlying array
 	 */
-	inline double* data() CADET_NOEXCEPT { return _data; }
-	inline double const* data() const CADET_NOEXCEPT { return _data; }
+	inline double* data() CADET_NOEXCEPT
+	{
+		return _data;
+	}
+	inline double const* data() const CADET_NOEXCEPT
+	{
+		return _data;
+	}
 
 	/**
 	 * @brief Returns the number of elements in a row
 	 * @return Number of elements in a row
 	 */
-	inline int stride() const CADET_NOEXCEPT { return _lowerBand + _upperBand + 1; }
+	inline int stride() const CADET_NOEXCEPT
+	{
+		return _lowerBand + _upperBand + 1;
+	}
 
 	/**
 	 * @brief Creates a RowIterator pointing to the given row
@@ -846,8 +915,8 @@ public:
 	 * @param [in] numCols Number of columns of the submatrix
 	 * @param [out] y Result of the submatrix-vector multiplication
 	 */
-	inline void submatrixMultiplyVector(const double* const x, int startRow, int startDiag, 
-		int numRows, int numCols, double* const y) const
+	inline void submatrixMultiplyVector(const double* const x, int startRow, int startDiag, int numRows, int numCols,
+										double* const y) const
 	{
 		submatrixMultiplyVector(x, startRow, startDiag, numRows, numCols, 1.0, 0.0, y);
 	}
@@ -865,8 +934,8 @@ public:
 
 	/**
 	 * @brief Multiplies a submatrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another vector using LAPACK
-	 * @details Computes @f$ y = \alpha Ax + \beta y @f$, where @f$ A @f$ is a submatrix of this matrix and @f$ x @f$ is given.
-	 *          The submatrix is given by its first row and diagonal and its number of rows and columns.
+	 * @details Computes @f$ y = \alpha Ax + \beta y @f$, where @f$ A @f$ is a submatrix of this matrix and @f$ x @f$ is
+	 * given. The submatrix is given by its first row and diagonal and its number of rows and columns.
 	 * @param [in] x Vector the submatrix is multiplied with
 	 * @param [in] startRow Index of the first row of the submatrix
 	 * @param [in] startDiag Diagonal index of the first element of the submatrix
@@ -876,8 +945,8 @@ public:
 	 * @param [in] beta Factor @f$ \beta @f$ in front of @f$ y @f$
 	 * @param [out] y Result of the submatrix-vector multiplication
 	 */
-	void submatrixMultiplyVector(const double* const x, int startRow, int startDiag, 
-		int numRows, int numCols, double alpha, double beta, double* const y) const;
+	void submatrixMultiplyVector(const double* const x, int startRow, int startDiag, int numRows, int numCols,
+								 double alpha, double beta, double* const y) const;
 
 	/**
 	 * @brief Multiplies the matrix @f$ A @f$ with a given vector @f$ x @f$ and adds it to another vector using LAPACK
@@ -894,7 +963,10 @@ public:
 	 * @details This corresponds to multiplying by a diagonal matrix from the left (i.e., @f$ D^{-1} A @f$).
 	 * @param [in] scalingFactors Vector with scaling factor for each row
 	 */
-	inline void scaleRows(double const* scalingFactors) { scaleRows(scalingFactors, rows()); }
+	inline void scaleRows(double const* scalingFactors)
+	{
+		scaleRows(scalingFactors, rows());
+	}
 
 	/**
 	 * @brief Scales the first rows by dividing them with a given factor
@@ -910,7 +982,10 @@ public:
 	 * @details This can be used to equilibrate the matrix by calling scaleRows().
 	 * @param [out] scalingFactors Vector in which the row scaling factors are written
 	 */
-	inline void rowScaleFactors(double* scalingFactors) const { rowScaleFactors(scalingFactors, rows()); }
+	inline void rowScaleFactors(double* scalingFactors) const
+	{
+		rowScaleFactors(scalingFactors, rows());
+	}
 
 	/**
 	 * @brief Computes row scaling factors for some rows such that the largest absolute value in each row is 1
@@ -922,16 +997,19 @@ public:
 	void rowScaleFactors(double* scalingFactors, int numRows) const;
 
 protected:
-	double* _data; //!< Pointer to the array in which the matrix is stored
+	double* _data;  //!< Pointer to the array in which the matrix is stored
 	int _lowerBand; //!< Lower bandwidth excluding main diagonal
 	int _upperBand; //!< Upper bandwidth excluding main diagonal
-	int _rows; //!< Number of rows
+	int _rows;      //!< Number of rows
 
 	/**
 	 * @brief Returns the number of true elements in a row (same as stride())
 	 * @return Number of true elements in a row
 	 */
-	inline int apparentStride() const CADET_NOEXCEPT { return stride(); }
+	inline int apparentStride() const CADET_NOEXCEPT
+	{
+		return stride();
+	}
 
 	/**
 	 * @brief Copies all values from the source to the local array
@@ -945,31 +1023,29 @@ protected:
 
 std::ostream& operator<<(std::ostream& out, const BandMatrix& bm);
 
-
 /**
  * @brief Represents a factorizable band matrix with given number of rows and diagonals
  * @details LAPACK uses column-major storage, whereas this class uses row-major.
  *          Thus, what we call a row here is actually a column for LAPACK.
- *          Concluding, we have to use the transposed LAPACK operations for 
+ *          Concluding, we have to use the transposed LAPACK operations for
  *          solution and matrix-vector multiplication. The ordering is irrelevant
  *          for the factorization.
- *          
+ *
  *          Because of the transposition induced by the differing ordering,
- *          the number of upper and lower diagonals switches (e.g., upper diagonals 
+ *          the number of upper and lower diagonals switches (e.g., upper diagonals
  *          are transposed lower diagonals). The ordering of the elements inside
  *          one (original) row is maintained (i.e., the first element in a row becomes
  *          the first element in a column and the last element in a row transposes to
  *          the last element in a column).
- *          
+ *
  *          LAPACK needs additional space to hold intermediate values when calling a
  *          factorization routine. This space, and the required pivoting arrays, are
  *          also stored in this class.
-* @todo Refactor and combine code with BandMatrix in order to save LOC
-  */
+ * @todo Refactor and combine code with BandMatrix in order to save LOC
+ */
 class FactorizableBandMatrix
 {
 public:
-
 	typedef BandedRowIterator<FactorizableBandMatrix> RowIterator;
 	friend class BandedRowIterator<FactorizableBandMatrix>;
 	typedef ConstBandedRowIterator<FactorizableBandMatrix> ConstRowIterator;
@@ -979,22 +1055,34 @@ public:
 	 * @brief Creates an empty, unitialized band matrix
 	 * @details No memory is allocated for the matrix. Users have to call resize() first.
 	 */
-	FactorizableBandMatrix() CADET_NOEXCEPT : _data(nullptr), _lowerBand(0), _upperBand(0), _rows(0), _capacity(0), _pivot(nullptr) { }
+	FactorizableBandMatrix() CADET_NOEXCEPT : _data(nullptr),
+											  _lowerBand(0),
+											  _upperBand(0),
+											  _rows(0),
+											  _capacity(0),
+											  _pivot(nullptr)
+	{
+	}
 	~FactorizableBandMatrix() CADET_NOEXCEPT
 	{
 		delete[] _pivot;
 		delete[] _data;
 	}
 
-	FactorizableBandMatrix(const FactorizableBandMatrix& cpy) : _data(new double[cpy.stride() * cpy._rows]),
-		_lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand), _rows(cpy._rows), _capacity(cpy._capacity), _pivot(new lapackInt_t[cpy._rows])
+	FactorizableBandMatrix(const FactorizableBandMatrix& cpy)
+		: _data(new double[cpy.stride() * cpy._rows]), _lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand),
+		  _rows(cpy._rows), _capacity(cpy._capacity), _pivot(new lapackInt_t[cpy._rows])
 	{
 		copyValues(cpy._data);
 		copyPivot(cpy._pivot);
 	}
 
-	FactorizableBandMatrix(FactorizableBandMatrix&& cpy) CADET_NOEXCEPT : _data(cpy._data), _lowerBand(cpy._lowerBand), _upperBand(cpy._upperBand),
-		_rows(cpy._rows), _capacity(cpy._capacity), _pivot(cpy._pivot)
+	FactorizableBandMatrix(FactorizableBandMatrix&& cpy) CADET_NOEXCEPT : _data(cpy._data),
+																		  _lowerBand(cpy._lowerBand),
+																		  _upperBand(cpy._upperBand),
+																		  _rows(cpy._rows),
+																		  _capacity(cpy._capacity),
+																		  _pivot(cpy._pivot)
 	{
 		cpy._data = nullptr;
 		cpy._pivot = nullptr;
@@ -1048,7 +1136,7 @@ public:
 	 * @brief Resizes the matrix to the given size
 	 * @details All data is lost in this operation. Note that the allocated memory also
 	 *          accounts for the main diagonal which is not counted in @p lowerBand or @p upperBand.
-	 * 
+	 *
 	 * @param [in] rows Number of rows
 	 * @param [in] lowerBand Number of lower diagonals (excluding the main diagonal)
 	 * @param [in] upperBand Number of upper diagonals (excluding the main diagonal)
@@ -1093,7 +1181,7 @@ public:
 	 * @brief Repartitions the matrix by changing lower and upper bandwidth
 	 * @details There has to be enough capacity for the new matrix size. Use resize() if the capacity is too small.
 	 *          Note that the data is not reset to @c 0.0 by this operation.
-	 *          
+	 *
 	 * @param [in] lowerBand Number of lower diagonals (excluding the main diagonal)
 	 * @param [in] upperBand Number of upper diagonals (excluding the main diagonal)
 	 */
@@ -1143,8 +1231,8 @@ public:
 		{
 			// Copy data over and take into account that the local storage is larger and that
 			// LAPACK needs the first _upperBand values in each row as additional storage
-			const double *src = bdm.data();
-			double *local = _data + _upperBand;
+			const double* src = bdm.data();
+			double* local = _data + _upperBand;
 			const int as = apparentStride();
 			const int ls = stride();
 			for (int i = 0; i < _rows; ++i, local += ls, src += as)
@@ -1155,8 +1243,8 @@ public:
 		else
 		{
 			// Only copy what bdm has and zero out the remaining entries
-			const double *src = bdm.data();
-			double *local = _data + _upperBand;
+			const double* src = bdm.data();
+			double* local = _data + _upperBand;
 			const int srcStride = bdm.stride();
 			const int diff = apparentStride() - srcStride;
 			const int ls = stride();
@@ -1180,26 +1268,32 @@ public:
 	/**
 	 * @brief Accesses an element in the matrix where the main diagonal is centered (index @c 0)
 	 * @details The @p diagonal determines the element in a row. A negative index indicates a lower diagonal,
-	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main 
+	 *          while a positive index indicates an upper diagonal. If @p diagonal is @c 0, then the main
 	 *          diagonal is retrieved.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] diagonal Index of the diagonal (between negative lower bandwidth and upper bandwidth)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
-	inline double& centered(int row, int diagonal) { return (*this)(row, diagonal); }
-	inline double centered(int row, int diagonal) const { return (*this)(row, diagonal); }
+	inline double& centered(int row, int diagonal)
+	{
+		return (*this)(row, diagonal);
+	}
+	inline double centered(int row, int diagonal) const
+	{
+		return (*this)(row, diagonal);
+	}
 
 	/**
 	 * @brief Accesses an element in the matrix where the lowest diagonal is indexed by @c 0
 	 * @details In contrast to centered() the index of the column starts with the lowest diagonal (@c 0).
 	 *          The main diagonal is, thus, retrieved for @c lowerBand and the highest upper diagonal
 	 *          is returned for `lowerBand + upperBand`.
-	 * 
+	 *
 	 * @param [in] row Index of the row
 	 * @param [in] col Index of the column (from @c 0 to `lowerBand + upperBand`)
-	 * 
+	 *
 	 * @return Matrix element at the given position
 	 */
 	inline double& native(int row, int col)
@@ -1239,36 +1333,60 @@ public:
 	 * @details The lower bandwidth is the number of diagonals below the main diagonal
 	 * @return Number of diagonals below the main diagonal
 	 */
-	inline int lowerBandwidth() const CADET_NOEXCEPT { return _lowerBand; }
-	
+	inline int lowerBandwidth() const CADET_NOEXCEPT
+	{
+		return _lowerBand;
+	}
+
 	/**
 	 * @brief Returns the upper bandwidth
 	 * @details The upper bandwidth is the number of diagonals above the main diagonal
 	 * @return Number of diagonals above the main diagonal
 	 */
-	inline int upperBandwidth() const CADET_NOEXCEPT { return _upperBand; }
-	
+	inline int upperBandwidth() const CADET_NOEXCEPT
+	{
+		return _upperBand;
+	}
+
 	/**
 	 * @brief Returns the number of rows
 	 * @return Number of rows
 	 */
-	inline int rows() const CADET_NOEXCEPT { return _rows; }
+	inline int rows() const CADET_NOEXCEPT
+	{
+		return _rows;
+	}
 
 	/**
 	 * @brief Provides direct access to the underlying memory
 	 * @return Pointer to the first element of the underlying array
 	 */
-	inline double* data() CADET_NOEXCEPT { return _data; }
-	inline double const* data() const CADET_NOEXCEPT { return _data; }
+	inline double* data() CADET_NOEXCEPT
+	{
+		return _data;
+	}
+	inline double const* data() const CADET_NOEXCEPT
+	{
+		return _data;
+	}
 
-	inline lapackInt_t* pivot() CADET_NOEXCEPT { return _pivot; }
-	inline lapackInt_t const* pivot() const CADET_NOEXCEPT { return _pivot; }
+	inline lapackInt_t* pivot() CADET_NOEXCEPT
+	{
+		return _pivot;
+	}
+	inline lapackInt_t const* pivot() const CADET_NOEXCEPT
+	{
+		return _pivot;
+	}
 
 	/**
 	 * @brief Returns the total number of elements in a row including additional storage for factorization
 	 * @return Total number of elements in a row
 	 */
-	inline int stride() const CADET_NOEXCEPT { return stride(_lowerBand, _upperBand); }
+	inline int stride() const CADET_NOEXCEPT
+	{
+		return stride(_lowerBand, _upperBand);
+	}
 
 	/**
 	 * @brief Creates a RowIterator pointing to the given row
@@ -1280,7 +1398,7 @@ public:
 		cadet_assert(idx < _rows);
 		return RowIterator(*this, idx, _upperBand);
 	}
-	
+
 	inline ConstRowIterator row(int idx) const
 	{
 		cadet_assert(idx < _rows);
@@ -1331,7 +1449,8 @@ public:
 	/**
 	 * @brief Uses the factorized matrix to solve the equation @f$ Ax = b @f$ with LAPACK
 	 * @details Before the equation can be solved, the matrix has to be factorized first by calling factorize().
-	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the solution @f$ x @f$
+	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the
+	 * solution @f$ x @f$
 	 * @return @c true if the solution process was successful, otherwise @c false
 	 */
 	bool solve(double* rhs) const;
@@ -1343,7 +1462,8 @@ public:
 	 *          In order to solve the equation system, the right hand side has to be scaled accordingly.
 	 *          This is handled automatically by passing the required scaling factors.
 	 * @param [in] scalingFactors Vector with scaling factor for each row
-	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the solution @f$ x @f$
+	 * @param [in,out] rhs On entry pointer to the right hand side vector @f$ b @f$ of the equation, on exit the
+	 * solution @f$ x @f$
 	 * @return @c true if the solution process was successful, otherwise @c false
 	 */
 	bool solve(double const* scalingFactors, double* rhs) const;
@@ -1353,7 +1473,10 @@ public:
 	 * @details This corresponds to multiplying by a diagonal matrix from the left (i.e., @f$ D^{-1} A @f$).
 	 * @param [in] scalingFactors Vector with scaling factor for each row
 	 */
-	inline void scaleRows(double const* scalingFactors) { scaleRows(scalingFactors, rows()); }
+	inline void scaleRows(double const* scalingFactors)
+	{
+		scaleRows(scalingFactors, rows());
+	}
 
 	/**
 	 * @brief Scales the first rows by dividing them with a given factor
@@ -1369,7 +1492,10 @@ public:
 	 * @details This can be used to equilibrate the matrix by calling scaleRows().
 	 * @param [out] scalingFactors Vector in which the row scaling factors are written
 	 */
-	inline void rowScaleFactors(double* scalingFactors) const { rowScaleFactors(scalingFactors, rows()); }
+	inline void rowScaleFactors(double* scalingFactors) const
+	{
+		rowScaleFactors(scalingFactors, rows());
+	}
 
 	/**
 	 * @brief Computes row scaling factors for some rows such that the largest absolute value in each row is 1
@@ -1381,11 +1507,11 @@ public:
 	void rowScaleFactors(double* scalingFactors, int numRows) const;
 
 protected:
-	double* _data; //!< Pointer to the array in which the matrix is stored
-	int _lowerBand; //!< Lower bandwidth excluding main diagonal
-	int _upperBand; //!< Upper bandwidth excluding main diagonal
-	int _rows; //!< Number of rows
-	int _capacity; //!< Allocated memory in sizeof(double)
+	double* _data;       //!< Pointer to the array in which the matrix is stored
+	int _lowerBand;      //!< Lower bandwidth excluding main diagonal
+	int _upperBand;      //!< Upper bandwidth excluding main diagonal
+	int _rows;           //!< Number of rows
+	int _capacity;       //!< Allocated memory in sizeof(double)
 	lapackInt_t* _pivot; //!< Pointer to an array which is used for pivoting by factorization methods
 
 	/**
@@ -1394,13 +1520,19 @@ protected:
 	 * @param [in] upperBand Number of upper diagonals (excluding the main diagonal)
 	 * @return Total number of elements in a row
 	 */
-	inline int stride(int lowerBand, int upperBand) const CADET_NOEXCEPT { return lowerBand + 2 * upperBand + 1; }
+	inline int stride(int lowerBand, int upperBand) const CADET_NOEXCEPT
+	{
+		return lowerBand + 2 * upperBand + 1;
+	}
 
 	/**
 	 * @brief Returns the number of true elements in a row not counting additional storage for factorization
 	 * @return Number of true elements in a row
 	 */
-	inline int apparentStride() const CADET_NOEXCEPT { return _lowerBand + _upperBand + 1; }
+	inline int apparentStride() const CADET_NOEXCEPT
+	{
+		return _lowerBand + _upperBand + 1;
+	}
 
 	/**
 	 * @brief Copies all values from the source to the local array
@@ -1423,9 +1555,8 @@ protected:
 
 std::ostream& operator<<(std::ostream& out, const FactorizableBandMatrix& fbm);
 
-
 } // namespace linalg
 
 } // namespace cadet
 
-#endif  // LIBCADET_BANDMATRIX_HPP_
+#endif // LIBCADET_BANDMATRIX_HPP_

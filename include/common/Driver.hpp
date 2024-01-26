@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides a driver for configuring and running a CADET simulation
  */
 
@@ -62,14 +62,14 @@ void readDataOutputConfig(ParamProvider_t& pp, StorageConfig_t& cfg, const std::
 	else
 		cfg.storeFlux = false;
 
-/*
-	if (pp.exists("WRITE_" + dataType + "_ALL"))
-	{
-		cfg.storeColumn = pp.getBool("WRITE_" + dataType + "_ALL");
-		cfg.storeParticle = cfg.storeColumn;
-		cfg.storeFlux = cfg.storeColumn;
-	}
-*/
+	/*
+		if (pp.exists("WRITE_" + dataType + "_ALL"))
+		{
+			cfg.storeColumn = pp.getBool("WRITE_" + dataType + "_ALL");
+			cfg.storeParticle = cfg.storeColumn;
+			cfg.storeFlux = cfg.storeColumn;
+		}
+	*/
 
 	if (pp.exists("WRITE_" + dataType + "_INLET"))
 		cfg.storeInlet = pp.getBool("WRITE_" + dataType + "_INLET");
@@ -88,7 +88,7 @@ void readDataOutputConfig(ParamProvider_t& pp, StorageConfig_t& cfg, const std::
 		if (pp.exists("WRITE_" + dataType + "_COLUMN_OUTLET"))
 			cfg.storeOutlet = pp.getBool("WRITE_" + dataType + "_COLUMN_OUTLET");
 		else
-			cfg.storeOutlet = false;		
+			cfg.storeOutlet = false;
 	}
 
 	if (pp.exists("WRITE_" + dataType + "_VOLUME"))
@@ -98,7 +98,8 @@ void readDataOutputConfig(ParamProvider_t& pp, StorageConfig_t& cfg, const std::
 }
 
 template <class ParamProvider_t>
-void configureSystemRecorder(cadet::InternalStorageSystemRecorder& recorder, ParamProvider_t& pp, unsigned int maxUnitOperationId)
+void configureSystemRecorder(cadet::InternalStorageSystemRecorder& recorder, ParamProvider_t& pp,
+							 unsigned int maxUnitOperationId)
 {
 
 #ifdef MATLAB_MEX_FILE
@@ -141,7 +142,7 @@ void configureSystemRecorder(cadet::InternalStorageSystemRecorder& recorder, Par
 		pp.pushScope(oss.str());
 
 		cadet::InternalStorageUnitOpRecorder* const subRec = new cadet::InternalStorageUnitOpRecorder(i);
-		
+
 		readDataOutputConfig(pp, cfg, "SOLUTION");
 		subRec->solutionConfig(cfg);
 
@@ -167,12 +168,13 @@ void configureSystemRecorder(cadet::InternalStorageSystemRecorder& recorder, Par
 }
 
 template <class ParamProvider_t>
-void readSensitivityInitialState(ParamProvider_t& pp, const char* prefix, std::vector<double const*>& out, std::vector<std::vector<double>>& data)
+void readSensitivityInitialState(ParamProvider_t& pp, const char* prefix, std::vector<double const*>& out,
+								 std::vector<std::vector<double>>& data)
 {
 	unsigned int i = 0;
 	std::ostringstream oss;
 	oss << prefix << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
-	while(pp.exists(oss.str()))
+	while (pp.exists(oss.str()))
 	{
 		data.push_back(pp.getDoubleArray(oss.str()));
 		out.push_back(data.back().data());
@@ -204,7 +206,7 @@ public:
 
 		if (_sim)
 			cadetDestroySimulator(_sim);
-		
+
 		cadetDestroyModelBuilder(_builder);
 	}
 
@@ -225,7 +227,7 @@ public:
 			cadetDestroySimulator(_sim);
 			_sim = nullptr;
 		}
-		
+
 		cadetDestroyModelBuilder(_builder);
 		_builder = cadetCreateModelBuilder();
 	}
@@ -238,8 +240,7 @@ public:
 	 * @param [in] pp Implementation of cadet::IParameterProvider used as input
 	 * @tparam ParamProvider_t Type of the parameter provider
 	 */
-	template <typename ParamProvider_t>
-	void configure(ParamProvider_t& pp)
+	template <typename ParamProvider_t> void configure(ParamProvider_t& pp)
 	{
 		// Create storage
 		delete _storage;
@@ -254,7 +255,7 @@ public:
 		// Configure main solver parameters
 		pp.pushScope("solver");
 		_sim->configure(pp);
-		
+
 		// Configure section times
 		std::vector<double> secTimes;
 		std::vector<bool> secCont;
@@ -348,7 +349,8 @@ public:
 				std::vector<cadet::ParameterId> sensParams;
 				sensParams.reserve(sensName.size());
 				for (std::size_t i = 0; i < sensName.size(); ++i)
-					sensParams.push_back(cadet::makeParamId(sensName[i], sensUnit[i], sensComp[i], sensParType[i], sensBoundState[i], sensReaction[i], sensSection[i]));
+					sensParams.push_back(cadet::makeParamId(sensName[i], sensUnit[i], sensComp[i], sensParType[i],
+															sensBoundState[i], sensReaction[i], sensSection[i]));
 
 				double sensTol = 1e-05;
 				if (pp.exists("SENS_ABSTOL"))
@@ -386,8 +388,7 @@ public:
 	 * @param [in] pp Implementation of cadet::IParameterProvider used as input
 	 * @tparam ParamProvider_t Type of the parameter provider
 	 */
-	template <typename ParamProvider_t>
-	void setInitialCondition(ParamProvider_t& pp)
+	template <typename ParamProvider_t> void setInitialCondition(ParamProvider_t& pp)
 	{
 		if (pp.exists("INIT_STATE_Y") && pp.exists("INIT_STATE_YDOT"))
 		{
@@ -432,8 +433,7 @@ public:
 	 * @param [in] pp Implementation of cadet::IParameterProvider used as input
 	 * @tparam ParamProvider_t Type of the parameter provider
 	 */
-	template <typename ParamProvider_t>
-	void setSectionTimes(ParamProvider_t& pp)
+	template <typename ParamProvider_t> void setSectionTimes(ParamProvider_t& pp)
 	{
 		std::vector<double> secTimes;
 		std::vector<bool> secCont;
@@ -442,14 +442,14 @@ public:
 	}
 
 	/**
-	 * @brief Reads the return configuration of the ModelSystem and its UnitOperation models from the given parameter provider
+	 * @brief Reads the return configuration of the ModelSystem and its UnitOperation models from the given parameter
+	 * provider
 	 * @details Does nothing if the simulator or model have not been configured yet.
 	 * @param [in] pp Implementation of cadet::IParameterProvider used as input
 	 * @param [in] applyInSimulator Determines whether the storage is set in the simulator (@c true), or not (@c false)
 	 * @tparam ParamProvider_t Type of the parameter provider
 	 */
-	template <typename ParamProvider_t>
-	void setReturnConfiguration(ParamProvider_t& pp, bool applyInSimulator)
+	template <typename ParamProvider_t> void setReturnConfiguration(ParamProvider_t& pp, bool applyInSimulator)
 	{
 		if (!_storage || !_sim || !_sim->model())
 			return;
@@ -463,7 +463,7 @@ public:
 			_storage->storeTime(pp.getBool("WRITE_SOLUTION_TIMES"));
 		else
 			_storage->storeTime(true);
-		
+
 		if (pp.exists("WRITE_SOLUTION_LAST"))
 			_writeLastState = pp.getBool("WRITE_SOLUTION_LAST");
 		else
@@ -516,8 +516,7 @@ public:
 	 * @param [in] writer Writer to write to
 	 * @tparam Writer_t Type of the writer
 	 */
-	template <typename Writer_t>
-	void write(Writer_t& writer)
+	template <typename Writer_t> void write(Writer_t& writer)
 	{
 		if (!_sim || !_storage)
 			return;
@@ -525,7 +524,7 @@ public:
 		LOG(Debug) << "Writing " << _storage->numDataPoints() << " data points to file";
 
 		writer.unlinkGroup("output");
-		
+
 		writer.extendibleFields(false);
 		writer.compressFields(true);
 
@@ -640,13 +639,23 @@ public:
 			_storage->clear();
 	}
 
-	inline cadet::ISimulator* simulator() const CADET_NOEXCEPT { return _sim; }
-	inline cadet::IModelBuilder* modelBuilder() const CADET_NOEXCEPT { return _builder; }
-	inline cadet::IModelSystem* model() const { return _sim->model(); }
+	inline cadet::ISimulator* simulator() const CADET_NOEXCEPT
+	{
+		return _sim;
+	}
+	inline cadet::IModelBuilder* modelBuilder() const CADET_NOEXCEPT
+	{
+		return _builder;
+	}
+	inline cadet::IModelSystem* model() const
+	{
+		return _sim->model();
+	}
 
 	inline void setWriteLastStateOfUnit(UnitOpIdx uid, bool writeLastStateUnit)
 	{
-		const std::vector<UnitOpIdx>::iterator it = std::find(_writeLastStateUnitId.begin(), _writeLastStateUnitId.end(), uid);
+		const std::vector<UnitOpIdx>::iterator it =
+			std::find(_writeLastStateUnitId.begin(), _writeLastStateUnitId.end(), uid);
 		if (writeLastStateUnit)
 		{
 			if (it == _writeLastStateUnitId.end())
@@ -665,20 +674,32 @@ public:
 		}
 	}
 
-	inline void setWriteLastState(bool writeLastState) CADET_NOEXCEPT { _writeLastState = writeLastState; }
-	inline void setWriteLastStateSens(bool writeLastState) CADET_NOEXCEPT { _writeLastStateSens = writeLastState; }
+	inline void setWriteLastState(bool writeLastState) CADET_NOEXCEPT
+	{
+		_writeLastState = writeLastState;
+	}
+	inline void setWriteLastStateSens(bool writeLastState) CADET_NOEXCEPT
+	{
+		_writeLastStateSens = writeLastState;
+	}
 	inline void setWriteSolutionTimes(bool solTimes) CADET_NOEXCEPT
 	{
 		if (_storage)
 			_storage->storeTime(solTimes);
 	}
 
-	inline cadet::InternalStorageSystemRecorder* solution() CADET_NOEXCEPT { return _storage; }
-	inline cadet::InternalStorageSystemRecorder const* solution() const CADET_NOEXCEPT { return _storage; }
+	inline cadet::InternalStorageSystemRecorder* solution() CADET_NOEXCEPT
+	{
+		return _storage;
+	}
+	inline cadet::InternalStorageSystemRecorder const* solution() const CADET_NOEXCEPT
+	{
+		return _storage;
+	}
 
 protected:
-	cadet::ISimulator* _sim; //!< Simulator owned by this driver
-	cadet::IModelBuilder* _builder; //!< Model builder owned by this driver
+	cadet::ISimulator* _sim;                        //!< Simulator owned by this driver
+	cadet::IModelBuilder* _builder;                 //!< Model builder owned by this driver
 	cadet::InternalStorageSystemRecorder* _storage; //!< Storage for results
 
 	bool _writeLastState;
@@ -699,7 +720,7 @@ protected:
 		pp.pushScope("sections");
 
 		secTimes = pp.getDoubleArray("SECTION_TIMES");
-		if (pp.exists("SECTION_CONTINUITY")) 
+		if (pp.exists("SECTION_CONTINUITY"))
 			secCont = pp.getBoolArray("SECTION_CONTINUITY");
 		else
 			secCont = std::vector<bool>(secTimes.size() - 2, false);
@@ -713,4 +734,4 @@ private:
 
 } // namespace cadet
 
-#endif  // CADET_DRIVER_HPP_
+#endif // CADET_DRIVER_HPP_

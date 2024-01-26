@@ -193,9 +193,9 @@ foreach(BM IN LISTS LIBCADET_BINDINGMODEL_SOURCES)
 	get_filename_component(BMFILEWE ${BM} NAME_WE)
 	get_filename_component(BMFILE ${BM} NAME)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BMFILE}
-		COMMAND templateCodeGen ${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/ExternalFunctionTemplate.cpp ${BM} ${CMAKE_CURRENT_BINARY_DIR}/${BMFILE} 
+		COMMAND templateCodeGen ${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/ExternalFunctionTemplate.cpp.in ${BM} ${CMAKE_CURRENT_BINARY_DIR}/${BMFILE} 
 		MAIN_DEPENDENCY ${BM}
-		DEPENDS ${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/ExternalFunctionTemplate.cpp
+		DEPENDS ${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/ExternalFunctionTemplate.cpp.in
 		COMMENT "Generating code for ${BMFILEWE}"
 	)
 	list (APPEND LIBCADET_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${BMFILE}")
@@ -205,9 +205,9 @@ foreach(RM IN LISTS LIBCADET_REACTIONMODEL_SOURCES)
 	get_filename_component(RMFILEWE ${RM} NAME_WE)
 	get_filename_component(RMFILE ${RM} NAME)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${RMFILE}
-		COMMAND templateCodeGen ${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ExternalFunctionTemplate.cpp ${RM} ${CMAKE_CURRENT_BINARY_DIR}/${RMFILE} 
+		COMMAND templateCodeGen ${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ExternalFunctionTemplate.cpp.in ${RM} ${CMAKE_CURRENT_BINARY_DIR}/${RMFILE} 
 		MAIN_DEPENDENCY ${RM}
-		DEPENDS ${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ExternalFunctionTemplate.cpp
+		DEPENDS ${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/ExternalFunctionTemplate.cpp.in
 		COMMENT "Generating code for ${RMFILEWE}"
 	)
 	list (APPEND LIBCADET_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${RMFILE}")

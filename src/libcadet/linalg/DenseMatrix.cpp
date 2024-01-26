@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -23,8 +23,7 @@ namespace linalg
 namespace detail
 {
 
-void DenseMatrixBase::submatrixSetAll(double val, int startRow, int startCol, 
-			int numRows, int numCols)
+void DenseMatrixBase::submatrixSetAll(double val, int startRow, int startCol, int numRows, int numCols)
 {
 	cadet_assert(_rows > startRow);
 	cadet_assert(_cols > startCol);
@@ -39,8 +38,7 @@ void DenseMatrixBase::submatrixSetAll(double val, int startRow, int startCol,
 	}
 }
 
-void DenseMatrixBase::submatrixAssign(const DenseMatrixBase& mat, int startRow, int startCol, 
-			int numRows, int numCols)
+void DenseMatrixBase::submatrixAssign(const DenseMatrixBase& mat, int startRow, int startCol, int numRows, int numCols)
 {
 	cadet_assert(numRows == mat.rows());
 	cadet_assert(numCols == mat.columns());
@@ -73,11 +71,12 @@ void DenseMatrixBase::multiplyVector(const double* const x, double alpha, double
 	char trans[] = "T";
 
 	// LAPACK computes y <- alpha * A * x + beta * y
-	LapackMultiplyDense(trans, &m, &n, &alpha, const_cast<double*>(_data), &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y), &inc);
+	LapackMultiplyDense(trans, &m, &n, &alpha, const_cast<double*>(_data), &lda, const_cast<double*>(x), &inc, &beta,
+						const_cast<double*>(y), &inc);
 }
 
-void DenseMatrixBase::submatrixMultiplyVector(const double* const x, int startRow, int startCol, 
-			int numRows, int numCols, double alpha, double beta, double* const y) const
+void DenseMatrixBase::submatrixMultiplyVector(const double* const x, int startRow, int startCol, int numRows,
+											  int numCols, double alpha, double beta, double* const y) const
 {
 	cadet_assert(_rows > startRow);
 	cadet_assert(_cols > startCol);
@@ -100,7 +99,8 @@ void DenseMatrixBase::submatrixMultiplyVector(const double* const x, int startRo
 	double* const data = const_cast<double*>(_data) + startRow * lda + startCol;
 
 	// LAPACK computes y <- alpha * A * x + beta * y
-	LapackMultiplyDense(trans, &m, &n, &alpha, data, &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y), &inc);
+	LapackMultiplyDense(trans, &m, &n, &alpha, data, &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y),
+						&inc);
 }
 
 void DenseMatrixBase::transposedMultiplyVector(const double* const x, double alpha, double beta, double* const y) const
@@ -116,11 +116,12 @@ void DenseMatrixBase::transposedMultiplyVector(const double* const x, double alp
 	char trans[] = "N";
 
 	// LAPACK computes y <- alpha * A * x + beta * y
-	LapackMultiplyDense(trans, &m, &n, &alpha, const_cast<double*>(_data), &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y), &inc);
+	LapackMultiplyDense(trans, &m, &n, &alpha, const_cast<double*>(_data), &lda, const_cast<double*>(x), &inc, &beta,
+						const_cast<double*>(y), &inc);
 }
 
-void DenseMatrixBase::transposedSubmatrixMultiplyVector(const double* const x, int startRow, int startCol, 
-			int numRows, int numCols, double alpha, double beta, double* const y) const
+void DenseMatrixBase::transposedSubmatrixMultiplyVector(const double* const x, int startRow, int startCol, int numRows,
+														int numCols, double alpha, double beta, double* const y) const
 {
 	cadet_assert(_rows > startRow);
 	cadet_assert(_cols > startCol);
@@ -141,7 +142,8 @@ void DenseMatrixBase::transposedSubmatrixMultiplyVector(const double* const x, i
 	double* const data = const_cast<double*>(_data) + startRow * lda + startCol;
 
 	// LAPACK computes y <- alpha * A * x + beta * y
-	LapackMultiplyDense(trans, &m, &n, &alpha, data, &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y), &inc);
+	LapackMultiplyDense(trans, &m, &n, &alpha, data, &lda, const_cast<double*>(x), &inc, &beta, const_cast<double*>(y),
+						&inc);
 }
 
 bool DenseMatrixBase::factorize()
@@ -177,7 +179,8 @@ bool DenseMatrixBase::solve(double* rhs) const
 	// solve the transposed equation which uses the original matrix.
 	char trans[] = "T";
 
-	LapackSolveDense(trans, &n, &nrhs, const_cast<double*>(_data), &lda, const_cast<lapackInt_t*>(_pivot), rhs, &n, &flag);
+	LapackSolveDense(trans, &n, &nrhs, const_cast<double*>(_data), &lda, const_cast<lapackInt_t*>(_pivot), rhs, &n,
+					 &flag);
 
 	// If the flag is -i (for i > 0), the ith argument is invalid
 	return flag == 0;
@@ -250,7 +253,7 @@ bool DenseMatrixBase::robustFactorize(double* const workspace)
 	lapackInt_t flag = 0;
 
 	// Compute LQ factorization A = L * Q with orthogonal matrix Q and lower triagonal matrix L
-	// Note that LAPACK sees the tranposed matrix A^T instead of A. The LQ factorization of A^T 
+	// Note that LAPACK sees the tranposed matrix A^T instead of A. The LQ factorization of A^T
 	// is essentially the same as QR factorization of A.
 	LapackFactorLQDense(&m, &n, _data, &lda, workspace, workspace + _rows, &n, &flag);
 
@@ -285,7 +288,8 @@ bool DenseMatrixBase::robustSolve(double* rhs, double* const workspace) const
 	lapackInt_t flag = 0;
 
 	// Calculate z = Q * y
-	LapackMultiplyFactorizedQ(side, transQ, &m, &nrhs, &m, _data, &lda, workspace, rhs, &n, workspace + _rows, &n, &flag);
+	LapackMultiplyFactorizedQ(side, transQ, &m, &nrhs, &m, _data, &lda, workspace, rhs, &n, workspace + _rows, &n,
+							  &flag);
 	if (flag != 0)
 		return false;
 
@@ -341,7 +345,6 @@ void DenseMatrixBase::columnScaleFactors(double* scalingFactors, int numCols) co
 	}
 }
 
-
 std::ostream& operator<<(std::ostream& out, const DenseMatrixBase& bm)
 {
 	out << "[";
@@ -360,8 +363,8 @@ std::ostream& operator<<(std::ostream& out, const DenseMatrixBase& bm)
 	return out;
 }
 
-}  // namespace detail
+} // namespace detail
 
-}  // namespace linalg
+} // namespace linalg
 
-}  // namespace cadet
+} // namespace cadet

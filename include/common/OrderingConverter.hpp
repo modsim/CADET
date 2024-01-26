@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides means to convert between column-major and row-major storage ordering of tensors
  */
 
@@ -32,7 +32,7 @@ namespace cadet
  *          appended to a long array. Column-major, on the contrary, means that the first
  *          subscript changes the fastest and the last the slowest. This would mean that
  *          the columns of a matrix are appended to form a long array.
- *          
+ *
  *          This class helps in converting between those to orderings. Given the rank and
  *          the dimensions of the tensor, a linear index in a column- or row-major array
  *          is converted to a subscript index (index for each dimension). This subscript
@@ -52,8 +52,7 @@ public:
 	 * @param [in] dims Vector with the dimensions of the tensor (length of this vector is the rank)
 	 * @tparam T Datatype of the dimensions, has to fit into @c std::size_t
 	 */
-	template <typename T>
-	OrderingConverter(const std::vector<T> dims) : _subscript(dims.size(), 0)
+	template <typename T> OrderingConverter(const std::vector<T> dims) : _subscript(dims.size(), 0)
 	{
 		prepareConversionToCol(dims.data(), dims.size());
 		prepareConversionToRow(dims.data(), dims.size());
@@ -65,8 +64,7 @@ public:
 	 * @param [in] size Length of the @p dims array, rank of the tensor
 	 * @tparam T Datatype of the dimensions, has to fit into @c std::size_t
 	 */
-	template <typename T>
-	OrderingConverter(T const* dims, unsigned int size) : _subscript(size, 0)
+	template <typename T> OrderingConverter(T const* dims, unsigned int size) : _subscript(size, 0)
 	{
 		cadet_assert(size > 0);
 		prepareConversionToCol(dims, size);
@@ -200,8 +198,7 @@ public:
 	 * @return Linear index to row-major storage
 	 * @tparam T Datatype of the subscript indices, has to fit into @c std::size_t
 	 */
-	template <typename T>
-	inline index_t subscriptToRowMajor(T const* idx) const
+	template <typename T> inline index_t subscriptToRowMajor(T const* idx) const
 	{
 		return subscriptToLinear(idx, _prodToRow);
 	}
@@ -223,8 +220,7 @@ public:
 	 * @return Linear index to column-major storage
 	 * @tparam T Datatype of the subscript indices, has to fit into @c std::size_t
 	 */
-	template <typename T>
-	inline index_t subscriptToColMajor(T const* idx) const
+	template <typename T> inline index_t subscriptToColMajor(T const* idx) const
 	{
 		return subscriptToLinear(idx, _prodToCol);
 	}
@@ -233,15 +229,17 @@ public:
 	 * @brief Returns the current subscript index as set by the last call to colToRow() or rowToCol()
 	 * @return Subscript index produced by the last call to colToRow() or rowToCol()
 	 */
-	inline const std::vector<index_t> subscriptIndex() const { return _subscript; }
+	inline const std::vector<index_t> subscriptIndex() const
+	{
+		return _subscript;
+	}
 
 protected:
-	std::vector<index_t> _prodToRow; //!< Helper vector for conversions from / to row-major
-	std::vector<index_t> _prodToCol; //!< Helper vector for conversions from / to column-major
+	std::vector<index_t> _prodToRow;         //!< Helper vector for conversions from / to row-major
+	std::vector<index_t> _prodToCol;         //!< Helper vector for conversions from / to column-major
 	mutable std::vector<index_t> _subscript; //!< Cache for subscript index
 
-	template <typename T>
-	void prepareConversionToCol(T const* dims, unsigned int size)
+	template <typename T> void prepareConversionToCol(T const* dims, unsigned int size)
 	{
 		_prodToCol.resize(size);
 		unsigned int p = 1;
@@ -253,8 +251,7 @@ protected:
 		}
 	}
 
-	template <typename T>
-	void prepareConversionToRow(T const* dims, unsigned int size)
+	template <typename T> void prepareConversionToRow(T const* dims, unsigned int size)
 	{
 		_prodToRow.resize(size);
 		unsigned int p = 1;
@@ -274,8 +271,7 @@ protected:
 	 * @param [in] dimsProd Helper array for the requested target storage order
 	 * @return Linear index to the requested target storage
 	 */
-	template <typename T>
-	inline index_t subscriptToLinear(T const* idx, const std::vector<index_t>& dimsProd) const
+	template <typename T> inline index_t subscriptToLinear(T const* idx, const std::vector<index_t>& dimsProd) const
 	{
 		index_t retIndex = 0;
 		for (std::size_t i = 0; i < dimsProd.size(); ++i)
@@ -286,4 +282,4 @@ protected:
 
 } // namespace cadet
 
-#endif  // CADET_ORDERINGCONVERTER_HPP_
+#endif // CADET_ORDERINGCONVERTER_HPP_

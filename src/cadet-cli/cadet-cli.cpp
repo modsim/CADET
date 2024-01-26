@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -29,7 +29,7 @@
 #include "common/Driver.hpp"
 
 #ifdef CADET_BENCHMARK_MODE
-	#include "common/Timer.hpp"
+#include "common/Timer.hpp"
 #endif
 
 #include <iostream>
@@ -38,91 +38,99 @@
 #include <cctype>
 
 #ifndef CADET_LOGGING_DISABLE
-	template <>
-	cadet::LogLevel cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
+template <>
+cadet::LogLevel cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::_minLvl = cadet::LogLevel::Trace;
 
-	#ifdef __clang__
-		// Silence -Wundefined-var-template warning
-		template class cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>;
-	#endif
+#ifdef __clang__
+// Silence -Wundefined-var-template warning
+template class cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>;
+#endif
 #endif
 
 namespace
 {
-	inline void setLocalLogLevel(cadet::LogLevel newLL)
-	{
+inline void setLocalLogLevel(cadet::LogLevel newLL)
+{
 #ifndef CADET_LOGGING_DISABLE
-		cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::level(newLL);
+	cadet::log::RuntimeFilteringLogger<cadet::log::GlobalLogger>::level(newLL);
 #endif
-	}
 }
+} // namespace
 
 class LogReceiver : public cadet::ILogReceiver
 {
 public:
-	LogReceiver() { }
+	LogReceiver()
+	{
+	}
 
-	virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl, const char* lvlStr, const char* message)
+	virtual void message(const char* file, const char* func, const unsigned int line, cadet::LogLevel lvl,
+						 const char* lvlStr, const char* message)
 	{
 		std::cout << '[' << lvlStr << ": " << func << "::" << line << "] " << message << std::flush;
 	}
 };
 
 #ifdef CADET_BENCHMARK_MODE
-	/**
-	 * @brief Scope class that starts a timer on construction and stops it on destruction
-	 */
-	class BenchScope
+/**
+ * @brief Scope class that starts a timer on construction and stops it on destruction
+ */
+class BenchScope
+{
+public:
+	BenchScope() : _timer()
 	{
-	public:
-		BenchScope() : _timer() { _timer.start(); }
-		~BenchScope() CADET_NOEXCEPT
-		{
-			const double t = _timer.stop();
-			std::cout << "Total elapsed time: " << t << " sec" << std::endl;
-		}
-	private:
-		cadet::Timer _timer;
-	};
+		_timer.start();
+	}
+	~BenchScope() CADET_NOEXCEPT
+	{
+		const double t = _timer.stop();
+		std::cout << "Total elapsed time: " << t << " sec" << std::endl;
+	}
+
+private:
+	cadet::Timer _timer;
+};
 #endif
 
 // Command line parsing support for cadet::LogLevel type
-namespace TCLAP 
+namespace TCLAP
 {
-	template<>
-	struct ArgTraits<cadet::LogLevel>
+template <> struct ArgTraits<cadet::LogLevel>
+{
+	typedef StringLike ValueCategory;
+};
+
+template <> void SetString<cadet::LogLevel>(cadet::LogLevel& v, const std::string& s)
+{
+	if (std::isdigit(s[0]))
 	{
-		typedef StringLike ValueCategory;
-	};
+		const unsigned int lvl = std::stoul(s);
+		if (lvl > static_cast<typename std::underlying_type<cadet::LogLevel>::type>(cadet::LogLevel::Trace))
+			throw TCLAP::ArgParseException("Couldn't convert '" + s + "' to a valid log level");
 
-	template<>
-	void SetString<cadet::LogLevel>(cadet::LogLevel& v, const std::string& s)
-	{
-		if (std::isdigit(s[0]))
-		{
-			const unsigned int lvl = std::stoul(s);
-			if (lvl > static_cast<typename std::underlying_type<cadet::LogLevel>::type>(cadet::LogLevel::Trace))
-				throw TCLAP::ArgParseException("Couldn't convert '" + s + "' to a valid log level");
-
-			v = static_cast<cadet::LogLevel>(lvl);
-		}
-		else
-		{
-			const cadet::LogLevel lvl = cadet::to_loglevel(s);
-			if (cadet::to_string(lvl) != s)
-				throw TCLAP::ArgParseException("Couldn't convert '" + s + "' to a valid log level");
-
-			v = lvl;
-		}
+		v = static_cast<cadet::LogLevel>(lvl);
 	}
-} // namespace TCLAP
+	else
+	{
+		const cadet::LogLevel lvl = cadet::to_loglevel(s);
+		if (cadet::to_string(lvl) != s)
+			throw TCLAP::ArgParseException("Couldn't convert '" + s + "' to a valid log level");
 
+		v = lvl;
+	}
+}
+} // namespace TCLAP
 
 class ProgressBarNotifier : public cadet::INotificationCallback
 {
 public:
-	ProgressBarNotifier() : _progBar(), _secStrBuffer(13) { }
-	virtual ~ProgressBarNotifier() CADET_NOEXCEPT { }
+	ProgressBarNotifier() : _progBar(), _secStrBuffer(13)
+	{
+	}
+	virtual ~ProgressBarNotifier() CADET_NOEXCEPT
+	{
+	}
 
 	virtual void timeIntegrationStart()
 	{
@@ -134,16 +142,20 @@ public:
 		_progBar.finish("Done");
 	}
 
-	virtual void timeIntegrationError(char const* message, unsigned int section, double time, double progress) { }
+	virtual void timeIntegrationError(char const* message, unsigned int section, double time, double progress)
+	{
+	}
 
-	virtual bool timeIntegrationSection(unsigned int section, double time, double const* state, double const* stateDot, double progress)
+	virtual bool timeIntegrationSection(unsigned int section, double time, double const* state, double const* stateDot,
+										double progress)
 	{
 		snprintf(_secStrBuffer.data(), _secStrBuffer.size(), "Init Sec %3u", section);
 		_progBar.update(progress, _secStrBuffer.data());
 		return !cadet::stopExecutionRequested();
 	}
 
-	virtual bool timeIntegrationStep(unsigned int section, double time, double const* state, double const* stateDot, double progress)
+	virtual bool timeIntegrationStep(unsigned int section, double time, double const* state, double const* stateDot,
+									 double progress)
 	{
 		snprintf(_secStrBuffer.data(), _secStrBuffer.size(), "Section %3u", section);
 		_progBar.update(progress, _secStrBuffer.data());
@@ -155,34 +167,45 @@ protected:
 	std::vector<char> _secStrBuffer;
 };
 
-
 class SignalHandlingNotifier : public cadet::INotificationCallback
 {
 public:
-	SignalHandlingNotifier() { }
-	virtual ~SignalHandlingNotifier() CADET_NOEXCEPT { }
+	SignalHandlingNotifier()
+	{
+	}
+	virtual ~SignalHandlingNotifier() CADET_NOEXCEPT
+	{
+	}
 
-	virtual void timeIntegrationStart() { }
-	virtual void timeIntegrationEnd() { }
-	virtual void timeIntegrationError(char const* message, unsigned int section, double time, double progress) { }
+	virtual void timeIntegrationStart()
+	{
+	}
+	virtual void timeIntegrationEnd()
+	{
+	}
+	virtual void timeIntegrationError(char const* message, unsigned int section, double time, double progress)
+	{
+	}
 
-	virtual bool timeIntegrationSection(unsigned int section, double time, double const* state, double const* stateDot, double progress)
+	virtual bool timeIntegrationSection(unsigned int section, double time, double const* state, double const* stateDot,
+										double progress)
 	{
 		return !cadet::stopExecutionRequested();
 	}
 
-	virtual bool timeIntegrationStep(unsigned int section, double time, double const* state, double const* stateDot, double progress)
+	virtual bool timeIntegrationStep(unsigned int section, double time, double const* state, double const* stateDot,
+									 double progress)
 	{
 		return !cadet::stopExecutionRequested();
 	}
 };
 
-
-template <class Reader_t>
-class FileReaderDriverConfigurator
+template <class Reader_t> class FileReaderDriverConfigurator
 {
 public:
-	FileReaderDriverConfigurator() { }
+	FileReaderDriverConfigurator()
+	{
+	}
 
 	void configure(cadet::Driver& drv, const std::string& inFileName)
 	{
@@ -196,11 +219,12 @@ public:
 	}
 };
 
-
 class JsonDriverConfigurator
 {
 public:
-	JsonDriverConfigurator() { }
+	JsonDriverConfigurator()
+	{
+	}
 
 	void configure(cadet::Driver& drv, const std::string& inFileName)
 	{
@@ -214,13 +238,12 @@ public:
 	}
 };
 
-
 template <class DriverConfigurator_t, class Writer_t>
 int run(const std::string& inFileName, const std::string& outFileName, bool showProgressBar)
 {
 	int returnCode = 0;
 	cadet::Driver drv;
-	
+
 	{
 		DriverConfigurator_t dc;
 		dc.configure(drv, inFileName);
@@ -249,7 +272,6 @@ int run(const std::string& inFileName, const std::string& outFileName, bool show
 	drv.simulator()->setNotificationCallback(shn.get());
 #endif
 
-	
 	try
 	{
 		drv.run();
@@ -278,10 +300,10 @@ int run(const std::string& inFileName, const std::string& outFileName, bool show
 	const std::vector<double> sysTiming = drv.model()->benchmarkTimings();
 	char const* const* sysDesc = drv.model()->benchmarkDescriptions();
 
-	for (std::size_t i = 0; i < sysTiming.size()-1; ++i)
+	for (std::size_t i = 0; i < sysTiming.size() - 1; ++i)
 		std::cout << "\t\t\"" << sysDesc[i] << "\": " << sysTiming[i] << ",\n";
 
-	std::cout << "\t\t\"" << sysDesc[sysTiming.size()-1] << "\": " << sysTiming[sysTiming.size()-1] << "\n\t}";
+	std::cout << "\t\t\"" << sysDesc[sysTiming.size() - 1] << "\": " << sysTiming[sysTiming.size() - 1] << "\n\t}";
 
 	// Then, timings for all unit operations
 	for (unsigned int j = 0; j < drv.model()->numModels(); ++j)
@@ -295,10 +317,10 @@ int run(const std::string& inFileName, const std::string& outFileName, bool show
 		const std::vector<double> grmTiming = m->benchmarkTimings();
 		char const* const* grmDesc = m->benchmarkDescriptions();
 
-		for (std::size_t i = 0; i < grmTiming.size()-1; ++i)
+		for (std::size_t i = 0; i < grmTiming.size() - 1; ++i)
 			std::cout << "\t\t\"" << grmDesc[i] << "\": " << grmTiming[i] << ",\n";
 
-		std::cout << "\t\t\"" << grmDesc[grmTiming.size()-1] << "\": " << grmTiming[grmTiming.size()-1] << "\n\t}";
+		std::cout << "\t\t\"" << grmDesc[grmTiming.size() - 1] << "\": " << grmTiming[grmTiming.size() - 1] << "\n\t}";
 	}
 	std::cout << "\n}" << std::endl;
 #endif
@@ -306,9 +328,8 @@ int run(const std::string& inFileName, const std::string& outFileName, bool show
 	return returnCode;
 }
 
-
 int main(int argc, char** argv)
-{	
+{
 #ifdef CADET_BENCHMARK_MODE
 	// Benchmark the whole program from start to finish
 	BenchScope bsTotalTime;
@@ -330,13 +351,18 @@ int main(int argc, char** argv)
 		cmd.setOutput(&customOut);
 
 		cmd >> (new TCLAP::SwitchArg("", "progress", "Show a progress bar"))->storeIn(&showProgressBar);
-		cmd >> (new TCLAP::ValueArg<cadet::LogLevel>("L", "loglevel", "Set the log level", false, cadet::LogLevel::Trace, "LogLevel"))->storeIn(&logLevel);
-		cmd >> (new TCLAP::UnlabeledValueArg<std::string>("input", "Input file", true, "", "File"))->storeIn(&inFileName);
-		cmd >> (new TCLAP::UnlabeledValueArg<std::string>("output", "Output file (defaults to input file)", false, "", "File"))->storeIn(&outFileName);
+		cmd >> (new TCLAP::ValueArg<cadet::LogLevel>("L", "loglevel", "Set the log level", false,
+													 cadet::LogLevel::Trace, "LogLevel"))
+				   ->storeIn(&logLevel);
+		cmd >>
+			(new TCLAP::UnlabeledValueArg<std::string>("input", "Input file", true, "", "File"))->storeIn(&inFileName);
+		cmd >> (new TCLAP::UnlabeledValueArg<std::string>("output", "Output file (defaults to input file)", false, "",
+														  "File"))
+				   ->storeIn(&outFileName);
 
 		cmd.parse(argc, argv);
 	}
-	catch (const TCLAP::ArgException &e)
+	catch (const TCLAP::ArgException& e)
 	{
 		std::cerr << "ERROR: " << e.error() << " for argument " << e.argId() << std::endl;
 		return 1;
@@ -369,8 +395,8 @@ int main(int argc, char** argv)
 		return 2;
 	}
 
-	const std::string fileExtIn = inFileName.substr(dotPosIn+1);
-	const std::string fileExtOut = outFileName.substr(dotPosOut+1);
+	const std::string fileExtIn = inFileName.substr(dotPosIn + 1);
+	const std::string fileExtOut = outFileName.substr(dotPosOut + 1);
 	int returnCode = 0;
 
 	try
@@ -379,11 +405,13 @@ int main(int argc, char** argv)
 		{
 			if (cadet::util::caseInsensitiveEquals(fileExtOut, "h5"))
 			{
-				returnCode = run<FileReaderDriverConfigurator<cadet::io::HDF5Reader>, cadet::io::HDF5Writer>(inFileName, outFileName, showProgressBar);
+				returnCode = run<FileReaderDriverConfigurator<cadet::io::HDF5Reader>, cadet::io::HDF5Writer>(
+					inFileName, outFileName, showProgressBar);
 			}
 			else if (cadet::util::caseInsensitiveEquals(fileExtOut, "xml"))
 			{
-				returnCode = run<FileReaderDriverConfigurator<cadet::io::HDF5Reader>, cadet::io::XMLWriter>(inFileName, outFileName, showProgressBar);
+				returnCode = run<FileReaderDriverConfigurator<cadet::io::HDF5Reader>, cadet::io::XMLWriter>(
+					inFileName, outFileName, showProgressBar);
 			}
 			else
 			{
@@ -395,11 +423,13 @@ int main(int argc, char** argv)
 		{
 			if (cadet::util::caseInsensitiveEquals(fileExtOut, "xml"))
 			{
-				returnCode = run<FileReaderDriverConfigurator<cadet::io::XMLReader>, cadet::io::XMLWriter>(inFileName, outFileName, showProgressBar);
+				returnCode = run<FileReaderDriverConfigurator<cadet::io::XMLReader>, cadet::io::XMLWriter>(
+					inFileName, outFileName, showProgressBar);
 			}
 			else if (cadet::util::caseInsensitiveEquals(fileExtOut, "h5"))
 			{
-				returnCode = run<FileReaderDriverConfigurator<cadet::io::XMLReader>, cadet::io::HDF5Writer>(inFileName, outFileName, showProgressBar);
+				returnCode = run<FileReaderDriverConfigurator<cadet::io::XMLReader>, cadet::io::HDF5Writer>(
+					inFileName, outFileName, showProgressBar);
 			}
 			else
 			{
@@ -411,11 +441,13 @@ int main(int argc, char** argv)
 		{
 			if (cadet::util::caseInsensitiveEquals(fileExtOut, "xml"))
 			{
-				returnCode = run<JsonDriverConfigurator, cadet::io::XMLWriter>(inFileName, outFileName, showProgressBar);
+				returnCode =
+					run<JsonDriverConfigurator, cadet::io::XMLWriter>(inFileName, outFileName, showProgressBar);
 			}
 			else if (cadet::util::caseInsensitiveEquals(fileExtOut, "h5"))
 			{
-				returnCode = run<JsonDriverConfigurator, cadet::io::HDF5Writer>(inFileName, outFileName, showProgressBar);
+				returnCode =
+					run<JsonDriverConfigurator, cadet::io::HDF5Writer>(inFileName, outFileName, showProgressBar);
 			}
 			else
 			{

@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Implements the kernel of a particle cell with mobile and solid phase.
  */
 
@@ -40,30 +40,34 @@ namespace cell
 
 namespace
 {
-	template <typename KernelParamsType>
-	void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active* res, const KernelParamsType& params, LinearBufferAllocator buffer, WithParamSensitivity)
-	{
-		params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer, WithParamSensitivity());
-	}
-
-	template <typename KernelParamsType>
-	void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active* res, const KernelParamsType& params, LinearBufferAllocator buffer, WithoutParamSensitivity)
-	{
-		params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer, WithoutParamSensitivity());
-	}
-
-	template <typename KernelParamsType>
-	void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, active* res, const KernelParamsType& params, LinearBufferAllocator buffer, WithParamSensitivity)
-	{
-		params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer);
-	}
-
-	template <typename KernelParamsType>
-	void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double* res, const KernelParamsType& params, LinearBufferAllocator buffer, WithoutParamSensitivity)
-	{
-		params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer);
-	}
+template <typename KernelParamsType>
+void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active* res,
+				 const KernelParamsType& params, LinearBufferAllocator buffer, WithParamSensitivity)
+{
+	params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer, WithParamSensitivity());
 }
+
+template <typename KernelParamsType>
+void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, active const* y, active* res,
+				 const KernelParamsType& params, LinearBufferAllocator buffer, WithoutParamSensitivity)
+{
+	params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer, WithoutParamSensitivity());
+}
+
+template <typename KernelParamsType>
+void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, active* res,
+				 const KernelParamsType& params, LinearBufferAllocator buffer, WithParamSensitivity)
+{
+	params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer);
+}
+
+template <typename KernelParamsType>
+void bindingFlux(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double* res,
+				 const KernelParamsType& params, LinearBufferAllocator buffer, WithoutParamSensitivity)
+{
+	params.binding->flux(t, secIdx, colPos, y, y - params.nComp, res, buffer);
+}
+} // namespace
 
 struct CellParameters
 {
@@ -78,9 +82,11 @@ struct CellParameters
 	IDynamicReactionModel* dynReaction;
 };
 
-template <typename StateType, typename ResidualType, typename ParamType, typename KernelParamsType, typename RowIteratorType, bool wantJac, bool handleMobilePhaseDerivative>
-void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,
-	double const* yDot, ResidualType* res, RowIteratorType jacBase, const KernelParamsType& params, LinearBufferAllocator buffer)
+template <typename StateType, typename ResidualType, typename ParamType, typename KernelParamsType,
+		  typename RowIteratorType, bool wantJac, bool handleMobilePhaseDerivative>
+void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y, double const* yDot,
+					ResidualType* res, RowIteratorType jacBase, const KernelParamsType& params,
+					LinearBufferAllocator buffer)
 {
 	// Mobile phase
 	if (handleMobilePhaseDerivative)
@@ -91,7 +97,11 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 	{
 		for (unsigned int comp = 0; comp < params.nComp; ++comp, ++res, ++y)
 		{
-			const ParamType invBetaP = (1.0 - static_cast<ParamType>(params.porosity)) / (params.poreAccessFactor ? static_cast<ParamType>(params.poreAccessFactor[comp]) * static_cast<ParamType>(params.porosity) : static_cast<ParamType>(params.porosity));
+			const ParamType invBetaP =
+				(1.0 - static_cast<ParamType>(params.porosity)) /
+				(params.poreAccessFactor
+					 ? static_cast<ParamType>(params.poreAccessFactor[comp]) * static_cast<ParamType>(params.porosity)
+					 : static_cast<ParamType>(params.porosity));
 
 			// Ultimately, we need dc_{p,comp} / dt + 1 / beta_p * [ sum_i  dq_comp^i / dt ]
 			// where the bound states in the brackets are the quasi-stationary states only.
@@ -129,7 +139,8 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 	if (wantJac)
 	{
 		// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-		params.binding->analyticJacobian(t, secIdx, colPos, reinterpret_cast<double const*>(y), params.nComp, jacBase + params.nComp, buffer);
+		params.binding->analyticJacobian(t, secIdx, colPos, reinterpret_cast<double const*>(y), params.nComp,
+										 jacBase + params.nComp, buffer);
 	}
 
 	if (params.binding->hasDynamicReactions() && yDot)
@@ -156,17 +167,23 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 		BufferedArray<ResidualType> fluxSolid = buffer.template array<ResidualType>(params.nTotalBound);
 
 		std::fill_n(static_cast<ResidualType*>(fluxSolid), params.nTotalBound, 0.0);
-		params.dynReaction->residualCombinedAdd(t, secIdx, colPos, y - params.nComp, y, res - params.nComp, static_cast<ResidualType*>(fluxSolid), -1.0, buffer);
+		params.dynReaction->residualCombinedAdd(t, secIdx, colPos, y - params.nComp, y, res - params.nComp,
+												static_cast<ResidualType*>(fluxSolid), -1.0, buffer);
 
 		unsigned int idx = 0;
 		for (unsigned int comp = 0; comp < params.nComp; ++comp)
 		{
-			const ParamType invBetaP = (1.0 - static_cast<ParamType>(params.porosity)) / (params.poreAccessFactor ? static_cast<ParamType>(params.poreAccessFactor[comp]) * static_cast<ParamType>(params.porosity) : static_cast<ParamType>(params.porosity));
+			const ParamType invBetaP =
+				(1.0 - static_cast<ParamType>(params.porosity)) /
+				(params.poreAccessFactor
+					 ? static_cast<ParamType>(params.poreAccessFactor[comp]) * static_cast<ParamType>(params.porosity)
+					 : static_cast<ParamType>(params.porosity));
 
 			for (unsigned int bnd = 0; bnd < params.nBound[comp]; ++bnd, ++idx)
 			{
 				// Add reaction term to mobile phase
-				res[-static_cast<int>(params.nComp) + static_cast<int>(comp)] += static_cast<typename DoubleActiveDemoter<ParamType, ResidualType>::type>(invBetaP) * fluxSolid[idx];
+				res[-static_cast<int>(params.nComp) + static_cast<int>(comp)] +=
+					static_cast<typename DoubleActiveDemoter<ParamType, ResidualType>::type>(invBetaP) * fluxSolid[idx];
 
 				if (!params.qsReaction[idx])
 				{
@@ -180,17 +197,25 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 		{
 			if (params.nTotalBound > 0)
 			{
-				BufferedArray<double> fluxSolidJacobian = buffer.template array<double>(params.nTotalBound * (params.nTotalBound + params.nComp));
-				linalg::DenseMatrixView dmv(static_cast<double*>(fluxSolidJacobian), nullptr, params.nTotalBound, params.nTotalBound + params.nComp);
+				BufferedArray<double> fluxSolidJacobian =
+					buffer.template array<double>(params.nTotalBound * (params.nTotalBound + params.nComp));
+				linalg::DenseMatrixView dmv(static_cast<double*>(fluxSolidJacobian), nullptr, params.nTotalBound,
+											params.nTotalBound + params.nComp);
 				dmv.setAll(0.0);
 
 				// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-				params.dynReaction->analyticJacobianCombinedAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y - params.nComp), reinterpret_cast<double const*>(y), -1.0, jacBase, dmv.row(0, params.nComp), buffer);
+				params.dynReaction->analyticJacobianCombinedAdd(
+					t, secIdx, colPos, reinterpret_cast<double const*>(y - params.nComp),
+					reinterpret_cast<double const*>(y), -1.0, jacBase, dmv.row(0, params.nComp), buffer);
 
 				idx = 0;
 				for (unsigned int comp = 0; comp < params.nComp; ++comp)
 				{
-					const double invBetaP = (1.0 - static_cast<double>(params.porosity)) / (params.poreAccessFactor ? static_cast<double>(params.poreAccessFactor[comp]) * static_cast<double>(params.porosity) : static_cast<double>(params.porosity));
+					const double invBetaP =
+						(1.0 - static_cast<double>(params.porosity)) /
+						(params.poreAccessFactor
+							 ? static_cast<double>(params.poreAccessFactor[comp]) * static_cast<double>(params.porosity)
+							 : static_cast<double>(params.porosity));
 
 					for (unsigned int bnd = 0; bnd < params.nBound[comp]; ++bnd, ++idx)
 					{
@@ -200,7 +225,8 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 						if (!params.qsReaction[idx])
 						{
 							// Add Jacobian row to solid phase
-							(jacBase + params.nComp + idx).addArray(dmv.rowPtr(idx), -static_cast<int>(params.nComp + idx), dmv.columns(), 1.0);
+							(jacBase + params.nComp + idx)
+								.addArray(dmv.rowPtr(idx), -static_cast<int>(params.nComp + idx), dmv.columns(), 1.0);
 						}
 					}
 				}
@@ -212,12 +238,13 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
 				// reaction model does not interact with it.
 
 				// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-				params.dynReaction->analyticJacobianCombinedAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y - params.nComp), reinterpret_cast<double const*>(y), -1.0, jacBase, linalg::DenseBandedRowIterator(), buffer);
+				params.dynReaction->analyticJacobianCombinedAdd(
+					t, secIdx, colPos, reinterpret_cast<double const*>(y - params.nComp),
+					reinterpret_cast<double const*>(y), -1.0, jacBase, linalg::DenseBandedRowIterator(), buffer);
 			}
 		}
 	}
 }
-
 
 /**
  * @brief Executes multiplication of particle shell Jacobian wrt. to state variable
@@ -230,12 +257,14 @@ void residualKernel(double t, unsigned int secIdx, const ColumnPosition& colPos,
  * @param [in] nTotalBound Total number of bound states (of all components)
  * @param [in] qsReaction Array that indicates whether a reaction is quasi-stationary
  * @param [in] factor Factor @f$ \alpha @f$
- * @param [in] qsFactor Factor of the @f$ \mathrm{d}q / \mathrm{d}t @f$ terms added to the mobile phase (only for quasi-stationary bound states)
+ * @param [in] qsFactor Factor of the @f$ \mathrm{d}q / \mathrm{d}t @f$ terms added to the mobile phase (only for
+ * quasi-stationary bound states)
  */
 template <bool handleMobilePhaseDerivative>
-inline void multiplyWithDerivativeJacobianKernel(double const* const mobileSdot, double* const mobileRes, unsigned int nComp,
-	unsigned int const* const nBoundPerComp, unsigned int const* const boundOffset, const unsigned int nTotalBound,
-	int const* const qsReaction, double factor, double qsFactor)
+inline void multiplyWithDerivativeJacobianKernel(double const* const mobileSdot, double* const mobileRes,
+												 unsigned int nComp, unsigned int const* const nBoundPerComp,
+												 unsigned int const* const boundOffset, const unsigned int nTotalBound,
+												 int const* const qsReaction, double factor, double qsFactor)
 {
 	// Mobile phase
 	for (unsigned int comp = 0; comp < nComp; ++comp)
@@ -285,8 +314,10 @@ inline void multiplyWithDerivativeJacobianKernel(double const* const mobileSdot,
  * @param [in] qsReaction Array that indicates whether a reaction is quasi-stationary
  */
 template <typename rowIter_t, bool handleMobilePhaseDerivative>
-void addTimeDerivativeToJacobianParticleShell(rowIter_t& jac, double alpha, double porosity, int nComp, unsigned int const* const nBoundPerComp,
-	active const* const poreAccessFactor, const unsigned int nTotalBound, unsigned int const* const offsetBoundComp, int const* const qsReaction)
+void addTimeDerivativeToJacobianParticleShell(rowIter_t& jac, double alpha, double porosity, int nComp,
+											  unsigned int const* const nBoundPerComp,
+											  active const* const poreAccessFactor, const unsigned int nTotalBound,
+											  unsigned int const* const offsetBoundComp, int const* const qsReaction)
 {
 	// Mobile phase
 	for (int comp = 0; comp < nComp; ++comp, ++jac)
@@ -298,7 +329,7 @@ void addTimeDerivativeToJacobianParticleShell(rowIter_t& jac, double alpha, doub
 		const double invBetaP = (1.0 - porosity) / (static_cast<double>(poreAccessFactor[comp]) * porosity);
 
 		// Add derivative with respect to dq / dt to Jacobian
-//		const int nBound = static_cast<int>(nBoundPerComp[comp]);
+		//		const int nBound = static_cast<int>(nBoundPerComp[comp]);
 		for (int i = 0; i < static_cast<int>(nBoundPerComp[comp]); ++i)
 		{
 			const int idxBoundState = offsetBoundComp[comp] + i;
@@ -328,4 +359,4 @@ void addTimeDerivativeToJacobianParticleShell(rowIter_t& jac, double alpha, doub
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_BINDINGCELLKERNEL_HPP_
+#endif // LIBCADET_BINDINGCELLKERNEL_HPP_

@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -29,12 +29,13 @@ namespace cadet
 class CADET_API IParameterProvider
 {
 public:
-
-	virtual ~IParameterProvider() CADET_NOEXCEPT { }
+	virtual ~IParameterProvider() CADET_NOEXCEPT
+	{
+	}
 
 	/**
 	 * @brief Returns the value of a parameter of type double
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter value
 	 */
@@ -42,7 +43,7 @@ public:
 
 	/**
 	 * @brief Returns the value of a parameter of type int
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter value
 	 */
@@ -50,7 +51,7 @@ public:
 
 	/**
 	 * @brief Returns the value of a parameter of type uint64_t
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter value
 	 */
@@ -58,7 +59,7 @@ public:
 
 	/**
 	 * @brief Returns the value of a parameter of type bool
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter value
 	 */
@@ -66,7 +67,7 @@ public:
 
 	/**
 	 * @brief Returns the value of a parameter of type string
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter value
 	 */
@@ -74,7 +75,7 @@ public:
 
 	/**
 	 * @brief Returns a parameter array of type double
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter values
 	 */
@@ -82,7 +83,7 @@ public:
 
 	/**
 	 * @brief Returns a parameter array of type int
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter values
 	 */
@@ -90,7 +91,7 @@ public:
 
 	/**
 	 * @brief Returns a parameter array of type uint64_t
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter values
 	 */
@@ -98,7 +99,7 @@ public:
 
 	/**
 	 * @brief Returns a parameter array of type bool
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter values
 	 */
@@ -106,7 +107,7 @@ public:
 
 	/**
 	 * @brief Returns a parameter array of type string
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return Parameter values
 	 */
@@ -114,7 +115,7 @@ public:
 
 	/**
 	 * @brief Checks whether a given parameter exists
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return @c true if the parameter exists, otherwise @c false
 	 */
@@ -122,7 +123,7 @@ public:
 
 	/**
 	 * @brief Checks whether a given parameter is an array
-	 * 
+	 *
 	 * @param [in] paramName Name of the parameter
 	 * @return @c true if the parameter is an array, otherwise @c false
 	 */
@@ -150,4 +151,4 @@ public:
 
 } // namespace cadet
 
-#endif  // LIBCADET_PARAMPROVIDER_HPP_
+#endif // LIBCADET_PARAMPROVIDER_HPP_

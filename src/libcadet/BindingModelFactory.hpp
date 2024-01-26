@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the BindingModelFactory
  */
 
@@ -25,66 +25,65 @@
 namespace cadet
 {
 
-	namespace model
-	{
-		class IBindingModel;
-	}
+namespace model
+{
+class IBindingModel;
+}
+
+/**
+ * @brief Creates binding models
+ */
+class BindingModelFactory
+{
+public:
+	/**
+	 * @brief Construct the BindingModelFactory
+	 * @details All internal binding models are registered here.
+	 */
+	BindingModelFactory();
+
+	~BindingModelFactory();
 
 	/**
-	 * @brief Creates binding models
+	 * @brief Creates binding models with the given @p name
+	 * @param [in] name Name of the binding model
+	 * @return The binding model or @c NULL if a binding model with this name does not exist
 	 */
-	class BindingModelFactory
-	{
-	public:
-		/**
-		 * @brief Construct the BindingModelFactory
-		 * @details All internal binding models are registered here.
-		 */
-		BindingModelFactory();
+	model::IBindingModel* create(const std::string& name) const;
 
-		~BindingModelFactory();
+	/**
+	 * @brief Registers the given binding model implementation
+	 * @param [in] name Name of the IBindingModel implementation
+	 * @param [in] factory Function that creates an object of the IBindingModel class
+	 */
+	void registerModel(const std::string& name, std::function<model::IBindingModel*()> factory);
 
-		/**
-		 * @brief Creates binding models with the given @p name
-		 * @param [in] name Name of the binding model
-		 * @return The binding model or @c NULL if a binding model with this name does not exist
-		 */
-		model::IBindingModel* create(const std::string& name) const;
+	/**
+	 * @brief Returns whether a binding model of the given name @p name exists
+	 * @param [in] name Name of the binding model
+	 * @return @c true if a binding model of this name exists, otherwise @c false
+	 */
+	bool exists(const std::string& name) const;
 
-		/**
-		 * @brief Registers the given binding model implementation
-		 * @param [in] name Name of the IBindingModel implementation
-		 * @param [in] factory Function that creates an object of the IBindingModel class
-		 */
-		void registerModel(const std::string& name, std::function<model::IBindingModel*()> factory);
+protected:
+	/**
+	 * @brief Registers an IBindingModel
+	 * @param [in] name Name of the binding model
+	 * @tparam BindingModel_t Type of the binding model
+	 */
+	template <class BindingModel_t> void registerModel(const std::string& name);
 
-		/**
-		 * @brief Returns whether a binding model of the given name @p name exists
-		 * @param [in] name Name of the binding model
-		 * @return @c true if a binding model of this name exists, otherwise @c false
-		 */
-		bool exists(const std::string& name) const;
-	protected:
+	/**
+	 * @brief Registers an IBindingModel
+	 * @details The name of the binding model is inferred from the static function IBindingModel::identifier().
+	 * @tparam BindingModel_t Type of the binding model
+	 */
+	template <class BindingModel_t> void registerModel();
 
-		/**
-		 * @brief Registers an IBindingModel
-		 * @param [in] name Name of the binding model
-		 * @tparam BindingModel_t Type of the binding model
-		 */
-		template <class BindingModel_t>
-		void registerModel(const std::string& name);
-
-		/**
-		 * @brief Registers an IBindingModel
-		 * @details The name of the binding model is inferred from the static function IBindingModel::identifier().
-		 * @tparam BindingModel_t Type of the binding model
-		 */
-		template <class BindingModel_t>
-		void registerModel();
-
-		std::unordered_map<std::string, std::function<model::IBindingModel*()>> _bindingModels; //!< Map with factory functions
-	};
+	std::unordered_map<std::string, std::function<model::IBindingModel*()>>
+		_bindingModels; //!< Map with factory functions
+};
 
 } // namespace cadet
 
-#endif  // LIBCADET_BINDINGMODELFACTORY_HPP_
+#endif // LIBCADET_BINDINGMODELFACTORY_HPP_

@@ -20,7 +20,8 @@ typedef cdtResult (*cdtGetAPIv010000_t)(cdtAPIv010000* ptr);
 typedef void (*cdtSetLogReceiver_t)(cdtLogHandler recv);
 typedef void (*cdtSetLogLevel_t)(int lvl);
 
-void logHandler(const char* file, const char* func, const unsigned int line, int lvl, const char* lvlStr, const char* message)
+void logHandler(const char* file, const char* func, const unsigned int line, int lvl, const char* lvlStr,
+				const char* message)
 {
 	std::cout << lvlStr << " [" << func << ":" << line << "] " << message << std::endl;
 }
@@ -44,7 +45,10 @@ public:
 		}
 	}
 
-	bool isValid() { return _hdLib; }
+	bool isValid()
+	{
+		return _hdLib;
+	}
 
 	template <typename T> T load(char const* func)
 	{
@@ -54,7 +58,6 @@ public:
 private:
 	HINSTANCE _hdLib;
 };
-
 
 json createColumnWithSMAJson(const std::string& uoType)
 {
@@ -202,8 +205,8 @@ json createLWEJson(const std::string& uoType)
 					// Connection list is 3x7 since we have 1 connection between
 					// the two unit operations with 3 ports (and we need to have 7 columns)
 					sw["CONNECTIONS"] = {1.0, 0.0, 0.0, 0.0, -1.0, -1.0, 7.42637597e-09,
-					                     1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
-					                     1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
+										 1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 2.22791279e-08,
+										 1.0, 0.0, 0.0, 2.0, -1.0, -1.0, 3.71318798e-08};
 					// Connections: From unit operation 1 port 0
 					//              to unit operation 0 port 0,
 					//              connect component -1 (i.e., all components)
@@ -215,7 +218,7 @@ json createLWEJson(const std::string& uoType)
 					// Connection list is 1x7 since we have 1 connection between
 					// the two unit operations (and we need to have 7 columns)
 					sw["CONNECTIONS"] = {1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0};
-					// Connections: From unit operation 1 port -1 (i.e., all ports) 
+					// Connections: From unit operation 1 port -1 (i.e., all ports)
 					//              to unit operation 0 port -1 (i.e., all ports),
 					//              connect component -1 (i.e., all components)
 					//              to component -1 (i.e., all components) with
@@ -245,14 +248,14 @@ json createLWEJson(const std::string& uoType)
 	{
 		json ret;
 		ret["WRITE_SOLUTION_TIMES"] = true;
-	
+
 		json grm;
 		grm["WRITE_SOLUTION_BULK"] = false;
 		grm["WRITE_SOLUTION_PARTICLE"] = false;
 		grm["WRITE_SOLUTION_FLUX"] = false;
 		grm["WRITE_SOLUTION_INLET"] = true;
 		grm["WRITE_SOLUTION_OUTLET"] = true;
-		
+
 		ret["unit_000"] = grm;
 		config["return"] = ret;
 	}
@@ -325,7 +328,6 @@ json createLWEJson(const std::string& uoType)
 	return config;
 }
 
-
 class JsonNavigator
 {
 public:
@@ -333,7 +335,9 @@ public:
 	{
 		_opened.push(&_root);
 	}
-	~JsonNavigator() { }
+	~JsonNavigator()
+	{
+	}
 
 	void pushScope(const std::string& scope)
 	{
@@ -355,7 +359,10 @@ public:
 		_scopePath.erase(idx);
 	}
 
-	const json& current() const { return *_opened.top(); }
+	const json& current() const
+	{
+		return *_opened.top();
+	}
 
 private:
 	const json& _root;
@@ -375,7 +382,7 @@ cdtResult getDouble(void* userData, const char* paramName, double* val)
 		*val = pp.get<double>();
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET scalar [double] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -402,7 +409,7 @@ cdtResult getInt(void* userData, const char* paramName, int* val)
 		}
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET scalar [int] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -429,7 +436,7 @@ cdtResult getBool(void* userData, const char* paramName, uint8_t* val)
 		}
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET scalar [bool] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -448,7 +455,7 @@ cdtResult getString(void* userData, const char* paramName, char const** val)
 		*val = pp.get_ptr<const std::string*>()->c_str();
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET scalar [string] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -475,7 +482,8 @@ cdtResult getDoubleArrayItem(void* userData, const char* paramName, int idx, dou
 		}
 		if ((idx > 0) && (idx >= p.size()))
 		{
-			std::cout << "[PP] GET array (" << idx << ") [double] ERROR: Index out of bounds (size is " << p.size() << ")" << std::endl;
+			std::cout << "[PP] GET array (" << idx << ") [double] ERROR: Index out of bounds (size is " << p.size()
+					  << ")" << std::endl;
 			return cdtError;
 		}
 
@@ -485,7 +493,7 @@ cdtResult getDoubleArrayItem(void* userData, const char* paramName, int idx, dou
 		*val = pp.get<double>();
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET array (" << idx << ") [double] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -512,7 +520,8 @@ cdtResult getIntArrayItem(void* userData, const char* paramName, int idx, int* v
 		}
 		if ((idx > 0) && (idx >= p.size()))
 		{
-			std::cout << "[PP] GET array (" << idx << ") [int] ERROR: Index out of bounds (size is " << p.size() << ")" << std::endl;
+			std::cout << "[PP] GET array (" << idx << ") [int] ERROR: Index out of bounds (size is " << p.size() << ")"
+					  << std::endl;
 			return cdtError;
 		}
 
@@ -520,7 +529,8 @@ cdtResult getIntArrayItem(void* userData, const char* paramName, int idx, int* v
 
 		if (pp.is_boolean())
 		{
-			std::cout << "[PP] GET array (" << idx << ") [int] " << paramName << " = " << static_cast<int>(pp.get<bool>()) << "\n";
+			std::cout << "[PP] GET array (" << idx << ") [int] " << paramName << " = "
+					  << static_cast<int>(pp.get<bool>()) << "\n";
 			*val = pp.get<bool>();
 		}
 		else
@@ -530,7 +540,7 @@ cdtResult getIntArrayItem(void* userData, const char* paramName, int idx, int* v
 		}
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET array (" << idx << ") [int] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -557,7 +567,8 @@ cdtResult getBoolArrayItem(void* userData, const char* paramName, int idx, uint8
 		}
 		if ((idx > 0) && (idx >= p.size()))
 		{
-			std::cout << "[PP] GET array (" << idx << ") [bool] ERROR: Index out of bounds (size is " << p.size() << ")" << std::endl;
+			std::cout << "[PP] GET array (" << idx << ") [bool] ERROR: Index out of bounds (size is " << p.size() << ")"
+					  << std::endl;
 			return cdtError;
 		}
 
@@ -565,7 +576,8 @@ cdtResult getBoolArrayItem(void* userData, const char* paramName, int idx, uint8
 
 		if (pp.is_number_integer())
 		{
-			std::cout << "[PP] GET array (" << idx << ") [bool] " << paramName << " = " << static_cast<bool>(pp.get<int>()) << "\n";
+			std::cout << "[PP] GET array (" << idx << ") [bool] " << paramName << " = "
+					  << static_cast<bool>(pp.get<int>()) << "\n";
 			*val = static_cast<bool>(pp.get<int>());
 		}
 		else
@@ -575,7 +587,7 @@ cdtResult getBoolArrayItem(void* userData, const char* paramName, int idx, uint8
 		}
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET array (" << idx << ") [bool] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -591,7 +603,8 @@ cdtResult getStringArrayItem(void* userData, const char* paramName, int idx, cha
 
 		if ((idx == 0) && !p.is_array())
 		{
-			std::cout << "[PP] GET array (" << idx << ") [string] " << paramName << " = " << p.get_ref<const std::string&>() << "\n";
+			std::cout << "[PP] GET array (" << idx << ") [string] " << paramName << " = "
+					  << p.get_ref<const std::string&>() << "\n";
 			*val = p.get_ptr<const std::string*>()->c_str();
 			return cdtOK;
 		}
@@ -602,17 +615,19 @@ cdtResult getStringArrayItem(void* userData, const char* paramName, int idx, cha
 		}
 		if ((idx > 0) && (idx >= p.size()))
 		{
-			std::cout << "[PP] GET array (" << idx << ") [string] ERROR: Index out of bounds (size is " << p.size() << ")" << std::endl;
+			std::cout << "[PP] GET array (" << idx << ") [string] ERROR: Index out of bounds (size is " << p.size()
+					  << ")" << std::endl;
 			return cdtError;
 		}
 
 		const json& pp = p[idx];
 
-		std::cout << "[PP] GET array (" << idx << ") [string] " << paramName << " = " << pp.get_ref<const std::string&>() << "\n";
+		std::cout << "[PP] GET array (" << idx << ") [string] " << paramName << " = "
+				  << pp.get_ref<const std::string&>() << "\n";
 		*val = pp.get_ptr<const std::string*>()->c_str();
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] GET array (" << idx << ") [string] ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -644,7 +659,7 @@ cdtResult isArray(void* userData, const char* paramName, uint8_t* res)
 		std::cout << "[PP] ISARRAY " << paramName << " = " << p.is_array() << "\n";
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] ISARRAY ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -660,7 +675,7 @@ int numElements(void* userData, const char* paramName)
 		std::cout << "[PP] NUMELEMENTS " << paramName << " = " << p.size() << "\n";
 		return p.size();
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] NUMELEMENTS ERROR: " << e.what() << std::endl;
 		return -1;
@@ -675,7 +690,7 @@ cdtResult pushScope(void* userData, const char* scope)
 		jn.pushScope(scope);
 		return cdtOK;
 	}
-	catch(const std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cout << "[PP] PUSHSCOPE ERROR: " << e.what() << std::endl;
 		return cdtError;
@@ -688,7 +703,6 @@ cdtResult popScope(void* userData)
 	jn.popScope();
 	return cdtOK;
 }
-
 
 int main(int argc, char** argv)
 {
@@ -733,37 +747,32 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	std::unique_ptr<cdtDriver, std::function<void(cdtDriver*)>> drv(api.createDriver(), [&api](cdtDriver* ptr)
-		{
-			api.deleteDriver(ptr);
-			std::cout << "Delete driver" << std::endl;
-		}
-	);
+	std::unique_ptr<cdtDriver, std::function<void(cdtDriver*)>> drv(api.createDriver(), [&api](cdtDriver* ptr) {
+		api.deleteDriver(ptr);
+		std::cout << "Delete driver" << std::endl;
+	});
 
 	const json simSpec = createLWEJson("GENERAL_RATE_MODEL");
 	JsonNavigator jn(simSpec);
 
-	cdtParameterProvider pp
-	{
-		&jn,
-		&getDouble,
-		&getInt,
-		&getBool,
-		&getString,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		&getDoubleArrayItem,
-		&getIntArrayItem,
-		&getBoolArrayItem,
-		&getStringArrayItem,
-		&exists,
-		&isArray,
-		&numElements,
-		&pushScope,
-		&popScope
-	};
+	cdtParameterProvider pp{&jn,
+							&getDouble,
+							&getInt,
+							&getBool,
+							&getString,
+							nullptr,
+							nullptr,
+							nullptr,
+							nullptr,
+							&getDoubleArrayItem,
+							&getIntArrayItem,
+							&getBoolArrayItem,
+							&getStringArrayItem,
+							&exists,
+							&isArray,
+							&numElements,
+							&pushScope,
+							&popScope};
 
 	const cdtResult resSim = api.runSimulation(drv.get(), &pp);
 	std::cout << "runSimulation() = " << resSim << std::endl;
@@ -781,7 +790,8 @@ int main(int argc, char** argv)
 	int nComp = 0;
 	const cdtResult resSol = api.getSolutionOutlet(drv.get(), 0, &time, &outlet, &nTime, &nPort, &nComp);
 
-	std::cout << "getSolutionOutlet() = " << resSol << " nTime = " << nTime << " nPort = " << nPort << " nComp = " << nComp << std::endl;
+	std::cout << "getSolutionOutlet() = " << resSol << " nTime = " << nTime << " nPort = " << nPort
+			  << " nComp = " << nComp << std::endl;
 
 	return 0;
 }

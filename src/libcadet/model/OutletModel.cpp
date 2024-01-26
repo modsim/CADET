@@ -28,12 +28,10 @@
 
 #include "AdUtils.hpp"
 
-
 inline void residual(double const* y, unsigned int nComp, double* res)
 {
 	std::copy(y, y + nComp, res);
 }
-
 
 namespace cadet
 {
@@ -75,7 +73,9 @@ bool OutletModel::configure(IParameterProvider& paramProvider)
 	return true;
 }
 
-void OutletModel::setSectionTimes(double const* secTimes, bool const* secContinuity, unsigned int nSections) { }
+void OutletModel::setSectionTimes(double const* secTimes, bool const* secContinuity, unsigned int nSections)
+{
+}
 
 std::unordered_map<ParameterId, double> OutletModel::getAllParameterValues() const
 {
@@ -125,8 +125,14 @@ unsigned int OutletModel::numSensParams() const
 	return 0;
 }
 
-void OutletModel::useAnalyticJacobian(const bool analyticJac) { }
-void OutletModel::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac) { }
+void OutletModel::useAnalyticJacobian(const bool analyticJac)
+{
+}
+void OutletModel::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx,
+													   const ConstSimulationState& simState,
+													   const AdJacobianParams& adJac)
+{
+}
 
 void OutletModel::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
 {
@@ -146,7 +152,9 @@ unsigned int OutletModel::requiredADdirs() const CADET_NOEXCEPT
 	return 0;
 }
 
-void OutletModel::prepareADvectors(const AdJacobianParams& adJac) const { }
+void OutletModel::prepareADvectors(const AdJacobianParams& adJac) const
+{
+}
 
 void OutletModel::applyInitialCondition(const SimulationState& simState) const
 {
@@ -154,23 +162,28 @@ void OutletModel::applyInitialCondition(const SimulationState& simState) const
 	std::fill(simState.vecStateYdot, simState.vecStateYdot + _nComp, 0.0);
 }
 
-void OutletModel::readInitialCondition(IParameterProvider& paramProvider) { }
+void OutletModel::readInitialCondition(IParameterProvider& paramProvider)
+{
+}
 
-int OutletModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
+int OutletModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
+						  util::ThreadLocalStorage& threadLocalMem)
 {
 	::residual(simState.vecStateY, _nComp, res);
 	return 0;
 }
 
-int OutletModel::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, 
-	double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int OutletModel::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+									  double* const res, const AdJacobianParams& adJac,
+									  util::ThreadLocalStorage& threadLocalMem)
 {
 	// Jacobian is always identity
 	::residual(simState.vecStateY, _nComp, res);
 	return 0;
 }
 
-int OutletModel::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
+int OutletModel::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState,
+									   active* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	for (unsigned int i = 0; i < _nComp; ++i)
 		adRes[i] = simState.vecStateY[i];
@@ -178,9 +191,10 @@ int OutletModel::residualSensFwdAdOnly(const SimulationTime& simTime, const Cons
 	return 0;
 }
 
-int OutletModel::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState, 
-	const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes, 
-	double* const tmp1, double* const tmp2, double* const tmp3)
+int OutletModel::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
+										const std::vector<const double*>& yS, const std::vector<const double*>& ySdot,
+										const std::vector<double*>& resS, active const* adRes, double* const tmp1,
+										double* const tmp2, double* const tmp3)
 {
 	// Directional derivative (dF / dy) * s does nothing since dF / dy = I (identity)
 	for (std::size_t param = 0; param < resS.size(); ++param)
@@ -192,7 +206,8 @@ int OutletModel::residualSensFwdCombine(const SimulationTime& simTime, const Con
 	return 0;
 }
 
-int OutletModel::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int OutletModel::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+											 const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	for (unsigned int i = 0; i < _nComp; ++i)
 		adJac.adRes[i] = simState.vecStateY[i];
@@ -200,21 +215,26 @@ int OutletModel::residualSensFwdWithJacobian(const SimulationTime& simTime, cons
 	return 0;
 }
 
-void OutletModel::initializeSensitivityStates(const std::vector<double*>& vecSensY) const { }
+void OutletModel::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
+{
+}
 
 void OutletModel::consistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
-	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
+											   std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot,
+											   active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	// Nothing to do here as inlet DOFs are initialized by ModelSystem
 }
 
 void OutletModel::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
-	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
+												   std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot,
+												   active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	// Nothing to do here as inlet DOFs are initialized by ModelSystem
 }
 
-void OutletModel::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
+void OutletModel::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+									   double const* yS, double alpha, double beta, double* ret)
 {
 	// dF / dy = I (identity matrix)
 	for (unsigned int i = 0; i < _nComp; ++i)
@@ -223,11 +243,11 @@ void OutletModel::multiplyWithJacobian(const SimulationTime& simTime, const Cons
 	}
 }
 
-void OutletModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
+void OutletModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState,
+												 double const* sDot, double* ret)
 {
 	std::fill_n(ret, numDofs(), 0.0);
 }
-
 
 int OutletModel::Exporter::writeInlet(unsigned int port, double* buffer) const
 {
@@ -255,12 +275,11 @@ int OutletModel::Exporter::writeOutlet(double* buffer) const
 	return _nComp;
 }
 
-
 void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
 {
 	models[OutletModel::identifier()] = [](UnitOpIdx uoId) { return new OutletModel(uoId); };
 }
 
-}  // namespace model
+} // namespace model
 
-}  // namespace cadet
+} // namespace cadet

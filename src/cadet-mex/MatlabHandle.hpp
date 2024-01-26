@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Provides Matlab IO support (reading & writing from Matlab structs)
  */
 
@@ -30,11 +30,11 @@ namespace mex
 
 // Adapt Matlab handle type to different pointer sizes on 32bit and 64bit systems
 #ifdef CADET_MEX_32BIT
-	const mxClassID MatlabPtrHandleTypeId = mxUINT32_CLASS;
-	typedef uint32_t MatlabPtrHandle;
+const mxClassID MatlabPtrHandleTypeId = mxUINT32_CLASS;
+typedef uint32_t MatlabPtrHandle;
 #else
-	const mxClassID MatlabPtrHandleTypeId = mxUINT64_CLASS;
-	typedef uint64_t MatlabPtrHandle;
+const mxClassID MatlabPtrHandleTypeId = mxUINT64_CLASS;
+typedef uint64_t MatlabPtrHandle;
 #endif
 
 /**
@@ -49,8 +49,7 @@ namespace mex
  * @return Matlab integer handle
  * @tparam Object_t Type of the object the pointer points to
  */
-template<class Object_t> 
-inline mxArray* convertPtr2Mat(Object_t* ptr)
+template <class Object_t> inline mxArray* convertPtr2Mat(Object_t* ptr)
 {
 	// Lock the MEX file for each created object (acts as reference counter)
 	mexLock();
@@ -69,8 +68,7 @@ inline mxArray* convertPtr2Mat(Object_t* ptr)
  * @return Pointer to an object
  * @tparam Object_t Expected type of the object the handle points to
  */
-template<class Object_t> 
-inline Object_t* convertMat2Ptr(const mxArray* hd)
+template <class Object_t> inline Object_t* convertMat2Ptr(const mxArray* hd)
 {
 	if ((mxGetNumberOfElements(hd) != 1) || (mxGetClassID(hd) != MatlabPtrHandleTypeId) || mxIsComplex(hd))
 		mexErrMsgIdAndTxt("CADET:mexError", "Handle must be a real uint64 scalar.\n");
@@ -90,8 +88,7 @@ inline Object_t* convertMat2Ptr(const mxArray* hd)
  * @param [in] hd Matlab integer handle
  * @tparam Object_t Expected type of the object the handle points to
  */
-template<class Object_t> 
-inline void destroyObject(const mxArray *hd)
+template <class Object_t> inline void destroyObject(const mxArray* hd)
 {
 	// Destroy object
 	delete convertMat2Ptr<Object_t>(hd);
@@ -103,4 +100,4 @@ inline void destroyObject(const mxArray *hd)
 } // namespace mex
 } // namespace cadet
 
-#endif  // CADET_MEX_MATLABHANDLE_HPP_
+#endif // CADET_MEX_MATLABHANDLE_HPP_

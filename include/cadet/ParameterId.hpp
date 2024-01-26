@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines the ParameterId and provides compile time and runtime hash functions for parameters.
  */
 
@@ -69,50 +69,50 @@ typedef uint64_t ParamIdHash;
 
 #if CADET_COMPILER_CXX_CONSTEXPR
 
-	/**
-	 * @brief Computes the string hash at compiletime
-	 * @details Use the hashStringRuntime for runtime hashing.
-	 * 
-	 * @param [in] str String
-	 * @return Hash of the string
-	 */
-	constexpr inline StringHash hashString(const util::hash::ConstString& cs)
-	{
-		return util::SipHash24(cs);
-	}
+/**
+ * @brief Computes the string hash at compiletime
+ * @details Use the hashStringRuntime for runtime hashing.
+ *
+ * @param [in] str String
+ * @return Hash of the string
+ */
+constexpr inline StringHash hashString(const util::hash::ConstString& cs)
+{
+	return util::SipHash24(cs);
+}
 
 #else
 
-	/**
-	 * @brief Computes the string hash at runtime
-	 * @details Use the _hash string literal for compile time hashing.
-	 * 
-	 * @param [in] str String
-	 * @return Hash of the string
-	 */
-	inline StringHash hashString(const std::string& str)
-	{
-		return util::SipHash24runtime(str);
-	}
+/**
+ * @brief Computes the string hash at runtime
+ * @details Use the _hash string literal for compile time hashing.
+ *
+ * @param [in] str String
+ * @return Hash of the string
+ */
+inline StringHash hashString(const std::string& str)
+{
+	return util::SipHash24runtime(str);
+}
 
-	/**
-	 * @brief Computes the string hash at runtime
-	 * @details Use the _hash string literal for compile time hashing.
-	 * 
-	 * @param [in] str String
-	 * @return Hash of the string
-	 */
-	inline StringHash hashString(char const* const str)
-	{
-		return util::SipHash24runtime(str);
-	}
+/**
+ * @brief Computes the string hash at runtime
+ * @details Use the _hash string literal for compile time hashing.
+ *
+ * @param [in] str String
+ * @return Hash of the string
+ */
+inline StringHash hashString(char const* const str)
+{
+	return util::SipHash24runtime(str);
+}
 
 #endif
 
 /**
  * @brief Computes the string hash at runtime
  * @details Use the _hash string literal for compile time hashing.
- * 
+ *
  * @param [in] str String
  * @return Hash of the string
  */
@@ -124,7 +124,7 @@ inline StringHash hashStringRuntime(const std::string& str)
 /**
  * @brief Computes the string hash at runtime
  * @details Use the _hash string literal for compile time hashing.
- * 
+ *
  * @param [in] str String
  * @return Hash of the string
  */
@@ -136,7 +136,7 @@ inline StringHash hashStringRuntime(char const* const str)
 /**
  * @brief Computes the unique parameter Id hash for a given parameter
  * @details This hash function can be used at compile- and runtime.
- * 
+ *
  * @param [in] nameHash Hash of the parameter name computed by hashString()
  * @param [in] unitOperation Index of the unit operation this parameter belongs to
  * @param [in] component Index of the component this parameter belongs to
@@ -145,11 +145,12 @@ inline StringHash hashStringRuntime(char const* const str)
  * @param [in] section Index of the section this parameter belongs to
  * @return Unique parameter id hash
  */
-inline ParamIdHash hashParameter(const StringHash nameHash, const UnitOpIdx unitOperation, const ComponentIdx component, 
-	const ParticleTypeIdx parType, const BoundStateIdx boundState, const ReactionIdx reaction, const SectionIdx section)
+inline ParamIdHash hashParameter(const StringHash nameHash, const UnitOpIdx unitOperation, const ComponentIdx component,
+								 const ParticleTypeIdx parType, const BoundStateIdx boundState,
+								 const ReactionIdx reaction, const SectionIdx section)
 {
 	ParamIdHash hash = nameHash;
-	
+
 	// Combine indices in one big integer by shifting them
 	// Note that ParamIdHash has to be big enough to hold all indices
 	const ParamIdHash combinedIdx = pack_ints(unitOperation, component, parType, boundState, reaction, section);
@@ -161,7 +162,7 @@ inline ParamIdHash hashParameter(const StringHash nameHash, const UnitOpIdx unit
 /**
  * @brief Computes the unique parameter Id hash for a given parameter
  * @details This hash function can be used at compile- and runtime.
- * 
+ *
  * @param [in] name Name of the parameter
  * @param [in] unitOperation Index of the unit operation this parameter belongs to
  * @param [in] component Index of the component this parameter belongs to
@@ -170,8 +171,9 @@ inline ParamIdHash hashParameter(const StringHash nameHash, const UnitOpIdx unit
  * @param [in] section Index of the section this parameter belongs to
  * @return Unique parameter id hash
  */
-inline ParamIdHash hashParameter(const std::string& name, const UnitOpIdx unitOperation, const ComponentIdx component, 
-	const ParticleTypeIdx parType, const BoundStateIdx boundState, const ReactionIdx reaction, const SectionIdx section)
+inline ParamIdHash hashParameter(const std::string& name, const UnitOpIdx unitOperation, const ComponentIdx component,
+								 const ParticleTypeIdx parType, const BoundStateIdx boundState,
+								 const ReactionIdx reaction, const SectionIdx section)
 {
 	return hashParameter(hashStringRuntime(name), unitOperation, component, parType, boundState, reaction, section);
 }
@@ -179,18 +181,19 @@ inline ParamIdHash hashParameter(const std::string& name, const UnitOpIdx unitOp
 /**
  * @brief Computes the unique parameter Id hash for a given parameter
  * @details This hash function is supposed to be used at runtime only.
- * 
+ *
  * @param [in] param Parameter Id
  * @return Unique parameter id hash
  */
 inline ParamIdHash hashParameter(const ParameterId& param)
 {
-	return hashParameter(param.name, param.unitOperation, param.component, param.particleType, param.boundState, param.reaction, param.section);
+	return hashParameter(param.name, param.unitOperation, param.component, param.particleType, param.boundState,
+						 param.reaction, param.section);
 }
 
 /**
  * @brief Builds the unique ParameterId for a given parameter
- * 
+ *
  * @param [in] name Name of the parameter
  * @param [in] unitOperation Index of the unit operation this parameter belongs to
  * @param [in] component Index of the component this parameter belongs to
@@ -199,15 +202,16 @@ inline ParamIdHash hashParameter(const ParameterId& param)
  * @param [in] section Index of the section this parameter belongs to
  * @return Unique parameter id
  */
-inline ParameterId makeParamId(const std::string& name, const UnitOpIdx unitOperation, const ComponentIdx component, 
-	const ParticleTypeIdx parType, const BoundStateIdx boundState, const ReactionIdx reaction, const SectionIdx section)
+inline ParameterId makeParamId(const std::string& name, const UnitOpIdx unitOperation, const ComponentIdx component,
+							   const ParticleTypeIdx parType, const BoundStateIdx boundState,
+							   const ReactionIdx reaction, const SectionIdx section)
 {
-	return ParameterId{ hashStringRuntime(name), unitOperation, component, parType, boundState, reaction, section };
+	return ParameterId{hashStringRuntime(name), unitOperation, component, parType, boundState, reaction, section};
 }
 
 /**
  * @brief Builds the unique ParameterId for a given parameter
- * 
+ *
  * @param [in] name Hash of the parameter name
  * @param [in] unitOperation Index of the unit operation this parameter belongs to
  * @param [in] component Index of the component this parameter belongs to
@@ -216,12 +220,13 @@ inline ParameterId makeParamId(const std::string& name, const UnitOpIdx unitOper
  * @param [in] section Index of the section this parameter belongs to
  * @return Unique parameter id
  */
-inline ParameterId makeParamId(const StringHash name, const UnitOpIdx unitOperation, const ComponentIdx component, 
-	const ParticleTypeIdx parType, const BoundStateIdx boundState, const ReactionIdx reaction, const SectionIdx section)
+inline ParameterId makeParamId(const StringHash name, const UnitOpIdx unitOperation, const ComponentIdx component,
+							   const ParticleTypeIdx parType, const BoundStateIdx boundState,
+							   const ReactionIdx reaction, const SectionIdx section)
 {
-	return ParameterId{ name, unitOperation, component, parType, boundState, reaction, section };
+	return ParameterId{name, unitOperation, component, parType, boundState, reaction, section};
 }
 
 } // namespace cadet
 
-#endif  // LIBCADET_PARAMETERID_HPP_
+#endif // LIBCADET_PARAMETERID_HPP_

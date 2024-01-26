@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Progress bar for cadet-cli.
  */
 
@@ -114,14 +114,14 @@ public:
 
 protected:
 	std::ostream* _os; //!< Stream to print to
-	double _progress; //!< Current progress in percent (between 0.0 and 1.0)
+	double _progress;  //!< Current progress in percent (between 0.0 and 1.0)
 	double _minUpdate; //!< Minimum amount of progress update to trigger printing
-	double _minTime; //!< Minimum amount of elapsed time between printing
-	typename std::chrono::steady_clock::time_point _startTime; //!< Start time of process
+	double _minTime;   //!< Minimum amount of elapsed time between printing
+	typename std::chrono::steady_clock::time_point _startTime;      //!< Start time of process
 	typename std::chrono::steady_clock::time_point _lastUpdateTime; //!< Time of last update
-	int _termWidth; //!< Number of columns of terminal
-	mutable std::vector<char> _buffer; //!< Buffer for printing the progress bar
-	std::string _message; //!< Message to display behind the bar
+	int _termWidth;                                                 //!< Number of columns of terminal
+	mutable std::vector<char> _buffer;                              //!< Buffer for printing the progress bar
+	std::string _message;                                           //!< Message to display behind the bar
 	double _barRatio; //!< Percentage of terminal width used for the bar (between 0.0 and 1.0)
 
 	void setup(int columns);
@@ -130,4 +130,4 @@ protected:
 
 } // namespace cadet
 
-#endif  // CADETCLI_PROGRESSBAR_HPP_
+#endif // CADETCLI_PROGRESSBAR_HPP_

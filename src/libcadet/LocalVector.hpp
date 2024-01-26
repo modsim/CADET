@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines local memory versions of some data structures
  */
 
@@ -40,14 +40,12 @@ namespace util
  * @param [in] delta Number of bytes to move the pointer
  * @return Pointer at new location
  */
-template <typename T>
-inline T* advancePointer(T* p, std::ptrdiff_t delta) CADET_NOEXCEPT
+template <typename T> inline T* advancePointer(T* p, std::ptrdiff_t delta) CADET_NOEXCEPT
 {
 	return reinterpret_cast<T*>(reinterpret_cast<char*>(p) + delta);
 }
 
-template <typename T>
-inline T* advancePointer(void* p, std::ptrdiff_t delta) CADET_NOEXCEPT
+template <typename T> inline T* advancePointer(void* p, std::ptrdiff_t delta) CADET_NOEXCEPT
 {
 	return reinterpret_cast<T*>(reinterpret_cast<char*>(p) + delta);
 }
@@ -68,16 +66,17 @@ inline void* alignPtr(void* ptr, std::size_t alignment) CADET_NOEXCEPT
  * @brief Represents a fixed size std::vector<T> in a contiguous buffer
  * @details The contents of the std::vector<T> are appended to the memory of the LocalVector<T>
  *          in a contiguous buffer. Thus, the full data is represented in a linear slab of memory.
- *          
+ *
  *          The LocalVector cannot be expanded or shrunk, but its contents can be changed.
  *          Memory is not owned by this class and must be created or destroyed elsewhere.
  * @tparam T Type of data stored in the vector
  */
-template <class T>
-class LocalVector
+template <class T> class LocalVector
 {
 public:
-	LocalVector() CADET_NOEXCEPT : _size(0), _data(nullptr) { }
+	LocalVector() CADET_NOEXCEPT : _size(0), _data(nullptr)
+	{
+	}
 	~LocalVector() CADET_NOEXCEPT
 	{
 		if (_data)
@@ -96,19 +95,46 @@ public:
 	inline LocalVector<T>& operator=(LocalVector<T>&& cpy) = default;
 #endif
 
-	inline T& operator[](std::size_t idx) { return _data[idx]; }
-	inline const T& operator[](std::size_t idx) const { return _data[idx]; }
+	inline T& operator[](std::size_t idx)
+	{
+		return _data[idx];
+	}
+	inline const T& operator[](std::size_t idx) const
+	{
+		return _data[idx];
+	}
 
-	inline T* data() CADET_NOEXCEPT { return _data; }
-	inline T const* data() const CADET_NOEXCEPT { return _data; }
+	inline T* data() CADET_NOEXCEPT
+	{
+		return _data;
+	}
+	inline T const* data() const CADET_NOEXCEPT
+	{
+		return _data;
+	}
 
-	inline std::size_t size() const CADET_NOEXCEPT { return _size; }
+	inline std::size_t size() const CADET_NOEXCEPT
+	{
+		return _size;
+	}
 
-	inline T& front() { return _data[0]; }
-	inline const T& front() const { return _data[0]; }
+	inline T& front()
+	{
+		return _data[0];
+	}
+	inline const T& front() const
+	{
+		return _data[0];
+	}
 
-	inline T& back() { return _data[_size - 1]; }
-	inline const T& back() const { return _data[_size - 1]; }
+	inline T& back()
+	{
+		return _data[_size - 1];
+	}
+	inline const T& back() const
+	{
+		return _data[_size - 1];
+	}
 
 	/**
 	 * @brief Assigns the data of the given vector to this instance
@@ -138,33 +164,41 @@ public:
 	 * @param [in] v Data to represent in a linearized local buffer
 	 * @return Size in bytes required for representing the given data
 	 */
-	static inline std::size_t requiredMemoryFor(const std::vector<T>& v) CADET_NOEXCEPT { return requiredMemoryFor(v.size()); }
-	static inline std::size_t requiredMemoryFor(std::size_t n) CADET_NOEXCEPT { return sizeof(LocalVector<T>) + alignof(LocalVector<T>) + sizeof(T) * n + alignof(T); }
+	static inline std::size_t requiredMemoryFor(const std::vector<T>& v) CADET_NOEXCEPT
+	{
+		return requiredMemoryFor(v.size());
+	}
+	static inline std::size_t requiredMemoryFor(std::size_t n) CADET_NOEXCEPT
+	{
+		return sizeof(LocalVector<T>) + alignof(LocalVector<T>) + sizeof(T) * n + alignof(T);
+	}
 
 protected:
-	LocalVector(std::size_t size) CADET_NOEXCEPT : _size(size), _data(nullptr) { }
+	LocalVector(std::size_t size) CADET_NOEXCEPT : _size(size), _data(nullptr)
+	{
+	}
 
 	std::size_t _size;
 	T* _data;
 };
 
-
 /**
  * @brief Represents a fixed size SlicedVector<T> in a contiguous buffer
  * @details The contents of the SlicedVector<T> are appended to the memory of the LocalSlicedVector<T>
  *          in a contiguous buffer. Thus, the full data is represented in a linear slab of memory.
- *          
+ *
  *          The LocalSlicedVector cannot be expanded or shrunk, but its contents can be changed.
  *          Memory is not owned by this class and must be created or destroyed elsewhere.
  * @tparam T Type of data stored in the sliced vector
  */
-template <class T>
-class LocalSlicedVector
+template <class T> class LocalSlicedVector
 {
 public:
 	typedef typename SlicedVector<T>::size_type size_type;
 
-	LocalSlicedVector() CADET_NOEXCEPT : _indexSize(0), _values(nullptr), _index(nullptr) { }
+	LocalSlicedVector() CADET_NOEXCEPT : _indexSize(0), _values(nullptr), _index(nullptr)
+	{
+	}
 	~LocalSlicedVector() CADET_NOEXCEPT
 	{
 		if (_values)
@@ -189,27 +223,39 @@ public:
 	 * @brief Checks whether this LocalSlicedVector is empty
 	 * @return @c true if it is empty, otherwise @c false
 	 */
-	inline bool empty() const { return _indexSize == 1; }
+	inline bool empty() const
+	{
+		return _indexSize == 1;
+	}
 
 	/**
 	 * @brief Returns the number of slices
 	 * @return Number of slices
 	 */
-	inline size_type slices() const CADET_NOEXCEPT { return _indexSize - 1; }
+	inline size_type slices() const CADET_NOEXCEPT
+	{
+		return _indexSize - 1;
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T const* operator[](size_type idxSlice) const { return _values + _index[idxSlice]; }
+	inline T const* operator[](size_type idxSlice) const
+	{
+		return _values + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T* operator[](size_type idxSlice) { return _values + _index[idxSlice]; }
+	inline T* operator[](size_type idxSlice)
+	{
+		return _values + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -217,7 +263,10 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline const T& operator()(size_type idxSlice, size_type idxElem) const { return _values[_index[idxSlice] + idxElem]; }
+	inline const T& operator()(size_type idxSlice, size_type idxElem) const
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -225,21 +274,30 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline T& operator()(size_type idxSlice, size_type idxElem) { return _values[_index[idxSlice] + idxElem]; }
+	inline T& operator()(size_type idxSlice, size_type idxElem)
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given linear index
 	 * @param [in] idx Linear index of the requested element
 	 * @return Element at the given linear index
 	 */
-	inline T& native(size_type idx) { return _values[idx]; }
+	inline T& native(size_type idx)
+	{
+		return _values[idx];
+	}
 
 	/**
 	 * @brief Returns the element at the given linear index
 	 * @param [in] idx Linear index of the requested element
 	 * @return Element at the given linear index
 	 */
-	inline const T& native(size_type idx) const { return _values[idx]; }
+	inline const T& native(size_type idx) const
+	{
+		return _values[idx];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -247,7 +305,10 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline const T& at(size_type idxSlice, size_type idxElem) const { return _values[_index[idxSlice] + idxElem]; }
+	inline const T& at(size_type idxSlice, size_type idxElem) const
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns the element at the given position in the given slice
@@ -255,32 +316,41 @@ public:
 	 * @param [in] idxElem Index of the element within the slice
 	 * @return Element at the given index of the given slice
 	 */
-	inline T& at(size_type idxSlice, size_type idxElem) { return _values[_index[idxSlice] + idxElem]; }
+	inline T& at(size_type idxSlice, size_type idxElem)
+	{
+		return _values[_index[idxSlice] + idxElem];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T const* at(size_type idxSlice) const { return _values + _index[idxSlice]; }
+	inline T const* at(size_type idxSlice) const
+	{
+		return _values + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of a given slice
 	 * @param [in] idxSlice Index of the slice
 	 * @return Pointer to the first element of the given slice
 	 */
-	inline T* at(size_type idxSlice) { return _values + _index[idxSlice]; }
+	inline T* at(size_type idxSlice)
+	{
+		return _values + _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of the last slice
 	 * @return Pointer to the first element of the last slice
 	 */
-	inline T const* back() const 
+	inline T const* back() const
 	{
 		cadet_assert(!empty());
 		return &_values[_index[_indexSize - 2]];
 	}
-	
+
 	inline T* back()
 	{
 		cadet_assert(!empty());
@@ -292,21 +362,30 @@ public:
 	 * @param [in] idxSlice Index of the slice
 	 * @return Number of elmenets in the slice
 	 */
-	inline size_type sliceSize(size_type idxSlice) const { return _index[idxSlice + 1] - _index[idxSlice]; }
+	inline size_type sliceSize(size_type idxSlice) const
+	{
+		return _index[idxSlice + 1] - _index[idxSlice];
+	}
 
 	/**
 	 * @brief Returns the total number of stored items
 	 * @details All items in every slice are counted.
 	 * @return Total number of stored items
 	 */
-	inline size_type size() const CADET_NOEXCEPT { return _index[_indexSize - 1]; }
+	inline size_type size() const CADET_NOEXCEPT
+	{
+		return _index[_indexSize - 1];
+	}
 
 	/**
 	 * @brief Returns the offset of the slice with the given index in the linear array
 	 * @param [in] idx Index of the slice
 	 * @return Offset of the given slice in the linearized storage
 	 */
-	inline size_type sliceOffset(size_type idx) const { return _index[idx]; }
+	inline size_type sliceOffset(size_type idx) const
+	{
+		return _index[idx];
+	}
 
 	/**
 	 * @brief Returns a pointer to the first element of the underlying linear array
@@ -378,17 +457,19 @@ public:
 	 */
 	static inline std::size_t requiredMemoryFor(const SlicedVector<T>& v) CADET_NOEXCEPT
 	{
-		return sizeof(LocalSlicedVector<T>) + alignof(LocalSlicedVector<T>) + (v.slices() + 1) * sizeof(size_type) + alignof(size_type) + v.size() * sizeof(T) + alignof(T);
+		return sizeof(LocalSlicedVector<T>) + alignof(LocalSlicedVector<T>) + (v.slices() + 1) * sizeof(size_type) +
+			   alignof(size_type) + v.size() * sizeof(T) + alignof(T);
 	}
 
 protected:
-	LocalSlicedVector(std::size_t nSlices) CADET_NOEXCEPT : _indexSize(nSlices), _values(nullptr), _index(nullptr) { }
+	LocalSlicedVector(std::size_t nSlices) CADET_NOEXCEPT : _indexSize(nSlices), _values(nullptr), _index(nullptr)
+	{
+	}
 
 	std::size_t _indexSize; //!< Size of the _index array
-	T* _values; //!< Data
-	size_type* _index; //!< Index array with start and end indices of the slices in _values
+	T* _values;             //!< Data
+	size_type* _index;      //!< Index array with start and end indices of the slices in _values
 };
-
 
 /**
  * @brief Returns the active data of the container
@@ -418,7 +499,7 @@ inline active* dataOfLocalVersion(LocalSlicedVector<active>& v) CADET_NOEXCEPT
  *          For containers using additional memory, which may be dynamically allocated,
  *          we need some more memory. The amount of additional memory is computed by
  *          this family of functions.
- *          
+ *
  *          Note that this is a generous estimate since additional space for alignment
  *          is included.
  * @param [in] v Data
@@ -438,58 +519,68 @@ inline std::size_t memoryForDataOf(const active& v) CADET_NOEXCEPT
 	return 0;
 }
 
-template <class T>
-inline std::size_t memoryForDataOf(const std::vector<T>& v) CADET_NOEXCEPT
+template <class T> inline std::size_t memoryForDataOf(const std::vector<T>& v) CADET_NOEXCEPT
 {
 	return v.size() * sizeof(T) + alignof(T);
 }
 
-template <class T>
-inline std::size_t memoryForDataOf(const SlicedVector<T>& v) CADET_NOEXCEPT
+template <class T> inline std::size_t memoryForDataOf(const SlicedVector<T>& v) CADET_NOEXCEPT
 {
 	// Required memory: Slice index array + items array
-	return (v.slices() + 1) * sizeof(typename SlicedVector<T>::size_type) + alignof(typename SlicedVector<T>::size_type) + v.size() * sizeof(T) + alignof(T);
+	return (v.slices() + 1) * sizeof(typename SlicedVector<T>::size_type) +
+		   alignof(typename SlicedVector<T>::size_type) + v.size() * sizeof(T) + alignof(T);
 }
 
-template <class T>
-inline std::size_t memoryForDataOf(const LocalVector<T>& v) CADET_NOEXCEPT
+template <class T> inline std::size_t memoryForDataOf(const LocalVector<T>& v) CADET_NOEXCEPT
 {
 	return v.size() * sizeof(T) + alignof(T);
 }
 
-template <class T>
-inline std::size_t memoryForDataOf(const LocalSlicedVector<T>& v) CADET_NOEXCEPT
+template <class T> inline std::size_t memoryForDataOf(const LocalSlicedVector<T>& v) CADET_NOEXCEPT
 {
 	// Required memory: Slice index array + items array
-	return (v.slices() + 1) * sizeof(typename LocalSlicedVector<T>::size_type) + alignof(typename LocalSlicedVector<T>::size_type) + v.size() * sizeof(T) + alignof(T);
+	return (v.slices() + 1) * sizeof(typename LocalSlicedVector<T>::size_type) +
+		   alignof(typename LocalSlicedVector<T>::size_type) + v.size() * sizeof(T) + alignof(T);
 }
-
 
 /**
  * @brief Provides the type of the local version of a given data type
  */
-template <typename T>
-struct localVersionOf { };
+template <typename T> struct localVersionOf
+{
+};
 
-template <>
-struct localVersionOf<double> { typedef double type; };
+template <> struct localVersionOf<double>
+{
+	typedef double type;
+};
 
-template <>
-struct localVersionOf<active> { typedef active type; };
+template <> struct localVersionOf<active>
+{
+	typedef active type;
+};
 
-template <typename T>
-struct localVersionOf<std::vector<T>> { typedef LocalVector<T> type; };
+template <typename T> struct localVersionOf<std::vector<T>>
+{
+	typedef LocalVector<T> type;
+};
 
-template <typename T>
-struct localVersionOf<SlicedVector<T>> { typedef LocalSlicedVector<T> type; };
+template <typename T> struct localVersionOf<SlicedVector<T>>
+{
+	typedef LocalSlicedVector<T> type;
+};
 
-template <typename T>
-struct localVersionOf<LocalVector<T>> { typedef LocalVector<T> type; };
+template <typename T> struct localVersionOf<LocalVector<T>>
+{
+	typedef LocalVector<T> type;
+};
 
-template <typename T>
-struct localVersionOf<LocalSlicedVector<T>> { typedef LocalSlicedVector<T> type; };
+template <typename T> struct localVersionOf<LocalSlicedVector<T>>
+{
+	typedef LocalSlicedVector<T> type;
+};
 
 } // namespace util
 } // namespace cadet
 
-#endif  // LIBCADET_LOCALVECTOR_HPP_
+#endif // LIBCADET_LOCALVECTOR_HPP_

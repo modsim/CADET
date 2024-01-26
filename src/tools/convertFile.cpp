@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -20,23 +20,32 @@
 #include "common/TclapUtils.hpp"
 #include "FormatConverter.hpp"
 
-
-template <class Writer_t>
-class FileCloser
+template <class Writer_t> class FileCloser
 {
 public:
-	FileCloser(Writer_t& writer) : _writer(writer) { }
-	~FileCloser() { _writer.closeFile(); }
+	FileCloser(Writer_t& writer) : _writer(writer)
+	{
+	}
+	~FileCloser()
+	{
+		_writer.closeFile();
+	}
+
 protected:
 	Writer_t& _writer;
 };
 
-template <class class_t>
-class DeleterScope
+template <class class_t> class DeleterScope
 {
 public:
-	DeleterScope(class_t* elem) : _elem(elem) { }
-	~DeleterScope() { delete _elem; }
+	DeleterScope(class_t* elem) : _elem(elem)
+	{
+	}
+	~DeleterScope()
+	{
+		delete _elem;
+	}
+
 protected:
 	class_t* const _elem;
 };
@@ -46,7 +55,8 @@ void translateFormat(cadet::io::IFileReader* rd, cadet::io::IFileWriter* wr)
 	copyGroup(*rd, *wr, "/");
 }
 
-bool run(const std::string& inFileName, const std::string& inFileExt, const std::string& outFileName, const std::string& outFileExt, bool translate)
+bool run(const std::string& inFileName, const std::string& inFileExt, const std::string& outFileName,
+		 const std::string& outFileExt, bool translate)
 {
 	cadet::io::IFileReader* rd = cadet::io::createReader(inFileExt);
 	if (!rd)
@@ -93,13 +103,15 @@ int main(int argc, char** argv)
 		TCLAP::CmdLine cmd("Converts between CADET file format versions", ' ', "1.0");
 		cmd.setOutput(&customOut);
 
-		cmd >> (new TCLAP::SwitchArg("t", "translate", "Translate file format type keeping its version"))->storeIn(&translateFormat);
+		cmd >> (new TCLAP::SwitchArg("t", "translate", "Translate file format type keeping its version"))
+				   ->storeIn(&translateFormat);
 		cmd >> (new TCLAP::UnlabeledValueArg<std::string>("input", "Input file", true, "", "File"))->storeIn(&inFile);
-		cmd >> (new TCLAP::UnlabeledValueArg<std::string>("output", "Output file", false, "", "File"))->storeIn(&outFile);
+		cmd >>
+			(new TCLAP::UnlabeledValueArg<std::string>("output", "Output file", false, "", "File"))->storeIn(&outFile);
 
 		cmd.parse(argc, argv);
 	}
-	catch (const TCLAP::ArgException &e)
+	catch (const TCLAP::ArgException& e)
 	{
 		std::cerr << "ERROR: " << e.error() << " for argument " << e.argId() << std::endl;
 		return 1;
@@ -118,12 +130,12 @@ int main(int argc, char** argv)
 		std::cerr << "Could not deduce input filetype due to missing extension: " << inFile << std::endl;
 		return 2;
 	}
-	const std::string fileExtIn = inFile.substr(dotPosIn+1);
+	const std::string fileExtIn = inFile.substr(dotPosIn + 1);
 
 	// Set output file name
 	if (outFile.empty())
 	{
-		outFile = inFile.substr(0, dotPosIn) + "-converted." + fileExtIn;		
+		outFile = inFile.substr(0, dotPosIn) + "-converted." + fileExtIn;
 	}
 
 	const std::size_t dotPosOut = outFile.find_last_of('.');
@@ -132,7 +144,7 @@ int main(int argc, char** argv)
 		std::cerr << "Could not deduce output filetype due to missing extension: " << outFile << std::endl;
 		return 2;
 	}
-	const std::string fileExtOut = outFile.substr(dotPosOut+1);
+	const std::string fileExtOut = outFile.substr(dotPosOut + 1);
 
 	try
 	{

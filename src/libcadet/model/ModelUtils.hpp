@@ -1,9 +1,9 @@
 // =============================================================================
 //  CADET
-//  
+//
 //  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
-//  
+//
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at
 //  your option, any later version) which accompanies this distribution, and
@@ -11,7 +11,7 @@
 // =============================================================================
 
 /**
- * @file 
+ * @file
  * Defines helper functions for models.
  */
 
@@ -119,9 +119,6 @@ inline unsigned int firstNonEmptyBoundStates(unsigned int const* const nBound, u
 	return nStates;
 }
 
-
-
-
 template <typename T>
 void getAllParameterValues(std::unordered_map<ParameterId, double>& data, const std::vector<T*>& items, bool singleItem)
 {
@@ -141,10 +138,10 @@ void getAllParameterValues(std::unordered_map<ParameterId, double>& data, const 
 	{
 		for (T const* bm : items)
 		{
-            if (!bm)
-                continue;
+			if (!bm)
+				continue;
 
-            const std::unordered_map<ParameterId, double> localData = bm->getAllParameterValues();
+			const std::unordered_map<ParameterId, double> localData = bm->getAllParameterValues();
 			for (const std::pair<const ParameterId, double>& val : localData)
 				data[val.first] = val.second;
 		}
@@ -174,10 +171,10 @@ bool getParameterDouble(const ParameterId& pId, const std::vector<T*>& items, bo
 	{
 		for (T* bm : items)
 		{
-            if (!bm)
-                continue;
+			if (!bm)
+				continue;
 
-            active const* const val = bm->getParameter(pId);
+			active const* const val = bm->getParameter(pId);
 			if (val)
 			{
 				out = static_cast<double>(*val);
@@ -190,8 +187,7 @@ bool getParameterDouble(const ParameterId& pId, const std::vector<T*>& items, bo
 	return false;
 }
 
-template <typename T>
-bool hasParameter(const ParameterId& pId, const std::vector<T*>& items, bool singleItem)
+template <typename T> bool hasParameter(const ParameterId& pId, const std::vector<T*>& items, bool singleItem)
 {
 	if (items.empty())
 		return false;
@@ -237,7 +233,8 @@ bool setParameter(const ParameterId& pId, param_t value, const std::vector<T*>& 
 }
 
 template <typename T>
-bool setSensitiveParameterValue(const ParameterId& pId, double value, const std::unordered_set<active*>& sensParams, const std::vector<T*>& items, bool singleItem)
+bool setSensitiveParameterValue(const ParameterId& pId, double value, const std::unordered_set<active*>& sensParams,
+								const std::vector<T*>& items, bool singleItem)
 {
 	if (items.empty())
 		return false;
@@ -258,8 +255,8 @@ bool setSensitiveParameterValue(const ParameterId& pId, double value, const std:
 	{
 		for (T* bm : items)
 		{
-            if (!bm)
-                continue;
+			if (!bm)
+				continue;
 
 			active* const val = bm->getParameter(pId);
 			if (val && contains(sensParams, val))
@@ -274,7 +271,8 @@ bool setSensitiveParameterValue(const ParameterId& pId, double value, const std:
 }
 
 template <typename T>
-bool setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue, std::unordered_set<active*>& sensParams, const std::vector<T*>& items, bool singleItem)
+bool setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue,
+						   std::unordered_set<active*>& sensParams, const std::vector<T*>& items, bool singleItem)
 {
 	if (items.empty())
 		return false;
@@ -314,8 +312,7 @@ bool setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, dou
 	return false;
 }
 
-
 } // namespace model
 } // namespace cadet
 
-#endif  // LIBCADET_MODELUTILS_HPP_
+#endif // LIBCADET_MODELUTILS_HPP_

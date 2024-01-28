@@ -21,7 +21,7 @@
 #include "ParamIdUtil.hpp"
 #include "AutoDiff.hpp"
 #include "Memory.hpp"
-//#include "Weno.hpp" // todo weno DG
+#include "Weno_DG.hpp"
 #include "SimulationTypes.hpp"
 #include <ParamReaderHelper.hpp>
 #include "linalg/BandedEigenSparseRowIterator.hpp"
@@ -123,6 +123,11 @@ namespace cadet
 				inline bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return static_cast<bool>(_OSmode); } // only zero if no oscillation suppression
 				inline double* smoothnessIndicator() const CADET_NOEXCEPT
 				{
+					if (_OSmode == 1)
+						return _weno.troubledCells();
+					//else if (_OSmode == 2) // todo subcell limiting
+					//	return _subcell.troubledCells();
+					else
 						return nullptr;
 				}
 
@@ -180,6 +185,11 @@ namespace cadet
 				Eigen::Vector<active, Eigen::Dynamic> _surfaceFlux; //!< stores the surface flux values
 				Eigen::Vector<active, 4> _boundary; //!< stores the boundary values from Danckwert boundary conditions
 
+				// non-linear oscillation prevention mechanism
+				int _OSmode; //!< oscillation suppression mode; 0 : none, 1 : WENO, 2 : Subcell limiting
+				WenoDG _weno; //!< WENO operator
+				//SucellLimiter _subcellLimiter; // todo
+
 				// Simulation parameters
 				active _colLength; //!< Column length \f$ L \f$
 				active _crossSection; //!< Cross section area 
@@ -194,7 +204,14 @@ namespace cadet
 				int _curSection; //!< current section index
 				bool _newStaticJac; //!< determines wether static analytical jacobian needs to be computed (every section)
 
+				// todo weno
+				//ArrayPool _stencilMemory; //!< Provides memory for the stencil
+				//double* _wenoDerivatives; //!< Holds derivatives of the WENO scheme
+				//Weno _weno; //!< The WENO scheme implementation
+				//double _wenoEpsilon; //!< The @f$ \varepsilon @f$ of the WENO scheme (prevents division by zero)
+
 				bool _dispersionCompIndep; //!< Determines whether dispersion is component independent
+
 				IParameterParameterDependence* _dispersionDep;
 
 				/* ===================================================================================

@@ -123,6 +123,44 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 	else
 		_dispersionDep = helper.createParameterParameterDependence("CONSTANT_ONE");
 
+	paramProvider.pushScope("discretization");
+	_OSmode = 0;
+	// Read oscillation suppression settings and apply them
+	if (paramProvider.exists("oscillation_suppression")) {
+
+		paramProvider.pushScope("oscillation_suppression");
+
+		 std::string osMethod = paramProvider.getString("METHOD");
+
+		 if (osMethod == "WENO")
+		 {
+			 LOG(Debug) << "WENO used as oscillation suppression mechanism.";
+
+			 _OSmode = 1;
+			 double eps = paramProvider.exists("WENO_EPS") ? paramProvider.getDouble("WENO_EPS") : 1e-6;
+			 double r = paramProvider.exists("WENO_R") ? paramProvider.getDouble("WENO_R") : 2.0;
+			 double gamma = paramProvider.exists("WENO_GAMMA") ? paramProvider.getDouble("WENO_GAMMA") : 0.998;
+			 bool write_smoothness_indicator = paramProvider.exists("RETURN_SMOOTHNESS_INDICATOR") ? static_cast<bool>(paramProvider.getInt("RETURN_SMOOTHNESS_INDICATOR")) : false;
+
+			 _weno.init(eps, r, gamma, _nCells, _nComp, write_smoothness_indicator);
+		 }
+		 else if (osMethod == "SUBCELL_LIMITING")
+		 {
+			 LOG(Debug) << "Subcell limiting used as oscillation suppression mechanism.";
+
+			 _OSmode = 2;
+			 int order = paramProvider.getInt("FV_ORDER");
+			 //  @TODO Subcell limiting
+			 throw InvalidParameterException("Oscillation suppression mechanism " + osMethod + " not implemented yet");
+
+		 }
+		 else if (osMethod != "NONE")
+			throw InvalidParameterException("Unknown oscillation suppression mechanism " + osMethod + " in oscillation_suppression_mode");
+
+		paramProvider.popScope();
+	}
+	paramProvider.popScope();
+
 	return true;
 }
 
@@ -389,6 +427,36 @@ int AxialConvectionDispersionOperatorBaseDG::residualImpl(const IModel& model, d
 		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _resC(res + offsetC() + comp, _nPoints, InnerStride<Dynamic>(_strideNode));
 		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _h(reinterpret_cast<ResidualType*>(_subsState), _nPoints, InnerStride<>(1));
 		Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g(reinterpret_cast<StateType*>(_auxState), _nPoints, InnerStride<>(1));
+
+		////ResidualType _pAvg0 = reinterpret_cast<ResidualType>(_weno._pAvg0);
+		////ResidualType _pAvg1 = reinterpret_cast<ResidualType>(_weno._pAvg1);
+		////ResidualType _pAvg2 = reinterpret_cast<ResidualType>(_weno._pAvg2);
+
+		//// calculate smoothness indicator, if oscillation suppression is active
+		//if (_OSmode != 0)
+		//{
+		//	if (_OSmode == 1) // WENO
+		//	{
+		//		for (unsigned int cell = 0; cell < _nCells; cell++)
+		//		{
+		//			if (cell > 0 && cell < _nCells - 1) // todo boundary treatment
+		//			{
+		//				// todo store weights additionally to inverse
+		//				// todo overwrite values instead of recalculation
+		//				_weno._pAvg0 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment((cell - 1) * _nNodes, _nNodes).array()).sum();
+		//				_weno._pAvg1 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment(cell       * _nNodes, _nNodes).array()).sum();
+		//				_weno._pAvg2 = 1.0 / static_cast<ParamType>(_deltaZ) * (_invWeights.cwiseInverse().cast<StateType>().array() * _C.segment((cell + 1) * _nNodes, _nNodes).array()).sum();
+
+
+		//				// mark troubled cell
+		//				if (true)
+		//				{
+		//					int hm = 0;
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 
 		// Add time derivative to bulk residual
 		if (yDot)

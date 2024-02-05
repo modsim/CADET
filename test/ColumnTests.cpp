@@ -579,93 +579,114 @@ namespace column
 		destroyModelBuilder(mb);
 	}
 
-	void testJacobianWenoForwardBackward(const std::string& uoType, const std::string& spatialMethod, int wenoOrder)
+	void testJacobianForwardBackward(cadet::JsonParameterProvider& jpp)
 	{
 		cadet::IModelBuilder* const mb = cadet::createModelBuilder();
 		REQUIRE(nullptr != mb);
 
-		SECTION("Forward vs backward flow Jacobian (WENO=" + std::to_string(wenoOrder) + ")")
-		{
-			// Use some test case parameters
-			cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, spatialMethod);
-			const unsigned int nComp = jpp.getInt("NCOMP");
+		// Use some test case parameters
+		const unsigned int nComp = jpp.getInt("NCOMP");
 
-			cadet::IUnitOperation* const unitAna = createAndConfigureUnit(uoType, *mb, jpp, wenoOrder);
-			cadet::IUnitOperation* const unitAD = createAndConfigureUnit(uoType, *mb, jpp, wenoOrder);
+		cadet::IUnitOperation* const unitAna = unitoperation::createAndConfigureUnit(jpp, *mb);
+		cadet::IUnitOperation* const unitAD = unitoperation::createAndConfigureUnit(jpp, *mb);
 
-			// Enable AD
-			cadet::ad::setDirections(cadet::ad::getMaxDirections());
-			unitAD->useAnalyticJacobian(false);
+		// Enable AD
+		cadet::ad::setDirections(cadet::ad::getMaxDirections());
+		unitAD->useAnalyticJacobian(false);
 
-			cadet::active* adRes = new cadet::active[unitAD->numDofs()];
-			cadet::active* adY = new cadet::active[unitAD->numDofs()];
+		cadet::active* adRes = new cadet::active[unitAD->numDofs()];
+		cadet::active* adY = new cadet::active[unitAD->numDofs()];
 
-			// Obtain memory for state, Jacobian multiply direction, Jacobian column
-			std::vector<double> y(unitAD->numDofs(), 0.0);
-			std::vector<double> jacDir(unitAD->numDofs(), 0.0);
-			std::vector<double> jacCol1(unitAD->numDofs(), 0.0);
-			std::vector<double> jacCol2(unitAD->numDofs(), 0.0);
+		// Obtain memory for state, Jacobian multiply direction, Jacobian column
+		std::vector<double> y(unitAD->numDofs(), 0.0);
+		std::vector<double> jacDir(unitAD->numDofs(), 0.0);
+		std::vector<double> jacCol1(unitAD->numDofs(), 0.0);
+		std::vector<double> jacCol2(unitAD->numDofs(), 0.0);
 
-			// Fill state vector with some values
-			util::populate(y.data(), [](unsigned int idx) { return std::abs(std::sin(idx * 0.13)) + 1e-4; }, unitAna->numDofs());
+		// Fill state vector with some values
+		util::populate(y.data(), [](unsigned int idx) { return std::abs(std::sin(idx * 0.13)) + 1e-4; }, unitAna->numDofs());
 //			util::populate(y.data(), [](unsigned int idx) { return 1.0; }, unitAna->numDofs());
 
-			// Setup matrices
-			const AdJacobianParams noAdParams{nullptr, nullptr, 0u};
-			const AdJacobianParams adParams{adRes, adY, 0u};
-			unitAD->prepareADvectors(adParams);
+		// Setup matrices
+		const AdJacobianParams noAdParams{nullptr, nullptr, 0u};
+		const AdJacobianParams adParams{adRes, adY, 0u};
+		unitAD->prepareADvectors(adParams);
 
+		unitAna->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, noAdParams);
+		unitAD->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, adParams);
+
+		SECTION("Forward then backward flow (nonzero state)")
+		{
+			// Compute state Jacobian
+			const SimulationTime simTime{0.0, 0u};
+			const ConstSimulationState simState{y.data(), nullptr};
+			cadet::util::ThreadLocalStorage tls;
+			tls.resize(unitAna->threadLocalMemorySize());
+
+			unitAna->residualWithJacobian(simTime, simState, jacDir.data(), noAdParams, tls);
+			unitAD->residualWithJacobian(simTime, simState, jacDir.data(), adParams, tls);
+			std::fill(jacDir.begin(), jacDir.end(), 0.0);
+
+			// Compare Jacobians
+			cadet::test::checkJacobianPatternFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
+			cadet::test::checkJacobianPatternFD(unitAna, unitAna, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
+			cadet::test::compareJacobian(unitAna, unitAD, nullptr, nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
+//				cadet::test::compareJacobianFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
+
+			// Reverse flow
+			const bool paramSet = unitAna->setParameter(cadet::makeParamId(cadet::hashString("VELOCITY"), 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), -jpp.getDouble("VELOCITY"));
+			REQUIRE(paramSet);
+			// Reverse flow
+			const bool paramSet2 = unitAD->setParameter(cadet::makeParamId(cadet::hashString("VELOCITY"), 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), -jpp.getDouble("VELOCITY"));
+			REQUIRE(paramSet2);
+
+			// Setup
 			unitAna->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, noAdParams);
 			unitAD->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, adParams);
 
-			SECTION("Forward then backward flow (nonzero state)")
-			{
-				// Compute state Jacobian
-				const SimulationTime simTime{0.0, 0u};
-				const ConstSimulationState simState{y.data(), nullptr};
-				cadet::util::ThreadLocalStorage tls;
-				tls.resize(unitAna->threadLocalMemorySize());
+			// Compute state Jacobian
+			unitAna->residualWithJacobian(simTime, simState, jacDir.data(), noAdParams, tls);
+			unitAD->residualWithJacobian(simTime, simState, jacDir.data(), adParams, tls);
+			std::fill(jacDir.begin(), jacDir.end(), 0.0);
 
-				unitAna->residualWithJacobian(simTime, simState, jacDir.data(), noAdParams, tls);
-				unitAD->residualWithJacobian(simTime, simState, jacDir.data(), adParams, tls);
-				std::fill(jacDir.begin(), jacDir.end(), 0.0);
-
-				// Compare Jacobians
-				cadet::test::checkJacobianPatternFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
-				cadet::test::checkJacobianPatternFD(unitAna, unitAna, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
-				cadet::test::compareJacobian(unitAna, unitAD, nullptr, nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
-//				cadet::test::compareJacobianFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
-
-				// Reverse flow
-				const bool paramSet = unitAna->setParameter(cadet::makeParamId(cadet::hashString("VELOCITY"), 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), -jpp.getDouble("VELOCITY"));
-				REQUIRE(paramSet);
-				// Reverse flow
-				const bool paramSet2 = unitAD->setParameter(cadet::makeParamId(cadet::hashString("VELOCITY"), 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), -jpp.getDouble("VELOCITY"));
-				REQUIRE(paramSet2);
-
-				// Setup
-				unitAna->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, noAdParams);
-				unitAD->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), nullptr}, adParams);
-
-				// Compute state Jacobian
-				unitAna->residualWithJacobian(simTime, simState, jacDir.data(), noAdParams, tls);
-				unitAD->residualWithJacobian(simTime, simState, jacDir.data(), adParams, tls);
-				std::fill(jacDir.begin(), jacDir.end(), 0.0);
-
-				// Compare Jacobians
-				cadet::test::checkJacobianPatternFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
-				cadet::test::checkJacobianPatternFD(unitAna, unitAna, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
+			// Compare Jacobians
+			cadet::test::checkJacobianPatternFD(unitAna, unitAD, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
+			cadet::test::checkJacobianPatternFD(unitAna, unitAna, y.data(), nullptr, jacDir.data(), jacCol1.data(), jacCol2.data(), tls);
 //				cadet::test::compareJacobianFD(unitAD, unitAna, y.data(), jacDir.data(), nullptr, jacCol1.data(), jacCol2.data());
 //				cadet::test::compareJacobianFD(unitAna, unitAD, y.data(), jacDir.data(), nullptr, jacCol1.data(), jacCol2.data());
-				cadet::test::compareJacobian(unitAna, unitAD, nullptr, nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
-			}
-
-			delete[] adRes;
-			delete[] adY;
-			mb->destroyUnitOperation(unitAna);
-			mb->destroyUnitOperation(unitAD);
+			cadet::test::compareJacobian(unitAna, unitAD, nullptr, nullptr, jacDir.data(), jacCol1.data(), jacCol2.data());
 		}
+
+		delete[] adRes;
+		delete[] adY;
+		mb->destroyUnitOperation(unitAna);
+		mb->destroyUnitOperation(unitAD);
+		
 		destroyModelBuilder(mb);
+	}
+
+	void testJacobianForwardBackward(const char* uoType, FVparams disc)
+	{
+		SECTION("Forward vs backward flow Jacobian (WENO=" + std::to_string(disc.getWenoOrder()) + ")")
+		{
+			// Use Load-Wash-Elution test case
+			cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, "FV");
+			disc.setDisc(jpp);
+
+			testJacobianForwardBackward(jpp);
+		}
+	}
+
+	void testJacobianForwardBackward(const char* uoType, DGparams disc)
+	{
+		SECTION("Forward vs backward flow Jacobian (DG integration mode " + std::to_string(disc.getIntegrationMode()) + ")")
+		{
+			// Use Load-Wash-Elution test case
+			cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding(uoType, "DG");
+			disc.setDisc(jpp);
+
+			testJacobianForwardBackward(jpp);
+		}
 	}
 
 	void testJacobianWenoForwardBackwardFD(const std::string& uoType, const std::string& spatialMethod, int wenoOrder, double h, double absTol, double relTol)

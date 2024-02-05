@@ -49,9 +49,14 @@ TEST_CASE("GRM non-binding linear pulse vs analytic solution", "[GRM],[FV],[Simu
 
 TEST_CASE("GRM Jacobian forward vs backward flow", "[GRM],[UnitOp],[Residual],[Jacobian],[AD]")
 {
+	cadet::test::column::FVparams disc;
+
 	// Test all WENO orders
 	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		cadet::test::column::testJacobianWenoForwardBackward("GENERAL_RATE_MODEL", "FV", i);
+	{
+		disc.setWenoOrder(i);
+		cadet::test::column::testJacobianForwardBackward("GENERAL_RATE_MODEL", disc);
+	}
 }
 
 TEST_CASE("GRM time derivative Jacobian vs FD", "[GRM],[UnitOp],[Residual],[Jacobian]")

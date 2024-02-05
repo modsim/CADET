@@ -179,9 +179,11 @@ namespace column
 	 *          Checks both forward and backward flow mode as well as switching between them.
 	 * 
 	 * @param [in] uoType Unit operation type
-	 * @param [in] wenoOrder Order of the WENO method
+	 * @param [in] disc spatial discretization parameters
 	 */
-	void testJacobianWenoForwardBackward(const std::string& uoType, const std::string& spatialMethod, int wenoOrder);
+	void testJacobianForwardBackward(const char* uoType, FVparams disc);
+	void testJacobianForwardBackward(const char* uoType, DGparams disc);
+	void testJacobianForwardBackward(cadet::JsonParameterProvider& jpp);
 
 	/**
 	 * @brief Checks the full Jacobian against FD switching from forward to backward flow and back

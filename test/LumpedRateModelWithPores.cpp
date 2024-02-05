@@ -49,9 +49,14 @@ TEST_CASE("LRMP non-binding linear pulse vs analytic solution", "[LRMP],[FV],[Si
 
 TEST_CASE("LRMP Jacobian forward vs backward flow", "[LRMP],[UnitOp],[Residual],[Jacobian],[AD]")
 {
+	cadet::test::column::FVparams disc;
+
 	// Test all WENO orders
 	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		cadet::test::column::testJacobianWenoForwardBackward("LUMPED_RATE_MODEL_WITH_PORES", "FV", i);
+	{
+		disc.setWenoOrder(i);
+		cadet::test::column::testJacobianForwardBackward("LUMPED_RATE_MODEL_WITH_PORES", disc);
+	}
 }
 
 TEST_CASE("LRMP time derivative Jacobian vs FD", "[LRMP],[UnitOp],[Residual],[Jacobian]")

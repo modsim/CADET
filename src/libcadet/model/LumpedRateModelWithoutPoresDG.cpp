@@ -385,8 +385,7 @@ namespace cadet
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 			return _jacobianAdDirs;
 #else
-			// If CADET_CHECK_ANALYTIC_JACOBIAN is active, we always need the AD directions for the Jacobian
-			return _jac.cols();// _jac.stride();@SAM?
+			return _convDispOp.requiredADdirs();
 #endif
 		}
 
@@ -425,10 +424,10 @@ namespace cadet
 			const int stride = lowerBandwidth + 1 + upperBandwidth;
 
 			int diagDir = lowerBandwidth;
-			const int nCols = _jac.cols();
+			const int nRows = _jac.rows();
 			const int colOffset = 0;
 
-			ad::extractBandedBlockEigenJacobianFromAd(adVec, adDirOffset, diagDir, lowerBandwidth, upperBandwidth, colOffset, nCols, _jac);
+			ad::extractBandedBlockEigenJacobianFromAd(adVec, adDirOffset, diagDir, lowerBandwidth, upperBandwidth, colOffset, nRows, _jac);
 
 		}
 
@@ -444,9 +443,16 @@ namespace cadet
 		{
 			Indexer idxr(_disc);
 
-			// @TODO
-			//const double maxDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetC(), adDirOffset, _jac.lowerBandwidth(), _jac);
-			//LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagDirCol: " << _jac.lowerBandwidth() << " MaxDiff: " << maxDiff;
+			const int lowerBandwidth = (_disc.exactInt) ? 2 * _disc.nNodes * idxr.strideColNode() : _disc.nNodes * idxr.strideColNode();
+			const int upperBandwidth = lowerBandwidth;
+			const int stride = lowerBandwidth + 1 + upperBandwidth;
+
+			const double maxDiff = ad::compareBandedEigenJacobianWithAd(adRes + idxr.offsetC(), adDirOffset, lowerBandwidth, lowerBandwidth, upperBandwidth, 0, _jac.rows(), _jac, 0);
+
+			if (maxDiff > 1e-6)
+				int jojo = 0;
+
+			LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagBlockSize: " << stride << " MaxDiff: " << maxDiff;
 		}
 
 #endif

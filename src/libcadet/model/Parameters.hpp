@@ -187,6 +187,42 @@ protected:
 
 
 /**
+ * @brief Vector parameter
+ * @details A single value per component.
+ */
+class VectorParameter
+{
+public:
+
+	typedef std::vector<active> storage_t;
+
+	VectorParameter(std::vector<active>& p) : _p(&p) { }
+	VectorParameter(std::vector<active>* p) : _p(p) { }
+
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		readScalarParameterOrArray(*_p, paramProvider, varName, 1);
+	}
+
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const StringHash hashVar = hashStringRuntime(varName);
+		registerParam1DArray(parameters, *_p, [=](bool multi, unsigned int rid) { return makeParamId(hashVar, unitOpIdx, CompIndep, parTypeIdx, BoundStateIndep, rid, SectionIndep); });
+	}
+
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) { }
+
+	inline std::size_t size() const CADET_NOEXCEPT { return _p->size(); }
+
+	inline const std::vector<active>& get() const CADET_NOEXCEPT { return *_p; }
+	inline std::vector<active>& get() CADET_NOEXCEPT { return *_p; }
+
+protected:
+	std::vector<active>* _p;
+};
+
+
+/**
  * @brief Component dependent scalar external parameter
  * @details A single value per component.
  */
@@ -293,6 +329,42 @@ public:
 	{
 		_p->reserve(nReactions);
 	}
+
+	inline std::size_t size() const CADET_NOEXCEPT { return _p->size(); }
+
+	inline const std::vector<active>& get() const CADET_NOEXCEPT { return *_p; }
+	inline std::vector<active>& get() CADET_NOEXCEPT { return *_p; }
+
+protected:
+	std::vector<active>* _p;
+};
+
+
+/**
+ * @brief Component dependent vectorial external parameter
+ * @details A vector per component, the component index changes the slowest.
+ */
+class VectorComponentDependentParameter
+{
+public:
+
+	typedef std::vector<active> storage_t;
+
+	VectorComponentDependentParameter(std::vector<active>& p) : _p(&p) { }
+	VectorComponentDependentParameter(std::vector<active>* p) : _p(p) { }
+
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		readScalarParameterOrArray(*_p, paramProvider, varName, 1);
+	}
+
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const StringHash nameHash = hashStringRuntime(varName);
+		registerParam2DArray(parameters, *_p, [=](bool multi, unsigned int comp, unsigned int rid) { return makeParamId(nameHash, unitOpIdx, comp, parTypeIdx, BoundStateIndep, multi ? rid : ReactionIndep, SectionIndep); }, _p->size() / nComp);
+	}
+
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) { }
 
 	inline std::size_t size() const CADET_NOEXCEPT { return _p->size(); }
 
@@ -750,6 +822,174 @@ protected:
 
 
 /**
+ * @brief Vector external parameter
+ * @details A vector.
+ */
+class ExternalVectorParameter
+{
+public:
+
+	/**
+	 * @brief Underlying type
+	 */
+	typedef std::vector<active> storage_t;
+
+	/**
+	 * @brief Reads parameters and verifies them
+	 * @details See IBindingModel::configure() for details.
+	 * @param [in] varName Name of the parameter
+	 * @param [in] paramProvider IParameterProvider used for reading parameters
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 * @return @c true if the parameters were read and validated successfully, otherwise @c false
+	 */
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		readScalarParameterOrArray(_base, paramProvider, "EXT_" + varName, 1);
+		readScalarParameterOrArray(_linear, paramProvider, "EXT_" + varName + "_T", 1);
+		readScalarParameterOrArray(_quad, paramProvider, "EXT_" + varName + "_TT", 1);
+		readScalarParameterOrArray(_cube, paramProvider, "EXT_" + varName + "_TTT", 1);
+	}
+
+	/**
+	 * @brief Registers the parameters in a map for further use
+	 * @param [in] varName Name of the parameter
+	 * @param [in,out] parameters Map in which the parameters are stored
+	 * @param [in] unitOpIdx Index of the unit operation used for registering the parameters
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 */
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const StringHash hashConst = hashStringRuntime("EXT_" + varName);
+		registerParam1DArray(parameters, _base, [=](bool multi, unsigned int rid) { return makeParamId(hashConst, unitOpIdx, CompIndep, parTypeIdx, BoundStateIndep, rid, SectionIndep); });
+
+		const StringHash hashLinear = hashStringRuntime("EXT_" + varName + "_T");
+		registerParam1DArray(parameters, _linear, [=](bool multi, unsigned int rid) { return makeParamId(hashLinear, unitOpIdx, CompIndep, parTypeIdx, BoundStateIndep, rid, SectionIndep); });
+
+		const StringHash hashQuad = hashStringRuntime("EXT_" + varName + "_TT");
+		registerParam1DArray(parameters, _quad, [=](bool multi, unsigned int rid) { return makeParamId(hashQuad, unitOpIdx, CompIndep, parTypeIdx, BoundStateIndep, rid, SectionIndep); });
+
+		const StringHash hashCube = hashStringRuntime("EXT_" + varName + "_TTT");
+		registerParam1DArray(parameters, _cube, [=](bool multi, unsigned int rid) { return makeParamId(hashCube, unitOpIdx, CompIndep, parTypeIdx, BoundStateIndep, rid, SectionIndep); });
+	}
+
+	/**
+	 * @brief Reserves space in the storage of the parameters
+	 * @param [in] numElem Total number of components in all slices / binding site types
+	 * @param [in] numSlices Number of slices / binding site types
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 */
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) { }
+
+	/**
+	 * @brief Calculates a parameter in order to take the external profile into account
+	 * @param [out] result Stores the result of the paramter
+	 * @param [in] extVal Value of the external function
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 */
+	inline void update(std::vector<active>& result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		update(result.data(), extVal, nComp, nBoundStates);
+	}
+
+	inline void update(active* result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = _base[i] + extVal * (_linear[i] + extVal * (_quad[i] + extVal * _cube[i]));
+	}
+
+	/**
+	 * @brief Calculates time derivative of parameter in case of external dependence
+	 * @param [out] result Stores the result of the paramter
+	 * @param [in] extVal Value of the external function
+	 * @param [in] extTimeDiff Time derivative of the external function
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 */
+	inline void updateTimeDerivative(active& result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		updateTimeDerivative(&result, extVal, extTimeDiff, nComp, nBoundStates);
+	}
+
+	/**
+	 * @brief Calculates time derivative of parameter in case of external dependence
+	 * @param [out] result Stores the result of the paramter
+	 * @param [in] extVal Value of the external function
+	 * @param [in] extTimeDiff Time derivative of the external function
+	 * @param [in] nComp Number of components
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 */
+	inline void updateTimeDerivative(std::vector<active>& result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		updateTimeDerivative(result.data(), extVal, extTimeDiff, nComp, nBoundStates);
+	}
+
+	inline void updateTimeDerivative(active* result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = extTimeDiff * (static_cast<double>(_linear[i]) + extVal * (2.0 * static_cast<double>(_quad[i]) + 3.0 * extVal * static_cast<double>(_cube[i])));
+	}
+
+	/**
+	 * @brief Returns the base value that does not depend on an external value
+	 * @return Constant base value
+	 */
+	inline storage_t& base() CADET_NOEXCEPT { return _base; }
+	inline const storage_t& base() const CADET_NOEXCEPT { return _base; }
+
+	/**
+	 * @brief Returns the amount of additional memory (usually dynamically allocated by containers) for storing the final parameters
+	 * @details In a model, externally dependent parameters are stored in a struct, usually called
+	 *          VariableParams. This is sufficient for "static" parameter types that do
+	 *          not require additional memory (which is usually allocated dynamically).
+	 *          For containers using additional dynamic memory, only the container itself
+	 *          is stored in the struct. Memory for the content of the container (i.e., the
+	 *          elements) is still required. This function computes this amount of additional
+	 *          memory.
+	 *
+	 * @param [in] nComp Number of components
+	 * @param [in] totalNumBoundStates Total number of bound states
+	 * @param [in] nBoundStates Array with number of bound states for each component
+	 * @return Amount of additional memory in bytes
+	 */
+	inline std::size_t additionalDynamicMemory(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT { return 0; }
+
+	/**
+	 * @brief Prepares the cache for the updated values
+	 * @details The cache is a local version of storage_t (e.g., LocalVector).
+	 * @param [in,out] cache Cache object to be prepared
+	 * @param [in] ptr Pointer to cache buffer
+	 */
+	template <typename T>
+	inline void prepareCache(T& cache, LinearBufferAllocator& buffer) const
+	{
+		cache.fromTemplate(buffer, _base);
+	}
+
+	/**
+	 * @brief Returns the number of elements in the parameter
+	 * @return Number of elements in the parameter
+	 */
+	inline std::size_t size() const CADET_NOEXCEPT { return _base.size(); }
+
+	/**
+	 * @brief Returns whether base, linear, quadratic, and cubic arrays have the same size
+	 * @return @c true if the arrays are of the same size, otherwise @c false
+	 */
+	inline bool allSameSize() const CADET_NOEXCEPT { return (_base.size() == _linear.size()) && (_base.size() == _quad.size()) && (_base.size() == _cube.size()); }
+
+protected:
+	std::vector<active> _base;
+	std::vector<active> _linear;
+	std::vector<active> _quad;
+	std::vector<active> _cube;
+};
+
+
+/**
  * @brief Component dependent scalar external parameter
  * @details A single value per component.
  */
@@ -983,6 +1223,95 @@ public:
 
 	inline storage_t& base() CADET_NOEXCEPT { return _base; }
 	inline const storage_t& base() const CADET_NOEXCEPT { return _base; }
+
+	template <typename T>
+	inline void prepareCache(T& cache, LinearBufferAllocator& buffer) const
+	{
+		cache.fromTemplate(buffer, _base);
+	}
+
+protected:
+	std::vector<active> _base;
+	std::vector<active> _linear;
+	std::vector<active> _quad;
+	std::vector<active> _cube;
+};
+
+
+/**
+ * @brief Component dependent vectorial external parameter
+ * @details A vector per component, the component index changes the slowest.
+ */
+class ExternalVectorComponentDependentParameter
+{
+public:
+
+	typedef std::vector<active> storage_t;
+
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		readScalarParameterOrArray(_base, paramProvider, "EXT_" + varName, 1);
+		readScalarParameterOrArray(_linear, paramProvider, "EXT_" + varName + "_T", 1);
+		readScalarParameterOrArray(_quad, paramProvider, "EXT_" + varName + "_TT", 1);
+		readScalarParameterOrArray(_cube, paramProvider, "EXT_" + varName + "_TTT", 1);
+	}
+
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const unsigned int stride = _base.size() / nComp;
+		const StringHash hashConst = hashStringRuntime("EXT_" + varName);
+		registerParam2DArray(parameters, _base, [=](bool multi, unsigned int comp, unsigned int rid) { return makeParamId(hashConst, unitOpIdx, comp, parTypeIdx, BoundStateIndep, multi ? rid : ReactionIndep, SectionIndep); }, stride);
+
+		const StringHash hashLinear = hashStringRuntime("EXT_" + varName + "_T");
+		registerParam2DArray(parameters, _linear, [=](bool multi, unsigned int comp, unsigned int rid) { return makeParamId(hashLinear, unitOpIdx, comp, parTypeIdx, BoundStateIndep, multi ? rid : ReactionIndep, SectionIndep); }, stride);
+
+		const StringHash hashQuad = hashStringRuntime("EXT_" + varName + "_TT");
+		registerParam2DArray(parameters, _quad, [=](bool multi, unsigned int comp, unsigned int rid) { return makeParamId(hashQuad, unitOpIdx, comp, parTypeIdx, BoundStateIndep, multi ? rid : ReactionIndep, SectionIndep); }, stride);
+
+		const StringHash hashCube = hashStringRuntime("EXT_" + varName + "_TTT");
+		registerParam2DArray(parameters, _cube, [=](bool multi, unsigned int comp, unsigned int rid) { return makeParamId(hashCube, unitOpIdx, comp, parTypeIdx, BoundStateIndep, multi ? rid : ReactionIndep, SectionIndep); }, stride);
+	}
+
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) { }
+
+	inline void update(std::vector<active>& result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		update(result.data(), extVal, nComp, nBoundStates);
+	}
+
+	inline void update(active* result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = _base[i] + extVal * (_linear[i] + extVal * (_quad[i] + extVal * _cube[i]));
+	}
+
+	inline void updateTimeDerivative(std::vector<active>& result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		updateTimeDerivative(result.data(), extVal, extTimeDiff, nComp, nBoundStates);
+	}
+
+	inline void updateTimeDerivative(active* result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = extTimeDiff * (static_cast<double>(_linear[i]) + extVal * (2.0 * static_cast<double>(_quad[i]) + 3.0 * extVal * static_cast<double>(_cube[i])));
+	}
+
+	inline std::size_t size() const CADET_NOEXCEPT { return _base.size(); }
+	inline bool allSameSize() const CADET_NOEXCEPT { return (_base.size() == _linear.size()) && (_base.size() == _quad.size()) && (_base.size() == _cube.size()); }
+
+	inline std::size_t additionalDynamicMemory(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT { return nComp * sizeof(active) + alignof(active); }
+
+	inline storage_t& base() CADET_NOEXCEPT { return _base; }
+	inline const storage_t& base() const CADET_NOEXCEPT { return _base; }
+
+	inline storage_t& linear() CADET_NOEXCEPT { return _linear; }
+	inline const storage_t& linear() const CADET_NOEXCEPT { return _linear; }
+
+	inline storage_t& quadratic() CADET_NOEXCEPT { return _quad; }
+	inline const storage_t& quadratic() const CADET_NOEXCEPT { return _quad; }
+
+	inline storage_t& cubic() CADET_NOEXCEPT { return _cube; }
+	inline const storage_t& cubic() const CADET_NOEXCEPT { return _cube; }
 
 	template <typename T>
 	inline void prepareCache(T& cache, LinearBufferAllocator& buffer) const

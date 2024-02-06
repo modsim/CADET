@@ -62,7 +62,7 @@ namespace model
 
 inline const char* BiSMAParamHandler::identifier() CADET_NOEXCEPT { return "BI_STERIC_MASS_ACTION"; }
 
-inline bool BiSMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool BiSMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	const unsigned int numStates = firstNonEmptyBoundStates(nBoundStates, nComp);
 
@@ -83,7 +83,7 @@ inline bool BiSMAParamHandler::validateConfig(unsigned int nComp, unsigned int c
 
 inline const char* ExtBiSMAParamHandler::identifier() CADET_NOEXCEPT { return "EXT_BI_STERIC_MASS_ACTION"; }
 
-inline bool ExtBiSMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtBiSMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	const unsigned int numStates = firstNonEmptyBoundStates(nBoundStates, nComp);
 

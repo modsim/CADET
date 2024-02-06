@@ -62,7 +62,7 @@ namespace model
 
 inline const char* SMAParamHandler::identifier() CADET_NOEXCEPT { return "STERIC_MASS_ACTION"; }
 
-inline bool SMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool SMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _sigma.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("SMA_KA, SMA_KD, SMA_NU, and SMA_SIGMA have to have the same size");
@@ -76,7 +76,7 @@ inline bool SMAParamHandler::validateConfig(unsigned int nComp, unsigned int con
 
 inline const char* ExtSMAParamHandler::identifier() CADET_NOEXCEPT { return "EXT_STERIC_MASS_ACTION"; }
 
-inline bool ExtSMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtSMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) || (_kA.size() != _sigma.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("EXT_SMA_KA, EXT_SMA_KD, EXT_SMA_NU, and EXT_SMA_SIGMA have to have the same size");

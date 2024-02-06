@@ -58,7 +58,7 @@ namespace model
 
 inline const char* KumarLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "KUMAR_MULTI_COMPONENT_LANGMUIR"; }
 
-inline bool KumarLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool KumarLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kAct.size()) || (_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _nu.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("KMCL_KA, KMCL_KD, KMCL_KACT, KMCL_NU, and KMCL_QMAX have to have the same size");
@@ -68,7 +68,7 @@ inline bool KumarLangmuirParamHandler::validateConfig(unsigned int nComp, unsign
 
 inline const char* ExtKumarLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "EXT_KUMAR_MULTI_COMPONENT_LANGMUIR"; }
 
-inline bool ExtKumarLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtKumarLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kAct.size()) || (_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _nu.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("KMCL_KA, KMCL_KD, KMCL_KACT, KMCL_NU, and KMCL_QMAX have to have the same size");

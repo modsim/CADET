@@ -99,11 +99,11 @@ public:
 	 * @param [in] nBoundStates Array with number of bound states for each component
 	 * @return @c true if the parameters were read and validated successfully, otherwise @c false
 	 */
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	inline bool configureAndValidate(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
 	{
 		_kA.configure("LIN_KA", paramProvider, nComp, nBoundStates);
 		_kD.configure("LIN_KD", paramProvider, nComp, nBoundStates);
-		return validateConfig(nComp, nBoundStates);
+		return validate(nComp, nBoundStates);
 	}
 
 	/**
@@ -164,21 +164,21 @@ public:
 		return std::make_tuple<ParamsHandle, ParamsHandle>(&_localParams, nullptr);
 	}
 
-protected:
-
 	/**
 	 * @brief Validates recently read parameters
 	 * @param [in] nComp Number of components
 	 * @param [in] nBoundStates Array with number of bound states for each component
 	 * @return @c true if the parameters were validated successfully, otherwise @c false
 	 */
-	inline bool validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+	inline bool validate(unsigned int nComp, unsigned int const* nBoundStates)
 	{
 		if ((_kA.size() != _kD.size()) || (_kA.size() < nComp))
 			throw InvalidParameterException("LIN_KA and LIN_KD have to have the same size");
 
 		return true;
 	}
+
+protected:
 
 	ConstParams _localParams; //!< Actual parameter data
 
@@ -228,14 +228,14 @@ public:
 	 * @param [in] nBoundStates Array with number of bound states for each component
 	 * @return @c true if the parameters were read and validated successfully, otherwise @c false
 	 */
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	inline bool configureAndValidate(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
 	{
 		_kA.configure("LIN_KA", paramProvider, nComp, nBoundStates);
 		_kD.configure("LIN_KD", paramProvider, nComp, nBoundStates);
 		
 		// Number of externally dependent parameters (2) needs to be given to ExternalParamHandlerBase::configure()
 		ExternalParamHandlerBase::configure(paramProvider, 2);
-		return validateConfig(nComp, nBoundStates);
+		return validate(nComp, nBoundStates);
 	}
 
 	/**
@@ -358,21 +358,21 @@ public:
 			+ 2 * (_kA.additionalDynamicMemory(nComp, totalNumBoundStates, nBoundStates) + _kD.additionalDynamicMemory(nComp, totalNumBoundStates, nBoundStates));
 	}
 
-protected:
-
 	/**
 	 * @brief Validates recently read parameters
 	 * @param [in] nComp Number of components
 	 * @param [in] nBoundStates Array with number of bound states for each component
 	 * @return @c true if the parameters were validated successfully, otherwise @c false
 	 */
-	inline bool validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+	inline bool validate(unsigned int nComp, unsigned int const* nBoundStates)
 	{
 		if ((_kA.size() != _kD.size()) || (_kA.size() < nComp))
 			throw InvalidParameterException("LIN_KA and LIN_KD have to have the same size");
 
 		return true;
 	}
+
+protected:
 
 	// Handlers provide configure(), reserve(), and registerParam() for parameters
 	ExternalScalarComponentDependentParameter _kA; //!< Handler for adsorption rate
@@ -446,12 +446,12 @@ public:
 		_parameters.clear();
 
 		// Read parameters (k_a and k_d)
-		_paramHandler.configure(paramProvider, _nComp, _nBoundStates);
+		const bool valid = _paramHandler.configureAndValidate(paramProvider, _nComp, _nBoundStates);
 
 		// Register parameters
 		_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nBoundStates);
 
-		return true;
+		return valid;
 	}
 
 	virtual void fillBoundPhaseInitialParameters(ParameterId* params, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx) const CADET_NOEXCEPT

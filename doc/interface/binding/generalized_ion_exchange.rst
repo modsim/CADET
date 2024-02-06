@@ -106,38 +106,70 @@ Generalized Ion Exchange
 
 **Unit:** :math:`m_{MP}^{3} mol^{-1}`
 
-===================  =========================  
+===================  ========================= 
 **Type:** double     **Length:** NCOMP
 ===================  ========================= 
 
 ``GIEX_NU``
    Base value for characteristic charges of the protein; The number of
    sites :math:`\nu` that the protein interacts with on the resin
-   surface
+   surface. If more than NCOMP values are provided, :math:`\nu` is given
+   by a piecewise cubic polynomial. Data is expected in component-major
+   ordering.
 
-===================  =========================  
-**Type:** double     **Length:** NCOMP
-===================  ========================= 
+===================  ===============================  
+**Type:** double     **Length:** multiples of NCOMP
+===================  =============================== 
 
 ``GIEX_NU_LIN``
    Coefficient of linear dependence of characteristic charge on modifier
-   component
+   component. If more than NCOMP values are provided, :math:`\nu` is given
+   by a piecewise cubic polynomial. This parameter is optional, it defaults
+   to all 0. Data is expected in component-major ordering.
 
 **Unit:** :math:`\text{[Mod]}^{-1}`
 
-===================  =========================  
-**Type:** double     **Length:** NCOMP
-===================  ========================= 
+===================  ===============================  
+**Type:** double     **Length:** same as GIEX_NU
+===================  =============================== 
 
 ``GIEX_NU_QUAD``
    Coefficient of quadratic dependence of characteristic charge on
-   modifier component
+   modifier component. If more than NCOMP values are provided,
+   :math:`\nu` is given by a piecewise cubic polynomial. This parameter
+   is optional, it defaults to all 0. Data is expected in component-major
+   ordering.
 
 **Unit:** :math:`\text{[Mod]}^{-2}`
 
-===================  =========================  
-**Type:** double     **Length:** NCOMP
-===================  ========================= 
+===================  ===============================  
+**Type:** double     **Length:** same as GIEX_NU
+===================  =============================== 
+
+``GIEX_NU_CUBE``
+   Coefficient of cubic dependence of characteristic charge on
+   modifier component. If more than NCOMP values are provided,
+   :math:`\nu` is given by a piecewise cubic polynomial. This
+   parameter is optional, it defaults to all 0. Data is expected
+   in component-major ordering.
+
+**Unit:** :math:`\text{[Mod]}^{-3}`
+
+===================  ===============================  
+**Type:** double     **Length:** same as GIEX_NU
+===================  =============================== 
+
+``GIEX_NU_BREAKS``
+   Optional, only required if a piecewise cubic polynomial is
+   used for :math:`\nu`. Contains the breaks of the pieces
+   in component-major ordering. Note that :math:`n` pieces
+   have :math:`n+1` breaks.
+
+**Unit:** :math:`\text{[Mod]}`
+
+===================  ======================================  
+**Type:** double     **Length:** length of GIEX_NU + NCOMP
+===================  ====================================== 
 
 ``GIEX_SIGMA``
    Steric factors of the protein; The number of sites :math:`\sigma` on

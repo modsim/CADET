@@ -51,7 +51,7 @@ namespace model
 
 inline const char* BiLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_BILANGMUIR"; }
 
-inline bool BiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool BiLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("MCBL_KA, MCBL_KD, and MCBL_QMAX have to have the same size");
@@ -61,7 +61,7 @@ inline bool BiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned 
 
 inline const char* ExtBiLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_BILANGMUIR"; }
 
-inline bool ExtBiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtBiLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("EXT_MCBL_KA, EXT_MCBL_KD, and EXT_MCBL_QMAX have to have the same size");

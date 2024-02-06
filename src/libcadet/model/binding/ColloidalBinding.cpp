@@ -71,7 +71,7 @@ namespace model
 
 inline const char* ColloidalParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_COLLOIDAL"; }
 
-inline bool ColloidalParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ColloidalParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kEqPhExp.size() != _kEqSaltPowerExp.size()) 
 			|| (_kEqPhExp.size() != _kEqSaltPowerFact.size())
@@ -97,7 +97,7 @@ inline bool ColloidalParamHandler::validateConfig(unsigned int nComp, unsigned i
 
 inline const char* ExtColloidalParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_COLLOIDAL"; }
 
-inline bool ExtColloidalParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtColloidalParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kEqPhExp.size() != _kEqSaltPowerExp.size()) 
 			|| (_kEqPhExp.size() != _kEqSaltPowerFact.size())

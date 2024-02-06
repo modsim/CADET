@@ -64,7 +64,7 @@ namespace model
 
 inline const char* MSSMAParamHandler::identifier() CADET_NOEXCEPT { return "MULTISTATE_STERIC_MASS_ACTION"; }
 
-inline bool MSSMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool MSSMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	const unsigned int totalBoundStates = numBoundStates(nBoundStates, nComp);
 
@@ -91,7 +91,7 @@ inline bool MSSMAParamHandler::validateConfig(unsigned int nComp, unsigned int c
 
 inline const char* ExtMSSMAParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTISTATE_STERIC_MASS_ACTION"; }
 
-inline bool ExtMSSMAParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtMSSMAParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	const unsigned int totalBoundStates = numBoundStates(nBoundStates, nComp);
 

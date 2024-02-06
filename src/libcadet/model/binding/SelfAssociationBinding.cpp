@@ -64,7 +64,7 @@ namespace model
 
 inline const char* SelfAssociationParamHandler::identifier() CADET_NOEXCEPT { return "SELF_ASSOCIATION"; }
 
-inline bool SelfAssociationParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool SelfAssociationParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kA2.size()) || (_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) 
 		|| (_kA.size() != _sigma.size()) || (_kA.size() < nComp))
@@ -79,7 +79,7 @@ inline bool SelfAssociationParamHandler::validateConfig(unsigned int nComp, unsi
 
 inline const char* ExtSelfAssociationParamHandler::identifier() CADET_NOEXCEPT { return "EXT_SELF_ASSOCIATION"; }
 
-inline bool ExtSelfAssociationParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtSelfAssociationParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kA2.size()) || (_kA.size() != _kD.size()) || (_kA.size() != _nu.size()) 
 		|| (_kA.size() != _sigma.size()) || (_kA.size() < nComp))

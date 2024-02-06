@@ -55,7 +55,7 @@ namespace model
 
 inline const char* MPMLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "MOBILE_PHASE_MODULATOR"; }
 
-inline bool MPMLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool MPMLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _gamma.size())
 		|| (_kA.size() != _beta.size()) || (_kA.size() < nComp))
@@ -66,7 +66,7 @@ inline bool MPMLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned
 
 inline const char* ExtMPMLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MOBILE_PHASE_MODULATOR"; }
 
-inline bool ExtMPMLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtMPMLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _gamma.size())
 		|| (_kA.size() != _beta.size()) || (_kA.size() < nComp))

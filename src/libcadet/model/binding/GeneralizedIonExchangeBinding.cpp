@@ -19,6 +19,7 @@
 #include "model/Parameters.hpp"
 #include "LocalVector.hpp"
 #include "SimulationTypes.hpp"
+#include "Spline.hpp"
 
 #include <functional>
 #include <unordered_map>
@@ -42,9 +43,11 @@
 			{ "type": "ScalarComponentDependentParameter", "varName": "kDQuad", "confName": "GIEX_KD_QUAD"},
 			{ "type": "ScalarComponentDependentParameter", "varName": "kDSalt", "confName": "GIEX_KD_SALT"},
 			{ "type": "ScalarComponentDependentParameter", "varName": "kDProt", "confName": "GIEX_KD_PROT"},
-			{ "type": "ScalarComponentDependentParameter", "varName": "nu", "confName": "GIEX_NU"},
-			{ "type": "ScalarComponentDependentParameter", "varName": "nuLin", "confName": "GIEX_NU_LIN"},
-			{ "type": "ScalarComponentDependentParameter", "varName": "nuQuad", "confName": "GIEX_NU_QUAD"},
+			{ "type": "VectorComponentDependentParameter", "varName": "nu", "confName": "GIEX_NU"},
+			{ "type": "VectorComponentDependentParameter", "varName": "nuLin", "confName": "GIEX_NU_LIN", "skipConfig": true},
+			{ "type": "VectorComponentDependentParameter", "varName": "nuQuad", "confName": "GIEX_NU_QUAD", "skipConfig": true},
+			{ "type": "VectorComponentDependentParameter", "varName": "nuCube", "confName": "GIEX_NU_CUBE", "skipConfig": true},
+			{ "type": "VectorComponentDependentParameter", "varName": "nuBreaks", "confName": "GIEX_NU_BREAKS", "skipConfig": true},
 			{ "type": "ScalarComponentDependentParameter", "varName": "sigma", "confName": "GIEX_SIGMA"}
 		],
 	"constantParameters":
@@ -66,6 +69,82 @@
  refPhC0,refPhQ = Reference concentrations for pH dependent powers
 */
 
+namespace
+{
+	void assignZeros(cadet::model::VectorComponentDependentParameter& p, unsigned int size)
+	{
+		p.get() = std::vector<cadet::active>(size, 0.0);
+	}
+
+	void assignZeros(cadet::model::ExternalVectorComponentDependentParameter& p, unsigned int size)
+	{
+		p.base() = std::vector<cadet::active>(size, 0.0);
+		p.linear() = std::vector<cadet::active>(size, 0.0);
+		p.quadratic() = std::vector<cadet::active>(size, 0.0);
+		p.cubic() = std::vector<cadet::active>(size, 0.0);
+	}
+
+	void assignSinglePiece(cadet::model::VectorComponentDependentParameter& p)
+	{
+		p.get().clear();
+	}
+
+	void assignSinglePiece(cadet::model::ExternalVectorComponentDependentParameter& p)
+	{
+		p.base().clear();
+		p.linear().clear();
+		p.quadratic().clear();
+		p.cubic().clear();
+	}
+
+	template <typename param_t, typename params_t, typename ph_t, typename cp_state_t, typename q_state_t>
+	std::tuple<cp_state_t, q_state_t> cpQNuPowers(int comp, int nPieces, const params_t& p, ph_t pH, cp_state_t cpBase, cp_state_t cpVar, q_state_t qBase, q_state_t qVar)
+	{
+		if (p.nuBreaks.size() == 0)
+		{
+			const cp_state_t nu_i_0_over_nu0 = static_cast<param_t>(p.nu[comp]) / static_cast<param_t>(p.nu[0]);
+			const cp_state_t nu_i_pH_over_nu0 = pH * (static_cast<param_t>(p.nuLin[comp]) + pH * (static_cast<param_t>(p.nuQuad[comp]) + pH * static_cast<param_t>(p.nuCube[comp]))) / static_cast<param_t>(p.nu[0]);
+			return {pow(cpBase, nu_i_0_over_nu0) * pow(cpVar, nu_i_pH_over_nu0), pow(qBase, nu_i_0_over_nu0) * pow(qVar, nu_i_pH_over_nu0)};
+		}
+		else
+		{
+			const int offset = comp * nPieces;
+			const auto [nuConst, nuVar] = cadet::evaluateCubicPiecewisePolynomialSplit<ph_t, typename cadet::DoubleActivePromoter<param_t, cp_state_t>::type>(pH, p.nuBreaks.data() + comp * (nPieces + 1), p.nu.data() + offset, p.nuLin.data() + offset, p.nuQuad.data() + offset, p.nuCube.data() + offset, nPieces);
+			const cp_state_t nu_i_0_over_nu0 = static_cast<param_t>(nuConst) / static_cast<param_t>(p.nu[0]);
+			const cp_state_t nu_i_pH_over_nu0 = nuVar / static_cast<param_t>(p.nu[0]);
+			return {pow(cpBase, nu_i_0_over_nu0) * pow(cpVar, nu_i_pH_over_nu0), pow(qBase, nu_i_0_over_nu0) * pow(qVar, nu_i_pH_over_nu0)};
+		}
+	}
+
+	template <typename params_t, typename ph_t, typename result_t>
+	std::tuple<result_t, result_t> evaluateNu(int comp, int nPieces, const params_t& p, ph_t pH)
+	{
+		if (p.nuBreaks.size() == 0)
+		{
+			return {static_cast<result_t>(p.nu[comp]), pH * (static_cast<result_t>(p.nuLin[comp]) + pH * (static_cast<result_t>(p.nuQuad[comp]) + pH * static_cast<result_t>(p.nuCube[comp])))};
+		}
+		else
+		{
+			const int offset = comp * nPieces;
+			return cadet::evaluateCubicPiecewisePolynomialSplit<ph_t, result_t>(pH, p.nuBreaks.data() + comp * (nPieces + 1), p.nu.data() + offset, p.nuLin.data() + offset, p.nuQuad.data() + offset, p.nuCube.data() + offset, nPieces);
+		}
+	}
+
+	template <typename params_t>
+	double nuDerivative(int comp, int nPieces, const params_t& p, double pH)
+	{
+		if (p.nuBreaks.size() == 0)
+		{
+			return static_cast<double>(p.nuLin[comp]) + pH * (2.0 * static_cast<double>(p.nuQuad[comp]) + 3.0 * pH * static_cast<double>(p.nuCube[comp]));
+		}
+		else
+		{
+			const int offset = comp * nPieces;
+			return cadet::evaluateCubicPiecewisePolynomialDerivative(pH, p.nuBreaks.data() + comp * (nPieces + 1), p.nuLin.data() + offset, p.nuQuad.data() + offset, p.nuCube.data() + offset, nPieces);
+		}
+	}
+}
+
 namespace cadet
 {
 
@@ -74,7 +153,7 @@ namespace model
 
 inline const char* GIEXParamHandler::identifier() CADET_NOEXCEPT { return "GENERALIZED_ION_EXCHANGE"; }
 
-inline bool GIEXParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool GIEXParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if (nComp <= 2)
 		throw InvalidParameterException("GENERALIZED_ION_EXCHANGE requires at least 3 components");
@@ -84,20 +163,58 @@ inline bool GIEXParamHandler::validateConfig(unsigned int nComp, unsigned int co
 	if (_kD.size() < nComp)
 		throw InvalidParameterException("GIEX_KD requires NCOMP entries");
 	if (_nu.size() < nComp)
-		throw InvalidParameterException("GIEX_NU requires NCOMP entries");
+		throw InvalidParameterException("GIEX_NU requires at least NCOMP entries");
 	if (_sigma.size() < nComp)
 		throw InvalidParameterException("GIEX_SIGMA requires NCOMP entries");
 
+	if (_nu.size() != _nuLin.size())
+		throw InvalidParameterException("GIEX_NU and GIEX_NU_LIN do not have the same length");
+
+	if (_nu.size() != _nuQuad.size())
+		throw InvalidParameterException("GIEX_NU and GIEX_NU_QUAD do not have the same length");
+
+	if (_nu.size() != _nuCube.size())
+		throw InvalidParameterException("GIEX_NU and GIEX_NU_CUBE do not have the same length");
+
+	if ((_nu.size() % nComp) != 0)
+		throw InvalidParameterException("Length of GIEX_NU must be a multiple of NCOMP");
+
+	if ((_nu.size() + nComp != _nuBreaks.size()) && (_nuBreaks.size() > 0))
+		throw InvalidParameterException("GIEX_NU_BREAKS must have one entry more than polynomial pieces in GIEX_NU");
+
+	if ((_nu.size() != nComp) && (_nuBreaks.size() == 0))
+		throw InvalidParameterException("GIEX_NU is expected to have NCOMP entries");
+
 	// Assume monovalent salt ions by default
-	if (_nu.get()[0] <= 0.0)
-		_nu.get()[0] = 1.0;
+	const int nPieces = _nu.size() / nComp;
+	for (int i = 0; i < nPieces; ++i)
+	{
+		if (_nu.get()[i] <= 0.0)
+			_nu.get()[i] = 1.0;
+	}
+
+	// Check breaks
+	if (_nuBreaks.size() > 1)
+	{
+		for (int i = 0; i < nComp; ++i)
+		{
+			cadet::active const* const b = _nuBreaks.get().data() + (nPieces + 1) * i;
+			for (int j = 0; j < nPieces; ++j)
+			{
+				if (b[j] >= b[j+1])
+				{
+					throw InvalidParameterException("GIEX_NU_BREAKS must be strictly increasing for each component");
+				}
+			}
+		}
+	}
 
 	return true;
 }
 
 inline const char* ExtGIEXParamHandler::identifier() CADET_NOEXCEPT { return "EXT_GENERALIZED_ION_EXCHANGE"; }
 
-inline bool ExtGIEXParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtGIEXParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if (nComp <= 2)
 		throw InvalidParameterException("EXT_GENERALIZED_ION_EXCHANGE requires at least 3 components");
@@ -107,13 +224,46 @@ inline bool ExtGIEXParamHandler::validateConfig(unsigned int nComp, unsigned int
 	if (_kD.size() < nComp)
 		throw InvalidParameterException("EXT_GIEX_KD requires NCOMP entries");
 	if (_nu.size() < nComp)
-		throw InvalidParameterException("EXT_GIEX_NU requires NCOMP entries");
+		throw InvalidParameterException("EXT_GIEX_NU requires at least NCOMP entries");
 	if (_sigma.size() < nComp)
 		throw InvalidParameterException("EXT_GIEX_SIGMA requires NCOMP entries");
 
+	if (_nu.size() != _nuLin.size())
+		throw InvalidParameterException("EXT_GIEX_NU and EXT_GIEX_NU_LIN do not have the same length");
+
+	if (_nu.size() != _nuQuad.size())
+		throw InvalidParameterException("EXT_GIEX_NU and EXT_GIEX_NU_QUAD do not have the same length");
+
+	if (_nu.size() != _nuCube.size())
+		throw InvalidParameterException("EXT_GIEX_NU and EXT_GIEX_NU_CUBE do not have the same length");
+
+	if ((_nu.size() % nComp) != 0)
+		throw InvalidParameterException("Length of EXT_GIEX_NU must be a multiple of NCOMP");
+
+	if ((_nu.size() + nComp != _nuBreaks.size()) && (_nuBreaks.size() > 0))
+		throw InvalidParameterException("EXT_GIEX_NU_BREAKS must have one entry more than polynomial pieces in EXT_GIEX_NU");
+
+	if ((_nu.size() != nComp) && (_nuBreaks.size() == 0))
+		throw InvalidParameterException("EXT_GIEX_NU is expected to have NCOMP entries");
+
+	if (!_nu.allSameSize())
+		throw InvalidParameterException("EXT_GIEX_NU, EXT_GIEX_NU_T, EXT_GIEX_NU_TT, and EXT_GIEX_NU_TTT must have the same size");
+	if (!_nuLin.allSameSize())
+		throw InvalidParameterException("EXT_GIEX_NU_LIN, EXT_GIEX_NU_LIN_T, EXT_GIEX_NU_LIN_TT, and EXT_GIEX_NU_LIN_TTT must have the same size");
+	if (!_nuQuad.allSameSize())
+		throw InvalidParameterException("EXT_GIEX_NU_QUAD, EXT_GIEX_NU_QUAD_T, EXT_GIEX_NU_QUAD_TT, and EXT_GIEX_NU_QUAD_TTT must have the same size");
+	if (!_nuCube.allSameSize())
+		throw InvalidParameterException("EXT_GIEX_NU_CUBE, EXT_GIEX_NU_CUBE_T, EXT_GIEX_NU_CUBE_TT, and EXT_GIEX_NU_CUBE_TTT must have the same size");
+	if (!_nuBreaks.allSameSize())
+		throw InvalidParameterException("EXT_GIEX_NU_BREAKS, EXT_GIEX_NU_BREAKS_T, EXT_GIEX_NU_BREAKS_TT, and EXT_GIEX_NU_BREAKS_TTT must have the same size");
+
 	// Assume monovalent salt ions by default
-	if (_nu.base()[0] <= 0.0)
-		_nu.base()[0] = 1.0;
+	const int nPieces = _nu.size() / nComp;
+	for (int i = 0; i < nPieces; ++i)
+	{
+		if ((_nu.base()[i] <= 0.0) && (_nu.linear()[i] <= 0.0) && (_nu.quadratic()[i] <= 0.0) && (_nu.cubic()[i] <= 0.0))
+			_nu.base()[i] = 1.0;
+	}
 
 	return true;
 }
@@ -177,6 +327,7 @@ public:
 
 		// Pseudo component 1 is pH
 		const double pH = yCp[1];
+		const int nPieces = (p->nuBreaks.size() > 0) ? (p->nu.size() / _nComp) : 0;
 
 		// Salt equation: nu_0 * q_0 - Lambda + Sum[nu_j(pH) * q_j, j] == 0
 		//           <=>  q_0 == (Lambda - Sum[nu_j(pH) * q_j, j]) / nu_0
@@ -189,9 +340,8 @@ public:
 			if (_nBoundStates[j] == 0)
 				continue;
 
-			const double nu_j = static_cast<double>(p->nu[j]) + pH * (static_cast<double>(p->nuLin[j]) + pH * static_cast<double>(p->nuQuad[j]));
-
-			y[0] -= nu_j * y[bndIdx];
+			const auto [nuConst, nuVar] = evaluateNu<typename ParamHandler_t::params_t, double, double>(j, nPieces, *p, pH);
+			y[0] -= (nuConst + nuVar) * y[bndIdx];
 
 			// Next bound component
 			++bndIdx;
@@ -215,10 +365,32 @@ protected:
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_reactionQuasistationarity;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nComp;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nBoundStates;
+	using ParamHandlerBindingModelBase<ParamHandler_t>::_parameters;
 
 	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx)
 	{
-		const bool valid = ParamHandlerBindingModelBase<ParamHandler_t>::configureImpl(paramProvider, unitOpIdx, parTypeIdx);
+		// Read parameters
+		_paramHandler.configure(paramProvider, _nComp, _nBoundStates);
+
+		if (paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_NU_LIN"))
+			_paramHandler.nuLin().configure("GIEX_NU_LIN", paramProvider, _nComp, _nBoundStates);
+		else
+			assignZeros(_paramHandler.nuLin(), _paramHandler.nu().size());
+
+		if (paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_NU_QUAD"))
+			_paramHandler.nuQuad().configure("GIEX_NU_QUAD", paramProvider, _nComp, _nBoundStates);
+		else
+			assignZeros(_paramHandler.nuQuad(), _paramHandler.nu().size());
+
+		if (paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_NU_CUBE"))
+			_paramHandler.nuCube().configure("GIEX_NU_CUBE", paramProvider, _nComp, _nBoundStates);
+		else
+			assignZeros(_paramHandler.nuCube(), _paramHandler.nu().size());
+
+		if (paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_NU_BREAKS"))
+			_paramHandler.nuBreaks().configure("GIEX_NU_BREAKS", paramProvider, _nComp, _nBoundStates);
+		else
+			assignSinglePiece(_paramHandler.nuBreaks());
 
 		if (paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_PHREFC0") && paramProvider.exists(std::string(_paramHandler.prefixInConfiguration()) + "GIEX_PHREFQ"))
 		{
@@ -232,7 +404,10 @@ protected:
 			_paramHandler.refConcentrationPh().getQ() = _paramHandler.refConcentration().getQ();
 		}
 
-		return valid;
+		// Register parameters
+		_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nBoundStates);
+
+		return _paramHandler.validate(_nComp, _nBoundStates);
 	}
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
@@ -241,11 +416,14 @@ protected:
 	{
 		using CpStateParamType = typename DoubleActivePromoter<CpStateType, ParamType>::type;
 		using StateParamType = typename DoubleActivePromoter<StateType, ParamType>::type;
+		using PhType = typename ActiveRefOrDouble<const CpStateType>::type;
 
 		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
+		const int nPieces = (p->nuBreaks.size() > 0) ? (p->nu.size() / _nComp) : 0;
+
 		// Pseudo component 1 is pH
-		const CpStateType pH = yCp[1];
+		const PhType pH = yCp[1];
 
 		// Salt flux: nu_0 * q_0 - Lambda + Sum[nu_j * q_j, j] == 0 
 		//       <=>  nu_0 * q_0 == Lambda - Sum[nu_j * q_j, j] 
@@ -260,9 +438,9 @@ protected:
 			if (_nBoundStates[j] == 0)
 				continue;
 
-			const CpStateParamType nu_j = static_cast<ParamType>(p->nu[j]) + pH * (static_cast<ParamType>(p->nuLin[j]) + pH * static_cast<ParamType>(p->nuQuad[j]));
+			const auto [nuConst, nuVar] = evaluateNu<typename ParamHandler_t::params_t,PhType, CpStateParamType>(j, nPieces, *p, pH);
 
-			res[0] += nu_j * y[bndIdx];
+			res[0] += (nuConst + nuVar) * y[bndIdx];
 			q0_bar -= static_cast<ParamType>(p->sigma[j]) * y[bndIdx];
 
 			// Next bound component
@@ -289,11 +467,14 @@ protected:
 //			const CpStateParamType nu_i_over_nu0 = (static_cast<ParamType>(p->nu[i]) + pH * (static_cast<ParamType>(p->nuLin[i]) + pH * static_cast<ParamType>(p->nuQuad[i]))) / static_cast<ParamType>(p->nu[0]);
 //			const CpStateParamType c0_pow_nu = pow(yCp0_divRef, nu_i_over_nu0);
 //			const StateParamType q0_bar_pow_nu = pow(q0_bar_divRef, nu_i_over_nu0);
-			const CpStateParamType nu_i_0_over_nu0 = static_cast<ParamType>(p->nu[i]) / static_cast<ParamType>(p->nu[0]);
-			const CpStateParamType nu_i_pH_over_nu0 = pH * (static_cast<ParamType>(p->nuLin[i]) + pH * static_cast<ParamType>(p->nuQuad[i])) / static_cast<ParamType>(p->nu[0]);
-			const CpStateParamType c0_pow_nu = pow(yCp0_divRef, nu_i_0_over_nu0) * pow(yCp0_ph_divRef, nu_i_pH_over_nu0);
-			const StateParamType q0_bar_pow_nu = pow(q0_bar_divRef, nu_i_0_over_nu0) * pow(q0_bar_ph_divRef, nu_i_pH_over_nu0);
+
+//			const CpStateParamType nu_i_0_over_nu0 = static_cast<ParamType>(p->nu[i]) / static_cast<ParamType>(p->nu[0]);
+//			const CpStateParamType nu_i_pH_over_nu0 = pH * (static_cast<ParamType>(p->nuLin[i]) + pH * static_cast<ParamType>(p->nuQuad[i])) / static_cast<ParamType>(p->nu[0]);
+//			const CpStateParamType c0_pow_nu = pow(yCp0_divRef, nu_i_0_over_nu0) * pow(yCp0_ph_divRef, nu_i_pH_over_nu0);
+//			const StateParamType q0_bar_pow_nu = pow(q0_bar_divRef, nu_i_0_over_nu0) * pow(q0_bar_ph_divRef, nu_i_pH_over_nu0);
 			
+			const auto [c0_pow_nu, q0_bar_pow_nu] = cpQNuPowers<ParamType, typename ParamHandler_t::params_t, PhType, CpStateParamType, StateParamType>(i, nPieces, *p, pH, yCp0_divRef, yCp0_ph_divRef, q0_bar_divRef, q0_bar_ph_divRef);
+
 			// k_{a,i}(c_p, q, \mathrm{pH}) = k_{a,i,0} \exp(k_{a,i,1} \mathrm{pH} + k_{a,i,2} \mathrm{pH}^2 + k_{a,i,\mathrm{salt}} c_{p,0} + k_{a,i,\mathrm{prot}} c_{p,i})
 			const CpStateParamType ka_i = static_cast<ParamType>(p->kA[i]) * 
 				exp(pH * (static_cast<ParamType>(p->kALin[i]) + pH * static_cast<ParamType>(p->kAQuad[i])) 
@@ -318,6 +499,7 @@ protected:
 	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
 	{
 		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
+		const int nPieces = (p->nuBreaks.size() > 0) ? (p->nu.size() / _nComp) : 0;
 
 		// Pseudo component 1 is pH
 		const double pH = yCp[1];
@@ -337,10 +519,10 @@ protected:
 			if (_nBoundStates[j] == 0)
 				continue;
 
-			const double nu_j = static_cast<double>(p->nu[j]) + pH * (static_cast<double>(p->nuLin[j]) + pH * static_cast<double>(p->nuQuad[j]));
+			const auto [nuConst, nuVar] = evaluateNu<typename ParamHandler_t::params_t, double, double>(j, nPieces, *p, pH);
 
-			jac[bndIdx] = nu_j;
-			jac[1 - offsetCp] += (static_cast<double>(p->nuLin[j]) + 2.0 * pH * static_cast<double>(p->nuQuad[j])) * y[bndIdx];
+			jac[bndIdx] = nuConst + nuVar;
+			jac[1 - offsetCp] += nuDerivative(j, nPieces, *p, pH) * y[bndIdx];
 
 			// Calculate \bar{q}_0 = nu_0 * q_0 - Sum[sigma_j * q_j, j]
 			q0_bar -= static_cast<double>(p->sigma[j]) * y[bndIdx];
@@ -370,12 +552,14 @@ protected:
 			if (_nBoundStates[i] == 0)
 				continue;
 
+			const auto [nuConst, nuVar] = evaluateNu<typename ParamHandler_t::params_t, double, double>(i, nPieces, *p, pH);
+
 			const double ka = static_cast<double>(p->kA[i]);
 			const double kd = static_cast<double>(p->kD[i]);
-			const double nu_0 = static_cast<double>(p->nu[i]) / static_cast<double>(p->nu[0]);
-			const double nu_pH = pH * (static_cast<double>(p->nuLin[i]) + pH * static_cast<double>(p->nuQuad[i])) / static_cast<double>(p->nu[0]);
+			const double nu_0 = nuConst / static_cast<double>(p->nu[0]);
+			const double nu_pH = nuVar / static_cast<double>(p->nu[0]);
 			const double nu = nu_0 + nu_pH;
-			const double dNuDpH = (static_cast<double>(p->nuLin[i]) + 2.0 * pH * static_cast<double>(p->nuQuad[i])) / static_cast<double>(p->nu[0]);
+			const double dNuDpH = nuDerivative(i, nPieces, *p, pH) / static_cast<double>(p->nu[0]);
 
 			const double c0_pow_nu     = pow(yCp0_divRef, nu_0) * pow(yCp0_ph_divRef, nu_pH);
 			const double q0_bar_pow_nu = pow(q0_bar_divRef, nu_0) * pow(q0_bar_ph_divRef, nu_pH);

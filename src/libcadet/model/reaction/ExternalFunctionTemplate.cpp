@@ -83,7 +83,7 @@ public:
 {% endif %}
 	{ }
 
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+	inline void configure(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
 	{
 {% for p in parameters %}
 	{% if not existsIn(p, "skipConfig") %}
@@ -109,7 +109,12 @@ public:
 		{% endif %}
 	{% endfor %}
 {% endif %}
-		return validateConfig(nReactions, nComp, nBoundStates);
+	}
+
+	inline bool configureAndValidate(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		configure(paramProvider, nReactions, nComp, nBoundStates);
+		return validate(nReactions, nComp, nBoundStates);
 	}
 
 	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
@@ -171,9 +176,9 @@ public:
 {% endif %}
 
 	inline char const* prefixInConfiguration() const CADET_NOEXCEPT { return ""; }
+	inline bool validate(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates);
 
 protected:
-	inline bool validateConfig(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates);
 
 	ConstParams _localParams;
 
@@ -262,7 +267,7 @@ public:
 {% endif %}
 	{ }
 
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+	inline void configure(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
 	{
 {% for p in parameters %}
 	{% if not existsIn(p, "skipConfig") %}
@@ -289,7 +294,12 @@ public:
 	{% endfor %}
 {% endif %}
 		ExternalParamHandlerBase::configure(paramProvider, {{ length(parameters) }});
-		return validateConfig(nReactions, nComp, nBoundStates);
+	}
+
+	inline bool configureAndValidate(IParameterProvider& paramProvider, unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		configure(paramProvider, nReactions, nComp, nBoundStates);
+		return validate(nReactions, nComp, nBoundStates);
 	}
 
 	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
@@ -409,9 +419,9 @@ public:
 {% endif %}
 
 	inline char const* prefixInConfiguration() const CADET_NOEXCEPT { return "EXT_"; }
+	inline bool validate(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates);
 
 protected:
-	inline bool validateConfig(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates);
 
 	ConstParams _constParams;
 

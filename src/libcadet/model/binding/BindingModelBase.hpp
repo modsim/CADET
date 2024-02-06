@@ -133,12 +133,12 @@ protected:
 	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx)
 	{
 		// Read parameters
-		_paramHandler.configure(paramProvider, _nComp, _nBoundStates);
+		const bool valid = _paramHandler.configureAndValidate(paramProvider, _nComp, _nBoundStates);
 
 		// Register parameters
 		_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nBoundStates);
 
-		return true;
+		return valid;
 	}
 };
 

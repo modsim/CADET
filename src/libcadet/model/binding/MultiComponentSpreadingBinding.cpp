@@ -55,7 +55,7 @@ namespace model
 
 inline const char* SpreadingParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_SPREADING"; }
 
-inline bool SpreadingParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool SpreadingParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp * 2))
 		throw InvalidParameterException("MCSPR_KA, MCSPR_KD, and MCSPR_QMAX have to have the same size");
@@ -67,7 +67,7 @@ inline bool SpreadingParamHandler::validateConfig(unsigned int nComp, unsigned i
 
 inline const char* ExtSpreadingParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_SPREADING"; }
 
-inline bool ExtSpreadingParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtSpreadingParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp * 2))
 		throw InvalidParameterException("EXT_MCSPR_KA, EXT_MCSPR_KD, and EXT_MCSPR_QMAX have to have the same size");

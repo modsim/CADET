@@ -50,7 +50,7 @@ namespace model
 
 inline const char* SaskaParamHandler::identifier() CADET_NOEXCEPT { return "SASKA"; }
 
-inline bool SaskaParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool SaskaParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_h.size() != _k.slices()) || (_k.size() != nComp * nComp) || (_h.size() < nComp))
 		throw InvalidParameterException("SASKA_K has to have NCOMP^2 and SASKA_H NCOMP many elements");
@@ -60,7 +60,7 @@ inline bool SaskaParamHandler::validateConfig(unsigned int nComp, unsigned int c
 
 inline const char* ExtSaskaParamHandler::identifier() CADET_NOEXCEPT { return "EXT_SASKA"; }
 
-inline bool ExtSaskaParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtSaskaParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_h.size() != _k.slices()) || (_k.size() != nComp * nComp) || (_h.size() < nComp))
 		throw InvalidParameterException("EXT_SASKA_K has to have NCOMP^2 and EXT_SASKA_H NCOMP many elements");

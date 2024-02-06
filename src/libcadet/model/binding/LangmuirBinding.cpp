@@ -51,7 +51,7 @@ namespace model
 
 inline const char* LangmuirParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_LANGMUIR"; }
 
-inline bool LangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool LangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("MCL_KA, MCL_KD, and MCL_QMAX have to have the same size");
@@ -61,7 +61,7 @@ inline bool LangmuirParamHandler::validateConfig(unsigned int nComp, unsigned in
 
 inline const char* ExtLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_LANGMUIR"; }
 
-inline bool ExtLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("EXT_MCL_KA, EXT_MCL_KD, and EXT_MCL_QMAX have to have the same size");

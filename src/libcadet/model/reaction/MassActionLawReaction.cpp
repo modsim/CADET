@@ -60,14 +60,14 @@ namespace model
 
 inline const char* MassActionLawParamHandler::identifier() CADET_NOEXCEPT { return "MASS_ACTION_LAW"; }
 
-inline bool MassActionLawParamHandler::validateConfig(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+inline bool MassActionLawParamHandler::validate(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
 {
 	return true;
 }
 
 inline const char* ExtMassActionLawParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MASS_ACTION_LAW"; }
 
-inline bool ExtMassActionLawParamHandler::validateConfig(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtMassActionLawParamHandler::validate(unsigned int nReactions, unsigned int nComp, unsigned int const* nBoundStates)
 {
 	return true;
 }
@@ -546,7 +546,7 @@ protected:
 		readAndRegisterExponents(paramProvider, _parameters, unitOpIdx, parTypeIdx, "MAL_EXPONENTS_SOLID_FWD_MODLIQUID", _expSolidFwdLiquid, _nComp, nullptr);
 		readAndRegisterExponents(paramProvider, _parameters, unitOpIdx, parTypeIdx, "MAL_EXPONENTS_SOLID_BWD_MODLIQUID", _expSolidBwdLiquid, _nComp, nullptr);
 
-		return true;
+		return _paramHandler.validate(maxNumReactions(), _nComp, _nBoundStates);
 	}
 
 	template <typename StateType, typename ResidualType, typename ParamType, typename FactorType>

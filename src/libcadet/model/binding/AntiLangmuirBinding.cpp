@@ -52,7 +52,7 @@ namespace model
 
 inline const char* AntiLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "MULTI_COMPONENT_ANTILANGMUIR"; }
 
-inline bool AntiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool AntiLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _antiLangmuir.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("MCAL_KA, MCAL_KD, MCAL_QMAX, and MCAL_ANTILANGMUIR have to have the same size");
@@ -62,7 +62,7 @@ inline bool AntiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigne
 
 inline const char* ExtAntiLangmuirParamHandler::identifier() CADET_NOEXCEPT { return "EXT_MULTI_COMPONENT_ANTILANGMUIR"; }
 
-inline bool ExtAntiLangmuirParamHandler::validateConfig(unsigned int nComp, unsigned int const* nBoundStates)
+inline bool ExtAntiLangmuirParamHandler::validate(unsigned int nComp, unsigned int const* nBoundStates)
 {
 	if ((_kA.size() != _kD.size()) || (_kA.size() != _qMax.size()) || (_kA.size() != _antiLangmuir.size()) || (_kA.size() < nComp))
 		throw InvalidParameterException("MCAL_KA, MCAL_KD, MCAL_QMAX, and MCAL_ANTILANGMUIR have to have the same size");

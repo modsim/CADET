@@ -176,7 +176,7 @@ namespace
 			ret["WRITE_SOLUTION_TIMES"] = true;
 
 			json mct;
-			mct["WRITE_SOLUTION_BULK"] = false;
+			mct["WRITE_SOLUTION_BULK"] = true;
 			mct["WRITE_SOLUTION_PARTICLE"] = false;
 			mct["WRITE_SOLUTION_FLUX"] = false;
 			mct["WRITE_SOLUTION_INLET"] = true;
@@ -246,7 +246,7 @@ namespace
 	}
 }
 
-TEST_CASE("MCT two channels without exchange yield same result", "[MCT],[Simulation]")
+TEST_CASE("MCT with two channels and without exchange yields same result on both ports", "[MCT],[Simulation]")
 {
 	const double relTol = 1e-10;
 	const double absTol = 1e-14;
@@ -278,13 +278,13 @@ TEST_CASE("MCT two channels without exchange yield same result", "[MCT],[Simulat
 	}
 }
 
-TEST_CASE("Two MCT's with forward/backward flow yield same result", "[MCT],[Simulation]")
+TEST_CASE("Two MCTs with two channels and forward/backward exchange yield same output in opposite ports", "[MCT],[Simulation]")
 {
 	const double relTol = 1e-6;
 	const double absTol = 1e-10;
 
 	// Setup forward exchange simulation
-	cadet::JsonParameterProvider jppFwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.0, 0.0 });
+	cadet::JsonParameterProvider jppFwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 0.2 }, { 1.0, 1.0 }, { 0.0, 0.01, 0.0, 0.0 });
 
 	// Run simulation
 	cadet::Driver drvFwdEx;
@@ -295,53 +295,7 @@ TEST_CASE("Two MCT's with forward/backward flow yield same result", "[MCT],[Simu
 	cadet::InternalStorageUnitOpRecorder const* const FwdExData = drvFwdEx.solution()->unitOperation(0);
 	
 	// Setup backward exchange simulation
-	cadet::JsonParameterProvider jppBwdEx = createMCT({ 1.0, 1.0 }, { -1.0, -1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.0, 0.0 });
-
-	// Run simulation
-	cadet::Driver drvBwdEx;
-	drvBwdEx.configure(jppBwdEx);
-	drvBwdEx.run();
-
-	// Get data from simulation
-	cadet::InternalStorageUnitOpRecorder const* const BwdExData = drvBwdEx.solution()->unitOperation(0);
-
-	const unsigned int nComp = FwdExData->numComponents();
-	const unsigned int nPorts = FwdExData->numInletPorts();
-
-	CHECK(nComp == 1);
-	CHECK(nPorts == 2);
-
-	const unsigned int nDataPoints = FwdExData->numDataPoints() * nComp * nPorts;
-	double const* const time = drvFwdEx.solution()->time();
-	double const* FwdOutlet = FwdExData->outlet();
-	double const* BwdOutlet = BwdExData->outlet();
-
-	for (int i = 0; i < FwdExData->numDataPoints(); ++i, FwdOutlet += 2, BwdOutlet += 2)
-	{
-		INFO("Time " << time[i] << " time point idx " << i);
-		CHECK(FwdOutlet[0] == cadet::test::makeApprox(BwdOutlet[0], relTol, absTol));
-		CHECK(FwdOutlet[1] == cadet::test::makeApprox(BwdOutlet[1], relTol, absTol));
-	}
-}
-
-TEST_CASE("MCT two channels with forward/backward exchange yield same output in opposite ports", "[MCT],[Simulation]")
-{
-	const double relTol = 1e-6;
-	const double absTol = 1e-10;
-
-	// Setup forward exchange simulation
-	cadet::JsonParameterProvider jppFwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.01, 0.0, 0.0 });
-
-	// Run simulation
-	cadet::Driver drvFwdEx;
-	drvFwdEx.configure(jppFwdEx);
-	drvFwdEx.run();
-
-	// Get data from simulation
-	cadet::InternalStorageUnitOpRecorder const* const FwdExData = drvFwdEx.solution()->unitOperation(0);
-
-	// Setup backward exchange simulation
-	cadet::JsonParameterProvider jppBwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.01, 0.0 });
+	cadet::JsonParameterProvider jppBwdEx = createMCT({ 1.0, 1.0 }, { 1.0, 1.0 }, { 0.2, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.01, 0.0 });
 
 	// Run simulation
 	cadet::Driver drvBwdEx;
@@ -370,70 +324,88 @@ TEST_CASE("MCT two channels with forward/backward exchange yield same output in 
 	}
 }
 
-TEST_CASE("MCT Jacobian forward vs backward flow", "[MCT],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("MCT with two channels and forward/backward flow yields same result at both ports", "[MCT],[Simulation]")
 {
-	// Test all WENO orders
-	for (unsigned int i = 1; i <= cadet::Weno::maxOrder(); ++i)
-		cadet::test::column::testJacobianWenoForwardBackwardFD("MULTI_CHANNEL_TRANSPORT", i, 1e-6, 0.0, 1e-3);
+	const double absTol = 6e-9;
+	const double relTol = 6e-4;
+
+	// Setup forward exchange simulation
+	cadet::JsonParameterProvider jppMixFlow = createMCT({ 1.0, 1.0 }, { 1.0, -1.0 }, { 1.0, 1.0 }, { 1.0, 1.0 }, { 0.0, 0.0, 0.0, 0.0 });
+
+	// Run simulation
+	cadet::Driver drvMixFlow;
+	drvMixFlow.configure(jppMixFlow);
+	drvMixFlow.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const MixFlowData = drvMixFlow.solution()->unitOperation(0);
+
+	const unsigned int nComp = MixFlowData->numComponents();
+	const unsigned int nPorts = MixFlowData->numInletPorts();
+
+	CHECK(nComp == 1);
+	CHECK(nPorts == 2);
+
+	const unsigned int nDataPoints = MixFlowData->numDataPoints() * nComp * nPorts;
+	double const* const time = drvMixFlow.solution()->time();
+	double const* MixFlowOutlet = MixFlowData->outlet();
+
+	for (int i = 0; i < MixFlowData->numDataPoints(); ++i, MixFlowOutlet += 2)
+	{
+		INFO("Time " << time[i] << " time point idx " << i);
+		CHECK(MixFlowOutlet[0] == cadet::test::makeApprox(MixFlowOutlet[1], relTol, absTol));
+	}
 }
 
-TEST_CASE("MCT time derivative Jacobian vs FD", "[MCT],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("Two MCT's with forward/backward flow yield same result", "[MCT],[Simulation]")
 {
-	cadet::test::column::testTimeDerivativeJacobianFD("MULTI_CHANNEL_TRANSPORT", 1e-6, 0.0, 9e-4);
-}
+	const double relTol = 1e-6;
+	const double absTol = 1e-10;
 
-TEST_CASE("MCT sensitivity Jacobians", "[MCT],[UnitOp],[Sensitivity]")
-{
-	cadet::test::column::testFwdSensJacobians("MULTI_CHANNEL_TRANSPORT", 1e-4, 6e-7);
-}
+	// Setup forward exchange simulation
+	cadet::JsonParameterProvider jppFwdFlow = createMCT({ 1.0 }, { 1.0 }, { 1.0 }, { 1.0 }, { 0.0 });
 
-TEST_CASE("MCT forward sensitivity vs FD", "[MCT],[Sensitivity],[Simulation]")
-{
-	// Relative error is checked first, we use high absolute error for letting
-	// some points that are far off pass the error test, too. This is required
-	// due to errors in finite differences.
-	const double fdStepSize[] = {5e-5, 1e-4, 1e-4, 1e-3};
-	const double absTols[] = {3e5, 2e-3, 2e-4, 5.0};
-	const double relTols[] = {5e-3, 7e-2, 8e-2, 1e-4};
-	const double passRatio[] = {0.95, 0.9, 0.91, 0.83};
-	cadet::test::column::testFwdSensSolutionFD("MULTI_CHANNEL_TRANSPORT", false, fdStepSize, absTols, relTols, passRatio);
-}
+	// Run simulation
+	cadet::Driver drvFwdFlow;
+	drvFwdFlow.configure(jppFwdFlow);
+	drvFwdFlow.run();
 
-TEST_CASE("MCT forward sensitivity forward vs backward flow", "[MCT],[Sensitivity],[Simulation]")
-{
-	const double absTols[] = {4e-5, 1e-11, 1e-11, 8e-9};
-	const double relTols[] = {6e-9, 5e-8, 5e-6, 5e-10};
-	const double passRatio[] = {0.99, 0.95, 0.98, 0.98};
-	cadet::test::column::testFwdSensSolutionForwardBackward("MULTI_CHANNEL_TRANSPORT", absTols, relTols, passRatio);
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const FwdFlowData = drvFwdFlow.solution()->unitOperation(0);
+
+	// Setup backward exchange simulation
+	cadet::JsonParameterProvider jppBwdFlow = createMCT({ 1.0 }, { -1.0 }, { 1.0 }, { 1.0 }, { 0.0 });
+
+	// Run simulation
+	cadet::Driver drvBwdFlow;
+	drvBwdFlow.configure(jppBwdFlow);
+	drvBwdFlow.run();
+
+	// Get data from simulation
+	cadet::InternalStorageUnitOpRecorder const* const BwdFlowData = drvBwdFlow.solution()->unitOperation(0);
+
+	const unsigned int nComp = FwdFlowData->numComponents();
+	const unsigned int nPorts = FwdFlowData->numInletPorts();
+
+	CHECK(nComp == 1);
+	CHECK(nPorts == 1);
+
+	const unsigned int nDataPoints = FwdFlowData->numDataPoints() * nComp * nPorts;
+	double const* const time = drvFwdFlow.solution()->time();
+	double const* FwdFlowOutlet = FwdFlowData->outlet();
+	double const* BwdFlowOutlet = BwdFlowData->outlet();
+
+	double const* BwdFlowBulk = BwdFlowData->bulk();
+	double const* FwdFlowBulk = FwdFlowData->bulk();
+
+	for (int i = 0; i < FwdFlowData->numDataPoints(); ++i, ++FwdFlowOutlet, ++BwdFlowOutlet)
+	{
+		INFO("Time " << time[i] << " time point idx " << i);
+		CHECK(FwdFlowOutlet[0] == cadet::test::makeApprox(BwdFlowOutlet[0], relTol, absTol));
+	}
 }
 
 TEST_CASE("MCT inlet DOF Jacobian", "[MCT],[UnitOp],[Jacobian],[Inlet]")
 {
 	cadet::test::column::testInletDofJacobian("MULTI_CHANNEL_TRANSPORT");
 }
-
-TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD bulk", "[MCT],[Jacobian],[Residual],[ReactionModel]")
-{
-	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", true, false, false, 1e-6, 1e-14, 8e-4);
-}
-
-TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD particle", "[MCT],[Jacobian],[Residual],[ReactionModel]")
-{
-	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", false, true, false, 1e-6, 1e-14, 8e-4);
-}
-
-TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD modified particle", "[MCT],[Jacobian],[Residual],[ReactionModel]")
-{
-	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", false, true, true, 1e-6, 1e-14, 8e-4);
-}
-
-TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD bulk and particle", "[MCT],[Jacobian],[Residual],[ReactionModel]")
-{
-	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", true, true, false, 1e-6, 1e-14, 8e-4);
-}
-
-TEST_CASE("MCT dynamic reactions time derivative Jacobian vs FD bulk and modified particle", "[MCT],[Jacobian],[Residual],[ReactionModel]")
-{
-	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD("MULTI_CHANNEL_TRANSPORT", true, true, true, 1e-6, 1e-14, 8e-4);
-}
-

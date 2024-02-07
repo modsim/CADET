@@ -883,7 +883,7 @@ void MultiChannelConvectionDispersionOperator::setFlowRates(int compartment, con
 void MultiChannelConvectionDispersionOperator::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 {
 	for (unsigned int compartment = 0; compartment < _nChannel; ++compartment)
-		_curVelocity[compartment] = in[compartment] / (_crossSections[compartment]);
+		_curVelocity[compartment] = _dir[compartment] * in[compartment] / (_crossSections[compartment]);
 }
 
 double MultiChannelConvectionDispersionOperator::inletFactor(unsigned int idxSec, int idxRad) const CADET_NOEXCEPT

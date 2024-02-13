@@ -1,7 +1,7 @@
 // =============================================================================
 //  CADET
 //  
-//  Copyright Â© 2008-2022: The CADET Authors
+//  Copyright © 2008-2022: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
 //  
 //  All rights reserved. This program and the accompanying materials
@@ -206,7 +206,7 @@ public:
 
 	/**
 	 * @brief Accesses an element at the given position
-	 * @details If the element does not exist, @Ã§ 0.0 is returned.
+	 * @details If the element does not exist, @ç 0.0 is returned.
 	 * @param [in] row Row index
 	 * @param [in] col Column index
 	 * @return Value of the element at the given position

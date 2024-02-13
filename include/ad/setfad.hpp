@@ -2,9 +2,9 @@
 //  SETFAD - Simple Expression Template Forward Automatic Differentiation
 //  (Part of SFAD library)
 //  
-//  Copyright Â© 2015-2019: Samuel LewekeÂ¹
+//  Copyright © 2015-2019: Samuel Leweke¹
 //	                                 
-//    Â¹ Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+//    ¹ Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 //  
 //  All rights reserved. This program and the accompanying materials
 //  are made available under the terms of the GNU Public License v3.0 (or, at

@@ -244,7 +244,7 @@ if (LAPACK_FOUND)
 	add_library(libcadet_nonlinalg_static STATIC ${LIBCADET_NONLINALG_SOURCES} ${LIBCADET_NONLINALG_SPARSE_SOURCES})
 	set_target_properties(libcadet_nonlinalg_static PROPERTIES OUTPUT_NAME cadet_nonlinalg_static)
 	target_compile_definitions(libcadet_nonlinalg_static PRIVATE libcadet_nonlinalg_static_EXPORTS ${LIB_LAPACK_DEFINE})
-	target_link_libraries(libcadet_nonlinalg_static PUBLIC CADET::CompileOptions PRIVATE SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${LAPACK_LIBRARIES})
+	target_link_libraries(libcadet_nonlinalg_static PUBLIC CADET::CompileOptions PRIVATE Eigen3::Eigen SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${LAPACK_LIBRARIES})
 
 	if (ENABLE_GRM_2D)
 		if (SUPERLU_FOUND)

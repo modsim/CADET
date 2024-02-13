@@ -55,7 +55,8 @@ AxialConvectionDispersionOperatorBaseDG::~AxialConvectionDispersionOperatorBaseD
 		delete _dispersionDep;
 
 	delete[] _DGjacAxDispBlocks;
-	//delete[] _wenoDerivatives; // todo weno
+	delete[] _auxState;
+	delete[] _subsState;
 }
 
 /**
@@ -92,10 +93,12 @@ bool AxialConvectionDispersionOperatorBaseDG::configureModelDiscretization(IPara
 	_invMM.resize(_nNodes, _nNodes);
 	_invMM.setZero();
 
-	_g.resize(_nPoints);
-	_g.setZero();
-	_h.resize(_nPoints);
-	_h.setZero();
+	_auxState = new active[_nPoints];
+	_subsState = new active[_nPoints];
+	for (int i = 0; i < _nPoints; i++) {
+		_auxState[i] = 0.0;
+		_subsState[i] = 0.0;
+	}
 	_boundary.setZero();
 	_surfaceFlux.resize(_nCells + 1u);
 	_surfaceFlux.setZero();
@@ -385,8 +388,8 @@ int AxialConvectionDispersionOperatorBaseDG::residualImpl(const IModel& model, d
 		// create Eigen objects
 		Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> _C(y + offsetC() + comp, _nPoints, InnerStride<Dynamic>(_strideNode));
 		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _resC(res + offsetC() + comp, _nPoints, InnerStride<Dynamic>(_strideNode));
-		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _h(reinterpret_cast<ResidualType*>(&_h[0]), _nPoints, InnerStride<>(1));
-		Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g(reinterpret_cast<StateType*>(&_g[0]), _nPoints, InnerStride<>(1));
+		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _h(reinterpret_cast<ResidualType*>(_subsState), _nPoints, InnerStride<>(1));
+		Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g(reinterpret_cast<StateType*>(_auxState), _nPoints, InnerStride<>(1));
 
 		// Add time derivative to bulk residual
 		if (yDot)
@@ -419,8 +422,7 @@ int AxialConvectionDispersionOperatorBaseDG::residualImpl(const IModel& model, d
 		InterfaceFluxAuxiliary<StateType>(y + offsetC() + comp, _strideNode, _strideCell);
 
 		// DG surface integral in strong form
-		surfaceIntegral<StateType, StateType>(y + offsetC() + comp, reinterpret_cast<StateType*>(&_g[0]),
-			_strideNode, _strideCell, 1u, _nNodes);
+		surfaceIntegral<StateType, StateType>(y + offsetC() + comp, &_g[0], _strideNode, _strideCell, 1u, _nNodes);
 
 		// ======================================//
 		// solve main equation RHS  d h / d x    //

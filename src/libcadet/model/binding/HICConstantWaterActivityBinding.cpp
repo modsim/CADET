@@ -1,7 +1,7 @@
 // =============================================================================
 //  CADET
 //  
-//  Copyright Â© 2008-2023: The CADET Authors
+//  Copyright © 2008-2023: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
 //  
 //  All rights reserved. This program and the accompanying materials
@@ -84,7 +84,7 @@ inline bool ExtHICCWAParamHandler::validateConfig(unsigned int nComp, unsigned i
 
 
 /**
- * @brief Defines the HIC Isotherm assuming a constant water activity as described by JÃ¤pel and Buyel, 2022
+ * @brief Defines the HIC Isotherm assuming a constant water activity as described by Jäpel and Buyel, 2022
  * @details Implements the the HIC Isotherm assuming a constant water activity: \f[ \begin{align}
  *				\beta &= \beta_0 e^{c_{p,0}\beta_1}\\
  *				\frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} \left( 1 - \sum_j \frac{q_j}{q_{max,j}} \right)^{\nu_i} - k_{d,i} q_i 0.1^{\nu_i \beta}

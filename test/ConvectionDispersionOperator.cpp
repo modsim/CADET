@@ -375,17 +375,17 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 		std::vector<double> wenoDerivatives(cadet::Weno::maxStencilSize(), 0.0);
 
 		cadet::Weno weno;
+		weno.epsilon(1e-12);
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 
-		cadet::model::parts::convdisp::FlowParameters<double> fp{
+		cadet::model::parts::convdisp::FlowParameters<double, cadet::Weno> fp{
 			u,
 			d_c.data(),
 			h,
 			wenoDerivatives.data(),
 			&weno,
 			&stencilMemory,
-			1e-12,
 			strideCell,
 			static_cast<unsigned int>(nComp),
 			static_cast<unsigned int>(nCol),
@@ -412,10 +412,10 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 
 			// Central finite differences
 			y[nComp + col] = ref * (1.0 + 1e-6);
-			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol1.data(), cadet::linalg::BandedSparseRowIterator(), fp);
+			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::Weno, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol1.data(), cadet::linalg::BandedSparseRowIterator(), fp);
 
 			y[nComp + col] = ref * (1.0 - 1e-6);
-			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol2.data(), cadet::linalg::BandedSparseRowIterator(), fp);
+			cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::Weno, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, jacCol2.data(), cadet::linalg::BandedSparseRowIterator(), fp);
 
 			y[nComp + col] = ref;
 
@@ -449,17 +449,17 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 		std::vector<double> wenoDerivatives(cadet::Weno::maxStencilSize(), 0.0);
 
 		cadet::Weno weno;
+		weno.epsilon(1e-12);
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 
-		cadet::model::parts::convdisp::FlowParameters<double> fp{
+		cadet::model::parts::convdisp::FlowParameters<double, cadet::Weno> fp{
 			u,
 			d_c.data(),
 			h,
 			wenoDerivatives.data(),
 			&weno,
 			&stencilMemory,
-			1e-12,
 			strideCell,
 			static_cast<unsigned int>(nComp),
 			static_cast<unsigned int>(nCol),
@@ -483,7 +483,7 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 
 		// Populate sparse matrix
 		cadet::linalg::CompressedSparseMatrix sparseMat(pattern);
-		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandedSparseRowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), sparseMat.row(0), fp);
+		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::Weno, cadet::linalg::BandedSparseRowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), sparseMat.row(0), fp);
 
 		// Populate dense matrix
 		cadet::linalg::BandMatrix bandMat;
@@ -491,7 +491,7 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 			bandMat.resize(nComp * nCol, lowerBandwidth * strideCell, upperBandwidth * strideCell);
 		else
 			bandMat.resize(nComp * nCol, upperBandwidth * strideCell, lowerBandwidth * strideCell);
-		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::linalg::BandMatrix::RowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), bandMat.row(0), fp);
+		cadet::model::parts::convdisp::residualKernel<double, double, double, cadet::Weno, cadet::linalg::BandMatrix::RowIterator, true>(cadet::SimulationTime{0.0, 0u}, y.data(), nullptr, res.data(), bandMat.row(0), fp);
 
 		for (int col = 0; col < bandMat.rows(); ++col)
 		{

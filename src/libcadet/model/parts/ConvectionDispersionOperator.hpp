@@ -22,7 +22,6 @@
 #include "AutoDiff.hpp"
 #include "linalg/BandMatrix.hpp"
 #include "Memory.hpp"
-#include "Weno.hpp"
 #include "SimulationTypes.hpp"
 
 #include <unordered_map>
@@ -35,6 +34,9 @@ namespace cadet
 class IParameterProvider;
 struct AdJacobianParams;
 struct SimulationTime;
+
+class Weno;
+class HighResolutionKoren;
 
 namespace model
 {
@@ -89,7 +91,8 @@ public:
 
 	inline unsigned int nComp() const CADET_NOEXCEPT { return _nComp; }
 	inline unsigned int nCol() const CADET_NOEXCEPT { return _nCol; }
-	inline const Weno& weno() const CADET_NOEXCEPT { return _weno; }
+	inline Weno const* weno() const CADET_NOEXCEPT { return _weno; }
+	inline HighResolutionKoren const* koren() const CADET_NOEXCEPT { return _koren; }
 
 	unsigned int jacobianLowerBandwidth() const CADET_NOEXCEPT;
 	unsigned int jacobianUpperBandwidth() const CADET_NOEXCEPT;
@@ -124,9 +127,9 @@ protected:
 	int _dir; //!< Current flow direction in this time section
 
 	ArrayPool _stencilMemory; //!< Provides memory for the stencil
-	double* _wenoDerivatives; //!< Holds derivatives of the WENO scheme
-	Weno _weno; //!< The WENO scheme implementation
-	double _wenoEpsilon; //!< The @f$ \varepsilon @f$ of the WENO scheme (prevents division by zero)
+	double* _reconstrDerivatives; //!< Holds derivatives of the reconstruction scheme
+	Weno* _weno; //!< The WENO scheme implementation
+	HighResolutionKoren* _koren; //!< The High Resolution Koren scheme implementation
 
 	bool _dispersionCompIndep; //!< Determines whether dispersion is component independent
 

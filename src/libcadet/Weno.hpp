@@ -57,7 +57,7 @@ public:
 	/**
 	 * @brief Creates the WENO scheme
 	 */
-	Weno() : _order(maxOrder()), _boundaryTreatment(BoundaryTreatment::ReduceOrder), _intermediateValues(3 * maxOrder() * sizeof(active)) { }
+	Weno() : _epsilon(1e-10), _order(maxOrder()), _boundaryTreatment(BoundaryTreatment::ReduceOrder), _intermediateValues(3 * maxOrder() * sizeof(active)) { }
 
 	/**
 	 * @brief Returns the maximum order \f$ r \f$ of the implemented schemes
@@ -73,7 +73,6 @@ public:
 
 	/**
 	 * @brief Reconstructs a cell face value from volume averages
-	 * @param [in] epsilon \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights) 
 	 * @param [in] cellIdx Index of the current cell
 	 * @param [in] numCells Number of cells
 	 * @param [in] w Stencil that contains the \f$ 2r-1 \f$ volume averages from which the cell face values are reconstructed centered at the 
@@ -85,14 +84,13 @@ public:
 	 * @return Order of the WENO scheme that was used in the computation
 	 */
 	template <typename StateType, typename StencilType>
-	int reconstruct(double epsilon, unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result, double* const Dvm)
+	int reconstruct(unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result, double* const Dvm)
 	{
-		return reconstruct<StateType, StencilType, true>(epsilon, cellIdx, numCells, w, result, Dvm);
+		return reconstruct<StateType, StencilType, true>(cellIdx, numCells, w, result, Dvm);
 	}
 
 	/**
 	 * @brief Reconstructs a cell face value from volume averages
-	 * @param [in] epsilon \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights) 
 	 * @param [in] cellIdx Index of the current cell
 	 * @param [in] numCells Number of cells
 	 * @param [in] w Stencil that contains the \f$ 2r-1 \f$ volume averages from which the cell face values are reconstructed centered at the 
@@ -103,10 +101,22 @@ public:
 	 * @return Order of the WENO scheme that was used in the computation
 	 */
 	template <typename StateType, typename StencilType>
-	int reconstruct(double epsilon, unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result)
+	int reconstruct(unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result)
 	{
-		return reconstruct<StateType, StencilType, false>(epsilon, cellIdx, numCells, w, result, nullptr);
+		return reconstruct<StateType, StencilType, false>(cellIdx, numCells, w, result, nullptr);
 	}
+
+	/**
+	 * @brief Sets the \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights)
+	 * @param [in] eps Boundary treatment method
+	 */
+	inline void epsilon(double eps) { _epsilon = eps; }
+
+	/**
+	 * @brief Returns the \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights)
+	 * @return WENO \f$ \varepsilon \f$
+	 */
+	inline double epsilon() const CADET_NOEXCEPT { return _epsilon; }
 
 	/**
 	 * @brief Sets the WENO order
@@ -183,7 +193,6 @@ private:
 
 	/**
 	 * @brief Reconstructs a cell face value from volume averages
-	 * @param [in] epsilon \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights) 
 	 * @param [in] cellIdx Index of the current cell
 	 * @param [in] numCells Number of cells
 	 * @param [in] w Stencil that contains the \f$ 2r-1 \f$ volume averages from which the cell face values are reconstructed centered at the 
@@ -196,7 +205,7 @@ private:
 	 * @return Order of the WENO scheme that was used in the computation
 	 */
 	template <typename StateType, typename StencilType, bool wantJac>
-	int reconstruct(double epsilon, unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result, double* const Dvm)
+	int reconstruct(unsigned int cellIdx, unsigned int numCells, const StencilType& w, StateType& result, double* const Dvm)
 	{
 #if defined(ACTIVE_SETFAD) || defined(ACTIVE_SFAD)
 		using cadet::sqr;
@@ -299,7 +308,7 @@ private:
 
 		// Add eps to avoid divide-by-zeros
 		for (int r = 0; r < order; ++r)
-			beta[r] += epsilon;
+			beta[r] += _epsilon;
 
 		// Calculate weights
 		for (int r = 0; r < order; ++r)
@@ -380,6 +389,7 @@ private:
 		return order;
 	}
 
+	double _epsilon; //!< Small number preventing divsion by zero
 	int _order; //!< Selected WENO order
 	BoundaryTreatment _boundaryTreatment; //!< Controls how to treat boundary cells
 	ArrayPool _intermediateValues; //!< Buffer for intermediate and temporary values

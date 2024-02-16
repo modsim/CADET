@@ -372,7 +372,7 @@ void testBulkJacobianWenoForwardBackward(int wenoOrder)
 
 struct AxialFlow
 {
-	typedef cadet::model::parts::convdisp::AxialFlowParameters<double> Params;
+	typedef cadet::model::parts::convdisp::AxialFlowParameters<double, cadet::Weno> Params;
 
 	static void sparsityPattern(cadet::linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, cadet::Weno& weno)
 	{
@@ -381,13 +381,13 @@ struct AxialFlow
 
 	static void residual(double const* y, double const* yDot, double* res, const Params& fp)
 	{
-		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, cadet::linalg::BandedSparseRowIterator(), fp);
+		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, cadet::Weno, cadet::linalg::BandedSparseRowIterator, false>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, cadet::linalg::BandedSparseRowIterator(), fp);
 	}
 
 	template <typename IteratorType>
 	static void residualWithJacobian(double const* y, double const* yDot, double* res, IteratorType jacBegin, const Params& fp)
 	{
-		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, IteratorType, true>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, jacBegin, fp);
+		cadet::model::parts::convdisp::residualKernelAxial<double, double, double, cadet::Weno, IteratorType, true>(cadet::SimulationTime{0.0, 0u}, y, yDot, res, jacBegin, fp);
 	}
 
 	std::unique_ptr<cadet::model::IParameterParameterDependence> parDep;
@@ -407,7 +407,6 @@ struct AxialFlow
 			wenoDerivatives,
 			weno,
 			stencilMemory,
-			1e-12,
 			strideCell,
 			static_cast<unsigned int>(nComp),
 			static_cast<unsigned int>(nCol),
@@ -500,6 +499,7 @@ void testBulkJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 		std::vector<double> wenoDerivatives(cadet::Weno::maxStencilSize(), 0.0);
 
 		cadet::Weno weno;
+		weno.epsilon(1e-12);
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 
@@ -576,6 +576,7 @@ void testBulkJacobianSparseBandedWeno(int wenoOrder, bool forwardFlow)
 		std::vector<double> wenoDerivatives(cadet::Weno::maxStencilSize(), 0.0);
 
 		cadet::Weno weno;
+		weno.epsilon(1e-12);
 		weno.order(wenoOrder);
 		weno.boundaryTreatment(cadet::Weno::BoundaryTreatment::ReduceOrder);
 

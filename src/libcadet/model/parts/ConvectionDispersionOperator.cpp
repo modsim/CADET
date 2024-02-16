@@ -14,6 +14,8 @@
 #include "cadet/Exceptions.hpp"
 
 #include "Stencil.hpp"
+#include "Weno.hpp"
+#include "HighResKoren.hpp"
 #include "ParamReaderHelper.hpp"
 #include "AdUtils.hpp"
 #include "SimulationTypes.hpp"
@@ -41,8 +43,7 @@ namespace parts
 /**
  * @brief Creates an AxialConvectionDispersionOperatorBase
  */
-AxialConvectionDispersionOperatorBase::AxialConvectionDispersionOperatorBase() : _stencilMemory(sizeof(active) * Weno::maxStencilSize()), 
-	_wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _dispersionDep(nullptr)
+AxialConvectionDispersionOperatorBase::AxialConvectionDispersionOperatorBase() : _reconstrDerivatives(nullptr), _weno(nullptr), _koren(nullptr), _dispersionDep(nullptr)
 {
 }
 
@@ -50,8 +51,9 @@ AxialConvectionDispersionOperatorBase::~AxialConvectionDispersionOperatorBase() 
 {
 	if (_dispersionDep)
 		delete _dispersionDep;
-
-	delete[] _wenoDerivatives;
+	delete[] _reconstrDerivatives;
+	delete _weno;
+	delete _koren;
 }
 
 /**
@@ -82,12 +84,40 @@ bool AxialConvectionDispersionOperatorBase::configureModelDiscretization(IParame
 
 	paramProvider.pushScope("discretization");
 
-	// Read WENO settings and apply them
-	paramProvider.pushScope("weno");
-	_weno.order(paramProvider.getInt("WENO_ORDER"));
-	_weno.boundaryTreatment(paramProvider.getInt("BOUNDARY_MODEL"));
-	_wenoEpsilon = paramProvider.getDouble("WENO_EPS");
-	paramProvider.popScope();
+	const std::string recType = paramProvider.exists("RECONSTRUCTION") ? paramProvider.getString("RECONSTRUCTION") : "WENO";
+
+	cadet_assert(_weno == nullptr);
+	cadet_assert(_koren == nullptr);
+	cadet_assert(_reconstrDerivatives == nullptr);
+
+	if (recType == "WENO")
+	{
+		// Read WENO settings and apply them
+		paramProvider.pushScope("weno");
+
+		_weno = new Weno();
+		_weno->order(paramProvider.getInt("WENO_ORDER"));
+		_weno->boundaryTreatment(paramProvider.getInt("BOUNDARY_MODEL"));
+		_weno->epsilon(paramProvider.getDouble("WENO_EPS"));
+
+		paramProvider.popScope();
+
+		_reconstrDerivatives = new double[Weno::maxStencilSize()];
+		_stencilMemory.resize(sizeof(active) * Weno::maxStencilSize());
+	}
+	else if (recType == "KOREN")
+	{
+		// Read Koren High Resolution scheme settings and apply them
+		paramProvider.pushScope("koren");
+
+		_koren = new HighResolutionKoren();
+		_koren->epsilon(paramProvider.getDouble("KOREN_EPS"));
+
+		paramProvider.popScope();
+
+		_reconstrDerivatives = new double[HighResolutionKoren::maxStencilSize()];
+		_stencilMemory.resize(sizeof(active) * HighResolutionKoren::maxStencilSize());
+	}
 
 	paramProvider.popScope();
 
@@ -324,24 +354,48 @@ int AxialConvectionDispersionOperatorBase::residualImpl(const IModel& model, dou
 	const ParamType h = static_cast<ParamType>(_colLength) / static_cast<double>(_nCol);
 //	const int strideCell = strideColCell();
 
-	convdisp::AxialFlowParameters<ParamType> fp{
-		u,
-		d_c,
-		h,
-		_wenoDerivatives,
-		&_weno,
-		&_stencilMemory,
-		_wenoEpsilon,
-		strideColCell(),
-		_nComp,
-		_nCol,
-		0u,
-		_nComp,
-		_dispersionDep,
-		model
-	};
+	if (_weno)
+	{
+		convdisp::AxialFlowParameters<ParamType, Weno> fp{
+			u,
+			d_c,
+			h,
+			_reconstrDerivatives,
+			_weno,
+			&_stencilMemory,
+			strideColCell(),
+			_nComp,
+			_nCol,
+			0u,
+			_nComp,
+			_dispersionDep,
+			model
+		};
 
-	return convdisp::residualKernelAxial<StateType, ResidualType, ParamType, RowIteratorType, wantJac, wantRes>(SimulationTime{t, secIdx}, y, yDot, res, jacBegin, fp);
+		return convdisp::residualKernelAxial<StateType, ResidualType, ParamType, Weno, RowIteratorType, wantJac, wantRes>(SimulationTime{t, secIdx}, y, yDot, res, jacBegin, fp);
+	}
+	else if (_koren)
+	{
+		convdisp::AxialFlowParameters<ParamType, HighResolutionKoren> fp{
+			u,
+			d_c,
+			h,
+			_reconstrDerivatives,
+			_koren,
+			&_stencilMemory,
+			strideColCell(),
+			_nComp,
+			_nCol,
+			0u,
+			_nComp,
+			_dispersionDep,
+			model
+		};
+
+		return convdisp::residualKernelAxial<StateType, ResidualType, ParamType, HighResolutionKoren, RowIteratorType, wantJac, wantRes>(SimulationTime{t, secIdx}, y, yDot, res, jacBegin, fp);
+	}
+
+	return 0;
 }
 
 /**
@@ -397,13 +451,33 @@ unsigned int AxialConvectionDispersionOperatorBase::jacobianLowerBandwidth() con
 	// right cell face (lower + 1 + upper) and to the left cell face (shift the stencil by -1 because influx of cell i
 	// is outflux of cell i-1)
 	// We also have to make sure that there's at least one sub and super diagonal for the dispersion term
-	return std::max(_weno.lowerBandwidth() + 1u, 1u) * strideColCell();
+	if (_weno)
+	{
+		return std::max(_weno->lowerBandwidth() + 1u, 1u) * strideColCell();
+	}
+	else if (_koren)
+	{
+		return std::max(_koren->lowerBandwidth() + 1u, 1u) * strideColCell();
+	}
+
+	// Only dispersion
+	return strideColCell();
 }
 
 unsigned int AxialConvectionDispersionOperatorBase::jacobianUpperBandwidth() const CADET_NOEXCEPT
 {
 	// We have to make sure that there's at least one sub and super diagonal for the dispersion term
-	return std::max(_weno.upperBandwidth(), 1u) * strideColCell();
+	if (_weno)
+	{
+		return std::max(_weno->upperBandwidth(), 1u) * strideColCell();
+	}
+	else if (_koren)
+	{
+		return std::max(_koren->upperBandwidth(), 1u) * strideColCell();
+	}
+
+	// Only dispersion
+	return strideColCell();
 }
 
 unsigned int AxialConvectionDispersionOperatorBase::jacobianDiscretizedBandwidth() const CADET_NOEXCEPT

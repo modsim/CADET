@@ -92,7 +92,7 @@ void sparsityPatternRadial(linalg::SparsityPatternRowIterator itBegin, unsigned 
 				}
 
 				// Reconstruct concentration on this cell's right face -- we only need the WENO order here
-				wenoOrder = weno.reconstruct<double, impl::DummyStencil>(1e-12, col, nCol, stencil, vm);
+				wenoOrder = weno.template reconstruct<double, impl::DummyStencil>(col, nCol, stencil, vm);
 
 				// Right side
 				for (int i = 0; i < 2 * wenoOrder - 1; ++i)
@@ -149,7 +149,7 @@ void sparsityPatternRadial(linalg::SparsityPatternRowIterator itBegin, unsigned 
 				}
 
 				// Reconstruct concentration on this cell's left face -- we only need the WENO order here
-				wenoOrder = weno.reconstruct<double, impl::DummyStencil>(1e-12, col, nCol, stencil, vm);
+				wenoOrder = weno.template reconstruct<double, impl::DummyStencil>(col, nCol, stencil, vm);
 
 				// Left face
 				for (int i = 0; i < 2 * wenoOrder - 1; ++i)

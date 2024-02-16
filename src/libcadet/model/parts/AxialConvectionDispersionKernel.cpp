@@ -17,6 +17,7 @@
 
 #include "model/parts/AxialConvectionDispersionKernel.hpp"
 #include "Weno.hpp"
+#include "HighResKoren.hpp"
 #include "linalg/CompressedSparseMatrix.hpp"
 
 namespace cadet
@@ -41,125 +42,135 @@ namespace impl
 		inline double operator[](const int idx) const { return 0.0; }
 	};
 
+	template <typename ReconstrType>
+	void sparsityPatternAxial(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, ReconstrType& reconstruction)
+	{
+		impl::DummyStencil stencil;
+
+		if (u >= 0.0)
+		{
+			for (unsigned int comp = 0; comp < nComp; ++comp)
+			{
+				linalg::SparsityPatternRowIterator jac = itBegin + comp;
+
+				// Reset reconstructed output
+				double vm = 0.0; // reconstructed value
+
+				int recOrder = 0;
+
+				// Iterate over all cells
+				for (unsigned int col = 0; col < nCol; ++col)
+				{
+					// Time derivative
+					jac.centered(0);
+
+					// ------------------- Dispersion -------------------
+
+					// Right side, leave out if we're in the last cell (boundary condition)
+					if (cadet_likely(col < nCol - 1))
+					{
+						// jac.centered(0);
+						jac.centered(strideCell);
+					}
+
+					// Left side, leave out if we're in the first cell (boundary condition)
+					if (cadet_likely(col > 0))
+					{
+						// jac.centered(0);
+						jac.centered(-strideCell);
+					}
+
+					// ------------------- Convection -------------------
+
+					// Add convection through this cell's left face
+					if (cadet_likely(col > 0))
+					{
+						for (int i = 0; i < 2 * recOrder - 1; ++i)
+							// Note that we have an offset of -1 here (compared to the right cell face below), since
+							// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
+							jac.centered((i - recOrder) * strideCell);
+					}
+
+					// Reconstruct concentration on this cell's right face -- we only need the order here
+					recOrder = reconstruction.template reconstruct<double, impl::DummyStencil>(col, nCol, stencil, vm);
+
+					// Right side
+					for (int i = 0; i < 2 * recOrder - 1; ++i)
+						jac.centered((i - recOrder + 1) * strideCell);
+
+					if (cadet_likely(col < nCol - 1))
+						jac += strideCell;
+				}
+			}
+		}
+		else
+		{
+			for (unsigned int comp = 0; comp < nComp; ++comp)
+			{
+				linalg::SparsityPatternRowIterator jac = itBegin + strideCell * (nCol - 1) + comp;
+
+				// Reset reconstructed output
+				double vm = 0.0; // reconstructed value
+
+				int recOrder = 0;
+
+				// Iterate over all cells (backwards)
+				// Note that col wraps around to unsigned int's maximum value after 0
+				for (unsigned int col = nCol - 1; col < nCol; --col)
+				{
+					// Time derivative
+					jac.centered(0);
+
+					// ------------------- Dispersion -------------------
+
+					// Right side, leave out if we're in the first cell (boundary condition)
+					if (cadet_likely(col < nCol - 1))
+					{
+						// jac.centered(0);
+						jac.centered(strideCell);
+					}
+
+					// Left side, leave out if we're in the last cell (boundary condition)
+					if (cadet_likely(col > 0))
+					{
+						// jac.centered(0);
+						jac.centered(-strideCell);
+					}
+
+					// ------------------- Convection -------------------
+
+					// Add convection through this cell's right face
+					if (cadet_likely(col < nCol - 1))
+					{
+						for (int i = 0; i < 2 * recOrder - 1; ++i)
+							// Note that we have an offset of +1 here (compared to the left cell face below), since
+							// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
+							jac.centered((recOrder - i) * strideCell);
+					}
+
+					// Reconstruct concentration on this cell's left face -- we only need the order here
+					recOrder = reconstruction.template reconstruct<double, impl::DummyStencil>(col, nCol, stencil, vm);
+
+					// Left face
+					for (int i = 0; i < 2 * recOrder - 1; ++i)
+						jac.centered((recOrder - i - 1) * strideCell);
+
+					if (cadet_likely(col > 0))
+						jac -= strideCell;
+				}
+			}
+		}
+	}
 } // namespace impl
 
 void sparsityPatternAxial(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, Weno& weno)
 {
-	impl::DummyStencil stencil;
+	impl::sparsityPatternAxial(itBegin, nComp, nCol, strideCell, u, weno);
+}
 
-	if (u >= 0.0)
-	{
-		for (unsigned int comp = 0; comp < nComp; ++comp)
-		{
-			linalg::SparsityPatternRowIterator jac = itBegin + comp;
-
-			// Time derivative
-			jac.centered(0);
-
-			// Reset WENO output
-			double vm = 0.0; // reconstructed value
-
-			int wenoOrder = 0;
-
-			// Iterate over all cells
-			for (unsigned int col = 0; col < nCol; ++col)
-			{
-				// ------------------- Dispersion -------------------
-
-				// Right side, leave out if we're in the last cell (boundary condition)
-				if (cadet_likely(col < nCol - 1))
-				{
-					// jac.centered(0);
-					jac.centered(strideCell);
-				}
-
-				// Left side, leave out if we're in the first cell (boundary condition)
-				if (cadet_likely(col > 0))
-				{
-					// jac.centered(0);
-					jac.centered(-strideCell);
-				}
-
-				// ------------------- Convection -------------------
-
-				// Add convection through this cell's left face
-				if (cadet_likely(col > 0))
-				{
-					for (int i = 0; i < 2 * wenoOrder - 1; ++i)
-						// Note that we have an offset of -1 here (compared to the right cell face below), since
-						// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
-						jac.centered((i - wenoOrder) * strideCell);
-				}
-
-				// Reconstruct concentration on this cell's right face -- we only need the WENO order here
-				wenoOrder = weno.reconstruct<double, impl::DummyStencil>(1e-12, col, nCol, stencil, vm);
-
-				// Right side
-				for (int i = 0; i < 2 * wenoOrder - 1; ++i)
-					jac.centered((i - wenoOrder + 1) * strideCell);
-
-				if (cadet_likely(col < nCol - 1))
-					jac += strideCell;
-			}
-		}
-	}
-	else
-	{
-		for (unsigned int comp = 0; comp < nComp; ++comp)
-		{
-			linalg::SparsityPatternRowIterator jac = itBegin + strideCell * (nCol - 1) + comp;
-
-			// Time derivative
-			jac.centered(0);
-
-			// Reset WENO output
-			double vm = 0.0; // reconstructed value
-
-			int wenoOrder = 0;
-
-			// Iterate over all cells (backwards)
-			// Note that col wraps around to unsigned int's maximum value after 0
-			for (unsigned int col = nCol - 1; col < nCol; --col)
-			{
-				// ------------------- Dispersion -------------------
-
-				// Right side, leave out if we're in the first cell (boundary condition)
-				if (cadet_likely(col < nCol - 1))
-				{
-					// jac.centered(0);
-					jac.centered(strideCell);
-				}
-
-				// Left side, leave out if we're in the last cell (boundary condition)
-				if (cadet_likely(col > 0))
-				{
-					// jac.centered(0);
-					jac.centered(-strideCell);
-				}
-
-				// ------------------- Convection -------------------
-
-				// Add convection through this cell's right face
-				if (cadet_likely(col < nCol - 1))
-				{
-					for (int i = 0; i < 2 * wenoOrder - 1; ++i)
-						// Note that we have an offset of +1 here (compared to the left cell face below), since
-						// the reconstructed value depends on the previous stencil (which has now been moved by one cell)
-						jac.centered((wenoOrder - i) * strideCell);
-				}
-
-				// Reconstruct concentration on this cell's left face -- we only need the WENO order here
-				wenoOrder = weno.reconstruct<double, impl::DummyStencil>(1e-12, col, nCol, stencil, vm);
-
-				// Left face
-				for (int i = 0; i < 2 * wenoOrder - 1; ++i)
-					jac.centered((wenoOrder - i - 1) * strideCell);
-
-				if (cadet_likely(col > 0))
-					jac -= strideCell;
-			}
-		}
-	}
+void sparsityPatternAxial(linalg::SparsityPatternRowIterator itBegin, unsigned int nComp, unsigned int nCol, int strideCell, double u, HighResolutionKoren& koren)
+{
+	impl::sparsityPatternAxial(itBegin, nComp, nCol, strideCell, u, koren);
 }
 
 } // namespace convdisp

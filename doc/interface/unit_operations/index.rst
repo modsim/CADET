@@ -15,4 +15,5 @@ Unit Operations
     cstr
     radial_flow_models
     multi_channel_transport_model
+    population_balance_model
 

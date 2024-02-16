@@ -108,6 +108,7 @@ set(LIBCADET_REACTIONMODEL_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/MassActionLawReaction.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/MichaelisMentenReaction.cpp
 
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/reaction/CrystallizationReaction.cpp
 )
 
 # LIBCADET_SOURCES holds all source files for LIBCADET target

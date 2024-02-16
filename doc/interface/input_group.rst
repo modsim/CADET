@@ -17,5 +17,6 @@ Input Group
     sensitivities
     solver
     parameter_dependencies
+    population_balance_model
 
 

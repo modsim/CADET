@@ -173,7 +173,6 @@ protected:
 	ArrayPool _stencilMemory; //!< Provides memory for the stencil
 	double* _wenoDerivatives; //!< Holds derivatives of the WENO scheme
 	Weno _weno; //!< The WENO scheme implementation
-	double _wenoEpsilon; //!< The @f$ \varepsilon @f$ of the WENO scheme (prevents division by zero)
 
 	linalg::CompressedSparseMatrix _jacC; //!< Jacobian
 	LinearSolver* _linearSolver; //!< Solves linear system with time discretized Jacobian

@@ -686,7 +686,7 @@ bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IP
 	paramProvider.pushScope("weno");
 	_weno.order(paramProvider.getInt("WENO_ORDER"));
 	_weno.boundaryTreatment(paramProvider.getInt("BOUNDARY_MODEL"));
-	_wenoEpsilon = paramProvider.getDouble("WENO_EPS");
+	_weno.epsilon(paramProvider.getDouble("WENO_EPS"));
 	paramProvider.popScope();
 
 	// Read solver settings
@@ -991,14 +991,13 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 	{
 		active const* const d_c = getSectionDependentSlice(_axialDispersion, _nRad * _nComp, secIdx) + i * _nComp;
 
-		convdisp::FlowParameters<ParamType> fp{
+		convdisp::FlowParameters<ParamType, Weno> fp{
 			static_cast<ParamType>(_curVelocity[i]),
 			d_c,
 			h,
 			_wenoDerivatives,
 			&_weno,
 			&_stencilMemory,
-			_wenoEpsilon,
 			static_cast<int>(_nComp * _nRad),  // Stride between two cells
 			_nComp,
 			_nCol,
@@ -1007,9 +1006,9 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 		};
 
 		if (wantJac)
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, true>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernel<StateType, ResidualType, ParamType, Weno, linalg::BandedSparseRowIterator, true>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 		else
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernel<StateType, ResidualType, ParamType, Weno, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 	}
 
 	// Handle radial dispersion

@@ -13,5 +13,4 @@ Unit Operations
     lumped_rate_model_without_pores
     2d_general_rate_model
     cstr
-    population_balance_model
 

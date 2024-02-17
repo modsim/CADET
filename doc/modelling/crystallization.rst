@@ -1,15 +1,16 @@
 .. _pbm_model:
 
-Population balance model (PBM)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Population balance models
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The population balance equation is a particle-number continuity equation which describes the evolution of the number density :math:`n` of the particles in the time and space domains. 
 The particles of interest have both internal and external coordinates: the internal coordinate can be chosen as any property of the particles such as the particle size or volume 
-while the external coordinate can be a characteristic dimension of the reactor itself, including the axial position. The current release considers the nucleation, growth and growth rate dispersion. 
-The equations can be solved in CSTR or DPFR (LRM) to model batch or continuous processes. Aggregation and fragmentation processes will be included later. 
+while the external coordinate can be a characteristic dimension of the reactor itself, including the axial position. 
 
-One-dimensional (1D) PBM
-^^^^^^^^^^^^^^^^^^^^^^^^
+The current release considers the nucleation, growth and growth rate dispersion. Aggregation and fragmentation processes will be included later. The equations can be solved in CSTR or DPFR (LRM) to model batch or continuous processes. 
+
+One-dimensional Population balance model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Assuming a well-mixed tank, the population balance equation chosen the particle size :math:`x` as the internal coodinate reads:
 
@@ -63,11 +64,12 @@ Evolution of the reactor's volume is governed by:
         \frac{\mathrm{d}V}{\mathrm{d}t} &= F_{\text{in}} - F_{\text{out}}.
     \end{aligned}
 
-Two-dimensional (2D) PBM
-^^^^^^^^^^^^^^^^^^^^^^^^
 
-The above 1D PBM can also be formulated in DPFR (LRM) to model continuous processes. If we choose the axial position within a plug
-flow reactor as the external coordinate :math:`z`, the 2D PBM incorporating axial dispersion reads:
+Two-dimensional Population balance model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The PBM can also be formulated in DPFR (LRM) to model continuous processes. If we choose the axial position within a plug
+flow reactor as the external coordinate :math:`z`, the :math:`2D` PBM incorporating axial dispersion reads:
 
 .. math::
 

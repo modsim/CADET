@@ -15,5 +15,6 @@ Input Group
     return_data
     sensitivities
     solver
+    population_balance_model
 
 

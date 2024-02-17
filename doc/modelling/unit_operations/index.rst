@@ -47,12 +47,6 @@ is given in :numref:`table_features_unit_operations`.
      - ×
      - ×
      - ✓
-   * - :ref:`pbm_model`
-     - ×
-     - ×
-     - ×
-     - ×
-     - ×
 
 
 Moreover, the pseudo unit operations :ref:`inlet_model`, and :ref:`outlet_model` act as sources and sinks for the system. 
@@ -67,6 +61,5 @@ Moreover, the pseudo unit operations :ref:`inlet_model`, and :ref:`outlet_model`
     lumped_rate_model_with_pores
     2d_general_rate_model
     cstr
-    population_balance_model
     inlet
     outlet

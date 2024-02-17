@@ -1,12 +1,10 @@
 .. _pbm_config:
 
 Population balance model
-=====================================
+========================
 
-One-dimensional (1D) PBM
-^^^^^^^^^^^^^^^^^^^^^^^^
+The :math:`1D` PBM is implemented in a CSTR as reactions. To configure the CSTR, see :ref:`cstr_config`. The :math:`2D` PBM is implemented in a DPFR (LRM). To configure the LRM, see :ref:`lumpded_rate_model_without_pores_config`.
 
-The 1D PBM is implemented in a CSTR as reactions. To configure the CSTR, see :ref:`cstr_config`.
 Add crystallization reactions:
 
 Group /input/model/unit_XXX - REACTION_MODEL = CRYSTALLIZATION
@@ -21,10 +19,7 @@ Group /input/model/unit_XXX - REACTION_MODEL = CRYSTALLIZATION
    =============  =================================  =============
 
 Constitutive equations are configured under:
---------------------------------------------
-
-Group /input/model/unit_XXX/reaction/reaction_bulk/
----------------------------------------------------
+Group /input/model/unit_XXX/reaction/reaction_bulk/ for CSTR operations, and Group /input/model/unit_XXX/reaction/reaction/ for DPFR operations.
 
 ``CRY_BINS``
 
@@ -140,20 +135,9 @@ Group /input/model/unit_XXX/reaction/reaction_bulk/
    
 ``CRY_GROWTH_SCHEME_ORDER``
 
-    Define growth flux reconstruction scheme. It can only be 1, 2, 3, 4. Values other than these will give undefined behaviors.
-    1: upwind scheme; 2: HR Koren scheme; 3: WENO23 scheme; 4: WENO35 scheme
+    Define growth flux reconstruction scheme. It can only be :math:`1`, :math:`2`, :math:`3`, :math:`4`. Values other than these will give undefined behaviors.
+    :math:`1`: upwind scheme; :math:`2`: HR Koren scheme; :math:`3`: WENO23 scheme; :math:`4`: WENO35 scheme
    
    =============  =========================  =============
    **Type:** int  **Range:** :math:`[1, 4]`  **Length:** 1
    =============  =========================  =============
-
-Two-dimensional (2D) PBM
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-The 2D PBM is implemented in a DPFR (LRM). To configure the LRM, see :ref:`lumpded_rate_model_without_pores_config`.
-The constitutive equations can be configured similarly to the 1D PBM above under
-
-Group /input/model/unit_XXX/reaction/
--------------------------------------
-
-Note the change from '../reaction_bulk/' to '../reaction/'.

@@ -3,7 +3,7 @@
 Flux reconstruction methods
 ===========================
 
-Group /input/model/unit_XXX/discretization/weno - WENO Parameters
+Group /input/model/unit_XXX/discretization/reconstruction = WENO
 -----------------------------------------------------------------
 
 ``BOUNDARY_MODEL``
@@ -38,3 +38,10 @@ Group /input/model/unit_XXX/discretization/weno - WENO Parameters
    =============  ===========================  =============
    **Type:** int  **Range:** :math:`\{1, 3\}`  **Length:** 1
    =============  ===========================  =============
+
+
+Group /input/model/unit_XXX/discretization/reconstruction = KOREN
+-----------------------------------------------------------------
+
+The Koren scheme implemented in CADET intrinsically uses a van Leer flux limiter. It can reach a maximum order of 2 depending on the smoothness of the solution. The
+BOUNDARY_MODEL is intrinsically set to 0 (stable). :math:`\varepsilon` in the van Leer flux limiter is set to :math:`1e-10`.

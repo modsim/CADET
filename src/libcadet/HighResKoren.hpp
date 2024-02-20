@@ -31,13 +31,11 @@ namespace cadet
 
 /**
  * @brief Implements the High Resolution Koren scheme for convection
- * @details This scheme is based on upwind stencils and provides WENO methods 1-1, 2-3, and 3-5.
- *          In general, WENO achieves order \f$ r \f$ using a stencil with \f$ (2r-1) \f$ points
- *          that is subdivided into \f$ r \f$ smaller stencils having \f$ r \f$ points each.
- *          WENO combines all substencils with an estimate of the smoothness of the solution (also obtained from the
- *          substencils) in order to achieve a non-oscillatory high order reconstruction of the face values given
- *          volume averages (cell boundary fluxes in finite volume schemes).
- *          For details see \cite Liu1994 and \cite Jiang1996.
+ * @details This scheme uses a van Leer flux limiter to help the scheme
+ * to stay in the TVD region. The limiter uses a smoothness monitor to
+ * monitor the smoothness of the solution and adjust the scheme between
+ * first and second order. \varepsilon in the van Leer flux limiter is
+ * set to 1e-10. The BOUNDARY_MODEL is set to 0. 
  */
 class HighResolutionKoren
 {
@@ -45,7 +43,7 @@ public:
 
 	/**
 	 * @brief Creates the HighResolutionKoren scheme
-	 * @details The order is 2. Remember to add these parameters in ConvectionDispersionOperator.cpp.
+	 * @details The max order is 2. 
 	 */
 	HighResolutionKoren(): _epsilon(1e-10), _order(2) { }
 

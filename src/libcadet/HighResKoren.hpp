@@ -45,7 +45,7 @@ public:
 	 * @brief Creates the HighResolutionKoren scheme
 	 * @details The max order is 2. 
 	 */
-	HighResolutionKoren(): _epsilon(1e-10), _order(2) { }
+	HighResolutionKoren(): _epsilon(), _order(2) { }
 
 	/**
     * @brief Returns the maximum order \f$ r \f$ of the implemented schemes
@@ -95,6 +95,12 @@ public:
 	}
 
 	/**
+    * @brief Sets the \f$ \varepsilon \f$ of the WENO emthod (prevents division by zero in the weights)
+    * @param [in] HR Koren \f$ \varepsilon \f$
+    */
+	inline void epsilon(double eps) { _epsilon = eps; }
+
+	/**
 	 * @brief Returns the \f$ \varepsilon \f$ of the HR Koren emthod (prevents division by zero in the weights)
 	 * @return HR Koren \f$ \varepsilon \f$
 	 */
@@ -106,7 +112,7 @@ public:
 	 */
 	inline void order(int order)
 	{
-		cadet_assert(order <= 2); // what is cadet_assert?  Anyway, max order is set to 2.
+		cadet_assert(order <= 2);
 		cadet_assert(order > 0);
 		_order = order;
 	}

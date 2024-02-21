@@ -93,7 +93,7 @@ bool ConvectionDispersionOperatorBase::configureModelDiscretization(IParameterPr
 		paramProvider.pushScope("koren");
 
 		_koren = new HighResolutionKoren();
-		//_koren->epsilon(paramProvider.getDouble("KOREN_EPS"));
+		_koren->epsilon(paramProvider.getDouble("KOREN_EPS"));
 
 		paramProvider.popScope();
 

@@ -235,7 +235,7 @@ namespace cadet
 
 				_growthSchemeOrder = paramProvider.getInt("CRY_GROWTH_SCHEME_ORDER");
 
-				if (!(_growthSchemeOrder == 1 || _growthSchemeOrder == 2 || _growthSchemeOrder == 3 || _growthSchemeOrder != 4))
+				if (!(_growthSchemeOrder == 1 || _growthSchemeOrder == 2 || _growthSchemeOrder == 3 || _growthSchemeOrder == 4))
 					throw InvalidParameterException("CRY_GROWTH_SCHEME_ORDER needs to be an int between [1, 4]");
 
 				_a = paramProvider.getDouble("CRY_A");

@@ -44,6 +44,7 @@ endif()
 
 add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp UnitOperationTests.cpp SimHelper.cpp ParticleHelper.cpp
 	GeneralRateModel.cpp GeneralRateModel2D.cpp LumpedRateModelWithPores.cpp LumpedRateModelWithoutPores.cpp
+	Crystallization.cpp
 	CSTR-Residual.cpp CSTR-Simulation.cpp
 	ConvectionDispersionOperator.cpp
 	CellKernelTests.cpp
@@ -68,6 +69,7 @@ endif()
 
 list(APPEND TEST_LIBCADET_TARGETS testRunner)
 list(APPEND TEST_NONLINALG_TARGETS testRunner)
+list(APPEND TEST_HDF5_TARGETS testRunner)
 
 list(APPEND TEST_TARGETS ${TEST_NONLINALG_TARGETS} ${TEST_LIBCADET_TARGETS} ${TEST_HDF5_TARGETS} testLogging)
 

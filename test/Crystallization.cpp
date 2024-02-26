@@ -30,24 +30,15 @@
 // todo: doesnt build in debug mode, unresolved external symbol RunTimeFilteringLogger (defined in include/common/LoggerBase.hpp)
 // todo: why include looging, when its not required elsewhere when ParameterProviderImpl is being used in the code
 // todo: include HDF::HDF in cmake is not elegant/repetitive?
-// 
-// tests
-// todo: add benchmark tests for all crystallization submodels/features
-// cleanup: FLAG FlynnsTest is just to launch it, dont put it on github
 
-/**
- * @brief Returns the absolute path to the test/ folder of the project
- * @details Absolute path to the test/ folder of the project without trailing slash
- * @return Absolute path to the test/ folder
- */
 
 // Linear interpolation function, naive approach
-double lerp(double a, double b, double t) {
+inline double lerp(double a, double b, double t) {
 	return a + t * (b - a);
 }
  
 // Function to interpolate a 1D vector
-std::vector<double> interpolate(const std::vector<double>& inputVector, size_t outputSize) {
+inline std::vector<double> interpolate(const std::vector<double>& inputVector, size_t outputSize) {
 	std::vector<double> outputVector(outputSize);
 
 	double inputStep = 1.0 / (inputVector.size() - 1);
@@ -67,16 +58,15 @@ std::vector<double> interpolate(const std::vector<double>& inputVector, size_t o
 	return outputVector;
 }
 
-const char* getTestDirectory();
+const char* getTestDirectory(); // test file dir
+cadet::io::HDF5Reader rd;  // h5 reader
 
-TEST_CASE("Crystillization test CSTR, nucleation and growth", "[CRYSTALLIZATION],[Simulation],[firstTest]")
-{
-	cadet::io::HDF5Reader rd;
-
-	// configure the simulations
-	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/cry_NGD_CSTR_sim.h5");
-
-	rd.openFile(simFile, "r");
+/**
+ * @brief Prepare the simulation results
+ * @return The simulation results
+ */
+std::vector<double> getSim(const std::string& simFilePath, const int& time_resolution) {
+	rd.openFile(simFilePath, "r");
 
 	cadet::ParameterProviderImpl<cadet::io::HDF5Reader> pp(rd);
 
@@ -102,10 +92,27 @@ TEST_CASE("Crystillization test CSTR, nucleation and growth", "[CRYSTALLIZATION]
 
 	rd.closeFile();
 
-	// read reference solutions
-	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/cry_NGD_CSTR_ref.h5");
+	// construct the sim solution at the last time without ceq and c, assumes identical time_res
+	std::vector<double> sim_n;
+	for (unsigned int i = 0; i < Ncomp_sim * time_resolution; ++sim_n_full_pr, ++i)
+	{
+		if ((i > Ncomp_sim * (time_resolution - 1)) && (i < Ncomp_sim * time_resolution - 1)) {
+			sim_n.emplace_back(*sim_n_full_pr);
+		}
+		else {
+			continue;
+		}
+	}
 
-	rd.openFile(refFile, "r");
+	return sim_n;
+}
+
+/**
+ * @brief Prepare the reference results. All reference solutions in CSTRs are obtained using 1000 cells, WENO23. In DPFR, 100 X 200(N_x X Ncol) WENO23-WENO23 is used. 
+ * @return The full reference solution
+ */
+const std::vector<double> getRef(const std::string& refFilePath, int& time_res) {
+	rd.openFile(refFilePath, "r");
 
 	cadet::ParameterProviderImpl<cadet::io::HDF5Reader> ppr(rd);
 
@@ -114,8 +121,8 @@ TEST_CASE("Crystillization test CSTR, nucleation and growth", "[CRYSTALLIZATION]
 	ppr.pushScope("model");
 	ppr.pushScope("unit_001");
 
-	// number of component and time resolution
-	const int time_res = ppr.getInt("TIME_RES");
+	// change the time resolution
+	time_res = ppr.getInt("TIME_RES");
 
 	ppr.popScope();
 	ppr.popScope();
@@ -128,49 +135,111 @@ TEST_CASE("Crystillization test CSTR, nucleation and growth", "[CRYSTALLIZATION]
 	// full ref solution 
 	const std::vector<double> ref_n = ppr.getDoubleArray("SOLUTION_OUTLET");
 
-	// prepare the sim solution at the last time without ceq and c, assumes identical time_res
-	std::vector<double> sim_n;
-	for (unsigned int i = 0; i < Ncomp_sim * time_res; ++sim_n_full_pr, ++i) 
-	{
-		if ((i > Ncomp_sim * (time_res - 1)) && (i < Ncomp_sim * time_res - 1)) {
-			sim_n.emplace_back(*sim_n_full_pr);
-		}
-		else {
-			continue;
-		}
-	}
-
-	// std::cout << "SIZE sim_n: " << sim_n.size() << std::endl;
-    // std::cout << "the first ref_n is " << ref_n[0] << std::endl;
-	// std::cout << "the first sim_n is " << sim_n[0] << std::endl;
-
 	rd.closeFile();
 
+	return ref_n;
+}
+
+
+/**
+ * @brief Test growth and primary nucleation in a CSTR
+ */
+TEST_CASE("Crystillization test CSTR, primary nucleation and growth", "[CRYSTALLIZATION],[Simulation],[primaryNucAndGrowthCSTR]")
+{
+	int time_res;
+
+	// reference solution
+	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/cry_PNG_CSTR_ref.h5");
+	const std::vector<double> ref_n_full = getRef(refFile, time_res);
+
+	// simulation solution
+	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/cry_PNG_CSTR_sim.h5");
+	std::vector<double> sim_n_full = getSim(simFile, time_res);
+
 	// interpolate the ref solution
-	size_t outputSize = sim_n.size();
-	std::vector<double> n_ref_interp = interpolate(ref_n, outputSize);
-	
-	// Compare
-	for (unsigned int i = 0; i < sim_n.size(); ++i)
+	std::vector<double> n_ref_interp = interpolate(ref_n_full, sim_n_full.size());
+
+	// compare the results
+	for (unsigned int i = 0; i < sim_n_full.size(); ++i)
 	{
-		CHECK((sim_n[i]) == cadet::test::makeApprox(n_ref_interp[i], 9.9999e-1, 1e15));
+		CHECK((sim_n_full[i]) == cadet::test::makeApprox(n_ref_interp[i], 1e-3, 1e16));  // reltol, abstol
+	}
+}
+
+/**
+ * @brief Test growth and primary and secondary nucleation in a CSTR
+ */
+TEST_CASE("Crystillization test CSTR, primary and secondary nucleation and growth", "[CRYSTALLIZATION],[Simulation],[priSecNucAndGrowthCSTR]")
+{
+	int time_res;
+
+	// reference solution
+	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/cry_PSNG_CSTR_ref.h5");
+	const std::vector<double> ref_n_full = getRef(refFile, time_res);
+
+	// simulation solution
+	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/cry_PSNG_CSTR_sim.h5");
+	std::vector<double> sim_n_full = getSim(simFile, time_res);
+
+	// interpolate the ref solution
+	std::vector<double> n_ref_interp = interpolate(ref_n_full, sim_n_full.size());
+
+	// compare the results
+	for (unsigned int i = 0; i < sim_n_full.size(); ++i)
+	{
+		CHECK((sim_n_full[i]) == cadet::test::makeApprox(n_ref_interp[i], 1e-3, 1e16));  // reltol, abstol
+	}
+}
+
+/**
+ * @brief Test growth, growth rate dispersion and primary nucleation in a CSTR
+ */
+TEST_CASE("Crystillization test CSTR, primary nucleation and growth and growth rate dispersion", "[CRYSTALLIZATION],[Simulation],[pricNucGrowthAndDispersionCSTR]")
+{
+	int time_res;
+
+	// reference solution
+	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/cry_PNGGD_CSTR_ref.h5");
+	const std::vector<double> ref_n_full = getRef(refFile, time_res);
+
+	// simulation solution
+	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/cry_PNGGD_CSTR_sim.h5");
+	std::vector<double> sim_n_full = getSim(simFile, time_res);
+
+	// interpolate the ref solution
+	std::vector<double> n_ref_interp = interpolate(ref_n_full, sim_n_full.size());
+
+	// compare the results
+	for (unsigned int i = 0; i < sim_n_full.size(); ++i)
+	{
+		CHECK((sim_n_full[i]) == cadet::test::makeApprox(n_ref_interp[i], 1e-3, 1e15));  // reltol, abstol
+	}
+}
+
+/**
+ * @brief Test growth, growth rate dispersion, primary and secondary nucleation in a DPFR. This test does not work now. 
+ */
+TEST_CASE("Crystillization test DPFR with axial dispersion, primary secondary nucleation and growth and growth rate dispersion", "[CRYSTALLIZATION],[Simulation],[priSecNucGrowthAndDispersionDPFR]")
+{
+	int time_res;
+
+	// reference solution
+	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/practice1_ref.h5");
+	const std::vector<double> ref_n_full = getRef(refFile, time_res);
+
+	// simulation solution
+	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/practice1_sim.h5");
+	std::vector<double> sim_n_full = getSim(simFile, time_res);
+
+	// interpolate the ref solution
+	std::vector<double> n_ref_interp = interpolate(ref_n_full, sim_n_full.size());
+
+	// compare the results
+	for (unsigned int i = 0; i < sim_n_full.size(); ++i)
+	{
+		CHECK((sim_n_full[i]) == cadet::test::makeApprox(n_ref_interp[i], 1e-3, 1e15));  // reltol, abstol
 	}
 }
 
 
-//TEST_CASE("Crystillization test DPFR", "[CRYSTALLIZATION],[Simulation]")
-//{
-//
-//}
-//
-//TEST_CASE("Crystillization test critical nucleation", "[CRYSTALLIZATION],[Simulation]")
-//{
-//
-//}
-//
-//TEST_CASE("Crystillization test propability density function nucleation", "[CRYSTALLIZATION],[Simulation]")
-//{
-//
-//}
-
-// add Jacobian tests
+// TODO: add Jacobian tests

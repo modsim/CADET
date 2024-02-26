@@ -217,18 +217,18 @@ TEST_CASE("Crystillization test CSTR, primary nucleation and growth and growth r
 }
 
 /**
- * @brief Test growth, growth rate dispersion, primary and secondary nucleation in a DPFR. This test does not work now. 
+ * @brief Test growth, growth rate dispersion, primary and secondary nucleation in a DPFR.
  */
 TEST_CASE("Crystillization test DPFR with axial dispersion, primary secondary nucleation and growth and growth rate dispersion", "[CRYSTALLIZATION],[Simulation],[priSecNucGrowthAndDispersionDPFR]")
 {
 	int time_res;
 
 	// reference solution
-	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/practice1_ref.h5");
+	const std::string refFile = std::string(getTestDirectory()) + std::string("/data/cry_PSNGGD_PFR_ref.h5");
 	const std::vector<double> ref_n_full = getRef(refFile, time_res);
 
 	// simulation solution
-	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/practice1_sim.h5");
+	const std::string simFile = std::string(getTestDirectory()) + std::string("/data/cry_PSNGGD_PFR_sim.h5");
 	std::vector<double> sim_n_full = getSim(simFile, time_res);
 
 	// interpolate the ref solution

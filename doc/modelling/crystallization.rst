@@ -130,10 +130,10 @@ where :math:`k_p` is the primary nucleation rate constant and :math:`u` is a con
 .. math::
 
     \begin{aligned}
-        B_s=k_bs^bM,
+        B_s=k_bs^bM^k,
     \end{aligned}
 
-where :math:`k_b` is the secondary nucleation rate constant, :math:`b` is a system-related parameter and :math:`M` is the suspension density defined as
+where :math:`k_b` is the secondary nucleation rate constant, :math:`b` and :math:`k` are system-related parameters and :math:`M` is the suspension density defined as
 
 .. math::
 

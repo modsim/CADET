@@ -179,6 +179,7 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 	_disc.parPolyDeg = new unsigned int[_disc.nParType];
 	_disc.nParCell = new unsigned int[_disc.nParType];
 	_disc.parExactInt = new bool[_disc.nParType];
+	_disc.parGSM = new bool[_disc.nParType];
 
 	if (paramProvider.exists("PAR_POLYDEG"))
 	{
@@ -234,6 +235,23 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 	}
 	else
 		throw InvalidParameterException("Specify field PAR_POLYDEG (or NPAR)");
+
+	if (paramProvider.exists("PAR_GSM"))
+	{
+		std::vector<bool> parGSM = paramProvider.getBoolArray("PAR_GSM");
+		if (parGSM.size() == 1)
+			std::fill(_disc.parGSM, _disc.parGSM + _disc.nParType, parGSM[0]);
+		else
+			std::copy_n(parGSM.begin(), _disc.nParType, _disc.parGSM);
+		for (int type = 0; type < _disc.nParType; type++)
+			if (_disc.parGSM[type] && _disc.nParCell[type] != 1)
+				throw InvalidParameterException("Field PAR_NELEM must equal one to use a GSM discretization in the corresponding particle type");
+	}
+	else // Use GSM as default for particle discretization
+	{
+		for (int type = 0; type < _disc.nParType; type++)
+			_disc.parGSM[type] = (_disc.nParCell[type] == 1);
+	}
 
 	// Compute discretization operators and initialize containers
 	_disc.initializeDG();
@@ -576,7 +594,7 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 	_globalJacDisc.resize(numDofs(), numDofs());
 	_globalJac.resize(numDofs(), numDofs());
 	// pattern is set in configure(), after surface diffusion is read
-	 //FDJac = MatrixXd::Zero(numDofs(), numDofs()); // todo delete
+	// FDJac = MatrixXd::Zero(numDofs(), numDofs()); // todo delete
 
 	// Set whether analytic Jacobian is used
 	useAnalyticJacobian(analyticJac);
@@ -1288,7 +1306,7 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
-	// special case: individual treatment of time derivatives in particle mass balance at inner particle boundary node
+	// Special case: individual treatment of time derivatives in particle mass balance at inner particle boundary node
 	bool specialCase = !_disc.parExactInt[parType] && (_parGeomSurfToVol[parType] != _disc.SurfVolRatioSlab && _parCoreRadius[parType] == 0.0);
 
 	// Prepare parameters
@@ -1296,7 +1314,7 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 
 	// Ordering of particle surface diffusion:
 	// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
-	active const* const _parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
+	active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
 
 	// z coordinate (column length normed to 1) of current node - needed in externally dependent adsorption kinetic
 	const double z = _convDispOp.relativeCoordinate(colNode);
@@ -1330,11 +1348,11 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 		const ColumnPosition colPos{ z, 0.0, r };
 
 		// Handle time derivatives, binding, dynamic reactions.
-		// if special case: Dont add time derivatives to inner boundary node for DG discretized mass balance equations.
+		// Special case: Dont add time derivatives to inner boundary node for DG discretized mass balance equations.
 		// This can be achieved by setting yDot pointer to null before passing to residual kernel, and adding only the time derivative for dynamic binding
 		// TODO Check Treatment of reactions (do we need yDot then?)
-		if (cadet_unlikely(par == 0 && specialCase)) {
-
+		if (cadet_unlikely(par == 0 && specialCase))
+		{
 			parts::cell::residualKernel<StateType, ResidualType, ParamType, parts::cell::CellParameters, linalg::BandedEigenSparseRowIterator, wantJac, true>(
 				t, secIdx, colPos, local_y, nullptr, local_res, jac, cellResParams, tlmAlloc // TODO Check Treatment of reactions (do we need yDot then?)
 				);
@@ -1350,12 +1368,12 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 						if (cellResParams.qsReaction[idx])
 							continue;
 
-						// for kinetic bindings and surface diffusion, we have an additional DG-discretized mass balance eq.
+						// For kinetic bindings and surface diffusion, we have an additional DG-discretized mass balance eq.
 						// -> add time derivate at inner bonudary node only without surface diffusion 
 						else if (_hasSurfaceDiffusion[parType])
 							continue;
-						// some bound states might still not be effected by surface diffusion
-						else if (_parSurfDiff[idx] != 0.0)
+						// Some bound states might still not be effected by surface diffusion
+						else if (parSurfDiff[idx] != 0.0)
 							continue;
 
 						// Add time derivative to solid phase
@@ -1364,27 +1382,26 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 				}
 			}
 		}
-		else {
-
+		else
+		{
 			parts::cell::residualKernel<StateType, ResidualType, ParamType, parts::cell::CellParameters, linalg::BandedEigenSparseRowIterator, wantJac, true>(
 				t, secIdx, colPos, local_y, local_yDot, local_res, jac, cellResParams, tlmAlloc
 				);
-
 		}
 
-		// move rowiterator to next particle node
+		// Move rowiterator to next particle node
 		jac += idxr.strideParNode(parType);
 	}
 
 	// We still need to handle transport/diffusion
 
-	// get pointers to the particle block of the current column node, particle type
+	// Get pointers to the particle block of the current column node, particle type
 	const StateType* c_p = yBase + idxr.offsetCp(ParticleTypeIndex{ parType }, ParticleIndex{ colNode });
 	ResidualType* resC_p = resBase + idxr.offsetCp(ParticleTypeIndex{ parType }, ParticleIndex{ colNode });
 
 	// Mobile phase RHS
 
-	// get film diffusion flux at current node to compute boundary condition
+	// Get film diffusion flux at current node to compute boundary condition
 	active const* const filmDiff = getSectionDependentSlice(_filmDiffusion, _disc.nComp * _disc.nParType, secIdx) + parType * _disc.nComp;
 	for (unsigned int comp = 0; comp < _disc.nComp; comp++) {
 		_disc.localFlux[comp] = filmDiff[comp] * (yBase[idxr.offsetC() + colNode * idxr.strideColNode() + comp]
@@ -1399,98 +1416,159 @@ int GeneralRateModelDG::residualParticle(double t, unsigned int parType, unsigne
 	int strideParLiquid = idxr.strideParLiquid();
 	int strideParNode = idxr.strideParNode(parType);
 
-	for (unsigned int comp = 0; comp < nComp; comp++)
+	if (_disc.parGSM[parType]) // GSM implementation
 	{
-		// component dependent (through access factor) inverse Beta_P
-		ParamType invBetaP = (1.0 - static_cast<ParamType>(_parPorosity[parType])) / (static_cast<ParamType>(_poreAccessFactor[_disc.nComp * parType + comp]) * static_cast<ParamType>(_parPorosity[parType]));
+		for (unsigned int comp = 0; comp < nComp; comp++)
+		{
 
-		// =====================================================================================================//
-		// solve auxiliary systems  d_p g_p + d_s beta_p sum g_s= d (d_p c_p + d_s beta_p sum c_s) / d xi		//
-		// =====================================================================================================//
-		// component-wise! strides
-		unsigned int strideCell = nNodes;
-		unsigned int strideNode = 1u;
-		// reset cache for auxiliary variable
-		Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g_p(reinterpret_cast<StateType*>(&_disc.g_p[parType][0]), nPoints, InnerStride<>(1));
-		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _g_pSum(reinterpret_cast<ResidualType*>(&_disc.g_pSum[parType][0]), nPoints, InnerStride<>(1));
-		_g_p.setZero();
-		_g_pSum.setZero();
+			// ====================================================================================//
+			// solve GSM-discretized particle mass balance   									   //
+			// ====================================================================================//
 
-		Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> cp(c_p + comp, _disc.nParPoints[parType], InnerStride<Dynamic>(idxr.strideParNode(parType)));
+			Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> resCp(resC_p + comp, nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
+			Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> Cp(c_p + comp, nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
 
-		// handle surface diffusion: Compute auxiliary variable; For kinetic bindings: add additional mass balance to residual of respective bound state
-		if (_hasSurfaceDiffusion[parType]) {
+			// Use auxiliary variable to get c^p + \sum 1 / \Beta_p c^s
+			Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> sum_cp_cs(reinterpret_cast<ResidualType*>(&_disc.g_pSum[parType][0]), nPoints, InnerStride<>(1));
+			sum_cp_cs = static_cast<ParamType>(parDiff[comp]) * Cp.template cast<ResidualType>();
 
-			for (int bnd = 0; bnd < _disc.nBound[parType * _disc.nComp + comp]; bnd++) {
-
-				if (_parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)] != 0.0) { // some bound states might still not be effected by surface diffusion
-
-					// get solid phase vector
-					Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> q_p(c_p + strideParLiquid + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ comp }) + bnd,
-						nPoints, InnerStride<Dynamic>(strideParNode));
-					// compute g_s = d c_s / d xi
-					solve_auxiliary_DG<StateType>(parType, q_p, strideCell, strideNode, comp);
-					// apply invBeta_p, d_s and add to sum -> gSum += d_s * invBeta_p * (D c - M^-1 B [c - c^*])
-					_g_pSum += _g_p.template cast<ResidualType>() * invBetaP * static_cast<ParamType>(_parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]);
+			for (int bnd = 0; bnd < _disc.nBound[parType * _disc.nComp + comp]; bnd++)
+			{
+				if (parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)] != 0.0) // some bound states might still not be effected by surface diffusion
+				{
+					Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> c_s(c_p + _disc.nComp + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ comp }) + bnd, nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
+					ParamType invBetaP = (1.0 - static_cast<ParamType>(_parPorosity[parType])) / (static_cast<ParamType>(_poreAccessFactor[_disc.nComp * parType + comp]) * static_cast<ParamType>(_parPorosity[parType]));
+					sum_cp_cs += invBetaP * static_cast<ParamType>(parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]) * c_s;
 
 					/* For kinetic bindings with surface diffusion: add the additional DG-discretized particle mass balance equations to residual */
 
-					if (!qsReaction[bnd]) {
-
+					if (!qsReaction[bnd])
+					{
 						// Eigen access to current bound state residual
 						Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> resCs(resBase + idxr.offsetCp(ParticleTypeIndex{ parType }, ParticleIndex{ colNode }) + idxr.strideParLiquid() + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ comp }) + bnd,
 							nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
 
-						// promote auxiliary variable storage from double to active if required
-						// @todo is there a more efficient or elegant solution?
-						if (std::is_same<ResidualType, active>::value && std::is_same<StateType, double>::value)
-							vectorPromoter(reinterpret_cast<double*>(&_g_p[0]), nPoints); // reinterpret_cast only required because statement is scanned also when StateType != double
+						// Use auxiliary variable to get \Beta_p D_s c^s
+						Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> c_s_modified(reinterpret_cast<ResidualType*>(&_disc.g_p[parType][0]), nPoints, InnerStride<>(1));
 
-						// Access auxiliary variable as ResidualType
-						Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _g_p_ResType(reinterpret_cast<ResidualType*>(&_disc.g_p[parType][0]), nPoints, InnerStride<>(1));
+						// Apply squared inverse mapping and surface diffusion
+						c_s_modified = 2.0 / static_cast<ParamType>(_disc.deltaR[_disc.offsetMetric[parType]]) * 2.0 / static_cast<ParamType>(_disc.deltaR[_disc.offsetMetric[parType]]) *
+							static_cast<ParamType>(parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]) * c_s;
 
-						applyParInvMap<ResidualType, ParamType>(_g_p_ResType, parType);
-						_g_p_ResType *= static_cast<ParamType>(_parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]);
+						Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> c_s_modified_const(&c_s_modified[0], nPoints, InnerStride<Dynamic>(1));
+						parGSMVolumeIntegral<ResidualType, ResidualType>(parType, c_s_modified_const, resCs);
 
-						// Eigen access to auxiliary variable of current bound state
-						Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _g_p_ResType_const(&_g_p_ResType[0], nPoints, InnerStride<Dynamic>(1));
-
-						// adds - D_r * gs to the residual, including metric part.->res = invMap^2* [ -D_r * (d_s c^s) ]
-						parVolumeIntegral<ResidualType, ResidualType>(parType, false, _g_p_ResType_const, resCs);
-
-						// adds M^-1 B (gs - gs^*) to the residual -> res =  invMap^2 * [ - D_r * (d_s c^s) + M^-1 B (gs - gs^*) ]
-						parSurfaceIntegral<ResidualType, ResidualType>(parType, _g_p_ResType_const, resCs, strideCell, strideNode, false, comp, true);
+						// Leave out the surface integral as we only have one element, i.e. we apply BC with zeros
 					}
 				}
 			}
+
+			// Apply squared inverse mapping
+			sum_cp_cs *= 2.0 / static_cast<ParamType>(_disc.deltaR[_disc.offsetMetric[parType]]) * 2.0 / static_cast<ParamType>(_disc.deltaR[_disc.offsetMetric[parType]]);
+
+			Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> sum_cp_cs_const(&sum_cp_cs[0], nPoints, InnerStride<Dynamic>(1));
+			parGSMVolumeIntegral<ResidualType, ResidualType>(parType, sum_cp_cs_const, resCp);
+
+			// Pass sum_cp_cs_const to match the DGSEM interface; nullptr might also be feasible
+			parSurfaceIntegral<ResidualType, ResidualType>(parType, sum_cp_cs_const, resCp, nNodes, 1u, false, comp);
+
 		}
+	}
+	else // DGSEM implementation
+	{
+		for (unsigned int comp = 0; comp < nComp; comp++)
+		{
+			// Component dependent (through access factor) inverse Beta_P
+			ParamType invBetaP = (1.0 - static_cast<ParamType>(_parPorosity[parType])) / (static_cast<ParamType>(_poreAccessFactor[_disc.nComp * parType + comp]) * static_cast<ParamType>(_parPorosity[parType]));
 
-		// compute g_p = d c_p / d xi
-		solve_auxiliary_DG<StateType>(parType, cp, strideCell, strideNode, comp);
+			// =====================================================================================================//
+			// Solve auxiliary systems  d_p g_p + d_s beta_p sum g_s= d (d_p c_p + d_s beta_p sum c_s) / d xi		//
+			// =====================================================================================================//
+			// Component-wise! strides
+			unsigned int strideCell = nNodes;
+			unsigned int strideNode = 1u;
+			// Reset cache for auxiliary variable
+			Eigen::Map<Vector<StateType, Dynamic>, 0, InnerStride<>> _g_p(reinterpret_cast<StateType*>(&_disc.g_p[parType][0]), nPoints, InnerStride<>(1));
+			Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _g_pSum(reinterpret_cast<ResidualType*>(&_disc.g_pSum[parType][0]), nPoints, InnerStride<>(1));
+			_g_p.setZero();
+			_g_pSum.setZero();
 
-		// add particle diffusion part to auxiliary variable sum -> gSum += d_p * (D c - M^-1 B [c - c^*])
-		_g_pSum += _g_p * static_cast<ParamType>(parDiff[comp]);
+			Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> cp(c_p + comp, _disc.nParPoints[parType], InnerStride<Dynamic>(idxr.strideParNode(parType)));
 
-		// apply squared inverse mapping to sum of bound state auxiliary variables -> gSum = - invMap^2 * (d_p * c^p + sum_mi d_s invBeta_p c^s)
-		applyParInvMap<ResidualType, ParamType>(_g_pSum, parType);
+			// Handle surface diffusion: Compute auxiliary variable; For kinetic bindings: add additional mass balance to residual of respective bound state
+			if (_hasSurfaceDiffusion[parType])
+			{
+				for (int bnd = 0; bnd < _disc.nBound[parType * _disc.nComp + comp]; bnd++)
+				{
+					if (parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)] != 0.0) // some bound states might still not be effected by surface diffusion
+					{
+						// Get solid phase vector
+						Eigen::Map<const Vector<StateType, Dynamic>, 0, InnerStride<Dynamic>> c_s(c_p + strideParLiquid + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ comp }) + bnd,
+							nPoints, InnerStride<Dynamic>(strideParNode));
+						// Compute g_s = d c_s / d xi
+						solve_auxiliary_DG<StateType>(parType, c_s, strideCell, strideNode, comp);
+						// Apply invBeta_p, d_s and add to sum -> gSum += d_s * invBeta_p * (D c - M^-1 B [c - c^*])
+						_g_pSum += _g_p.template cast<ResidualType>() * invBetaP * static_cast<ParamType>(parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]);
 
-	  // ====================================================================================//
-	  // solve DG-discretized particle mass balance   									     //
-	  // ====================================================================================//
+						/* For kinetic bindings with surface diffusion: add the additional DG-discretized particle mass balance equations to residual */
 
-		/* solve DG-discretized particle mass balance equation */
-		
-		Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _g_pSum_const(&_g_pSum[0], nPoints, InnerStride<Dynamic>(1));
+						if (!qsReaction[bnd])
+						{
+							// Eigen access to current bound state residual
+							Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> resCs(resBase + idxr.offsetCp(ParticleTypeIndex{ parType }, ParticleIndex{ colNode }) + idxr.strideParLiquid() + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ comp }) + bnd,
+								nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
 
-		// Eigen access to particle liquid residual
-		Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> resCp(resC_p + comp, nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
+							// Promote auxiliary variable storage from double to active if required
+							// @todo is there a more efficient or elegant solution?
+							if (std::is_same<ResidualType, active>::value && std::is_same<StateType, double>::value)
+								vectorPromoter(reinterpret_cast<double*>(&_g_p[0]), nPoints); // reinterpret_cast only required because statement is scanned also when StateType != double
 
-		// adds - D_r * (g_sum) to the residual, including metric part. -> res = - D_r * (d_p * c^p + invBeta_p sum_mi d_s c^s)
-		parVolumeIntegral<ResidualType, ResidualType>(parType, false, _g_pSum_const, resCp);
+							// Access auxiliary variable as ResidualType
+							Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<>> _g_p_ResType(reinterpret_cast<ResidualType*>(&_disc.g_p[parType][0]), nPoints, InnerStride<>(1));
 
-		// adds M^-1 B (g_sum - g_sum^*) to the residual -> res = - D_r * (d_p * c^p + invBeta_p sum_mi d_s c^s) + M^-1 B (g_sum - g_sum^*)
-		parSurfaceIntegral<ResidualType, ResidualType>(parType, _g_pSum_const, resCp, strideCell, strideNode, false, comp);
+							applyParInvMap<ResidualType, ParamType>(_g_p_ResType, parType);
+							_g_p_ResType *= static_cast<ParamType>(parSurfDiff[getOffsetSurfDiff(parType, comp, bnd)]);
 
+							// Eigen access to auxiliary variable of current bound state
+							Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _g_p_ResType_const(&_g_p_ResType[0], nPoints, InnerStride<Dynamic>(1));
+
+							// Add - D_r * gs to the residual, including metric part.->res = invMap^2* [ -D_r * (d_s c^s) ]
+							parVolumeIntegral<ResidualType, ResidualType>(parType, false, _g_p_ResType_const, resCs);
+
+							// Add M^-1 B (gs - gs^*) to the residual -> res =  invMap^2 * [ - D_r * (d_s c^s) + M^-1 B (gs - gs^*) ]
+							parSurfaceIntegral<ResidualType, ResidualType>(parType, _g_p_ResType_const, resCs, strideCell, strideNode, false, comp, true);
+						}
+					}
+				}
+			}
+
+			// Compute g_p = d c_p / d xi
+			solve_auxiliary_DG<StateType>(parType, cp, strideCell, strideNode, comp);
+
+			// Add particle diffusion part to auxiliary variable sum -> gSum += d_p * (D c - M^-1 B [c - c^*])
+			_g_pSum += _g_p * static_cast<ParamType>(parDiff[comp]);
+
+			// apply squared inverse mapping to sum of bound state auxiliary variables -> gSum = - invMap^2 * (d_p * c^p + sum_mi d_s invBeta_p c^s)
+			applyParInvMap<ResidualType, ParamType>(_g_pSum, parType);
+
+			// ====================================================================================//
+			// solve DG-discretized particle mass balance   									     //
+			// ====================================================================================//
+
+			  /* Solve DG-discretized particle mass balance equation */
+
+			Eigen::Map<const Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> _g_pSum_const(&_g_pSum[0], nPoints, InnerStride<Dynamic>(1));
+
+			// Eigen access to particle liquid residual
+			Eigen::Map<Vector<ResidualType, Dynamic>, 0, InnerStride<Dynamic>> resCp(resC_p + comp, nPoints, InnerStride<Dynamic>(idxr.strideParNode(parType)));
+
+			// Add - D_r * (g_sum) to the residual, including metric part. -> res = - D_r * (d_p * c^p + invBeta_p sum_mi d_s c^s)
+			parVolumeIntegral<ResidualType, ResidualType>(parType, false, _g_pSum_const, resCp);
+
+			// Add M^-1 B (g_sum - g_sum^*) to the residual -> res = - D_r * (d_p * c^p + invBeta_p sum_mi d_s c^s) + M^-1 B (g_sum - g_sum^*)
+			parSurfaceIntegral<ResidualType, ResidualType>(parType, _g_pSum_const, resCp, strideCell, strideNode, false, comp);
+
+		}
 	}
 
 	return 0;
@@ -1977,8 +2055,10 @@ void GeneralRateModelDG::updateRadialDisc()
 
 	for (unsigned int parType = 0; parType < _disc.nParType; ++parType)
 	{
-		if (_parDiscType[parType] == ParticleDiscretizationMode::Equidistant) {
-			for (int cell = 0; cell < _disc.nParCell[parType]; cell++) {
+		if (_parDiscType[parType] == ParticleDiscretizationMode::Equidistant)
+		{
+			for (int cell = 0; cell < _disc.nParCell[parType]; cell++)
+			{
 				_disc.deltaR[_disc.offsetMetric[parType] + cell] = (_parRadius[parType] - _parCoreRadius[parType]) / _disc.nParCell[parType];
 			}
 				setEquidistantRadialDisc(parType);
@@ -1992,15 +2072,14 @@ void GeneralRateModelDG::updateRadialDisc()
 	/*		metrics		*/
 	// estimate cell dependent D_r
 
-	for (int parType = 0; parType < _disc.nParType; parType++) {
-
-		for (int cell = 0; cell < _disc.nParCell[parType]; cell++) {
-
+	for (int parType = 0; parType < _disc.nParType; parType++)
+	{
+		for (int cell = 0; cell < _disc.nParCell[parType]; cell++)
+		{
 			_disc.Ir[_disc.offsetMetric[parType] + cell] = Vector<active, Dynamic>::Zero(_disc.nParNode[parType]);
 
-			for (int node = 0; node < _disc.nParNode[parType]; node++) {
+			for (int node = 0; node < _disc.nParNode[parType]; node++)
 				_disc.Ir[_disc.offsetMetric[parType] + cell][node] = _disc.deltaR[_disc.offsetMetric[parType] + cell] / 2.0 * (_disc.parNodes[parType][node] + 1.0);
-			}
 
 			_disc.Dr[_disc.offsetMetric[parType] + cell].resize(_disc.nParNode[parType], _disc.nParNode[parType]);
 			_disc.Dr[_disc.offsetMetric[parType] + cell].setZero();
@@ -2020,30 +2099,44 @@ void GeneralRateModelDG::updateRadialDisc()
 			_disc.Dr[_disc.offsetMetric[parType] + cell].array().colwise() *= _disc.Ir[_disc.offsetMetric[parType] + cell].array().template cast<double>().cwiseInverse();
 
 			// compute mass matrices for exact integration based on particle geometry, via transformation to normalized Jacobi polynomials with weight function w
-			if (_parGeomSurfToVol[parType] == SurfVolRatioSphere) { // w = (1 + \xi)^2
-
-				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 2.0).inverse() * pow((static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) / 2.0), 2.0);
-				if(cell > 0 || _parCoreRadius[parType] != 0.0) // following contributions are zero for first cell when R_c = 0 (no particle core)
-					_disc.parInvMM[_disc.offsetMetric[parType] + cell] += parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 1.0).inverse() * (static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) * static_cast<double>(r_L))
-																	   + parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 0.0).inverse() * pow(static_cast<double>(r_L), 2.0);
-
-				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
-				_disc.minus_InvMM_ST[_disc.offsetMetric[parType] + cell] = - _disc.parInvMM[_disc.offsetMetric[parType] + cell] * _disc.parPolyDerM[parType].transpose() * _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
-			}
-			else if (_parGeomSurfToVol[parType] == SurfVolRatioCylinder) { // w = (1 + \xi)
-
-				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 1.0).inverse() * (static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) / 2.0);
-				if (cell > 0 || _parCoreRadius[parType] != 0.0) // following contribution is zero for first cell when R_c = 0 (no particle core)
-					_disc.parInvMM[_disc.offsetMetric[parType] + cell] += parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 0.0).inverse() * static_cast<double>(r_L);
+			if (_parGeomSurfToVol[parType] == SurfVolRatioSphere) // r^2 =  r_i^2 + (1 + \xi) * r_i * DeltaR_i / 2.0 + (1 + \xi)^2 * (DeltaR_i / 2.0)^2
+			{
+				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = parts::dgtoolbox::mMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 2.0) * pow((static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) / 2.0), 2.0);
+				if (cell > 0 || _parCoreRadius[parType] != 0.0) // following contributions are zero for first cell when R_c = 0 (no particle core)
+					_disc.parInvMM[_disc.offsetMetric[parType] + cell] += parts::dgtoolbox::mMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 1.0) * (static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) * static_cast<double>(r_L))
+					+ parts::dgtoolbox::mMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 0.0) * pow(static_cast<double>(r_L), 2.0);
 
 				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
 				_disc.minus_InvMM_ST[_disc.offsetMetric[parType] + cell] = -_disc.parInvMM[_disc.offsetMetric[parType] + cell] * _disc.parPolyDerM[parType].transpose() * _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
-			}
-			else if (_parGeomSurfToVol[parType] == SurfVolRatioSlab) { // w = 1
 
+				// particle GSM specific second order stiffness matrix (single element, i.e. nParCell = 1)
+				_disc.secondOrderStiffnessM[parType] = std::pow(static_cast<double>(_parCoreRadius[parType]), 2.0) * parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 0.0, _disc.parNodes[parType]);
+				_disc.secondOrderStiffnessM[parType] += static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType]]) * static_cast<double>(_parCoreRadius[parType]) * parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 1.0, _disc.parNodes[parType]);
+				_disc.secondOrderStiffnessM[parType] += std::pow(static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType]]) / 2.0, 2.0) * parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 2.0, _disc.parNodes[parType]);
+			}
+			else if (_parGeomSurfToVol[parType] == SurfVolRatioCylinder) // r = r_i + (1 + \xi) * DeltaR_i / 2.0
+			{
+				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = parts::dgtoolbox::mMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 1.0) * (static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType] + cell]) / 2.0);
+				if (cell > 0 || _parCoreRadius[parType] != 0.0) // following contribution is zero for first cell when R_c = 0 (no particle core)
+					_disc.parInvMM[_disc.offsetMetric[parType] + cell] += parts::dgtoolbox::mMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 0.0) * static_cast<double>(r_L);
+
+				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
+				_disc.minus_InvMM_ST[_disc.offsetMetric[parType] + cell] = -_disc.parInvMM[_disc.offsetMetric[parType] + cell] * _disc.parPolyDerM[parType].transpose() * _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
+
+				// particle GSM specific second order stiffness matrix (single element, i.e. nParCell = 1)
+				_disc.secondOrderStiffnessM[parType] = static_cast<double>(_parCoreRadius[parType]) * parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 0.0, _disc.parNodes[parType]);
+				_disc.secondOrderStiffnessM[parType] += static_cast<double>(_disc.deltaR[_disc.offsetMetric[parType]]) / 2.0 * parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 1.0, _disc.parNodes[parType]);
+			}
+			else if (_parGeomSurfToVol[parType] == SurfVolRatioSlab) // r = 1
+			{
+				_disc.minus_InvMM_ST[_disc.offsetMetric[parType] + cell] = -_disc.parInvMM[_disc.offsetMetric[parType] + cell] * _disc.parPolyDerM[parType].transpose() * _disc.parInvMM[_disc.offsetMetric[parType] + cell].inverse();
+
+				_disc.secondOrderStiffnessM[parType] = parts::dgtoolbox::secondOrderStiffnessMatrix(_disc.parPolyDeg[parType], 0.0, 0.0, _disc.parNodes[parType]);
 				_disc.parInvMM[_disc.offsetMetric[parType] + cell] = parts::dgtoolbox::invMMatrix(_disc.parPolyDeg[parType], _disc.parNodes[parType], 0.0, 0.0);
 			}
 		}
+
+		_disc.minus_parInvMM_Ar[parType] = -_disc.parInvMM[_disc.offsetMetric[parType]] * _disc.secondOrderStiffnessM[parType];
 	}
 }
 

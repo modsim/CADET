@@ -303,7 +303,7 @@ VectorXd barycentricWeights(const unsigned int polyDeg, const VectorXd nodes) {
 	return baryWeights;
 }
 /**
- * @brief computation of nodal (lagrange) polynomial derivative matrix
+ * @brief computation of nodal polynomial derivative matrix
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
@@ -339,7 +339,7 @@ double orthonFactor(const int polyDeg, double a, double b) {
  * @param [in] a Jacobi polynomial parameter
  * @param [in] b Jacobi polynomial parameter
  */
-MatrixXd getVandermonde_JACOBI(const unsigned int polyDeg, const VectorXd nodes, const double a, const double b) {
+MatrixXd jacVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes, const double a, const double b) {
 
 	const unsigned int nNodes = polyDeg + 1u;
 	MatrixXd V(nNodes, nNodes);
@@ -367,22 +367,65 @@ MatrixXd getVandermonde_JACOBI(const unsigned int polyDeg, const VectorXd nodes,
 
 	return V;
 }
+double jacPDerivativePreFactor(const unsigned int pIndex, const unsigned int derOrder, const double a, const double b) {
+
+	double prefac = std::tgamma(a + b + static_cast<double>(pIndex) + 1.0 + static_cast<double>(derOrder)) / (std::pow(2.0, static_cast<double>(derOrder)) * std::tgamma(a + b + static_cast<double>(pIndex) + 1.0));
+
+	return prefac * orthonFactor(pIndex - derOrder, a + static_cast<double>(derOrder), b + static_cast<double>(derOrder)) / orthonFactor(pIndex, a, b);
+}
 /**
  * @brief calculates the Vandermonde matrix of the normalized Legendre polynomials
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
-MatrixXd getVandermonde_LEGENDRE(const unsigned int polyDeg, const VectorXd nodes) {
-	return getVandermonde_JACOBI(polyDeg, nodes, 0.0, 0.0);
+MatrixXd legVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes) {
+	return jacVandermondeMatrix(polyDeg, nodes, 0.0, 0.0);
 }
 /**
- * @brief calculates mass matrix via transformation to orthonormal Jacobi (modal) basis
- * @detail exact integration for integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
+ * @brief calculates the inverse mass matrix via transformation to orthonormal Jacobi (modal) basis
+ * @detail the mass matrix used to compute integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
 Eigen::MatrixXd invMMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta) {
-	return (getVandermonde_JACOBI(polyDeg, nodes, alpha, beta) * (getVandermonde_JACOBI(polyDeg, nodes, alpha, beta).transpose()));
+	return (jacVandermondeMatrix(polyDeg, nodes, alpha, beta) * (jacVandermondeMatrix(polyDeg, nodes, alpha, beta).transpose()));
+}
+/**
+ * @brief calculates the mass matrix via transformation to orthonormal Jacobi (modal) basis
+ * @detail mass matrix used to compute integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
+ * @param [in] polyDeg polynomial degree
+ * @param [in] nodes polynomial interpolation nodes
+ */
+Eigen::MatrixXd mMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta) {
+	return invMMatrix(polyDeg, nodes, alpha, beta).inverse();
+}
+/**
+ * @brief calculates the derivative of the Vandermonde matrix of the normalized Legendre polynomials
+ * @param [in] polyDeg polynomial degree
+ * @param [in] a Jacobi polynomial parameter
+ * @param [in] b Jacobi polynomial parameter
+ * @param [in] nodes polynomial interpolation nodes
+ */
+MatrixXd jacDerVandermondeMatrix(const unsigned int polyDeg, const double a, const double b, const VectorXd nodes) {
+
+	MatrixXd derVan = MatrixXd::Zero(polyDeg + 1, polyDeg + 1);
+	derVan.block(0, 1, polyDeg + 1, polyDeg) = jacVandermondeMatrix(polyDeg, nodes, a + 1.0, b + 1.0).block(0, 0, polyDeg + 1, polyDeg);
+
+	for (int hm = 1; hm < polyDeg + 1; hm++)
+		derVan.block(0, hm, polyDeg + 1, 1) *= jacPDerivativePreFactor(hm, 1, a, b);
+		//derVan.block(0, hm, polyDeg + 1, 1) *= std::sqrt(hm * (hm + a + b + 1)); // todo
+
+	return derVan;
+}
+/**
+ * @brief calculates the second order nodal stiffness matrix (via transformation to normalized Legendre polynomials)
+ * @param [in] polyDeg polynomial degree
+ * @param [in] a Jacobi polynomial parameter
+ * @param [in] b Jacobi polynomial parameter
+ * @param [in] nodes polynomial interpolation nodes
+ */
+MatrixXd secondOrderStiffnessMatrix(const unsigned int polyDeg, const double alpha, const double beta, const VectorXd nodes) {
+	return derivativeMatrix(polyDeg, nodes).transpose() * mMatrix(polyDeg, nodes, alpha, beta) * derivativeMatrix(polyDeg, nodes);
 }
 
 } // namespace dgtoolbox

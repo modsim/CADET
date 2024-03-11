@@ -27,7 +27,7 @@ namespace cadet
 
 namespace model
 {
-	class IParameterDependence;
+	class IParameterStateDependence;
 }
 
 namespace test
@@ -66,8 +66,8 @@ namespace paramdep
 
 		static ConfiguredParameterDependence create(const char* name, unsigned int nComp, unsigned int const* nBound, const char* config);
 
-		inline cadet::model::IParameterDependence& model() { return *_paramDep; }
-		inline const cadet::model::IParameterDependence& model() const { return *_paramDep; }
+		inline cadet::model::IParameterStateDependence& model() { return *_paramDep; }
+		inline const cadet::model::IParameterStateDependence& model() const { return *_paramDep; }
 
 		inline unsigned int nComp() const { return _nComp; }
 		inline unsigned int const* nBound() const { return _nBound; }
@@ -77,12 +77,12 @@ namespace paramdep
 
 	private:
 
-		ConfiguredParameterDependence(cadet::model::IParameterDependence* paramDep, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset) 
+		ConfiguredParameterDependence(cadet::model::IParameterStateDependence* paramDep, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset) 
 			: _paramDep(paramDep), _nComp(nComp), _nBound(nBound), _boundOffset(boundOffset)
 		{
 		}
 
-		cadet::model::IParameterDependence* _paramDep;
+		cadet::model::IParameterStateDependence* _paramDep;
 		unsigned int _nComp;
 		unsigned int const* _nBound;
 		unsigned int const* _boundOffset;

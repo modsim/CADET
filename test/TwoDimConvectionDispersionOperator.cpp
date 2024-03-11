@@ -15,9 +15,11 @@
 
 #include "model/parts/TwoDimensionalConvectionDispersionOperator.hpp"
 #include "Weno.hpp"
+#include "ModelBuilderImpl.hpp"
 
 #include "ColumnTests.hpp"
 #include "Utils.hpp"
+#include "Dummies.hpp"
 
 #include "common/JsonParameterProvider.hpp"
 
@@ -30,6 +32,9 @@ namespace
 		cadet::JsonParameterProvider jpp(R"json({
 				"COL_LENGTH": 10,
 				"COL_RADIUS": 1,
+				"COL_RADIUS_INNER": 0.001,
+				"COL_RADIUS_OUTER": 0.004,
+				"CROSS_SECTION_AREA": 0.0003141592653589793,
 				"COL_POROSITY": 0.37,
 				"COL_DISPERSION": 1e-6,
 				"COL_DISPERSION_RADIAL": [1e-4, 1e-4, 1e-4, 1e-4, 1e-4],
@@ -61,7 +66,8 @@ namespace
 		// Configure the operator
 		typedef std::unordered_map<cadet::ParameterId, cadet::active*> ParameterMap;
 		ParameterMap parameters;
-		REQUIRE(convDispOp.configureModelDiscretization(jpp, nComp, nCol, nRad, false));
+		cadet::ModelBuilder builder;
+		REQUIRE(convDispOp.configureModelDiscretization(jpp, builder, nComp, nCol, nRad, false));
 		REQUIRE(convDispOp.configure(0, jpp, parameters));
 	}
 
@@ -73,10 +79,10 @@ namespace
 
 			// Central finite differences
 			y[nInletDof + col] = ref * (1.0 + h);
-			convDispOp.residual(0.0, 0u, y, nullptr, jacCol1, false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y, nullptr, jacCol1, false, cadet::WithoutParamSensitivity());
 
 			y[nInletDof + col] = ref * (1.0 - h);
-			convDispOp.residual(0.0, 0u, y, nullptr, jacCol2, false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y, nullptr, jacCol2, false, cadet::WithoutParamSensitivity());
 
 			y[nInletDof + col] = ref;
 
@@ -128,14 +134,14 @@ void testBulk2DJacobianWenoForwardBackward(int wenoOrder)
 			convDispOp.setFlowRates(i, 1e-2 * convDispOp.crossSection(i) * convDispOp.columnPorosity(i), 0.0);
 
 		convDispOp.notifyDiscontinuousSectionTransition(0.0, 0u);
-		convDispOp.residual(0.0, 0u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
+		convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
 
 		// Compare Jacobian pattern against FD
 		compareSparseJacobianAgainstFD(convDispOp, nInletDof, nPureDof, y.data(), jacCol1.data(), jacCol2.data(), h, relTol, absTol);
 
 		// Reverse flow
 		convDispOp.notifyDiscontinuousSectionTransition(0.0, 1u);
-		convDispOp.residual(0.0, 1u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
+		convDispOp.residual(DummyModel(), 0.0, 1u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
 
 		// Compare Jacobian pattern against FD
 		compareSparseJacobianAgainstFD(convDispOp, nInletDof, nPureDof, y.data(), jacCol1.data(), jacCol2.data(), h, relTol, absTol);
@@ -170,7 +176,7 @@ void testBulk2DJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 			convDispOp.setFlowRates(i, 1e-2 * convDispOp.crossSection(i) * convDispOp.columnPorosity(i), 0.0);
 
 		convDispOp.notifyDiscontinuousSectionTransition(0.0, 0u);
-		convDispOp.residual(0.0, 0u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
+		convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacCol1.data(), true, cadet::WithoutParamSensitivity());
 
 		// Compare Jacobian pattern with FD
 		for (int col = 0; col < nPureDof; ++col)
@@ -179,10 +185,10 @@ void testBulk2DJacobianSparsityWeno(int wenoOrder, bool forwardFlow)
 
 			// Central finite differences
 			y[nInletDof + col] = ref * (1.0 + h);
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, jacCol1.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacCol1.data(), false, cadet::WithoutParamSensitivity());
 
 			y[nInletDof + col] = ref * (1.0 - h);
-			convDispOp.residual(0.0, 0u, y.data(), nullptr, jacCol2.data(), false, cadet::WithoutParamSensitivity());
+			convDispOp.residual(DummyModel(), 0.0, 0u, y.data(), nullptr, jacCol2.data(), false, cadet::WithoutParamSensitivity());
 
 			y[nInletDof + col] = ref;
 

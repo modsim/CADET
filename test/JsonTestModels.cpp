@@ -31,6 +31,9 @@ json createColumnWithSMAJson(const std::string& uoType)
 	// Geometry
 	config["COL_LENGTH"] = 0.014;
 	config["COL_RADIUS"] = 0.01;
+	config["COL_RADIUS_INNER"] = 0.001;
+	config["COL_RADIUS_OUTER"] = 0.004;
+	config["CROSS_SECTION_AREA"] = 0.0003141592653589793;
 	config["PAR_RADIUS"] = 4.5e-5;
 	config["COL_POROSITY"] = 0.37;
 	config["PAR_POROSITY"] = 0.75;
@@ -159,6 +162,9 @@ json createColumnWithTwoCompLinearJson(const std::string& uoType)
 	// Geometry
 	config["COL_LENGTH"] = 0.014;
 	config["COL_RADIUS"] = 0.01;
+	config["COL_RADIUS_INNER"] = 0.001;
+	config["COL_RADIUS_OUTER"] = 0.004;
+	config["CROSS_SECTION_AREA"] = 0.0003141592653589793;
 	config["PAR_RADIUS"] = 4.5e-5;
 	config["COL_POROSITY"] = 0.37;
 	config["PAR_POROSITY"] = 0.75;
@@ -304,12 +310,12 @@ json createLWEJson(const std::string& uoType)
 				{
 					// Connection list is 1x7 since we have 1 connection between
 					// the two unit operations (and we need to have 7 columns)
-					sw["CONNECTIONS"] = {1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0};
+					sw["CONNECTIONS"] = {1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 6.683738370512285e-8};
 					// Connections: From unit operation 1 port -1 (i.e., all ports)
 					//              to unit operation 0 port -1 (i.e., all ports),
 					//              connect component -1 (i.e., all components)
 					//              to component -1 (i.e., all components) with
-					//              volumetric flow rate 1.0 m^3/s
+					//              volumetric flow rate 6.683738370512285e-8 m^3/s
 				}
 
 				con["switch_000"] = sw;
@@ -444,6 +450,9 @@ cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoTyp
 			// Geometry
 			grm["COL_LENGTH"] = 0.014;
 			grm["COL_RADIUS"] = 0.01;
+			grm["COL_RADIUS_INNER"] = 0.001;
+			grm["COL_RADIUS_OUTER"] = 0.004;
+			grm["CROSS_SECTION_AREA"] = 0.0003141592653589793;
 			grm["PAR_RADIUS"] = 4.5e-5;
 			grm["PAR_CORERADIUS"] = 0.0;
 			grm["COL_POROSITY"] = 0.37;

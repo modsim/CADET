@@ -47,10 +47,10 @@ int main(int argc, char* argv[])
 {
 #ifdef CADETTEST_ENABLE_LOG
 	// Set LogLevel in CADET library
-	cadet::LogLevel logLevel = cadet::LogLevel::Trace;
+	const cadet::LogLevel logLevel = cadet::LogLevel::Trace;
 	LogReceiver lr;
-	cadetSetLogReceiver(&lr);
-	cadetSetLogLevel(static_cast<typename std::underlying_type<cadet::LogLevel>::type>(logLevel));
+	cadet::setLogReceiver(&lr);
+	cadet::setLogLevel(logLevel);
 #endif
 
 #ifdef CADET_PARALLELIZE

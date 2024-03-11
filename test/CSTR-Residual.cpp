@@ -40,7 +40,7 @@
 cadet::model::CSTRModel* createAndConfigureCSTR(cadet::IModelBuilder& mb, cadet::JsonParameterProvider& jpp)
 {
 	// Create a CSTR
-	cadet::IModel* const iCstr = mb.createUnitOperation("CSTR", 0);
+	cadet::IModel* const iCstr = mb.createUnitOperation(jpp, 0);
 	REQUIRE(nullptr != iCstr);
 
 	cadet::model::CSTRModel* const cstr = reinterpret_cast<cadet::model::CSTRModel*>(iCstr);

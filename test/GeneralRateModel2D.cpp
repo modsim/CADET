@@ -239,14 +239,6 @@ TEST_CASE("GRM2D with 1 radial zone matches GRM", "[GRM],[GRM2D],[UnitOp],[Jacob
 	REQUIRE(nullptr != mb);
 
 	// Create a unit
-	cadet::IModel* const iUnitGrm = mb->createUnitOperation("GENERAL_RATE_MODEL", 0);
-	cadet::IModel* const iUnitGrm2d = mb->createUnitOperation("GENERAL_RATE_MODEL_2D", 0);
-	REQUIRE(nullptr != iUnitGrm);
-	REQUIRE(nullptr != iUnitGrm2d);
-
-	cadet::IUnitOperation* const grm = reinterpret_cast<cadet::IUnitOperation*>(iUnitGrm);
-	cadet::IUnitOperation* const grm2d = reinterpret_cast<cadet::IUnitOperation*>(iUnitGrm2d);
-
 	cadet::JsonParameterProvider jpp = createColumnWithTwoCompLinearBinding("GENERAL_RATE_MODEL");
 	const double velocity = jpp.getDouble("VELOCITY");
 	const double colRadius = jpp.getDouble("COL_RADIUS");
@@ -262,6 +254,16 @@ TEST_CASE("GRM2D with 1 radial zone matches GRM", "[GRM],[GRM2D],[UnitOp],[Jacob
 	jpp.set("LINEAR_SOLVER_BULK", "DENSE");
 	jpp.popScope();
 
+	jpp.set("UNIT_TYPE", "GENERAL_RATE_MODEL");
+	cadet::IModel* const iUnitGrm = mb->createUnitOperation(jpp, 0);
+	jpp.set("UNIT_TYPE", "GENERAL_RATE_MODEL_2D");
+	cadet::IModel* const iUnitGrm2d = mb->createUnitOperation(jpp, 0);
+	REQUIRE(nullptr != iUnitGrm);
+	REQUIRE(nullptr != iUnitGrm2d);
+
+	cadet::IUnitOperation* const grm = reinterpret_cast<cadet::IUnitOperation*>(iUnitGrm);
+	cadet::IUnitOperation* const grm2d = reinterpret_cast<cadet::IUnitOperation*>(iUnitGrm2d);
+
 	// Set WENO order
 	const int wenoOrder = 3;
 	cadet::test::column::setWenoOrder(jpp, wenoOrder);
@@ -275,8 +277,8 @@ TEST_CASE("GRM2D with 1 radial zone matches GRM", "[GRM],[GRM2D],[UnitOp],[Jacob
 
 	REQUIRE(grm2d->numDofs() == grm->numDofs());
 
-	const cadet::active flowIn[] = {velocity * colPorosity * crossSectionArea};
-	const cadet::active flowOut[] = {velocity * colPorosity * crossSectionArea};
+	const cadet::active flowIn[] = { velocity * colPorosity * crossSectionArea };
+	const cadet::active flowOut[] = { velocity * colPorosity * crossSectionArea };
 	grm->setFlowRates(flowIn, flowOut);
 	grm2d->setFlowRates(flowIn, flowOut);
 
@@ -295,13 +297,13 @@ TEST_CASE("GRM2D with 1 radial zone matches GRM", "[GRM],[GRM2D],[UnitOp],[Jacob
 	cadet::test::util::populate(yDot.data(), [=](unsigned int idx) { return std::abs(std::sin((idx + nDof) * 0.13)) + 1e-4; }, nDof);
 
 	// Setup matrices
-	const cadet::AdJacobianParams noAdParams{nullptr, nullptr, 0u};
-	grm->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), yDot.data()}, noAdParams);
-	grm2d->notifyDiscontinuousSectionTransition(0.0, 0u, {y.data(), yDot.data()}, noAdParams);
+	const cadet::AdJacobianParams noAdParams{ nullptr, nullptr, 0u };
+	grm->notifyDiscontinuousSectionTransition(0.0, 0u, { y.data(), yDot.data() }, noAdParams);
+	grm2d->notifyDiscontinuousSectionTransition(0.0, 0u, { y.data(), yDot.data() }, noAdParams);
 
 	// Compute Jacobian
-	const cadet::SimulationTime simTime{0.0, 0u};
-	const cadet::ConstSimulationState simState{y.data(), yDot.data()};
+	const cadet::SimulationTime simTime{ 0.0, 0u };
+	const cadet::ConstSimulationState simState{ y.data(), yDot.data() };
 	grm->residualWithJacobian(simTime, simState, jacCol1.data(), noAdParams, tls);
 	grm2d->residualWithJacobian(simTime, simState, jacCol2.data(), noAdParams, tls);
 

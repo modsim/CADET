@@ -2,6 +2,7 @@
   "dependencies": [
     "hdf5",
     "suitesparse",
-    "superlu"
+    "superlu",
+    "eigen3"
   ]
 }

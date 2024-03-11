@@ -106,7 +106,7 @@ void CSTRModel::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 	_flowRateOut = out[0];
 }
 
-bool CSTRModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool CSTRModel::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	_nComp = paramProvider.getInt("NCOMP");
 
@@ -2023,9 +2023,9 @@ int CSTRModel::Exporter::writeOutlet(double* buffer) const
 
 
 
-void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {
-	models[CSTRModel::identifier()] = [](UnitOpIdx uoId) { return new CSTRModel(uoId); };
+	models[CSTRModel::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new CSTRModel(uoId); };
 }
 
 }  // namespace model

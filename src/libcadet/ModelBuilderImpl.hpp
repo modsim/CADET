@@ -52,7 +52,7 @@ public:
 	virtual void destroySystem(IModelSystem* sys);
 
 	virtual IModel* createUnitOperation(IParameterProvider& paramProvider, UnitOpIdx uoId);
-	virtual IModel* createUnitOperation(const std::string& uoType, UnitOpIdx uoId);
+	//virtual IModel* createUnitOperation(const std::string& uoType, UnitOpIdx uoId);
 	virtual void destroyUnitOperation(IModel* unitOp);
 
 	virtual void registerInletType(const std::string& name, std::function<IInletProfile*(void)> factory);
@@ -63,8 +63,10 @@ public:
 	virtual bool isValidBindingModel(const std::string& name) const;
 	virtual model::IDynamicReactionModel* createDynamicReactionModel(const std::string& name) const;
 	virtual bool isValidDynamicReactionModel(const std::string& name) const;
-	virtual model::IParameterDependence* createParameterDependence(const std::string& name) const;
-	virtual bool isValidParameterDependence(const std::string& name) const;
+	virtual model::IParameterStateDependence* createParameterStateDependence(const std::string& name) const;
+	virtual bool isValidParameterStateDependence(const std::string& name) const;
+	virtual model::IParameterParameterDependence* createParameterParameterDependence(const std::string& name) const;
+	virtual bool isValidParameterParameterDependence(const std::string& name) const;
 	virtual IExternalFunction* createExternalFunction(const std::string& type) const;
 
 protected:
@@ -87,9 +89,9 @@ protected:
 
 	BindingModelFactory _bindingModels; //!< Factory for IBindingModel implementations
 	ReactionModelFactory _reactionModels; //!< Factory for IDynamicReactionModel implementations
-	ParameterDependenceFactory _paramDeps; //!< Factory for IParameterDependence implementations
+	ParameterDependenceFactory _paramDeps; //!< Factory for IParameterStateDependence implementations
 
-	typedef std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>> ModelFactoryContainer_t;
+	typedef std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>> ModelFactoryContainer_t;
 	typedef std::unordered_map<std::string, std::function<IInletProfile*(void)>> InletFactoryContainer_t;
 	typedef std::unordered_map<std::string, std::function<IExternalFunction*(void)>> ExternalFunctionFactoryContainer_t;
 

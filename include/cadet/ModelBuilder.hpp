@@ -118,17 +118,17 @@ public:
 	 */
 	virtual IModel* createUnitOperation(IParameterProvider& paramProvider, UnitOpIdx uoId) = 0;
 
-	/**
-	 * @brief Creates a unit operation model
-	 * @details The created unit operation model is not owned by the IModelBuilder.
-	 *          Ownership of unit operation models is handled by IModelSystem.
-	 *          Unit operation models can be destroyed by calling destroyUnitOperation().
-	 *
-	 * @param [in] uoType Name of the unit operation model
-	 * @param [in] uoId Unit operation index assigned to the created unit operation
-	 * @return Uninitialized unit operation model or @c nullptr if an error occurred
-	 */
-	virtual IModel* createUnitOperation(const std::string& uoType, UnitOpIdx uoId) = 0;
+	///**
+	// * @brief Creates a unit operation model
+	// * @details The created unit operation model is not owned by the IModelBuilder.
+	// *          Ownership of unit operation models is handled by IModelSystem.
+	// *          Unit operation models can be destroyed by calling destroyUnitOperation().
+	// *
+	// * @param [in] uoType Name of the unit operation model
+	// * @param [in] uoId Unit operation index assigned to the created unit operation
+	// * @return Uninitialized unit operation model or @c nullptr if an error occurred
+	// */
+	//virtual IModel* createUnitOperation(const std::string& uoType, UnitOpIdx uoId) = 0;
 
 	/**
 	 * @brief Destroys the given IModel

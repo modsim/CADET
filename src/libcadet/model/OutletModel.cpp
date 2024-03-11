@@ -64,7 +64,7 @@ bool OutletModel::usesAD() const CADET_NOEXCEPT
 	return false;
 }
 
-bool OutletModel::configureModelDiscretization(IParameterProvider& paramProvider, IConfigHelper& helper)
+bool OutletModel::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	_nComp = paramProvider.getInt("NCOMP");
 	return true;
@@ -256,9 +256,9 @@ int OutletModel::Exporter::writeOutlet(double* buffer) const
 }
 
 
-void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {
-	models[OutletModel::identifier()] = [](UnitOpIdx uoId) { return new OutletModel(uoId); };
+	models[OutletModel::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new OutletModel(uoId); };
 }
 
 }  // namespace model

@@ -30,15 +30,15 @@ namespace cadet
 {
 	namespace model
 	{
-		void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerInletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
+		void registerOutletModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
 
-		void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
-		void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerGeneralRateModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
+		void registerLumpedRateModelWithPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
+		void registerLumpedRateModelWithoutPores(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
+		void registerCSTRModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
 #ifdef ENABLE_GRM_2D
-		void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models);
+		void registerGeneralRateModel2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models);
 #endif
 
 		namespace inlet
@@ -84,7 +84,7 @@ namespace cadet
 	template <class UnitOpModel_t>
 	void ModelBuilder::registerModel(const std::string& name)
 	{
-		_modelCreators[name] = [](UnitOpIdx uoId) { return new UnitOpModel_t(uoId); };
+		_modelCreators[name] = [](UnitOpIdx uoId, IParameterProvider&) { return new UnitOpModel_t(uoId); };
 	}
 
 	template <class UnitOpModel_t>
@@ -180,7 +180,11 @@ namespace cadet
 
 		// Call factory function (thanks to type erasure of std::function we can store 
 		// all factory functions in one container)
-		IUnitOperation* const model = it->second(uoId);
+		IUnitOperation* const model = it->second(uoId, paramProvider);
+		if (!model) {
+			LOG(Error) << "Failed to create unit type " << uoType << " for unit " << uoId;
+			return nullptr;
+		}
 
 		if (!model->configureModelDiscretization(paramProvider, *this) || !model->configure(paramProvider))
 		{
@@ -192,19 +196,19 @@ namespace cadet
 		return model;
 	}
 
-	IModel* ModelBuilder::createUnitOperation(const std::string& uoType, UnitOpIdx uoId)
-	{
-		const auto it = _modelCreators.find(uoType);
-		if (it == _modelCreators.end())
-		{
-			// Model was not found
-			LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
-			return nullptr;
-		}
+	//IModel* ModelBuilder::createUnitOperation(const std::string& uoType, UnitOpIdx uoId)
+	//{
+	//	const auto it = _modelCreators.find(uoType);
+	//	if (it == _modelCreators.end())
+	//	{
+	//		// Model was not found
+	//		LOG(Error) << "Unknown unit type " << uoType << " for unit " << uoId;
+	//		return nullptr;
+	//	}
 
-		IUnitOperation* const model = it->second(uoId);
-		return model;
-	}
+	//	IUnitOperation* const model = it->second(uoId);
+	//	return model;
+	//}
 
 	void ModelBuilder::destroyUnitOperation(IModel* unitOp)
 	{
@@ -265,14 +269,24 @@ namespace cadet
 		return _reactionModels.existsDynamic(name);
 	}
 
-	model::IParameterDependence* ModelBuilder::createParameterDependence(const std::string& name) const
+	model::IParameterStateDependence* ModelBuilder::createParameterStateDependence(const std::string& name) const
 	{
-		return _paramDeps.create(name);
+		return _paramDeps.createStateDependence(name);
 	}
 
-	bool ModelBuilder::isValidParameterDependence(const std::string& name) const
+	bool ModelBuilder::isValidParameterStateDependence(const std::string& name) const
 	{
-		return _paramDeps.exists(name);
+		return _paramDeps.stateDependenceExists(name);
+	}
+
+	model::IParameterParameterDependence* ModelBuilder::createParameterParameterDependence(const std::string& name) const
+	{
+		return _paramDeps.createParameterDependence(name);
+	}
+
+	bool ModelBuilder::isValidParameterParameterDependence(const std::string& name) const
+	{
+		return _paramDeps.parameterDependenceExists(name);
 	}
 
 } // namespace cadet

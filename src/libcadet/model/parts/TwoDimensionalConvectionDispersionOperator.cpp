@@ -19,7 +19,10 @@
 #include "SensParamUtil.hpp"
 #include "SimulationTypes.hpp"
 #include "linalg/CompressedSparseMatrix.hpp"
-#include "model/parts/ConvectionDispersionKernel.hpp"
+#include "model/parts/AxialConvectionDispersionKernel.hpp"
+#include "model/ParameterDependence.hpp"
+#include "ConfigurationHelper.hpp"
+
 
 #ifdef SUPERLU_FOUND
 	#include "linalg/SuperLUSparseMatrix.hpp"
@@ -654,7 +657,7 @@ protected:
  * @brief Creates a TwoDimensionalConvectionDispersionOperator
  */
 TwoDimensionalConvectionDispersionOperator::TwoDimensionalConvectionDispersionOperator() : _colPorosities(0), _dir(0), _stencilMemory(sizeof(active) * Weno::maxStencilSize()), 
-	_wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _linearSolver(nullptr)
+	_wenoDerivatives(new double[Weno::maxStencilSize()]), _weno(), _linearSolver(nullptr), _dispersionDep(nullptr)
 {
 }
 
@@ -662,6 +665,7 @@ TwoDimensionalConvectionDispersionOperator::~TwoDimensionalConvectionDispersionO
 {
 	delete[] _wenoDerivatives;
 	delete _linearSolver;
+	delete _dispersionDep;
 }
 
 /**
@@ -673,12 +677,15 @@ TwoDimensionalConvectionDispersionOperator::~TwoDimensionalConvectionDispersionO
  * @param [in] dynamicReactions Determines whether the sparsity pattern accounts for dynamic reactions
  * @return @c true if configuration went fine, @c false otherwise
  */
-bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nCol, unsigned int nRad, bool dynamicReactions)
+bool TwoDimensionalConvectionDispersionOperator::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, unsigned int nCol, unsigned int nRad, bool dynamicReactions)
 {
 	_nComp = nComp;
 	_nCol = nCol;
 	_nRad = nRad;
 	_hasDynamicReactions = dynamicReactions;
+
+	// TODO: Add support for parameter dependent dispersion
+	_dispersionDep = helper.createParameterParameterDependence("CONSTANT_ONE");
 
 	paramProvider.pushScope("discretization");
 
@@ -944,40 +951,40 @@ const active& TwoDimensionalConvectionDispersionOperator::radialDispersion(unsig
  * @param [in] wantJac Determines whether the Jacobian is computed or not
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
 {
 	if (wantJac)
-		return residualImpl<double, double, double, true>(t, secIdx, y, yDot, res);
+		return residualImpl<double, double, double, true>(model, t, secIdx, y, yDot, res);
 	else
-		return residualImpl<double, double, double, false>(t, secIdx, y, yDot, res);
+		return residualImpl<double, double, double, false>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity)
 {
 	if (wantJac)
-		return residualImpl<active, active, double, true>(t, secIdx, y, yDot, res);
+		return residualImpl<active, active, double, true>(model, t, secIdx, y, yDot, res);
 	else
-		return residualImpl<active, active, double, false>(t, secIdx, y, yDot, res);
+		return residualImpl<active, active, double, false>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
 {
 	if (wantJac)
-		return residualImpl<double, active, active, true>(t, secIdx, y, yDot, res);
+		return residualImpl<double, active, active, true>(model, t, secIdx, y, yDot, res);
 	else
-		return residualImpl<double, active, active, false>(t, secIdx, y, yDot, res);
+		return residualImpl<double, active, active, false>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperator::residual(double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
 {
 	if (wantJac)
-		return residualImpl<active, active, active, true>(t, secIdx, y, yDot, res);
+		return residualImpl<active, active, active, true>(model, t, secIdx, y, yDot, res);
 	else
-		return residualImpl<active, active, active, false>(t, secIdx, y, yDot, res);
+		return residualImpl<active, active, active, false>(model, t, secIdx, y, yDot, res);
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
+int TwoDimensionalConvectionDispersionOperator::residualImpl(const IModel& model, double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
 {
 	if (wantJac)
 	{
@@ -991,7 +998,7 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 	{
 		active const* const d_c = getSectionDependentSlice(_axialDispersion, _nRad * _nComp, secIdx) + i * _nComp;
 
-		convdisp::FlowParameters<ParamType> fp{
+		convdisp::AxialFlowParameters<ParamType> fp{
 			static_cast<ParamType>(_curVelocity[i]),
 			d_c,
 			h,
@@ -1003,13 +1010,15 @@ int TwoDimensionalConvectionDispersionOperator::residualImpl(double t, unsigned 
 			_nComp,
 			_nCol,
 			_nComp * i,                        // Offset to the first component of the inlet DOFs in the local state vector
-			_nComp * (_nRad + i)               // Offset to the first component of the first bulk cell in the local state vector
+			_nComp * (_nRad + i),              // Offset to the first component of the first bulk cell in the local state vector
+			_dispersionDep,
+			model
 		};
 
 		if (wantJac)
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, true>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernelAxial<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, true>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 		else
-			convdisp::residualKernel<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
+			convdisp::residualKernelAxial<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 	}
 
 	// Handle radial dispersion
@@ -1112,7 +1121,7 @@ void TwoDimensionalConvectionDispersionOperator::setSparsityPattern()
 
 	// Handle convection, axial dispersion (WENO)
 	for (unsigned int i = 0; i < _nRad; ++i)
-		cadet::model::parts::convdisp::sparsityPattern(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nRad, static_cast<double>(_curVelocity[i]), _weno);
+		cadet::model::parts::convdisp::sparsityPatternAxial(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nRad, static_cast<double>(_curVelocity[i]), _weno);
 
 	// Handle radial dispersion
 	if (_nRad > 1)

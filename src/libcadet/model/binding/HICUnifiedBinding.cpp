@@ -116,16 +116,20 @@ namespace cadet
 				if (nBound[0] != 0)
 					throw InvalidParameterException("HICUNIFIED binding model requires exactly zero bound states for salt component");
 
-				// First flux is salt, which is always quasi-stationary
-				_reactionQuasistationarity[0] = false;
-
 				return res;
 			}
 
 			virtual bool hasSalt() const CADET_NOEXCEPT { return true; }
 			virtual bool supportsMultistate() const CADET_NOEXCEPT { return false; }
 			virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
-			virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT { return false; }
+			virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT
+			{
+				return std::any_of(_reactionQuasistationarity.begin(), _reactionQuasistationarity.end(), [](int i) -> bool { return i; });
+			}
+			virtual bool hasDynamicReactions() const CADET_NOEXCEPT
+			{
+				return std::any_of(_reactionQuasistationarity.begin(), _reactionQuasistationarity.end(), [](int i) -> bool { return !static_cast<bool>(i); });
+			}
 			virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 			virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const

@@ -584,7 +584,7 @@ TEST_CASE("ModelSystem Jacobian AD vs analytic", "[ModelSystem],[Jacobian],[AD]"
 		SECTION(isKinetic ? "Kinetic binding" : "Quasi-stationary binding")
 		{
 			// Use some test case parameters
-			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL");
+			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL", "FV");
 
 			// Extract section times
 			jpp.pushScope("solver");
@@ -690,7 +690,7 @@ TEST_CASE("ModelSystem time derivative Jacobian FD vs analytic", "[ModelSystem],
 		SECTION(isKinetic ? "Kinetic binding" : "Quasi-stationary binding")
 		{
 			// Use some test case parameters
-			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL");
+			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL", "FV");
 
 			// Extract section times
 			jpp.pushScope("solver");
@@ -761,7 +761,7 @@ TEST_CASE("ModelSystem sensitivity Jacobians", "[ModelSystem],[Sensitivity]")
 		SECTION(isKinetic ? "Kinetic binding" : "Quasi-stationary binding")
 		{
 			// Use some test case parameters
-			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL");
+			cadet::JsonParameterProvider jpp = createLinearBenchmark(isKinetic, false, "GENERAL_RATE_MODEL", "FV");
 
 			// Extract section times
 			jpp.pushScope("solver");

@@ -100,10 +100,10 @@ void extractBandedEigenJacobianFromAd(active const* const adVec, int adDirOffset
 }
 
 void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
-	const int blockOffset, const int nCols, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
+	const int blockOffset, const int nRows, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
 {
 	const int stride = lowerBandwidth + 1 + upperBandwidth;
-	for (int eq = blockOffset; eq < blockOffset + nCols; ++eq)
+	for (int eq = blockOffset; eq < blockOffset + nRows; ++eq)
 	{
 		// Start with lowest subdiagonal and stay in the range of the columns:
 		// diagDir might be too big for the matrix and, hence, dir ranges between
@@ -114,7 +114,7 @@ void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirO
 		for (int diag = 0; diag < stride; ++diag)
 		{
 			if (eq - lowerBandwidth + diag >= blockOffset && // left block boundary
-				eq - lowerBandwidth + diag < blockOffset + nCols && // right block boundary
+				eq - lowerBandwidth + diag < blockOffset + nRows && // right block boundary
 				adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
 				)
 				mat.coeffRef(matrixOffset + eq, matrixOffset + eq - lowerBandwidth + diag) = adVec[eq].getADValue(adDirOffset + dir);
@@ -264,6 +264,51 @@ double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int 
 					return std::numeric_limits<double>::quiet_NaN();
 				const double diff = std::abs(mat.native(eq, diagCol) - baseVal);
 				
+				baseVal = std::abs(baseVal);
+				if (baseVal > 0.0)
+					maxDiff = std::max(maxDiff, diff / baseVal);
+				else
+					maxDiff = std::max(maxDiff, diff);
+			}
+
+			// Wrap around at end of row and jump to lowest subdiagonal
+			if (dir == diagDir + upperBandwidth)
+				dir = diagDir - lowerBandwidth;
+			else
+				++dir;
+		}
+	}
+	return maxDiff;
+}
+
+double compareBandedEigenJacobianWithAd(active const* const adVec, const int adDirOffset, const int diagDir, const int lowerBandwidth, const int upperBandwidth,
+	const int blockOffset, const int nRows, const Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
+{
+	double maxDiff = 0.0;
+
+	const int stride = lowerBandwidth + 1 + upperBandwidth;
+	for (int eq = blockOffset; eq < blockOffset + nRows; ++eq)
+	{
+		// Start with lowest subdiagonal and stay in the range of the columns:
+		// diagDir might be too big for the matrix and, hence, dir ranges between
+		// diagDir - lowerBandwidth <= dir <= diagDir + upperBandwidth
+		int dir = diagDir - lowerBandwidth + eq % stride;
+
+		// Loop over diagonals
+		for (int diag = 0; diag < stride; ++diag)
+		{
+			if (eq - lowerBandwidth + diag >= blockOffset && // left block boundary
+				eq - lowerBandwidth + diag < blockOffset + nRows && // right block boundary
+				adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
+				)
+			{
+				double baseVal = adVec[eq].getADValue(adDirOffset + dir);
+				double matVal = mat.coeff(matrixOffset + eq, matrixOffset + eq - lowerBandwidth + diag);
+
+				if (std::isnan(matVal) || std::isnan(baseVal))
+					return std::numeric_limits<double>::quiet_NaN();
+				const double diff = std::abs(matVal - baseVal);
+
 				baseVal = std::abs(baseVal);
 				if (baseVal > 0.0)
 					maxDiff = std::max(maxDiff, diff / baseVal);

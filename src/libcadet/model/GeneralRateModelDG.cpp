@@ -74,12 +74,35 @@ GeneralRateModelDG::~GeneralRateModelDG() CADET_NOEXCEPT
 	clearParDepSurfDiffusion();
 
 	delete[] _disc.nParCell;
-	delete[] _disc.parTypeOffset;
 	delete[] _disc.nParPointsBeforeType;
+	delete[] _disc.parPolyDeg;
+	delete[] _disc.nParNode;
+	delete[] _disc.nParPoints;
+	delete[] _disc.parExactInt;
+	delete[] _disc.parTypeOffset;
 	delete[] _disc.nBound;
 	delete[] _disc.boundOffset;
 	delete[] _disc.strideBound;
 	delete[] _disc.nBoundBeforeType;
+
+	delete[] _disc.offsetSurfDiff;
+
+	delete[] _disc.deltaR;
+	delete[] _disc.parNodes;
+	delete[] _disc.parPolyDerM;
+	delete[] _disc.minus_InvMM_ST;
+	delete[] _disc.parInvWeights;
+	delete[] _disc.parInvMM;
+	delete[] _disc.parInvMM_Leg;
+	delete[] _disc.Ir;
+	delete[] _disc.Dr;
+
+	delete[] _disc.DGjacParDispBlocks;
+
+	delete[] _disc.g_p;
+	delete[] _disc.g_pSum;
+	delete[] _disc.surfaceFluxParticle;
+	delete[] _disc.localFlux;
 }
 
 unsigned int GeneralRateModelDG::numDofs() const CADET_NOEXCEPT

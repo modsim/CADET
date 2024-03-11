@@ -32,6 +32,46 @@ namespace test
 
 namespace column
 {
+	struct DiscParams {
+		virtual ~DiscParams() = default;
+		virtual void setDisc(JsonParameterProvider& jpp) const = 0;
+	};
+
+	struct FVparams : public DiscParams {
+		int nCol;
+		int wenoOrder;
+		int nPar;
+
+		FVparams() : nCol(0), wenoOrder(0), nPar(0) {}
+		FVparams(int nCol)
+			: nCol(nCol), wenoOrder(0), nPar(0) {}
+		FVparams(int nCol, int wenoOrder)
+			: nCol(nCol), wenoOrder(wenoOrder), nPar(0) {}
+		FVparams(int nCol, int wenoOrder, int nPar)
+			: nCol(nCol), wenoOrder(wenoOrder), nPar(nPar) {}
+
+		void setWenoOrder(int order) { wenoOrder = order; }
+		int getWenoOrder() { return wenoOrder; }
+		void setDisc(JsonParameterProvider& jpp) const override;
+	};
+
+	struct DGparams : public DiscParams {
+		int exactIntegration;
+		int polyDeg;
+		int nElem;
+		int parPolyDeg;
+		int parNelem;
+
+		DGparams() : exactIntegration(-1), polyDeg(0), nElem(0), parPolyDeg(0), parNelem(0) {}
+		DGparams(int exact, int poly, int elem)
+			: exactIntegration(exact), polyDeg(poly), nElem(elem), parPolyDeg(0), parNelem(0) {}
+		DGparams(int exact, int poly, int elem, int parPolyDeg, int parNelem)
+			: exactIntegration(exact), polyDeg(poly), nElem(elem), parPolyDeg(parPolyDeg), parNelem(parNelem) {}
+
+		void setIntegrationMode(int integrationMode) { exactIntegration = integrationMode; }
+		int getIntegrationMode() { return exactIntegration; }
+		void setDisc(JsonParameterProvider& jpp) const override;
+	};
 
 	/**
 	 * @brief Sets the number of axial cells in a configuration of a column-like unit operation
@@ -40,16 +80,6 @@ namespace column
 	 * @param [in] nCol Number of axial cells
 	 */
 	void setNumAxialCells(cadet::JsonParameterProvider& jpp, unsigned int nCol);
-
-	/**
-	* @brief Sets the discrete points, polynomial basis in a configuration of a column-like unit operation
-	* @details Overwrites the POLYNOMIAL_BASIS, POLYDEG, NCOL fields in the discretization group of the given ParameterProvider.
-	* @param [in,out] jpp ParameterProvider to change the number of axial cells in
-	* @param [in] basis type of polynomial basis functions
-	* @param [in] polyDeg Number of axial nodes per cell
-	* @param [in] nCol Number of axial cells
-	*/
-	void setDG(cadet::JsonParameterProvider& jpp, std::string basis, unsigned int polyDeg, unsigned int nCol);
 
 	/**
 	 * @brief Sets the WENO order in a configuration of a column-like unit operation
@@ -92,12 +122,14 @@ namespace column
 	 * @param [in] refFileRelPath Path to the reference data file from the directory of this file
 	 * @param [in] forwardFlow Determines whether the unit operates in forward flow (@c true) or backwards flow (@c false)
 	 * @param [in] dynamicBinding Determines whether dynamic binding (@c true) or rapid equilibrium (@c false) is used
-	 * @param [in] nCol Number of axial cells
+	 * @param [in] disc spatial discretization parameters
+	 * @param [in] method spatial discretization method
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testAnalyticBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, unsigned int nCol, double absTol, double relTol);
-	void testAnalyticBenchmark_DG(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, std::string basis, unsigned int polyDeg, unsigned int nCol, double absTol, double relTol);
+	void testAnalyticBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, DiscParams& disc, const std::string method, double absTol, double relTol);
+	void testAnalyticBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, FVparams& disc, double absTol, double relTol);
+	void testAnalyticBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, bool dynamicBinding, DGparams& disc, double absTol, double relTol);
 
 	/**
 	 * @brief Runs a simulation test comparing against (semi-)analytic single component pulse injection reference data
@@ -105,20 +137,26 @@ namespace column
 	 * @param [in] uoType Unit operation type
 	 * @param [in] refFileRelPath Path to the reference data file from the directory of this file
 	 * @param [in] forwardFlow Determines whether the unit operates in forward flow (@c true) or backwards flow (@c false)
-	 * @param [in] nCol Number of axial cells
+	 * @param [in] disc spatial discretization parameters
+	 * @param [in] method spatial discretization method
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testAnalyticNonBindingBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, unsigned int nCol, double absTol, double relTol);
+	void testAnalyticNonBindingBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, DiscParams& disc, const std::string method, double absTol, double relTol);
+	void testAnalyticNonBindingBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, FVparams& disc, double absTol, double relTol);
+	void testAnalyticNonBindingBenchmark(const char* uoType, const char* refFileRelPath, bool forwardFlow, DGparams& disc, double absTol, double relTol);
+
 
 	/**
 	 * @brief Runs a simulation test comparing forward and backwards flow in the load-wash-elution example
 	 * @param [in] uoType Unit operation type
-	 * @param [in] wenoOrder Order of the WENO method
+	 * @param [in] disc spatial discretization parameters
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testWenoForwardBackward(const char* uoType, int wenoOrder, double absTol, double relTol);
+	void testForwardBackward(const char* uoType, FVparams disc, double absTol, double relTol);
+	void testForwardBackward(const char* uoType, DGparams disc, double absTol, double relTol);
+	void testForwardBackward(cadet::JsonParameterProvider jpp, double absTol, double relTol);
 
 	/**
 	 * @brief Checks the full Jacobian against AD and FD pattern switching
@@ -133,7 +171,7 @@ namespace column
 	 * @param [in] uoType Unit operation type
 	 * @param [in] dynamicBinding Determines whether dynamic binding is used
 	 */
-	void testJacobianADVariableParSurfDiff(const std::string& uoType, bool dynamicBinding);
+	void testJacobianADVariableParSurfDiff(const std::string& uoType, const std::string& spatialMethod, bool dynamicBinding);
 
 	/**
 	 * @brief Checks the full Jacobian against AD and FD pattern switching from forward to backward flow and back
@@ -141,9 +179,11 @@ namespace column
 	 *          Checks both forward and backward flow mode as well as switching between them.
 	 * 
 	 * @param [in] uoType Unit operation type
-	 * @param [in] wenoOrder Order of the WENO method
+	 * @param [in] disc spatial discretization parameters
 	 */
-	void testJacobianWenoForwardBackward(const std::string& uoType, int wenoOrder);
+	void testJacobianForwardBackward(const char* uoType, FVparams disc);
+	void testJacobianForwardBackward(const char* uoType, DGparams disc);
+	void testJacobianForwardBackward(cadet::JsonParameterProvider& jpp);
 
 	/**
 	 * @brief Checks the full Jacobian against FD switching from forward to backward flow and back
@@ -157,7 +197,7 @@ namespace column
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testJacobianWenoForwardBackwardFD(const std::string& uoType, int wenoOrder, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
+	void testJacobianWenoForwardBackwardFD(const std::string& uoType, const std::string& spatialMethod, int wenoOrder, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
 
 	/**
 	 * @brief Checks the (analytic) time derivative Jacobian against FD
@@ -167,7 +207,7 @@ namespace column
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testTimeDerivativeJacobianFD(const std::string& uoType, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
+	void testTimeDerivativeJacobianFD(const std::string& uoType, const std::string& spatialMethod, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
 
 	/**
 	 * @brief Checks the bottom macro row and right macro column of the Jacobian against FD
@@ -218,7 +258,7 @@ namespace column
 	 * @param [in] absTol Absolute error tolerance
 	 * @param [in] relTol Relative error tolerance
 	 */
-	void testFwdSensJacobians(const std::string& uoType, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
+	void testFwdSensJacobians(const std::string& uoType, const std::string& spatialMethod, double h = 1e-6, double absTol = 0.0, double relTol = std::numeric_limits<float>::epsilon() * 100.0);
 
 	/**
 	 * @brief Checks the forward sensitivity solution against finite differences
@@ -234,7 +274,7 @@ namespace column
 	 * @param [in] relTols Array with relative error tolerances
 	 * @param [in] passRates Array with rates of relative error test passes
 	 */
-	void testFwdSensSolutionFD(const std::string& uoType, bool disableSensErrorTest, double const* fdStepSize, double const* absTols, double const* relTols, double const* passRates);
+	void testFwdSensSolutionFD(const std::string& uoType, const std::string& spatialMethod, bool disableSensErrorTest, double const* fdStepSize, double const* absTols, double const* relTols, double const* passRates);
 
 	/**
 	 * @brief Checks the forward sensitivity solution with forward flow against the one using backward flow
@@ -247,7 +287,7 @@ namespace column
 	 * @param [in] relTols Array with relative error tolerances
 	 * @param [in] passRates Array with rates of relative error test passes
 	 */
-	void testFwdSensSolutionForwardBackward(const std::string& uoType, double const* absTols, double const* relTols, double const* passRates);
+	void testFwdSensSolutionForwardBackward(const std::string& uoType, const std::string& spatialMethod, double const* absTols, double const* relTols, double const* passRates);
 
 	/**
 	 * @brief Checks consistent initialization using a model with linear binding
@@ -258,7 +298,7 @@ namespace column
 	 * @param [in] consTol Error tolerance for consistent initialization solver
 	 * @param [in] absTol Error tolerance for checking whether algebraic residual is 0
 	 */
-	void testConsistentInitializationLinearBinding(const std::string& uoType, double consTol, double absTol);
+	void testConsistentInitializationLinearBinding(const std::string& uoType, const std::string& spatialMethod, double consTol, double absTol);
 
 	/**
 	 * @brief Checks consistent initialization using a model with SMA binding
@@ -269,7 +309,7 @@ namespace column
 	 * @param [in] consTol Error tolerance for consistent initialization solver
 	 * @param [in] absTol Error tolerance for checking whether algebraic residual is 0
 	 */
-	void testConsistentInitializationSMABinding(const std::string& uoType, double const* const initState, double consTol, double absTol);
+	void testConsistentInitializationSMABinding(const std::string& uoType, const std::string& spatialMethod, double const* const initState, double consTol, double absTol);
 
 	/**
 	 * @brief Checks consistent initialization of sensitivities in a column-like model
@@ -281,14 +321,14 @@ namespace column
 	 * @param [in] linearBinding Determines whether linear binding or SMA binding model is used
 	 * @param [in] absTol Error tolerance for checking whether sensitivity residual is 0
 	 */
-	void testConsistentInitializationSensitivity(const std::string& uoType, double const* const y, double const* const yDot, bool linearBinding, double absTol);
+	void testConsistentInitializationSensitivity(const std::string& uoType, const std::string& spatialMethod, double const* const y, double const* const yDot, bool linearBinding, double absTol);
 
 	/**
 	 * @brief Checks whether the inlet DOFs produce the identity matrix in the Jacobian of the unit operation
 	 * @details Assumes column-like unit models. Both AD and analytic Jacobians are checked.
 	 * @param [in] uoType Unit operation type
 	 */
-	void testInletDofJacobian(const std::string& uoType);
+	void testInletDofJacobian(const std::string& uoType, const std::string& spatialMethod);
 
 } // namespace column
 } // namespace test

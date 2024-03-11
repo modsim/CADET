@@ -146,6 +146,26 @@ void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int ad
 double compareBandedJacobianWithAd(active const* const adVec, int adDirOffset, int diagDir, const linalg::BandMatrix& mat);
 
 /**
+ * @brief Compares a (block-) banded Jacobian in Eigen library row-major format with an AD version derived by band compressed AD seed vectors
+ * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
+			compare the results with a given banded Jacobian. The AD Jacobian is treated as base and the analytic
+			Jacobian is compared against it. The relative difference
+			@f[ \Delta_{ij} = \begin{cases} \left\lvert \frac{ J_{\text{ana},ij} - J_{\text{ad},ij} }{ J_{\text{ad},ij} }\right\rvert, & J_{\text{ad},ij} \neq 0 \\
+							   \left\lvert J_{\text{ana},ij} - J_{\text{ad},ij} \right\rvert, & J_{\text{ad},ij} = 0 \end{cases} @f]
+			is computed for each matrix entry. The maximum of all @f$ \Delta_{ij} @f$ is returned.
+ * @param [in] adVec Vector of AD datatypes with band compressed seed vectors
+ * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
+ * @param [in] diagDir Diagonal direction index
+ * @param [in] lowerBandwidth of the block
+ * @param [in] upperBandwidth of the block
+ * @param [in] blockOffset of the currently considered block
+ * @param [in] nRows of the matrix or number of equations to be compared
+ * @param [in] mat BandMatrix populated with the analytic Jacobian
+ * @return The maximum absolute relative difference between the matrix elements
+ */
+double compareBandedEigenJacobianWithAd(active const* const adVec, const int adDirOffset, const int diagDir, const int lowerBandwidth, const int upperBandwidth, const int blockOffset, const int nRows, const Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset);
+
+/**
  * @brief Compares a dense Jacobian with an AD version derived by AD seed vectors
  * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForDenseMatrix() to
 			compare the results with a given dense Jacobian. The AD Jacobian is treated as base and the analytic

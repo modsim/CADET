@@ -761,23 +761,56 @@ void LumpedRateModelWithPoresDG::extractJacobianFromAD(active const* const adRes
  */
 void LumpedRateModelWithPoresDG::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
 {
-	// todo write this function
-	//Indexer idxr(_disc);
+	Indexer idxr(_disc);
 
-	//LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagDirCol: " << _convDispOp.jacobian().lowerBandwidth();
+	const int lowerBandwidth = (_disc.exactInt) ? 2 * _disc.nNodes * idxr.strideColNode() : _disc.nNodes * idxr.strideColNode();
+	const int upperBandwidth = lowerBandwidth;
+	const int stride = lowerBandwidth + 1 + upperBandwidth;
 
-	//// Column
-	//const double maxDiffCol = _convDispOp.checkAnalyticJacobianAgainstAd(adRes, adDirOffset);
+	const double maxDiff = ad::compareBandedEigenJacobianWithAd(adRes + idxr.offsetC(), adDirOffset, lowerBandwidth, lowerBandwidth, upperBandwidth, 0, numPureDofs(), _globalJac, 0);
 
-	//// Particles
-	//double maxDiffPar = 0.0;
-	//for (unsigned int type = 0; type < _disc.nParType; ++type)
-	//{
-	//	const linalg::BandMatrix& jacMat = _jacP[type];
-	//	const double localDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetCp(ParticleTypeIndex{ type }), adDirOffset, jacMat.lowerBandwidth(), jacMat);
-	//	LOG(Debug) << "-> Par type " << type << " diff: " << localDiff;
-	//	maxDiffPar = std::max(maxDiffPar, localDiff);
-	//}
+	if (maxDiff > 1e-6)
+		int jojo = 0;
+
+	double maxDiffPar = 0.0;
+
+	for (unsigned int type = 0; type < _disc.nParType; type++)
+	{
+		int offsetParticleTypeDirs = adDirOffset + idxr.offsetCp(ParticleTypeIndex{ type }) - idxr.offsetC();
+
+		for (unsigned int par = 0; par < _disc.nPoints; par++)
+		{
+			const int eqOffset_res = idxr.offsetCp(ParticleTypeIndex{ type }, ParticleIndex{ par });
+			const int eqOffset_mat = idxr.offsetCp(ParticleTypeIndex{ type }, ParticleIndex{ par }) - idxr.offsetC();
+			for (unsigned int phase = 0; phase < idxr.strideParBlock(type); phase++)
+			{
+				for (unsigned int phaseTo = 0; phaseTo < idxr.strideParBlock(type); phaseTo++)
+				{
+
+					double baseVal = adRes[eqOffset_res + phase].getADValue(offsetParticleTypeDirs + phaseTo);
+					double matVal = _globalJac.coeff(eqOffset_mat + phase, eqOffset_mat + phaseTo);
+
+					if (std::isnan(matVal) || std::isnan(baseVal))
+						continue;
+
+					const double diff = std::abs(matVal - baseVal);
+
+					baseVal = std::abs(baseVal);
+					if (baseVal > 0.0)
+						maxDiffPar = std::max(maxDiffPar, diff / baseVal);
+					else
+						maxDiffPar = std::max(maxDiffPar, diff);
+
+				}
+			}
+		}
+		offsetParticleTypeDirs += idxr.strideParBlock(type);
+	}
+
+	if (maxDiffPar > 1e-6)
+		int jojo2 = 0;
+
+	LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagBlockSize: " << stride << " MaxDiffBulk: " << maxDiff << " MaxDiffParticle: " << maxDiffPar;
 }
 
 #endif

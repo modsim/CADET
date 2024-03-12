@@ -10,7 +10,7 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-#include "model/GeneralRateModel2D.hpp"
+#include "model/LumpedRateModelWithPoresDG2D.hpp"
 #include "BindingModelFactory.hpp"
 #include "ParamReaderHelper.hpp"
 #include "ParamReaderScopes.hpp"
@@ -324,21 +324,21 @@ constexpr double SurfVolRatioSphere = 3.0;
 constexpr double SurfVolRatioCylinder = 2.0;
 constexpr double SurfVolRatioSlab = 1.0;
 
-int schurComplementMultiplierGRM2D(void* userData, double const* x, double* z)
+int schurComplementMultiplierDPFR2D(void* userData, double const* x, double* z)
 {
-	GeneralRateModel2D* const grm = static_cast<GeneralRateModel2D*>(userData);
-	return grm->schurComplementMatrixVector(x, z);
+	LumpedRateModelWithPoresDG2D* const dpfr = static_cast<LumpedRateModelWithPoresDG2D*>(userData);
+	return dpfr->schurComplementMatrixVector(x, z);
 }
 
 
-GeneralRateModel2D::GeneralRateModel2D(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
+LumpedRateModelWithPoresDG2D::LumpedRateModelWithPoresDG2D(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
 	_dynReactionBulk(nullptr), _jacP(nullptr), _jacPdisc(nullptr), _jacPF(nullptr), _jacFP(nullptr), _jacInlet(),
 	_analyticJac(true), _jacobianAdDirs(0), _factorizeJacobian(false), _tempState(nullptr),
 	_initC(0), _singleRadiusInitC(true), _initCp(0), _singleRadiusInitCp(true), _initQ(0), _singleRadiusInitQ(true), _initState(0), _initStateDot(0)
 {
 }
 
-GeneralRateModel2D::~GeneralRateModel2D() CADET_NOEXCEPT
+LumpedRateModelWithPoresDG2D::~LumpedRateModelWithPoresDG2D() CADET_NOEXCEPT
 {
 	delete[] _tempState;
 
@@ -359,27 +359,27 @@ GeneralRateModel2D::~GeneralRateModel2D() CADET_NOEXCEPT
 	delete[] _disc.nBoundBeforeType;
 }
 
-unsigned int GeneralRateModel2D::numDofs() const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::numDofs() const CADET_NOEXCEPT
 {
 	// Column bulk DOFs: nCol * nComp * nRad
 	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nParCell shells for each particle type
 	// Flux DOFs: nCol * nComp * nRad * nParType (as many as column bulk DOFs)
 	// Inlet DOFs: nComp * nRad
-	return _disc.nCol * _disc.nRad * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp * _disc.nRad;
+	return _disc.axNPoints * _disc.radNPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp * _disc.radNPoints;
 }
 
-unsigned int GeneralRateModel2D::numPureDofs() const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::numPureDofs() const CADET_NOEXCEPT
 {
 	// Column bulk DOFs: nCol * nComp * nRad
 	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nParCell shells for each particle type
 	// Flux DOFs: nCol * nComp * nRad * nParType (as many as column bulk DOFs)
-	return _disc.nCol * _disc.nRad * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType];
+	return _disc.axNPoints * _disc.radNPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType];
 }
 
 
-bool GeneralRateModel2D::usesAD() const CADET_NOEXCEPT
+bool LumpedRateModelWithPoresDG2D::usesAD() const CADET_NOEXCEPT
 {
 #ifdef CADET_CHECK_ANALYTIC_JACOBIAN
 	// We always need AD if we want to check the analytical Jacobian
@@ -390,15 +390,15 @@ bool GeneralRateModel2D::usesAD() const CADET_NOEXCEPT
 #endif
 }
 
-bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
+bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
 
 	paramProvider.pushScope("discretization");
 
-	_disc.nCol = paramProvider.getInt("NCOL");
-	_disc.nRad = paramProvider.getInt("NRAD");
+	_disc.axNPoints = paramProvider.getInt("NCOL");
+	_disc.radNPoints = paramProvider.getInt("NRAD");
 
 	const std::vector<int> nParCell = paramProvider.getIntArray("NPAR");
 
@@ -472,7 +472,7 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	unsigned int nTotalParCells = 0;
 	for (unsigned int j = 1; j < _disc.nParType + 1; ++j)
 	{
-		_disc.parTypeOffset[j] = _disc.parTypeOffset[j-1] + (_disc.nComp + _disc.strideBound[j-1]) * _disc.nParCell[j-1] * _disc.nCol * _disc.nRad;
+		_disc.parTypeOffset[j] = _disc.parTypeOffset[j-1] + (_disc.nComp + _disc.strideBound[j-1]) * _disc.nParCell[j-1] * _disc.axNPoints * _disc.radNPoints;
 		_disc.nParCellsBeforeType[j] = _disc.nParCellsBeforeType[j-1] + _disc.nParCell[j-1];
 		nTotalParCells += _disc.nParCell[j-1];
 	}
@@ -555,14 +555,14 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	}
 
 	// Initialize and configure GMRES for solving the Schur-complement
-	_gmres.initialize(_disc.nCol * _disc.nRad * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
-	_gmres.matrixVectorMultiplier(&schurComplementMultiplierGRM2D, this);
+	_gmres.initialize(_disc.axNPoints * _disc.radNPoints * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
+	_gmres.matrixVectorMultiplier(&schurComplementMultiplierDPFR2D, this);
 	_schurSafety = paramProvider.getDouble("SCHUR_SAFETY");
 
 	// Allocate space for initial conditions
-	_initC.resize(_disc.nComp * _disc.nRad);
-	_initCp.resize(_disc.nComp * _disc.nRad * _disc.nParType);
-	_initQ.resize(nTotalBound * _disc.nRad);
+	_initC.resize(_disc.nComp * _disc.radNPoints);
+	_initCp.resize(_disc.nComp * _disc.radNPoints * _disc.nParType);
+	_initQ.resize(nTotalBound * _disc.radNPoints);
 
 	// Create nonlinear solver for consistent initialization
 	configureNonlinearSolver(paramProvider);
@@ -572,32 +572,32 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	// Allocate memory
 	Indexer idxr(_disc);
 
-	_jacInlet.resize(_disc.nComp * _disc.nRad);
+	_jacInlet.resize(_disc.nComp * _disc.radNPoints);
 
-	_jacP = new linalg::BandMatrix[_disc.nCol * _disc.nRad * _disc.nParType];
-	_jacPdisc = new linalg::FactorizableBandMatrix[_disc.nCol * _disc.nRad * _disc.nParType];
+	_jacP = new linalg::BandMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
+	_jacPdisc = new linalg::FactorizableBandMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
 	for (unsigned int j = 0; j < _disc.nParType; ++j)
 	{
-		linalg::BandMatrix* const ptrJac = _jacP + _disc.nCol * _disc.nRad * j;
-		linalg::FactorizableBandMatrix* const ptrJacDisc = _jacPdisc + _disc.nCol * _disc.nRad * j;
-		for (unsigned int i = 0; i < _disc.nCol * _disc.nRad; ++i)
+		linalg::BandMatrix* const ptrJac = _jacP + _disc.axNPoints * _disc.radNPoints * j;
+		linalg::FactorizableBandMatrix* const ptrJacDisc = _jacPdisc + _disc.axNPoints * _disc.radNPoints * j;
+		for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 		{
 			ptrJacDisc[i].resize(_disc.nParCell[j] * (_disc.nComp + _disc.strideBound[j]), _disc.nComp + _disc.strideBound[j], _disc.nComp + 2 * _disc.strideBound[j]);
 			ptrJac[i].resize(_disc.nParCell[j] * (_disc.nComp + _disc.strideBound[j]), _disc.nComp + _disc.strideBound[j], _disc.nComp + 2 * _disc.strideBound[j]);
 		}
 	}
 
-	_jacPF = new linalg::DoubleSparseMatrix[_disc.nCol * _disc.nRad * _disc.nParType];
-	_jacFP = new linalg::DoubleSparseMatrix[_disc.nCol * _disc.nRad * _disc.nParType];
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad * _disc.nParType; ++i)
+	_jacPF = new linalg::DoubleSparseMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
+	_jacFP = new linalg::DoubleSparseMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
+	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++i)
 	{
 		_jacPF[i].resize(_disc.nComp);
-		const int type = i / (_disc.nCol * _disc.nRad);
+		const int type = i / (_disc.axNPoints * _disc.radNPoints);
 		_jacFP[i].resize(_disc.nComp + 2 * _disc.strideBound[type]);
 	}
 
-	_jacCF.resize(_disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType);
-	_jacFC.resize(_disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType);
+	_jacCF.resize(_disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType);
+	_jacFC.resize(_disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType);
 
 	_discParFlux.resize(sizeof(active) * _disc.nComp);
 
@@ -703,7 +703,9 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 		}
 	}
 
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nCol, _disc.nRad, _dynReactionBulk);
+	const unsigned int radNodeStride = _disc.nComp;
+	const unsigned int axNodeStride = _disc.radNPoints * radNodeStride;
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, axNodeStride, radNodeStride, _dynReactionBulk);
 
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
@@ -711,7 +713,7 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	return transportSuccess && bindingConfSuccess && reactionConfSuccess;
 }
 
-bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
+bool LumpedRateModelWithPoresDG2D::configure(IParameterProvider& paramProvider)
 {
 	_parameters.clear();
 
@@ -736,18 +738,18 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 
 	// Let PAR_TYPE_VOLFRAC default to 1.0 for backwards compatibility
 	if (paramProvider.exists("PAR_TYPE_VOLFRAC"))
-		_parTypeVolFracMode = readAndRegisterMultiplexParam(paramProvider, _parameters, _parTypeVolFrac, "PAR_TYPE_VOLFRAC", _disc.nCol, _disc.nRad, _disc.nParType, _unitOpIdx);
+		_parTypeVolFracMode = readAndRegisterMultiplexParam(paramProvider, _parameters, _parTypeVolFrac, "PAR_TYPE_VOLFRAC", _disc.axNPoints, _disc.radNPoints, _disc.nParType, _unitOpIdx);
 	else
 	{
 		// Only one particle type present
-		_parTypeVolFrac.resize(_disc.nCol * _disc.nRad, 1.0);
+		_parTypeVolFrac.resize(_disc.axNPoints * _disc.radNPoints, 1.0);
 		_parTypeVolFracMode = MultiplexMode::Independent;
 	}
 
 	// Check whether all sizes are matched
 	if (_disc.nParType != _parRadius.size())
 		throw InvalidParameterException("Number of elements in field PAR_RADIUS does not match number of particle types");
-	if (_disc.nParType * _disc.nCol * _disc.nRad != _parTypeVolFrac.size())
+	if (_disc.nParType * _disc.axNPoints * _disc.radNPoints != _parTypeVolFrac.size())
 		throw InvalidParameterException("Number of elements in field PAR_TYPE_VOLFRAC does not match number of particle types times number of bulk cells");
 	if (_disc.nParType != _parPorosity.size())
 		throw InvalidParameterException("Number of elements in field PAR_POROSITY does not match number of particle types");
@@ -755,12 +757,12 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 		throw InvalidParameterException("Number of elements in field PAR_CORERADIUS does not match number of particle types");
 
 	// Check that particle volume fractions sum to 1.0
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 	{
 		const double volFracSum = std::accumulate(_parTypeVolFrac.begin() + i * _disc.nParType, _parTypeVolFrac.begin() + (i+1) * _disc.nParType, 0.0,
 			[](double a, const active& b) -> double { return a + static_cast<double>(b); });
 		if (std::abs(1.0 - volFracSum) > 1e-10)
-			throw InvalidParameterException("Sum of field PAR_TYPE_VOLFRAC differs from 1.0 (is " + std::to_string(volFracSum) + ") in axial cell " + std::to_string(i / _disc.nRad) + " radial cell " + std::to_string(i % _disc.nRad));
+			throw InvalidParameterException("Sum of field PAR_TYPE_VOLFRAC differs from 1.0 (is " + std::to_string(volFracSum) + ") in axial cell " + std::to_string(i / _disc.radNPoints) + " radial cell " + std::to_string(i % _disc.radNPoints));
 	}
 
 	// Read vectorial parameters (which may also be section dependent; transport)
@@ -800,7 +802,7 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 
 	// Register initial conditions parameters
 	registerParam1DArray(_parameters, _initC, [=](bool multi, unsigned int comp) { return makeParamId(hashString("INIT_C"), _unitOpIdx, comp, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
-	if (_disc.nRad > 1)
+	if (_disc.radNPoints > 1)
 		registerParam2DArray(_parameters, _initC, [=](bool multi, unsigned int rad, unsigned int comp) { return makeParamId(hashString("INIT_C"), _unitOpIdx, comp, ParTypeIndep, BoundStateIndep, rad, SectionIndep); }, _disc.nComp);
 
 	if (_singleBinding)
@@ -808,9 +810,9 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 		for (unsigned int c = 0; c < _disc.nComp; ++c)
 			_parameters[makeParamId(hashString("INIT_CP"), _unitOpIdx, c, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = &_initCp[c];
 
-		if (_disc.nRad > 1)
+		if (_disc.radNPoints > 1)
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			{
 				for (unsigned int c = 0; c < _disc.nComp; ++c)
 					_parameters[makeParamId(hashString("INIT_CP"), _unitOpIdx, c, ParTypeIndep, BoundStateIndep, r, SectionIndep)] = &_initCp[r * _disc.nComp * _disc.nParType + c];
@@ -820,7 +822,7 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 	else
 	{
 		registerParam2DArray(_parameters, _initCp, [=](bool multi, unsigned int type, unsigned int comp) { return makeParamId(hashString("INIT_CP"), _unitOpIdx, comp, type, BoundStateIndep, ReactionIndep, SectionIndep); }, _disc.nComp);
-		if (_disc.nRad > 1)
+		if (_disc.radNPoints > 1)
 			registerParam3DArray(_parameters, _initCp, [=](bool multi, unsigned int rad, unsigned int type, unsigned int comp) { return makeParamId(hashString("INIT_CP"), _unitOpIdx, comp, type, BoundStateIndep, rad, SectionIndep); }, _disc.nComp, _disc.nParType);
 	}
 
@@ -851,13 +853,13 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 		}
 
 		// Register radially dependent
-		if (_disc.nRad > 1)
+		if (_disc.radNPoints > 1)
 		{
 			if (_singleBinding)
 			{
 				_binding[0]->fillBoundPhaseInitialParameters(initParams.data(), _unitOpIdx, ParTypeIndep);
 
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (ParameterId& pId : initParams)
 						pId.reaction = r;
@@ -869,7 +871,7 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 			}
 			else
 			{
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (unsigned int type = 0; type < _disc.nParType; ++type)
 					{
@@ -948,7 +950,7 @@ bool GeneralRateModel2D::configure(IParameterProvider& paramProvider)
 }
 
 
-unsigned int GeneralRateModel2D::threadLocalMemorySize() const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::threadLocalMemorySize() const CADET_NOEXCEPT
 {
 	LinearMemorySizer lms;
 
@@ -991,7 +993,7 @@ unsigned int GeneralRateModel2D::threadLocalMemorySize() const CADET_NOEXCEPT
 	return lms.bufferSize();
 }
 
-unsigned int GeneralRateModel2D::numAdDirsForJacobian() const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::numAdDirsForJacobian() const CADET_NOEXCEPT
 {
 	// We need as many directions as the highest bandwidth of the diagonal blocks:
 	// The bandwidth of the column block depends on the size of the WENO stencil, whereas
@@ -1001,13 +1003,13 @@ unsigned int GeneralRateModel2D::numAdDirsForJacobian() const CADET_NOEXCEPT
 	int maxStride = 0;
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		maxStride = std::max(maxStride, _jacP[type * _disc.nCol * _disc.nRad].stride());
+		maxStride = std::max(maxStride, _jacP[type * _disc.axNPoints * _disc.radNPoints].stride());
 	}
 
 	return maxStride;
 }
 
-void GeneralRateModel2D::useAnalyticJacobian(const bool analyticJac)
+void LumpedRateModelWithPoresDG2D::useAnalyticJacobian(const bool analyticJac)
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	_analyticJac = analyticJac;
@@ -1022,7 +1024,7 @@ void GeneralRateModel2D::useAnalyticJacobian(const bool analyticJac)
 #endif
 }
 
-void GeneralRateModel2D::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
+void LumpedRateModelWithPoresDG2D::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
 	// Setup flux Jacobian blocks at the beginning of the simulation or in case of
 	// section dependent film or particle diffusion coefficients
@@ -1038,7 +1040,7 @@ void GeneralRateModel2D::notifyDiscontinuousSectionTransition(double t, unsigned
 	// Setup the matrix connecting inlet DOFs to first column cells
 	_jacInlet.clear();
 
-	for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+	for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
 	{
 		const double f = _convDispOp.inletFactor(secIdx, rad);
 		if (_convDispOp.currentVelocity(rad) >= 0.0)
@@ -1054,33 +1056,33 @@ void GeneralRateModel2D::notifyDiscontinuousSectionTransition(double t, unsigned
 			// Backwards flow
 
 			// Place entries for inlet DOF to last column cell conversion
-			const unsigned int offset = (_disc.nCol - 1) * idxr.strideColAxialCell();
+			const unsigned int offset = (_disc.axNPoints - 1) * idxr.strideColAxialCell();
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				_jacInlet.addElement(offset + comp * idxr.strideColComp() + rad * idxr.strideColRadialCell(), comp, f);
 		}
 	}
 }
 
-void GeneralRateModel2D::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
+void LumpedRateModelWithPoresDG2D::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
 {
 	_convDispOp.setFlowRates(in, out);
 }
 
-void GeneralRateModel2D::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
+void LumpedRateModelWithPoresDG2D::reportSolution(ISolutionRecorder& recorder, double const* const solution) const
 {
 	Exporter expr(_disc, *this, solution);
 	recorder.beginUnitOperation(_unitOpIdx, *this, expr);
 	recorder.endUnitOperation();
 }
 
-void GeneralRateModel2D::reportSolutionStructure(ISolutionRecorder& recorder) const
+void LumpedRateModelWithPoresDG2D::reportSolutionStructure(ISolutionRecorder& recorder) const
 {
 	Exporter expr(_disc, *this, nullptr);
 	recorder.unitOperationStructure(_unitOpIdx, *this, expr);
 }
 
 
-unsigned int GeneralRateModel2D::requiredADdirs() const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::requiredADdirs() const CADET_NOEXCEPT
 {
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
 	return _jacobianAdDirs;
@@ -1090,7 +1092,7 @@ unsigned int GeneralRateModel2D::requiredADdirs() const CADET_NOEXCEPT
 #endif
 }
 
-void GeneralRateModel2D::prepareADvectors(const AdJacobianParams& adJac) const
+void LumpedRateModelWithPoresDG2D::prepareADvectors(const AdJacobianParams& adJac) const
 {
 	// Early out if AD is disabled
 	if (!adJac.adY)
@@ -1101,10 +1103,10 @@ void GeneralRateModel2D::prepareADvectors(const AdJacobianParams& adJac) const
 	// Particle blocks
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		const unsigned int lowerParBandwidth = _jacP[type * _disc.nCol * _disc.nRad].lowerBandwidth();
-		const unsigned int upperParBandwidth = _jacP[type * _disc.nCol * _disc.nRad].upperBandwidth();
+		const unsigned int lowerParBandwidth = _jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth();
+		const unsigned int upperParBandwidth = _jacP[type * _disc.axNPoints * _disc.radNPoints].upperBandwidth();
 
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
 			ad::prepareAdVectorSeedsForBandMatrix(adJac.adY + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adJac.adDirOffset, idxr.strideParBlock(type), lowerParBandwidth, upperParBandwidth, lowerParBandwidth);
 		}
@@ -1116,16 +1118,16 @@ void GeneralRateModel2D::prepareADvectors(const AdJacobianParams& adJac) const
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel2D::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
+void LumpedRateModelWithPoresDG2D::extractJacobianFromAD(active const* const adRes, unsigned int adDirOffset)
 {
 	Indexer idxr(_disc);
 
 	// Particles
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.nCol * _disc.nRad * type + pblk];
+			linalg::BandMatrix& jacMat = _jacP[_disc.axNPoints * _disc.radNPoints * type + pblk];
 			ad::extractBandedJacobianFromAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
 		}
 	}
@@ -1139,7 +1141,7 @@ void GeneralRateModel2D::extractJacobianFromAD(active const* const adRes, unsign
  * @param [in] adRes Residual vector of AD datatypes with band compressed seed vectors
  * @param [in] adDirOffset Number of AD directions used for non-Jacobian purposes (e.g., parameter sensitivities)
  */
-void GeneralRateModel2D::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
+void LumpedRateModelWithPoresDG2D::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
 {
 	Indexer idxr(_disc);
 
@@ -1149,9 +1151,9 @@ void GeneralRateModel2D::checkAnalyticJacobianAgainstAd(active const* const adRe
 	double maxDiffPar = 0.0;
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.nCol * _disc.nRad * type + pblk];
+			linalg::BandMatrix& jacMat = _jacP[_disc.axNPoints * _disc.radNPoints * type + pblk];
 			const double localDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
 			LOG(Debug) << "-> Par type " << type << " block " << pblk << " diff: " << localDiff;
 			maxDiffPar = std::max(maxDiffPar, localDiff);
@@ -1161,7 +1163,7 @@ void GeneralRateModel2D::checkAnalyticJacobianAgainstAd(active const* const adRe
 
 #endif
 
-int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1169,7 +1171,7 @@ int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimul
 	return residualImpl<double, double, double, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, res, threadLocalMem);
 }
 
-int GeneralRateModel2D::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
 
@@ -1177,7 +1179,7 @@ int GeneralRateModel2D::residualWithJacobian(const SimulationTime& simTime, cons
 	return residual(simTime, simState, res, adJac, threadLocalMem, true, false);
 }
 
-int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
+int LumpedRateModelWithPoresDG2D::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res,
 	const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem, bool updateJacobian, bool paramSensitivity)
 {
 	if (updateJacobian)
@@ -1280,22 +1282,22 @@ int GeneralRateModel2D::residual(const SimulationTime& simTime, const ConstSimul
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_START(_timerResidualPar);
 
 #ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType + 1), [&](std::size_t pblk)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType + 1), [&](std::size_t pblk)
 #else
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType + 1; ++pblk)
+	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType + 1; ++pblk)
 #endif
 	{
 		if (cadet_unlikely(pblk == 0))
 			residualBulk<StateType, ResidualType, ParamType, wantJac>(t, secIdx, y, yDot, res, threadLocalMem);
 		else
 		{
-			const unsigned int type = (pblk - 1) / (_disc.nCol * _disc.nRad);
-			const unsigned int par = (pblk - 1) % (_disc.nCol * _disc.nRad);
+			const unsigned int type = (pblk - 1) / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = (pblk - 1) % (_disc.axNPoints * _disc.radNPoints);
 			residualParticle<StateType, ResidualType, ParamType, wantJac>(t, type, par, secIdx, y, yDot, res, threadLocalMem);
 		}
 	} CADET_PARFOR_END;
@@ -1305,7 +1307,7 @@ int GeneralRateModel2D::residualImpl(double t, unsigned int secIdx, StateType co
 	residualFlux<StateType, ResidualType, ParamType>(t, secIdx, y, yDot, res);
 
 	// Handle inlet DOFs, which are simply copied to res
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.radNPoints; ++i)
 	{
 		res[i] = y[i];
 	}
@@ -1314,7 +1316,7 @@ int GeneralRateModel2D::residualImpl(double t, unsigned int secIdx, StateType co
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualBulk(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	_convDispOp.residual(*this, t, secIdx, yBase, yDotBase, resBase, wantJac, typename ParamSens<ParamType>::enabled());
 	if (!_dynReactionBulk || (_dynReactionBulk->numReactionsLiquid() == 0))
@@ -1326,12 +1328,12 @@ int GeneralRateModel2D::residualBulk(double t, unsigned int secIdx, StateType co
 	ResidualType* res = resBase + idxr.offsetC();
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
-	for (unsigned int colCell = 0; colCell < _disc.nCol * _disc.nRad; ++colCell, y += idxr.strideColRadialCell(), res += idxr.strideColRadialCell())
+	for (unsigned int colCell = 0; colCell < _disc.axNPoints * _disc.radNPoints; ++colCell, y += idxr.strideColRadialCell(), res += idxr.strideColRadialCell())
 	{
-		const unsigned int axialCell = colCell / _disc.nRad;
-		const unsigned int radialCell = colCell % _disc.nRad;
+		const unsigned int axialCell = colCell / _disc.radNPoints;
+		const unsigned int radialCell = colCell % _disc.radNPoints;
 		const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.nCol);
+		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
 
 		const ColumnPosition colPos{z, r, 0.0};
 		_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
@@ -1347,7 +1349,7 @@ int GeneralRateModel2D::residualBulk(double t, unsigned int secIdx, StateType co
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int GeneralRateModel2D::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	Indexer idxr(_disc);
 
@@ -1366,21 +1368,21 @@ int GeneralRateModel2D::residualParticle(double t, unsigned int parType, unsigne
 	active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
 
 	// Midpoint of current column cell (z, rho coordinate) - needed in externally dependent adsorption kinetic
-	const unsigned int axialCell = colCell / _disc.nRad;
-	const unsigned int radialCell = colCell % _disc.nRad;
+	const unsigned int axialCell = colCell / _disc.radNPoints;
+	const unsigned int radialCell = colCell % _disc.radNPoints;
 	const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-	const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.nCol);
+	const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
 
 	// Reset Jacobian
 	if (wantJac)
-		_jacP[_disc.nCol * _disc.nRad * parType + colCell].setAll(0.0);
+		_jacP[_disc.axNPoints * _disc.radNPoints * parType + colCell].setAll(0.0);
 
 	// The RowIterator is always centered on the main diagonal.
 	// This means that jac[0] is the main diagonal, jac[-1] is the first lower diagonal,
 	// and jac[1] is the first upper diagonal. We can also access the rows from left to
 	// right beginning with the last lower diagonal moving towards the main diagonal and
 	// continuing to the last upper diagonal by using the native() method.
-	linalg::BandMatrix::RowIterator jac = _jacP[_disc.nCol * _disc.nRad * parType + colCell].row(0);
+	linalg::BandMatrix::RowIterator jac = _jacP[_disc.axNPoints * _disc.radNPoints * parType + colCell].row(0);
 
 	active const* const outerSurfPerVol = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
 	active const* const innerSurfPerVol = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
@@ -1562,7 +1564,7 @@ int GeneralRateModel2D::residualParticle(double t, unsigned int parType, unsigne
 }
 
 template <typename StateType, typename ResidualType, typename ParamType>
-int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
+int LumpedRateModelWithPoresDG2D::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
 {
 	Indexer idxr(_disc);
 
@@ -1574,7 +1576,7 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
 	StateType const* const yFlux = yBase + idxr.offsetJf();
 
 	// J_f block (identity matrix), adds flux state to flux equation
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++i)
 		resFlux[i] = yFlux[i];
 
 	// Discretized film diffusion kf for finite volumes
@@ -1616,21 +1618,21 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
 
 		// J_{0,f} block, adds flux to column void / bulk volume equations
 		unsigned int idx = 0;
-		for (unsigned int i = 0; i < _disc.nCol; ++i)
+		for (unsigned int i = 0; i < _disc.axNPoints; ++i)
 		{
-			for (unsigned int j = 0; j < _disc.nRad; ++j)
+			for (unsigned int j = 0; j < _disc.radNPoints; ++j)
 			{
 				const ParamType invBetaC = 1.0 / static_cast<ParamType>(_convDispOp.columnPorosity(j)) - 1.0;
 				const ParamType jacCF_val = invBetaC * surfaceToVolumeRatio;
 				for (unsigned int k = 0; k < _disc.nComp; ++k, ++idx)
 				{
-					resCol[idx] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + i * _disc.nParType * _disc.nRad + j * _disc.nParType]) * yFluxType[idx];
+					resCol[idx] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + i * _disc.nParType * _disc.radNPoints + j * _disc.nParType]) * yFluxType[idx];
 				}
 			}
 		}
 
 		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int bnd = 0; bnd < _disc.nCol * _disc.nRad; ++bnd)
+		for (unsigned int bnd = 0; bnd < _disc.axNPoints * _disc.radNPoints; ++bnd)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1640,7 +1642,7 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
 		}
 
 		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1650,7 +1652,7 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
 		}
 
 		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1672,7 +1674,7 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				kf_FV[comp] = (1.0 - static_cast<ParamType>(_parPorosity[type])) / (1.0 + epsP * static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<ParamType>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<ParamType>(filmDiff[comp])));
 
-			for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 			{
 				const ParamType dr = static_cast<ParamType>(parCenterRadius[0]) - static_cast<ParamType>(parCenterRadius[1]);
 
@@ -1709,12 +1711,12 @@ int GeneralRateModel2D::residualFlux(double t, unsigned int secIdx, StateType co
  * @param [in] t Current time
  * @param [in] secIdx Index of the current section
  */
-void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
+void LumpedRateModelWithPoresDG2D::assembleOffdiagJac(double t, unsigned int secIdx)
 {
 	// Clear matrices for new assembly
 	_jacCF.clear();
 	_jacFC.clear();
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 	{
 		_jacPF[pblk].clear();
 		_jacFP[pblk].clear();
@@ -1729,7 +1731,7 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		const unsigned int typeOffset = type * _disc.nCol * _disc.nComp * _disc.nRad;
+		const unsigned int typeOffset = type * _disc.axNPoints * _disc.nComp * _disc.radNPoints;
 		const double epsP = static_cast<double>(_parPorosity[type]);
 
 		// Ordering of diffusion:
@@ -1758,9 +1760,9 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 
 		// J_{0,f} block, adds flux to column void / bulk volume equations
 		unsigned int idx = 0;
-		for (unsigned int col = 0; col < _disc.nCol; ++col)
+		for (unsigned int col = 0; col < _disc.axNPoints; ++col)
 		{
-			for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+			for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
 			{
 				const double invBetaC = 1.0 / static_cast<double>(_convDispOp.columnPorosity(rad)) - 1.0;
 				const double jacCF_val = invBetaC * surfaceToVolumeRatio;
@@ -1768,13 +1770,13 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 				for (unsigned int comp = 0; comp < _disc.nComp; ++comp, ++idx)
 				{
 					// Main diagonal corresponds to j_{f,i} (flux) state variable
-					_jacCF.addElement(idx, idx + typeOffset, jacCF_val * static_cast<double>(_parTypeVolFrac[type + col * _disc.nRad * _disc.nParType + rad * _disc.nParType]));
+					_jacCF.addElement(idx, idx + typeOffset, jacCF_val * static_cast<double>(_parTypeVolFrac[type + col * _disc.radNPoints * _disc.nParType + rad * _disc.nParType]));
 				}
 			}
 		}
 
 		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int col = 0; col < _disc.nCol * _disc.nRad; ++col)
+		for (unsigned int col = 0; col < _disc.axNPoints * _disc.radNPoints; ++col)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1785,8 +1787,8 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 		}
 
 		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		linalg::DoubleSparseMatrix* const jacPFtype = _jacPF + type * _disc.nCol * _disc.nRad;
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		linalg::DoubleSparseMatrix* const jacPFtype = _jacPF + type * _disc.axNPoints * _disc.radNPoints;
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1796,8 +1798,8 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 		}
 
 		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.nCol * _disc.nRad;
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.axNPoints * _disc.radNPoints;
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 		{
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 			{
@@ -1819,7 +1821,7 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
 				kf_FV[comp] = (1.0 - static_cast<double>(_parPorosity[type])) / (1.0 + epsP * static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<double>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<double>(filmDiff[comp])));
 
-			for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 			{
 				const double dr = static_cast<double>(parCenterRadius[0]) - static_cast<double>(parCenterRadius[1]);
 
@@ -1850,7 +1852,7 @@ void GeneralRateModel2D::assembleOffdiagJac(double t, unsigned int secIdx)
 	_discParFlux.destroy<double>();
 }
 
-int GeneralRateModel2D::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -1859,7 +1861,7 @@ int GeneralRateModel2D::residualSensFwdWithJacobian(const SimulationTime& simTim
 	return residual(simTime, simState, nullptr, adJac, threadLocalMem, true, true);
 }
 
-int GeneralRateModel2D::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualSensFwdAdOnly(const SimulationTime& simTime, const ConstSimulationState& simState, active* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidualSens);
 
@@ -1867,7 +1869,7 @@ int GeneralRateModel2D::residualSensFwdAdOnly(const SimulationTime& simTime, con
 	return residualImpl<double, active, active, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, adRes, threadLocalMem);
 }
 
-int GeneralRateModel2D::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
+int LumpedRateModelWithPoresDG2D::residualSensFwdCombine(const SimulationTime& simTime, const ConstSimulationState& simState,
 	const std::vector<const double*>& yS, const std::vector<const double*>& ySdot, const std::vector<double*>& resS, active const* adRes,
 	double* const tmp1, double* const tmp2, double* const tmp3)
 {
@@ -1921,20 +1923,20 @@ int GeneralRateModel2D::residualSensFwdCombine(const SimulationTime& simTime, co
  * @param [in] beta Factor @f$ \beta @f$ in front of @f$ z @f$
  * @param [in,out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
+void LumpedRateModelWithPoresDG2D::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
 {
 	Indexer idxr(_disc);
 
 	// Handle identity matrix of inlet DOFs
-	for (unsigned int i = 0; i < _disc.nComp * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.nComp * _disc.radNPoints; ++i)
 	{
 		ret[i] = alpha * yS[i] + beta * ret[i];
 	}
 
 #ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType + 1), [&](std::size_t idx)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType + 1), [&](std::size_t idx)
 #else
-	for (unsigned int idx = 0; idx < _disc.nCol * _disc.nRad * _disc.nParType + 1; ++idx)
+	for (unsigned int idx = 0; idx < _disc.axNPoints * _disc.radNPoints * _disc.nParType + 1; ++idx)
 #endif
 	{
 		if (cadet_unlikely(idx == 0))
@@ -1945,8 +1947,8 @@ void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, con
 		else
 		{
 			const unsigned int pblk = idx - 1;
-			const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-			const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 			const int localOffset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
 			_jacP[pblk].multiplyVector(yS + localOffset, alpha, beta, ret + localOffset);
@@ -1966,9 +1968,9 @@ void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, con
 
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int par = 0; par < _disc.nCol * _disc.nRad; ++par)
+		for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
 		{
-			_jacFP[type * _disc.nCol * _disc.nRad + par].multiplyVector(yS + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), alpha, 1.0, retJf);
+			_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplyVector(yS + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), alpha, 1.0, retJf);
 		}
 	}
 
@@ -1985,14 +1987,14 @@ void GeneralRateModel2D::multiplyWithJacobian(const SimulationTime& simTime, con
  * @param [in] sDot Vector @f$ x @f$ that is transformed by the Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$
  * @param [out] ret Vector @f$ z @f$ which stores the result of the operation
  */
-void GeneralRateModel2D::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
+void LumpedRateModelWithPoresDG2D::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
 {
 	Indexer idxr(_disc);
 
 #ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType + 1), [&](std::size_t idx)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType + 1), [&](std::size_t idx)
 #else
-	for (unsigned int idx = 0; idx < _disc.nCol * _disc.nRad * _disc.nParType + 1; ++idx)
+	for (unsigned int idx = 0; idx < _disc.axNPoints * _disc.radNPoints * _disc.nParType + 1; ++idx)
 #endif
 	{
 		if (cadet_unlikely(idx == 0))
@@ -2002,8 +2004,8 @@ void GeneralRateModel2D::multiplyWithDerivativeJacobian(const SimulationTime& si
 		else
 		{
 			const unsigned int idxParLoop = idx - 1;
-			const unsigned int pblk = idxParLoop % (_disc.nCol * _disc.nRad);
-			const unsigned int type = idxParLoop / (_disc.nCol * _disc.nRad);
+			const unsigned int pblk = idxParLoop % (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int type = idxParLoop / (_disc.axNPoints * _disc.radNPoints);
 
 			const double invBetaP = (1.0 / static_cast<double>(_parPorosity[type]) - 1.0);
 			unsigned int const* const nBound = _disc.nBound + type * _disc.nComp;
@@ -2022,13 +2024,13 @@ void GeneralRateModel2D::multiplyWithDerivativeJacobian(const SimulationTime& si
 
 	// Handle fluxes (all algebraic)
 	double* const dFdyDot = ret + idxr.offsetJf();
-	std::fill(dFdyDot, dFdyDot + _disc.nCol * _disc.nComp * _disc.nRad * _disc.nParType, 0.0);
+	std::fill(dFdyDot, dFdyDot + _disc.axNPoints * _disc.nComp * _disc.radNPoints * _disc.nParType, 0.0);
 
 	// Handle inlet DOFs (all algebraic)
-	std::fill_n(ret, _disc.nComp * _disc.nRad, 0.0);
+	std::fill_n(ret, _disc.nComp * _disc.radNPoints, 0.0);
 }
 
-void GeneralRateModel2D::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
+void LumpedRateModelWithPoresDG2D::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
 {
 	for (IBindingModel* bm : _binding)
 	{
@@ -2037,34 +2039,34 @@ void GeneralRateModel2D::setExternalFunctions(IExternalFunction** extFuns, unsig
 	}
 }
 
-unsigned int GeneralRateModel2D::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Inlets are duplicated so need to be accounted for
 	if (static_cast<double>(_convDispOp.currentVelocity(port)) >= 0.0)
 		// Forward Flow: outlet is last cell
-		return _disc.nComp * _disc.nRad + (_disc.nCol - 1) * _disc.nComp * _disc.nRad + port * _disc.nComp;
+		return _disc.nComp * _disc.radNPoints + (_disc.axNPoints - 1) * _disc.nComp * _disc.radNPoints + port * _disc.nComp;
 	else
 		// Backward flow: Outlet is first cell
-		return _disc.nComp * _disc.nRad + _disc.nComp * port;
+		return _disc.nComp * _disc.radNPoints + _disc.nComp * port;
 }
 
-unsigned int GeneralRateModel2D::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::localInletComponentIndex(unsigned int port) const CADET_NOEXCEPT
 {
 	// Always 0 due to dedicated inlet DOFs
 	return _disc.nComp * port;
 }
 
-unsigned int GeneralRateModel2D::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::localOutletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-unsigned int GeneralRateModel2D::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
+unsigned int LumpedRateModelWithPoresDG2D::localInletComponentStride(unsigned int port) const CADET_NOEXCEPT
 {
 	return 1;
 }
 
-void GeneralRateModel2D::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
+void LumpedRateModelWithPoresDG2D::expandErrorTol(double const* errorSpec, unsigned int errorSpecSize, double* expandOut)
 {
 	// @todo Write this function
 }
@@ -2072,7 +2074,7 @@ void GeneralRateModel2D::expandErrorTol(double const* errorSpec, unsigned int er
 /**
  * @brief Computes equidistant radial nodes in the beads
  */
-void GeneralRateModel2D::setEquidistantRadialDisc(unsigned int parType)
+void LumpedRateModelWithPoresDG2D::setEquidistantRadialDisc(unsigned int parType)
 {
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
@@ -2135,7 +2137,7 @@ void GeneralRateModel2D::setEquidistantRadialDisc(unsigned int parType)
 /**
  * @brief Computes the radial nodes in the beads in such a way that all shells have the same volume
  */
-void GeneralRateModel2D::setEquivolumeRadialDisc(unsigned int parType)
+void LumpedRateModelWithPoresDG2D::setEquivolumeRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2217,7 +2219,7 @@ void GeneralRateModel2D::setEquivolumeRadialDisc(unsigned int parType)
  * @brief Computes all helper quantities for radial bead discretization from given radial cell boundaries
  * @details Calculates surface areas per volume for every shell and the radial shell centers.
  */
-void GeneralRateModel2D::setUserdefinedRadialDisc(unsigned int parType)
+void LumpedRateModelWithPoresDG2D::setUserdefinedRadialDisc(unsigned int parType)
 {
 	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
 	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
@@ -2283,7 +2285,7 @@ void GeneralRateModel2D::setUserdefinedRadialDisc(unsigned int parType)
 	}
 }
 
-void GeneralRateModel2D::updateRadialDisc()
+void LumpedRateModelWithPoresDG2D::updateRadialDisc()
 {
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
 	{
@@ -2296,11 +2298,11 @@ void GeneralRateModel2D::updateRadialDisc()
 	}
 }
 
-bool GeneralRateModel2D::setParameter(const ParameterId& pId, double value)
+bool LumpedRateModelWithPoresDG2D::setParameter(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
-		if (multiplexParameterValue(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.nCol, _disc.nRad, _disc.nParType, value, nullptr))
+		if (multiplexParameterValue(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.axNPoints, _disc.radNPoints, _disc.nParType, value, nullptr))
 			return true;
 		if (multiplexCompTypeSecParameterValue(pId, hashString("PORE_ACCESSIBILITY"), _poreAccessFactorMode, _poreAccessFactor, _disc.nParType, _disc.nComp, value, nullptr))
 			return true;
@@ -2336,11 +2338,11 @@ bool GeneralRateModel2D::setParameter(const ParameterId& pId, double value)
 	return result;
 }
 
-void GeneralRateModel2D::setSensitiveParameterValue(const ParameterId& pId, double value)
+void LumpedRateModelWithPoresDG2D::setSensitiveParameterValue(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
-		if (multiplexParameterValue(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.nCol, _disc.nRad, _disc.nParType, value, &_sensParams))
+		if (multiplexParameterValue(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.axNPoints, _disc.radNPoints, _disc.nParType, value, &_sensParams))
 			return;
 		if (multiplexCompTypeSecParameterValue(pId, hashString("PORE_ACCESSIBILITY"), _poreAccessFactorMode, _poreAccessFactor, _disc.nParType, _disc.nComp, value, &_sensParams))
 			return;
@@ -2371,11 +2373,11 @@ void GeneralRateModel2D::setSensitiveParameterValue(const ParameterId& pId, doub
 		updateRadialDisc();
 }
 
-bool GeneralRateModel2D::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
+bool LumpedRateModelWithPoresDG2D::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
 {
 	if (pId.unitOperation == _unitOpIdx)
 	{
-		if (multiplexParameterAD(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.nCol, _disc.nRad, _disc.nParType, adDirection, adValue, _sensParams))
+		if (multiplexParameterAD(pId, hashString("PAR_TYPE_VOLFRAC"), _parTypeVolFracMode, _parTypeVolFrac, _disc.axNPoints, _disc.radNPoints, _disc.nParType, adDirection, adValue, _sensParams))
 		{
 			LOG(Debug) << "Found parameter " << pId << ": Dir " << adDirection << " is set to " << adValue;
 			return true;
@@ -2451,14 +2453,14 @@ bool GeneralRateModel2D::setSensitiveParameter(const ParameterId& pId, unsigned 
 }
 
 
-int GeneralRateModel2D::Exporter::writeMobilePhase(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeMobilePhase(double* buffer) const
 {
 	const int blockSize = numMobilePhaseDofs();
 	std::copy_n(_idx.c(_data), blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel2D::Exporter::writeSolidPhase(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeSolidPhase(double* buffer) const
 {
 	int numWritten = 0;
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
@@ -2470,7 +2472,7 @@ int GeneralRateModel2D::Exporter::writeSolidPhase(double* buffer) const
 	return numWritten;
 }
 
-int GeneralRateModel2D::Exporter::writeParticleMobilePhase(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeParticleMobilePhase(double* buffer) const
 {
 	int numWritten = 0;
 	for (unsigned int i = 0; i < _disc.nParType; ++i)
@@ -2482,13 +2484,13 @@ int GeneralRateModel2D::Exporter::writeParticleMobilePhase(double* buffer) const
 	return numWritten;
 }
 
-int GeneralRateModel2D::Exporter::writeSolidPhase(unsigned int parType, double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeSolidPhase(unsigned int parType, double* buffer) const
 {
 	cadet_assert(parType < _disc.nParType);
 
 	const unsigned int stride = _disc.nComp + _disc.strideBound[parType];
 	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType}) + _disc.nComp;
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 	{
 		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
 		{
@@ -2497,16 +2499,16 @@ int GeneralRateModel2D::Exporter::writeSolidPhase(unsigned int parType, double* 
 			ptr += stride;
 		}
 	}
-	return _disc.nCol * _disc.nRad * _disc.nParCell[parType] * _disc.strideBound[parType];
+	return _disc.axNPoints * _disc.radNPoints * _disc.nParCell[parType] * _disc.strideBound[parType];
 }
 
-int GeneralRateModel2D::Exporter::writeParticleMobilePhase(unsigned int parType, double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeParticleMobilePhase(unsigned int parType, double* buffer) const
 {
 	cadet_assert(parType < _disc.nParType);
 
 	const unsigned int stride = _disc.nComp + _disc.strideBound[parType];
 	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType});
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad; ++i)
+	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 	{
 		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
 		{
@@ -2515,56 +2517,63 @@ int GeneralRateModel2D::Exporter::writeParticleMobilePhase(unsigned int parType,
 			ptr += stride;
 		}
 	}
-	return _disc.nCol * _disc.nRad * _disc.nParCell[parType] * _disc.nComp;
+	return _disc.axNPoints * _disc.radNPoints * _disc.nParCell[parType] * _disc.nComp;
 }
 
-int GeneralRateModel2D::Exporter::writeParticleFlux(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeParticleFlux(double* buffer) const
 {
 	const int blockSize = numParticleFluxDofs();
 	std::copy_n(_idx.jf(_data), blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel2D::Exporter::writeParticleFlux(unsigned int parType, double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeParticleFlux(unsigned int parType, double* buffer) const
 {
-	const unsigned int blockSize = _disc.nComp * _disc.nRad * _disc.nCol;
+	const unsigned int blockSize = _disc.nComp * _disc.radNPoints * _disc.axNPoints;
 	std::copy_n(_idx.jf(_data) + blockSize * parType, blockSize, buffer);
 	return blockSize;
 }
 
-int GeneralRateModel2D::Exporter::writeInlet(unsigned int port, double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeInlet(unsigned int port, double* buffer) const
 {
-	cadet_assert(port < _disc.nRad);
+	cadet_assert(port < _disc.radNPoints);
 	std::copy_n(_data + port * _disc.nComp, _disc.nComp, buffer);
 	return _disc.nComp;
 }
 
-int GeneralRateModel2D::Exporter::writeInlet(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeInlet(double* buffer) const
 {
-	std::copy_n(_data, _disc.nComp * _disc.nRad, buffer);
-	return _disc.nComp * _disc.nRad;
+	std::copy_n(_data, _disc.nComp * _disc.radNPoints, buffer);
+	return _disc.nComp * _disc.radNPoints;
 }
 
-int GeneralRateModel2D::Exporter::writeOutlet(unsigned int port, double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeOutlet(unsigned int port, double* buffer) const
 {
-	cadet_assert(port < _disc.nRad);
+	cadet_assert(port < _disc.radNPoints);
 
 	if (_model._convDispOp.currentVelocity(port) >= 0)
-		std::copy_n(&_idx.c(_data, _disc.nCol - 1, port, 0), _disc.nComp, buffer);
+		std::copy_n(&_idx.c(_data, _disc.axNPoints - 1, port, 0), _disc.nComp, buffer);
 	else
 		std::copy_n(&_idx.c(_data, 0, port, 0), _disc.nComp, buffer);
 
 	return _disc.nComp;
 }
 
-int GeneralRateModel2D::Exporter::writeOutlet(double* buffer) const
+int LumpedRateModelWithPoresDG2D::Exporter::writeOutlet(double* buffer) const
 {
-	for (int i = 0; i < _disc.nRad; ++i)
+	for (int i = 0; i < _disc.radNPoints; ++i)
 	{
 		writeOutlet(i, buffer);
 		buffer += _disc.nComp;
 	}
-	return _disc.nComp * _disc.nRad;
+	return _disc.nComp * _disc.radNPoints;
+}
+
+
+void registerLumpedRateModelWithPoresDG2D(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
+{
+	models[LumpedRateModelWithPoresDG2D::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new LumpedRateModelWithPoresDG2D(uoId); };
+	models["LRMPDG2D"] = [](UnitOpIdx uoId, IParameterProvider&) { return new LumpedRateModelWithPoresDG2D(uoId); };
 }
 
 }  // namespace model

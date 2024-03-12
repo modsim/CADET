@@ -36,6 +36,38 @@ namespace dgtoolbox
 {
 
 /**
+ * @brief computes the corresponding node in the physical space
+ * @param [in] deltaX element spacing
+ * @param [in] elemIdx element index starting at 0
+ * @param [in] xi reference node
+ */
+template <typename ParamType>
+ParamType mapRefToPhys(const std::vector<ParamType> deltaX, const unsigned int elemIdx, const double xi) {
+
+	//return std::accumulate(deltaX.begin(), deltaX.begin() + elemIdx, 0.0) + deltaX[elemIdx] / 2.0 * (xi + 1.0);
+
+	double map = 0.0;
+	for (unsigned int i = 0; i < elemIdx; i++)
+		map += static_cast<double>(deltaX[i]);
+	return map + static_cast<double>(deltaX[elemIdx]) / 2.0 * (xi + 1.0);
+}
+/**
+ * @brief computes the corresponding node in the reference element [-1, 1]
+ * @param [in] deltaX element spacing
+ * @param [in] elemIdx element index starting at 0
+ * @param [in] x physical node
+ */
+template <typename ParamType>
+ParamType mapPhysToRef(const std::vector<ParamType> deltaX, const unsigned int elemIdx, const double x) {
+
+	//return (x - std::accumulate(deltaX.begin(), deltaX.begin() + elemIdx, 0.0)) * 2.0 / deltaX[elemIdx] - 1.0;
+
+	double map = 0.0;
+	for (unsigned int i = 0; i < elemIdx; i++)
+		map += static_cast<double>(deltaX[i]);
+	return  (x - map) * 2.0 / static_cast<double>(deltaX[elemIdx) - 1.0;
+}
+/**
  * @brief computes the Legendre polynomial L_N and q = L_N+1 - L_N-2 and q' at point x
  * @param [in] polyDeg polynomial degree
  * @param [in] x evaluation point
@@ -282,7 +314,7 @@ MatrixXd gaussQuadratureMMatrix(const VectorXd LGLnodes, const int nLGNodes) {
 	return massMatrix;
 }
 /**
- * @brief computation of barycentric weights for fast polynomial evaluation
+ * @brief calculates the barycentric weights for fast polynomial evaluation
  * @param [in] polyDeg polynomial degree
  * @param [in, out] baryWeights vector to store barycentric weights. Must already be initialized with ones!
  */
@@ -303,7 +335,7 @@ VectorXd barycentricWeights(const unsigned int polyDeg, const VectorXd nodes) {
 	return baryWeights;
 }
 /**
- * @brief computation of nodal polynomial derivative matrix
+ * @brief calculates the nodal (lagrange) polynomial derivative matrix
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
@@ -386,6 +418,8 @@ MatrixXd legVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes) 
  * @detail the mass matrix used to compute integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
+ * @param [in] alpha Jacobi polynomial coefficient
+ * @param [in] beta Jacobi polynomial coefficient
  */
 Eigen::MatrixXd invMMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta) {
 	return (jacVandermondeMatrix(polyDeg, nodes, alpha, beta) * (jacVandermondeMatrix(polyDeg, nodes, alpha, beta).transpose()));
@@ -426,6 +460,141 @@ MatrixXd jacDerVandermondeMatrix(const unsigned int polyDeg, const double a, con
  */
 MatrixXd secondOrderStiffnessMatrix(const unsigned int polyDeg, const double alpha, const double beta, const VectorXd nodes) {
 	return derivativeMatrix(polyDeg, nodes).transpose() * mMatrix(polyDeg, nodes, alpha, beta) * derivativeMatrix(polyDeg, nodes);
+}
+/**
+ * @brief calculates the stiffness matrix via transformation to orthonormal Jacobi (modal) basis
+ * @detail exact integration for integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
+ * @param [in] polyDeg polynomial degree
+ * @param [in] nodes polynomial interpolation nodes
+ * @param [in] alpha Jacobi polynomial coefficient
+ * @param [in] beta Jacobi polynomial coefficient
+ */
+Eigen::MatrixXd stiffnessMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha = 0.0, const double beta = 0.0)
+{
+	return invMMatrix(polyDeg, nodes, alpha, beta) * derivativeMatrix(polyDeg, nodes);
+}
+/**
+ * @brief estimates if two double numbers are equal
+ * @detail as we consider computational reference elements [-1, 1], the only exceptional cases we have to deal with are near the origin
+ */
+bool almostEqual(double a, double b)
+{
+	if (a == 0.0 || b == 0.0)
+	{
+		if (std::abs(a - b) <= std::numeric_limits<double>::epsilon())
+			return true;
+		else
+			return false;
+	}
+	else
+	{
+		if (std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::abs(a) && std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::abs(b))
+			return true;
+		else
+			return false;
+	}
+}
+/**
+ * @brief calculates the polynomial interpolation matrix between two sets of nodes
+ * @param [in] newNodes set of nodes, the solution is interpolated to
+ * @param [in] oldNodes set of nodes, the solution is interpolated from
+ * @param [in] baryWeights barycentric weights of the polynomial to be interpolated
+ */
+MatrixXd polynomialInterpolationMatrix(const VectorXd newNodes, const VectorXd oldNodes, const VectorXd baryWeights) {
+
+	const unsigned int nNewNodes = newNodes.size();
+	const unsigned int nOldNodes = oldNodes.size();
+	MatrixXd intM = MatrixXd::Zero(nNewNodes, nOldNodes);
+
+	for (unsigned int k = 0; k <= nNewNodes; k++)
+	{
+		bool rowHasMatch = false;
+		for (unsigned int j = 0; j <= nOldNodes; j++)
+		{
+			if (almostEqual(newNodes[k], oldNodes[j]))
+			{
+				intM(k, j) = 1.0;
+				rowHasMatch = true;
+			}
+			else
+				intM(k, j) = 0.0;
+		}
+
+		if (rowHasMatch)
+			break;
+
+		double s = 0.0;
+
+		for (unsigned int j = 0; j <= nOldNodes; j++)
+		{
+			double t = baryWeights[j] / (newNodes[k] - oldNodes[j]);
+			intM(k, j) = t;
+			s = s + t;
+		}
+		for (unsigned int j = 0; j <= nOldNodes; j++)
+		{
+			intM(k, j) /= s;
+		}
+	}
+
+	return intM;
+}
+/**
+ * @brief returns a quadratic lifting matrix
+ * @param [in] size quadratic matrix size
+ */
+MatrixXd liftingMatrixQuadratic(const unsigned int size)
+{
+	MatrixXd liftingMatrix = MatrixXd::Zero(size, size);
+
+	liftingMatrix(0, 0) = -1.0;
+	liftingMatrix(size - 1, size - 1) = 1.0;
+
+	return liftingMatrix;
+}
+/**
+ * @brief returns a (size x 2) lifting matrix
+ * @param [in] rows number of matrix rows
+ */
+MatrixXd liftingMatrix(const unsigned int size)
+{
+	MatrixXd liftingMatrix = MatrixXd::Zero(size, 2);
+
+	liftingMatrix(0, 0) = 1.0;
+	liftingMatrix(size - 1, 2) = -1.0;
+
+	return liftingMatrix;
+}
+/**
+ * @brief evaluates the jth Lagrange basis functions at given nodes
+ * @param [in] j index of Lagrange basis function
+ * @param [in] baseNodes interpolation nodes of Lagrange basis
+ * @param [in] evalNodes evaluation nodes in [-1, 1]
+ */
+VectorXd evalLagrangeBasis(const unsigned int j, const VectorXd baseNodes, const VectorXd evalNodes)
+{
+	const unsigned int nBase = baseNodes.size();
+	const unsigned int nEval = evalNodes.size();
+	VectorXd ell = VectorXd::Zero(nEval);
+
+	double nominator = 1.0;
+	double denominator = 1.0;
+
+	for (unsigned int i = 0; i < nBase; i++)
+		if (i != j)
+			denominator *= (baseNodes[j] - baseNodes[i]);
+
+	for (unsigned int k = 0; k < nEval; k++)
+	{
+		for (unsigned int i = 0; i < nBase; i++)
+		{
+			nominator *= (evalNodes[k] - baseNodes[i]);
+		}
+		ell[k] = nominator / denominator;
+		nominator = 1.0;
+	}
+
+	return ell;
 }
 
 } // namespace dgtoolbox

@@ -102,11 +102,14 @@ add_feature_info(ENABLE_THREADING ENABLE_THREADING "Use multi-threading")
 option(ENABLE_DEBUG_THREADING "Use multi-threading in debug builds" OFF)
 add_feature_info(ENABLE_DEBUG_THREADING ENABLE_DEBUG_THREADING "Use multi-threading in debug builds")
 
-option(ENABLE_GRM_2D "Build 2D general rate model" ON)
+option(ENABLE_GRM_2D "Build 2D general rate model (FV)" ON)
 add_feature_info(ENABLE_GRM_2D ENABLE_GRM_2D "Build 2D general rate model")
 
 option(ENABLE_DG "Build DG variants of models" ON)
 add_feature_info(ENABLE_DG ENABLE_DG "Build DG variants of models")
+
+option(ENABLE_2D_MODELS_DG "Build 2D models (DG)" ON)
+add_feature_info(ENABLE_2D_MODELS_DG ENABLE_2D_MODELS_DG "Build 2D models (DG)")
 
 option(ENABLE_SUNDIALS_OPENMP "Prefer OpenMP vector implementation of SUNDIALS if available (for large problems)" OFF)
 add_feature_info(ENABLE_SUNDIALS_OPENMP ENABLE_SUNDIALS_OPENMP "Prefer OpenMP vector implementation of SUNDIALS if available (for large problems)")

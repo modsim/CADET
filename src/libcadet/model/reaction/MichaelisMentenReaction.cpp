@@ -106,7 +106,7 @@ namespace
  *              \nu_i = \frac{\mu_{\mathrm{max},i} c_S}{k_{\mathrm{MM},i} + c_S} \prod_j \frac{k_{\mathrm{I},i,j}}{k_{\mathrm{I},i,j} + c_{\mathrm{I},j}}.
  *          \end{align} \f]
  *          The value of \f$ k_{\mathrm{I},i,j} \f$ decides whether component \f$ j \f$
- *          inhibits reaction \f$ i \f$. If \f$ k_{\mathrm{I},i,j} < 0 \f$, the component
+ *          inhibits reaction \f$ i \f$. If \f$ k_{\mathrm{I},i,j} \leq 0 \f$, the component
  *          does not inhibit the reaction.
  *
  *          Only reactions in liquid phase are supported (no solid phase or cross-phase reactions).
@@ -207,7 +207,7 @@ protected:
 		// Calculate fluxes
 		typedef typename DoubleActivePromoter<StateType, ParamType>::type flux_t;
 		BufferedArray<flux_t> fluxes = workSpace.array<flux_t>(_stoichiometryBulk.columns());
-		for (unsigned int r = 0; r < _stoichiometryBulk.columns(); ++r)
+		for (int r = 0; r < _stoichiometryBulk.columns(); ++r)
 		{
 			const int idxSubs = _idxSubstrate[r];
 			if (idxSubs == -1)
@@ -221,7 +221,7 @@ protected:
 			for (int comp = 0; comp < _nComp; ++comp)
 			{
 				const flux_t kI = static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->kInhibit[_nComp * r + comp]);
-				if (kI < 0.0)
+				if (kI <= 0.0)
 					continue;
 
 				fluxes[r] *= kI / (kI + y[comp]);
@@ -253,7 +253,7 @@ protected:
 	{
 		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
-		for (unsigned int r = 0; r < _stoichiometryBulk.columns(); ++r)
+		for (int r = 0; r < _stoichiometryBulk.columns(); ++r)
 		{
 			const int idxSubs = _idxSubstrate[r];
 			if (idxSubs == -1)
@@ -263,7 +263,7 @@ protected:
 			for (int comp = 0; comp < _nComp; ++comp)
 			{
 				const double kI = static_cast<double>(p->kInhibit[_nComp * r + comp]);
-				if (kI < 0.0)
+				if (kI <= 0.0)
 					continue;
 
 				inhibit *= kI / (kI + y[comp]);
@@ -277,20 +277,20 @@ protected:
 
 			// Add gradients to Jacobian
 			RowIterator curJac = jac;
-			for (unsigned int row = 0; row < _nComp; ++row, ++curJac)
+			for (int row = 0; row < _nComp; ++row, ++curJac)
 			{
 				const double colFactor = static_cast<double>(_stoichiometryBulk.native(row, r)) * factor;
 				curJac[idxSubs - static_cast<int>(row)] += colFactor * fluxGrad;
 			}
 
 			curJac = jac;
-			for (unsigned int row = 0; row < _nComp; ++row, ++curJac)
+			for (int row = 0; row < _nComp; ++row, ++curJac)
 			{
 				const double colFactor = static_cast<double>(_stoichiometryBulk.native(row, r)) * factor;
 				for (int comp = 0; comp < _nComp; ++comp)
 				{
 					const double kI = static_cast<double>(p->kInhibit[_nComp * r + comp]);
-					if (kI < 0.0)
+					if (kI <= 0.0)
 						continue;
 
 					curJac[comp - static_cast<int>(row)] -= colFactor * flux / (kI + y[comp]);

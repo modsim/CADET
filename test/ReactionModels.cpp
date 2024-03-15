@@ -77,14 +77,31 @@ TEST_CASE("MassActionLaw kinetic analytic Jacobian vs AD", "[MassActionLaw],[Rea
 	);
 }
 
-TEST_CASE("MichaelisMenten kinetic analytic Jacobian vs AD", "[MichaelisMenten],[ReactionModel],[Jacobian],[AD]")
+TEST_CASE("MichaelisMenten kinetic analytic Jacobian vs AD without inhibition", "[MichaelisMenten],[ReactionModel],[Jacobian],[AD]")
 {
 	const unsigned int nBound[] = {1, 2, 1};
 	const double point[] = {1.0, 2.0, 1.4, 2.1, 0.2, 1.1, 1.8};
 	cadet::test::reaction::testDynamicJacobianAD("MICHAELIS_MENTEN", 3, nBound,
 		R"json({
 			"MM_KMM": [1.0, 2.0, 0.4],
-			"MM_KI": [1.0, 0.2, 1.5],
+			"MM_KI": [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0],
+			"MM_VMAX": [1.0, 0.2, 1.5],
+			"MM_STOICHIOMETRY_BULK": [ 1.0, -2.0,  3.0,
+			                          -1.0,  0.0, -2.0,
+			                           0.0,  1.0,  1.0]
+		})json",
+		point, 1e-15, 1e-15
+	);
+}
+
+TEST_CASE("MichaelisMenten kinetic analytic Jacobian vs AD with inhibition", "[MichaelisMenten],[ReactionModel],[Jacobian],[AD]")
+{
+	const unsigned int nBound[] = {1, 2, 1};
+	const double point[] = {1.0, 2.0, 1.4, 2.1, 0.2, 1.1, 1.8};
+	cadet::test::reaction::testDynamicJacobianAD("MICHAELIS_MENTEN", 3, nBound,
+		R"json({
+			"MM_KMM": [1.0, 2.0, 0.4],
+			"MM_KI": [-1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 3.0, 2.0, -1.0],
 			"MM_VMAX": [1.0, 0.2, 1.5],
 			"MM_STOICHIOMETRY_BULK": [ 1.0, -2.0,  3.0,
 			                          -1.0,  0.0, -2.0,

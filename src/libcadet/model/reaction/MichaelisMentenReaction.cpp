@@ -34,19 +34,13 @@
 		[
 			{ "type": "ScalarReactionDependentParameter", "varName": "vMax", "confName": "MM_VMAX"},
 			{ "type": "ScalarReactionDependentParameter", "varName": "kMM", "confName": "MM_KMM"},
-			{ "type": "ScalarReactionDependentParameter", "varName": "kInhibit", "confName": "MM_KI"}
+			{ "type": "ComponentDependentReactionDependentParameter", "varName": "kInhibit", "confName": "MM_KI"}
 		]
 }
 </codegen>*/
 
 /* Parameter description
  ------------------------
- kFwdBulk = Forward rate for reactions in bulk volume
- kBwdBulk = Backward rate for reactions in bulk volume
- kFwdLiquid = Forward rate for reactions in particle liquid phase
- kBwdLiquid = Backward rate for reactions in particle liquid phase
- kFwdSolid = Forward rate for reactions in particle solid phase
- kBwdSolid = Backward rate for reactions in particle solid phase
 */
 
 
@@ -95,14 +89,27 @@ namespace
 
 
 /**
- * @brief Defines the multi component Langmuir binding model
- * @details Implements the Langmuir adsorption model: \f[ \begin{align}
- *              \frac{\mathrm{d}q_i}{\mathrm{d}t} &= k_{a,i} c_{p,i} q_{\text{max},i} \left( 1 - \sum_j \frac{q_j}{q_{\text{max},j}} \right) - k_{d,i} q_i
+ * @brief Defines a Michaelis-Menten reaction kinetic with simple inhibition
+ * @details Implements the Michaelis-Menten kinetics: \f[ \begin{align}
+ *              S \nu,
  *          \end{align} \f]
- *          Multiple bound states are not supported.
- *          Components without bound state (i.e., non-binding components) are supported.
+ *          where \f$ S \f$ is the stoichiometric matrix and the fluxes are given by
+ *          \f[ \begin{align}
+ *              \nu_i = \frac{\mu_{\mathrm{max},i} c_S}{k_{\mathrm{MM},i} + c_S}.
+ *          \end{align} \f]
+ *          The substrate component \f$ c_S \f$ is identified by the index of the
+ *          first negative entry in the stoichiometry of this reaction.
  *
- *          See @cite Langmuir1916.
+ *          In addition, the reaction might be inhibited by other components. In this
+ *          case, the flux has the form
+ *          \f[ \begin{align}
+ *              \nu_i = \frac{\mu_{\mathrm{max},i} c_S}{k_{\mathrm{MM},i} + c_S} \prod_j \frac{k_{\mathrm{I},i,j}}{k_{\mathrm{I},i,j} + c_{\mathrm{I},j}}.
+ *          \end{align} \f]
+ *          The value of \f$ k_{\mathrm{I},i,j} \f$ decides whether component \f$ j \f$
+ *          inhibits reaction \f$ i \f$. If \f$ k_{\mathrm{I},i,j} < 0 \f$, the component
+ *          does not inhibit the reaction.
+ *
+ *          Only reactions in liquid phase are supported (no solid phase or cross-phase reactions).
  * @tparam ParamHandler_t Type that can add support for external function dependence
  */
 template <class ParamHandler_t>
@@ -209,7 +216,16 @@ protected:
 				continue;
 			}
 
-			fluxes[r] = static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->vMax[r]) * y[idxSubs] / (static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->kMM[r]) + y[idxSubs] * (1.0 + y[idxSubs] / static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->kInhibit[r])));
+			fluxes[r] = static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->vMax[r]) * y[idxSubs] / (static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->kMM[r]) + y[idxSubs]);
+
+			for (int comp = 0; comp < _nComp; ++comp)
+			{
+				const flux_t kI = static_cast<typename DoubleActiveDemoter<flux_t, active>::type>(p->kInhibit[_nComp * r + comp]);
+				if (kI < 0.0)
+					continue;
+
+				fluxes[r] *= kI / (kI + y[comp]);
+			}
 		}
 
 		// Add reaction terms to residual
@@ -243,11 +259,21 @@ protected:
 			if (idxSubs == -1)
 				continue;
 
+			double inhibit = 1.0;
+			for (int comp = 0; comp < _nComp; ++comp)
+			{
+				const double kI = static_cast<double>(p->kInhibit[_nComp * r + comp]);
+				if (kI < 0.0)
+					continue;
+
+				inhibit *= kI / (kI + y[comp]);
+			}
+
 			const double vMax = static_cast<double>(p->vMax[r]);
-			const double kIn = static_cast<double>(p->kInhibit[r]);
 			const double kMM = static_cast<double>(p->kMM[r]);
-			const double kk = kIn * kMM;
-			const double fluxGrad = kIn * vMax * (kk - sqr(y[idxSubs])) / sqr(y[idxSubs] * (kIn + y[idxSubs]) + kk);
+			const double denom = kMM + y[idxSubs];
+			const double fluxGrad = vMax / denom * (1.0 - y[idxSubs] / denom) * inhibit;
+			const double flux = vMax * y[idxSubs] / denom * inhibit;
 
 			// Add gradients to Jacobian
 			RowIterator curJac = jac;
@@ -255,6 +281,20 @@ protected:
 			{
 				const double colFactor = static_cast<double>(_stoichiometryBulk.native(row, r)) * factor;
 				curJac[idxSubs - static_cast<int>(row)] += colFactor * fluxGrad;
+			}
+
+			curJac = jac;
+			for (unsigned int row = 0; row < _nComp; ++row, ++curJac)
+			{
+				const double colFactor = static_cast<double>(_stoichiometryBulk.native(row, r)) * factor;
+				for (int comp = 0; comp < _nComp; ++comp)
+				{
+					const double kI = static_cast<double>(p->kInhibit[_nComp * r + comp]);
+					if (kI < 0.0)
+						continue;
+
+					curJac[comp - static_cast<int>(row)] -= colFactor * flux / (kI + y[comp]);
+				}
 			}
 		}
 	}

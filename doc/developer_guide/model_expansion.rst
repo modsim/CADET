@@ -12,17 +12,17 @@ For now, please refer to the `forum post <https://forum.cadet-web.de/t/registrat
 Unit Operation
 ^^^^^^^^^^^^^^
 
-The easiest way to create a new unit operation in CADET-Core is to start from an existing unit operation (optimally most similar one) and make adjustments from there.
+The easiest way to create a new unit operation in CADET-Core is to start from an existing unit operation (e.g. ``src/libcadet/StirredTankModel``, but optimally the most similar one) and make adjustments from there.
 The first, model independent steps are:
 
-1. Add NewModel.cpp and NewModel.hpp files in src\libcadet\model folder (copy and rename existing ones)
+1. Add NewModel.cpp and NewModel.hpp files in src\libcadet\model folder (copy and rename existing ones). Note that we'll call the new model "NewModel" from here on, so make sure to substitute this with the actual name of your model.
 2. Add ``${CMAKE_SOURCE_DIR}/src/libcadet/model/NewModel.cpp`` to the ``src/libcadet/CMakeLists.txt``
-3. In the root/CMakeLists.txt file, you can add a build option to make building your new model optional. This enables building CADET versions with and without the new extension. This can be done, e.g., when additional dependencies are required or when build time should be reduced. See e.g. ``ENABLE_GRM_2D`` or ``ENABLE_DG``.
+3. (Optional) In the root/CMakeLists.txt file, you can add a build option to make building your new model optional. This enables building CADET versions with and without the new extension. This can be done, e.g., when additional dependencies are required or when build time should be reduced. See e.g. ``ENABLE_GRM_2D`` or ``ENABLE_DG``.
 4. Add new model to ModelBuilder (in ModelBuilderImpl.cpp, just like the other models are included):
 5. Rename everything to the new model
-  a. Change the ``identifier()`` function in the ``NewModel.hpp`` to return a new unique model name (here: "NewModel")
-  b. Adjust the ``registerNewModel()`` function in the ``NewModel.cpp`` accordingly
-  c. rename all functions, i.e. substitute the previous (copied) model name by your model name. Also do this for the header guards in the hpp file and the include in the cpp (essentially every occurrence of the old model name has to be changed).
+   a. Change the ``identifier()`` function in the ``NewModel.hpp`` to return a new unique model name (here: "NewModel")
+   b. Adjust the ``registerNewModel()`` function in the ``NewModel.cpp`` accordingly
+   c. rename all functions, i.e. substitute the previous (copied) model name by your model name. Also do this for the header guards in the hpp file and the include in the cpp (essentially every occurrence of the old model name has to be changed).
 6. Try to build (and maybe even run) the new unit operation, which at this point is essentially still the same as the copied one, to make sure everything is set up correctly.
 
 You are now ready to implement your model in CADET-Core.

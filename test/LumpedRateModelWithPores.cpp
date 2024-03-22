@@ -47,7 +47,7 @@ TEST_CASE("LRMP Jacobian forward vs backward flow", "[LRMP],[UnitOp],[Residual],
 		cadet::test::column::testJacobianWenoForwardBackward("LUMPED_RATE_MODEL_WITH_PORES", i);
 }
 
-TEST_CASE("LRMP numerical Benchmark with parameter sensitivities for linear case", "[LRMP],[Simulation],[Reference],[Sensitivity]") // todo CI flag: currently only runs locally but fails on server
+TEST_CASE("LRMP numerical Benchmark with parameter sensitivities for linear case", "[LRMP],[Simulation],[Reference],[Sensitivity]") // todo CI flag: Currently only runs locally but fails on server
 {
 	const std::string& modelFilePath = std::string("/data/model_LRMP_dynLin_1comp_benchmark1.json");
 	const std::string& refFilePath = std::string("/data/ref_LRMP_dynLin_1comp_sensbenchmark1_FV_Z32.h5");

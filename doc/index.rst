@@ -100,6 +100,7 @@ Please refer to the `list of contributors <https://github.com/modsim/CADET/blob/
     modelling/index
     simulation/index
     interface/index
+    developer_guide/index
     .. examples/index
     CADET-Match <https://cadet.github.io/CADET-Match/master/index.html>
     license

@@ -29,19 +29,27 @@
 	"externalName": "ExtLangmuirLDFParamHandler",
 	"parameters":
 		[
-			{ "type": "ScalarComponentDependentParameter", "varName": "keq", "confName": "MCLLDF_KEQ"},
-			{ "type": "ScalarComponentDependentParameter", "varName": "kkin", "confName": "MCLLDF_KKIN"},
-			{ "type": "ScalarComponentDependentParameter", "varName": "qMax", "confName": "MCLLDF_QMAX"}
+			{ "type": "ScalarComponentDependentParameter", "varName": "keq", "confName": "KEQ"},
+			{ "type": "ScalarComponentDependentParameter", "varName": "kkin", "confName": "KKIN"},
+			{ "type": "ScalarComponentDependentParameter", "varName": "qMax", "confName": "QMAX"},
+			{ "type": "ScalarComponentDependentParameter", "varName": "SolSA", "confName": "SOLSA"},
+			{ "type": "ScalarComponentDependentParameter", "varName": "SolSB", "confName": "SOLSB"}
 		]
 }
 </codegen>*/
+
 
 /* Parameter description
  ------------------------
  keq = Equillibrium constant
  kkin = Linear driving force
  qMax = Capacity
+ solsa = solvent strength numerator
+ solsb = solvent strength denominator
+
+ q = keq * exp(-solsa * phi) * C_p/(1 + keq/qmax * exp(-solsb * phi) Cp)
 */
+
 
 namespace cadet
 {
@@ -165,7 +173,7 @@ protected:
 			if (_nBoundStates[i] == 0)
 				continue;
 
-			cpSum += yCp[i] * static_cast<ParamType>(p->keq[i]);
+			cpSum += yCp[i] * static_cast<ParamType>(p->keq[i]) * exp(-static_cast<ParamType>(p->SolSB[i]) * yCp[0]) / static_cast<ParamType>(p->qMax[i]);
 
 			// Next bound component
 			++bndIdx;
@@ -179,7 +187,7 @@ protected:
 				continue;
 
 			// Residual
-			res[bndIdx] = static_cast<ParamType>(p->kkin[i]) * (y[bndIdx] - static_cast<ParamType>(p->keq[i]) * yCp[i] * static_cast<ParamType>(p->qMax[i]) / cpSum);
+			res[bndIdx] = static_cast<ParamType>(p->kkin[i]) * (y[bndIdx] - static_cast<ParamType>(p->keq[i]) * exp(-static_cast<ParamType>(p->SolSA[i] * yCp[0])) * yCp[i] / cpSum);
 
 			// Next bound component
 			++bndIdx;
@@ -194,7 +202,7 @@ protected:
 		typename ParamHandler_t::ParamsHandle const p = _paramHandler.update(t, secIdx, colPos, _nComp, _nBoundStates, workSpace);
 
 		// Protein fluxes: k_{kin,i}q_i - k_{kin,i} \frac{q_{m,i}k_{eq,i}c_i}{1+\sum_{j=1}^{n_{comp}} k_{eq,j}c_j}
-		double cpSum = 1.0;
+		double cpSum = 0.0;
 		int bndIdx = 0;
 		for (int i = 0; i < _nComp; ++i)
 		{
@@ -202,7 +210,13 @@ protected:
 			if (_nBoundStates[i] == 0)
 				continue;
 
-			cpSum += yCp[i] * static_cast<double>(p->keq[i]);
+			const double keq = static_cast<double>(p->keq[i]);
+			const double qMax = static_cast<double>(p->qMax[i]);
+			const double kkin = static_cast<double>(p->kkin[i]);
+			const double solsa = static_cast<double>(p->SolSA[i]);
+			const double solsb = static_cast<double>(p->SolSB[i]);
+
+			cpSum += yCp[i] * keq + qMax * exp(solsb * yCp[0]);
 
 			// Next bound component
 			++bndIdx;
@@ -216,39 +230,47 @@ protected:
 				continue;
 
 			const double keq = static_cast<double>(p->keq[i]);
+			const double qMax = static_cast<double>(p->qMax[i]);
 			const double kkin = static_cast<double>(p->kkin[i]);
+			const double solsa = static_cast<double>(p->SolSA[i]);
+			const double solsb = static_cast<double>(p->SolSB[i]);
+
 			//(keq *keq *static_cast<double>(p->qMax[i]) * yCp[i] / (cpSum*cpSum))
 			// dres_i / dc_{p,i}
-			jac[i - bndIdx - offsetCp] = -kkin * keq * static_cast<double>(p->qMax[i]) / cpSum;
+			jac[i - bndIdx - offsetCp] = -kkin * keq * qMax * exp((-solsa + solsb) * yCp[0]) / cpSum;
 			// Getting to c_{p,i}: -bndIdx takes us to q_0, another -offsetCp to c_{p,0} and a +i to c_{p,i}.
 			//                     This means jac[i - bndIdx - offsetCp] corresponds to c_{p,i}.
 
 			// Fill dres_i / dc_j
-			const double commonFactor = keq * kkin * static_cast<double>(p->qMax[i]) * yCp[i] / (cpSum * cpSum);
+
 			int bndIdx2 = 0;
 			for (int j = 0; j < _nComp; ++j)
 			{
 				// Skip components without bound states (bound state index bndIdx is not advanced)
 				if (_nBoundStates[j] == 0)
 					continue;
-
+				const double keq = static_cast<double>(p->keq[j]);
+				const double qMax = static_cast<double>(p->qMax[j]);
+				const double kkin = static_cast<double>(p->kkin[j]);
+				const double solsa = static_cast<double>(p->SolSA[j]);
+				const double solsb = static_cast<double>(p->SolSB[j]);
 				// dres_i / dc_j
-				jac[j - bndIdx - offsetCp] += static_cast<double>(p->keq[j]) * commonFactor;
+				jac[j - bndIdx - offsetCp] += pow(keq, 2.0) * kkin * qMax * yCp[j] * exp((-solsa + solsb) * yCp[0]) / pow(cpSum, 2.0);
 				// Getting to c_{p,j}: -bndIdx takes us to q_0, another -offsetCp to c_{p,0} and a +j to c_{p,j}.
 				//                     This means jac[j - bndIdx - offsetCp] corresponds to c_{p,j}.
-				
+
 
 				++bndIdx2;
 			}
 
 			// Add to dres_i / dq_i
-			jac[0] += kkin;
+			jac[0] += static_cast<double>(p->kkin[i]);
 
 			// Advance to next flux and Jacobian row
 			++bndIdx;
 			++jac;
 		}
-	}	
+	}
 };
 
 typedef LangmuirLDFBindingBase<LangmuirLDFParamHandler> LangmuirLDFBinding;
@@ -256,7 +278,7 @@ typedef LangmuirLDFBindingBase<ExtLangmuirLDFParamHandler> ExternalLangmuirLDFBi
 
 namespace binding
 {
-	void registerLangmuirLDFModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings)
+	void registerLangmuirLDFModel(std::unordered_map<std::string, std::function<model::IBindingModel* ()>>& bindings)
 	{
 		bindings[LangmuirLDFBinding::identifier()] = []() { return new LangmuirLDFBinding(); };
 		bindings[ExternalLangmuirLDFBinding::identifier()] = []() { return new ExternalLangmuirLDFBinding(); };

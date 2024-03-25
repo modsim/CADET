@@ -305,6 +305,48 @@ protected:
 
 
 /**
+ * @brief Component dependent reaction dependent parameter
+ * @details Holds a scalar for each component and reaction.
+ */
+class ComponentDependentReactionDependentParameter
+{
+public:
+
+	typedef std::vector<active> storage_t;
+
+	ComponentDependentReactionDependentParameter(std::vector<active>& p) : _p(&p) { }
+	ComponentDependentReactionDependentParameter(std::vector<active>* p) : _p(p) { }
+
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		if (paramProvider.exists(varName))
+			readParameterMatrix(*_p, paramProvider, varName, 1, 1);
+		else
+			_p->clear();
+	}
+
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const StringHash nameHash = hashStringRuntime(varName);
+		registerParam2DArray(parameters, *_p, [=](bool multi, unsigned r, unsigned int c) { return makeParamId(nameHash, unitOpIdx, c, parTypeIdx, BoundStateIndep, r, SectionIndep); }, nComp);
+	}
+
+	inline void reserve(unsigned int nReactions, unsigned int nComp, unsigned int nBoundStates)
+	{
+		_p->reserve(nComp * nReactions);
+	}
+
+	inline typename std::vector<active>::size_type size() const CADET_NOEXCEPT { return _p->size(); }
+
+	inline const std::vector<active>& get() const CADET_NOEXCEPT { return *_p; }
+	inline std::vector<active>& get() CADET_NOEXCEPT { return *_p; }
+
+protected:
+	std::vector<active>* _p;
+};
+
+
+/**
  * @brief Component and bound state dependent external parameter
  * @details A single value per component and bound state / binding site type.
  * @tparam compMajor Determines whether the values are stored in component-major or bound-state-/binding-site-type-major ordering
@@ -952,6 +994,91 @@ public:
 		_linear.reserve(nReactions);
 		_quad.reserve(nReactions);
 		_cube.reserve(nReactions);
+	}
+
+	inline void update(std::vector<active>& result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		update(result.data(), extVal, nComp, nBoundStates);
+	}
+
+	inline void update(active* result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = _base[i] + extVal * (_linear[i] + extVal * (_quad[i] + extVal * _cube[i]));
+	}
+
+	inline void updateTimeDerivative(std::vector<active>& result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		updateTimeDerivative(result.data(), extVal, extTimeDiff, nComp, nBoundStates);
+	}
+
+	inline void updateTimeDerivative(active* result, double extVal, double extTimeDiff, unsigned int nComp, unsigned int const* nBoundStates) const
+	{
+		for (std::size_t i = 0; i < _base.size(); ++i)
+			result[i] = extTimeDiff * (static_cast<double>(_linear[i]) + extVal * (2.0 * static_cast<double>(_quad[i]) + 3.0 * extVal * static_cast<double>(_cube[i])));
+	}
+
+	inline std::size_t size() const CADET_NOEXCEPT { return _base.size(); }
+	inline bool allSameSize() const CADET_NOEXCEPT { return (_base.size() == _linear.size()) && (_base.size() == _quad.size()) && (_base.size() == _cube.size()); }
+
+	inline std::size_t additionalDynamicMemory(unsigned int nReactions, unsigned int nComp, unsigned int totalNumBoundStates) const CADET_NOEXCEPT { return nReactions * sizeof(active) + alignof(active); }
+
+	inline storage_t& base() CADET_NOEXCEPT { return _base; }
+	inline const storage_t& base() const CADET_NOEXCEPT { return _base; }
+
+	template <typename T>
+	inline void prepareCache(T& cache, LinearBufferAllocator& buffer) const
+	{
+		cache.fromTemplate(buffer, _base);
+	}
+
+protected:
+	std::vector<active> _base;
+	std::vector<active> _linear;
+	std::vector<active> _quad;
+	std::vector<active> _cube;
+};
+
+
+/**
+ * @brief Component dependent reaction dependent external parameter
+ * @details Holds a scalar for each component and reaction.
+ */
+class ExternalComponentDependentReactionDependentParameter
+{
+public:
+
+	typedef std::vector<active> storage_t;
+
+	inline void configure(const std::string& varName, IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		readParameterMatrix(_base, paramProvider, "EXT_" + varName, 1, 1);
+		readParameterMatrix(_linear, paramProvider, "EXT_" + varName + "_T", 1, 1);
+		readParameterMatrix(_quad, paramProvider, "EXT_" + varName + "_TT", 1, 1);
+		readParameterMatrix(_cube, paramProvider, "EXT_" + varName + "_TTT", 1, 1);
+	}
+
+	inline void registerParam(const std::string& varName, std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nBoundStates)
+	{
+		const StringHash hashConst = hashStringRuntime("EXT_" + varName);
+		registerParam2DArray(parameters, _base, [=](bool multi, unsigned int r, unsigned c) { return makeParamId(hashConst, unitOpIdx, c, parTypeIdx, BoundStateIndep, r, SectionIndep); }, nComp);
+
+		const StringHash hashLinear = hashStringRuntime("EXT_" + varName + "_T");
+		registerParam2DArray(parameters, _linear, [=](bool multi, unsigned int r, unsigned c) { return makeParamId(hashLinear, unitOpIdx, c, parTypeIdx, BoundStateIndep, r, SectionIndep); }, nComp);
+
+		const StringHash hashQuad = hashStringRuntime("EXT_" + varName + "_TT");
+		registerParam2DArray(parameters, _quad, [=](bool multi, unsigned int r, unsigned c) { return makeParamId(hashQuad, unitOpIdx, c, parTypeIdx, BoundStateIndep, r, SectionIndep); }, nComp);
+
+		const StringHash hashCube = hashStringRuntime("EXT_" + varName + "_TTT");
+		registerParam2DArray(parameters, _cube, [=](bool multi, unsigned int r, unsigned c) { return makeParamId(hashCube, unitOpIdx, c, parTypeIdx, BoundStateIndep, r, SectionIndep); }, nComp);
+	}
+
+	inline void reserve(unsigned int nReactions, unsigned int nComp, unsigned int nBoundStates)
+	{
+		_base.reserve(nReactions * nComp);
+		_linear.reserve(nReactions * nComp);
+		_quad.reserve(nReactions * nComp);
+		_cube.reserve(nReactions * nComp);
 	}
 
 	inline void update(std::vector<active>& result, double extVal, unsigned int nComp, unsigned int const* nBoundStates) const

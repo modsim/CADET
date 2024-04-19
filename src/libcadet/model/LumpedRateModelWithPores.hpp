@@ -406,11 +406,7 @@ protected:
 			return _disc.nCol;
 		}
 		virtual int writeSecondaryCoordinates(double* coords) const { return 0; }
-		virtual int writeParticleCoordinates(unsigned int parType, double* coords) const
-		{
-			coords[0] = static_cast<double>(_model._parRadius[parType]) * 0.5;
-			return 1;
-		}
+		virtual int writeParticleCoordinates(unsigned int parType, double* coords) const { return 0; }
 
 	protected:
 		const Discretization& _disc;

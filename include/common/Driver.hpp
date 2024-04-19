@@ -455,7 +455,6 @@ public:
 		else
 			_writeLastState = false;
 
-		// Adding a new output variable
 		std::ostringstream oss;
 		for (int i = 0; i <= _sim->model()->maxUnitOperationId(); ++i)
 		{
@@ -480,6 +479,25 @@ public:
 			_writeLastStateSens = pp.getBool("WRITE_SENS_LAST");
 		else
 			_writeLastStateSens = false;
+
+		for (int i = 0; i <= _sim->model()->maxUnitOperationId(); ++i)
+		{
+			oss.str("");
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+			if (pp.exists(oss.str()))
+			{
+				pp.pushScope(oss.str());
+
+				if (pp.exists("WRITE_SENS_LAST_UNIT"))
+				{
+					const bool writeLastStateSensUnit = pp.getBool("WRITE_SENS_LAST_UNIT");
+					if (writeLastStateSensUnit)
+						_writeLastStateSensUnitId.push_back(i);
+				}
+
+				pp.popScope();
+			}
+		}
 
 		pp.popScope(); // scope return
 
@@ -588,6 +606,40 @@ public:
 			}
 		}
 
+		for (int i = 0; i < _writeLastStateSensUnitId.size(); ++i)
+		{
+			unsigned int sliceStart;
+			unsigned int sliceEnd;
+			std::tie(sliceStart, sliceEnd) = _sim->model()->getModelStateOffsets(_writeLastStateSensUnitId[i]);
+
+			oss.str("");
+			oss << "unit_" << std::setfill('0') << std::setw(3) << std::setprecision(0) << _writeLastStateSensUnitId[i];
+			writer.pushGroup("sensitivity");
+			std::string unitID = oss.str();
+
+			unsigned int len = 0;
+
+			const std::vector<double const*> lastSens = _sim->getLastSensitivities(len);
+			const std::vector<double const*> lastSensdot = _sim->getLastSensitivityDerivatives(len);
+
+			const int nSens = lastSens.size();
+
+			for (int i = 0; i < nSens; i++)
+			{
+				oss.str("");
+				oss << std::setfill('0') << std::setw(3) << std::setprecision(0) << i;
+				writer.pushGroup("param_" + oss.str());
+				writer.pushGroup(unitID);
+				writer.template vector<double>("LAST_SENS_Y", sliceEnd - sliceStart, lastSens[i] + sliceStart);
+				writer.template vector<double>("LAST_SENS_YDOT", sliceEnd - sliceStart, lastSensdot[i] + sliceStart);
+				writer.popGroup();
+				writer.popGroup();
+			}
+
+			writer.popGroup();
+			writer.popGroup();
+		}
+
 		writer.popGroup();
 
 		if (writer.exists("meta"))
@@ -651,6 +703,27 @@ public:
 		}
 	}
 
+	inline void setWriteLastSensStateOfUnit(UnitOpIdx uid, bool writeLastSensStateUnit)
+	{
+		const std::vector<UnitOpIdx>::iterator it = std::find(_writeLastStateSensUnitId.begin(), _writeLastStateSensUnitId.end(), uid);
+		if (writeLastSensStateUnit)
+		{
+			if (it == _writeLastStateSensUnitId.end())
+			{
+				// Unit not in list, so add it
+				_writeLastStateSensUnitId.push_back(uid);
+			}
+		}
+		else
+		{
+			if (it != _writeLastStateSensUnitId.end())
+			{
+				// Unit is listed, so remove it
+				_writeLastStateSensUnitId.erase(it);
+			}
+		}
+	}
+
 	inline void setWriteLastState(bool writeLastState) CADET_NOEXCEPT { _writeLastState = writeLastState; }
 	inline void setWriteLastStateSens(bool writeLastState) CADET_NOEXCEPT { _writeLastStateSens = writeLastState; }
 	inline void setWriteSolutionTimes(bool solTimes) CADET_NOEXCEPT
@@ -670,6 +743,7 @@ protected:
 	bool _writeLastState;
 	std::vector<UnitOpIdx> _writeLastStateUnitId;
 	bool _writeLastStateSens;
+	std::vector<UnitOpIdx> _writeLastStateSensUnitId;
 
 	/**
 	 * @brief Sets section times and section continuity from the given parameter provider

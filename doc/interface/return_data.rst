@@ -298,3 +298,11 @@ Group /input/return/unit_XXX
    **Type:** int  **Range:** :math:`\{0,1\}`
    =============  ==========================
 
+``WRITE_SENS_LAST_UNIT``
+
+   Write sensitivity state vector of this unit at last time point, including the state derivative vector (optional, defaults to 0)
+
+   =============  ==========================
+   **Type:** int  **Range:** :math:`\{0,1\}`
+   =============  ==========================
+

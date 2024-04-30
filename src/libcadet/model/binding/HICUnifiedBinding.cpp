@@ -41,6 +41,11 @@
 			{ "type": "ScalarComponentDependentParameter", "varName": "epsilon", "confName": "HICUNI_EPSILON"},
 			{ "type": "ScalarComponentDependentParameter", "varName": "nu", "confName": "HICUNI_NU"},
 			{ "type": "ScalarComponentDependentParameter", "varName": "qMax", "confName": "HICUNI_QMAX"}
+		],
+	"constantParameters":
+		[
+			{ "type": "ScalarParameter", "varName": "rho", "default": 0.00003348, "objName": "osmoticEffect", "confName": "HICUNI_RHO"}
+
 		]
 }
 </codegen>*/
@@ -56,6 +61,7 @@
  epsilon = Influence of bound protein concentration on bound protein activity
  nu = Number of binding sites
  qMax = Maximum binding capacity
+ rh0 = osmotic effect of salt concentration on water activity. Calculated as osmotic_coefficient * molar_weight_of_water * ion_number in
 */
 
 namespace cadet
@@ -164,10 +170,13 @@ namespace cadet
 				const ParamType beta0 = static_cast<ParamType>(_p->beta0);
 				const ParamType beta1 = static_cast<ParamType>(_p->beta1);
 
-				const double osmotic_coefficient = 0.93;  // for NaCl
-				const double ion_number = 2.0; // for NaCl
-				const double molar_weight_water = 18.0 / 1000.0 / 1000.0;  // kg per mmol
-				const CpStateType water_activity = exp(-yCp[0] * osmotic_coefficient * ion_number * molar_weight_water );
+				// For reference how rho is calculated:
+				//const double osmotic_coefficient = 0.93;  // for NaCl, average of Partanen and Partanen 2020, difference can be compensated with beta0 & beta1 (Jäpel Dissertation 2023)
+				//const double ion_number = 2.0; // for NaCl
+				//const double molar_weight_water = 18.0 / 1000.0 / 1000.0;  // in kg per mmol -> to match yCp[0] in mmol / L (kg)
+				//const double rho = osmotic_coefficient * ion_number * molar_weight_water
+
+				const CpStateParamType water_activity = exp(-yCp[0] * static_cast<ParamType>(_p->rho));
 
 				const CpStateParamType beta = beta0 * exp(beta1 * yCp[0]);
 
@@ -223,11 +232,9 @@ namespace cadet
 				const double beta1 = static_cast<double>(_p->beta1);
 
 				const double beta = beta0 * exp(beta1 * yCp[0]);
+				const double rho = static_cast<double>(_p->rho);
 
-				const double osmotic_coefficient = 0.93;  // for NaCl
-				const double ion_number = 2.0; // for NaCl
-				const double molar_weight_water = 18.0 / 1000.0 / 1000.0;  // kg per mmol
-				const double water_activity = exp(-yCp[0] * osmotic_coefficient * ion_number * molar_weight_water);
+				const double water_activity = exp(-yCp[0] * rho);
 
 				double qSum = 1.0;
 
@@ -259,9 +266,9 @@ namespace cadet
 					const double epsilon = static_cast<double>(_p->epsilon[i]);
 
 					// dres_i / dc_{p,0}
-					jac[-bndIdx - offsetCp] = kD * y[bndIdx] * (1 + epsilon * y[bndIdx])* (-osmotic_coefficient * ion_number * molar_weight_water) * nu * beta0 * (beta1 * yCp[0] + 1) *
-						exp(beta1 * yCp[0] - osmotic_coefficient * ion_number * molar_weight_water * nu * beta0 * exp(beta1 * yCp[0]) * yCp[0]) 
-						- kA * yCp[i] *pow(qSum, nu) * exp(kP * yCp[i] + kS * yCp[0]) * kS;
+					jac[-bndIdx - offsetCp] = kD * y[bndIdx] * (1 + epsilon * y[bndIdx]) * (-rho) * nu * beta0 * (beta1 * yCp[0] + 1) *
+						exp(beta1 * yCp[0] - rho * nu * beta0 * exp(beta1 * yCp[0]) * yCp[0])
+						- kA * yCp[i] * pow(qSum, nu) * exp(kP * yCp[i] + kS * yCp[0]) * kS;
 
 					// dres_i / dc_{p,i}
 					jac[i - bndIdx - offsetCp] = -kA * pow(qSum, nu) * exp(kP * yCp[i] + kS * yCp[0])

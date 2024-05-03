@@ -97,11 +97,8 @@ endforeach()
 
 # ---------------------------------------------------
 
-
-if(WIN32)
-	add_executable(testCAPIv1 "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" testCAPIv1.cpp)
-	target_include_directories(testCAPIv1 PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ThirdParty/json)
-endif()
+add_executable(testCAPIv1 "${CMAKE_CURRENT_BINARY_DIR}/Paths_$<CONFIG>.cpp" testCAPIv1.cpp)
+target_include_directories(testCAPIv1 PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ThirdParty/json)
 
 # ---------------------------------------------------
 

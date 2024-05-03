@@ -1,6 +1,21 @@
+
+#ifdef _WIN32
+	// Windows (x64 and x86)
+
+	#define NOMINMAX
+	#define _WINDOWS
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+#elif __unix__ || __linux__ || __APPLE__
+	// Linux and MacOS
+
+	#include <dlfcn.h>
+#endif
+
 #include <stdexcept>
 #include <stdint.h>
-#include <windows.h>
 #include <iostream>
 #include <memory>
 #include <functional>
@@ -25,36 +40,73 @@ void logHandler(const char* file, const char* func, const unsigned int line, int
 	std::cout << lvlStr << " [" << func << ":" << line << "] " << message << std::endl;
 }
 
-class LibLoader
-{
-public:
-	LibLoader(char const* path) : _hdLib(0)
-	{
-		_hdLib = LoadLibrary(path);
-		if (_hdLib)
-			std::cout << "Loaded library " << path << std::endl;
-	}
+#ifdef _WIN32
 
-	~LibLoader()
+	class LibLoader
 	{
-		if (_hdLib)
+	public:
+		LibLoader(char const* path) : _hdLib(0)
 		{
-			FreeLibrary(_hdLib);
-			std::cout << "Deleted library" << std::endl;
+			_hdLib = LoadLibrary(path);
+			if (_hdLib)
+				std::cout << "Loaded library " << path << std::endl;
 		}
-	}
 
-	bool isValid() { return _hdLib; }
+		~LibLoader()
+		{
+			if (_hdLib)
+			{
+				FreeLibrary(_hdLib);
+				std::cout << "Deleted library" << std::endl;
+			}
+		}
 
-	template <typename T> T load(char const* func)
+		bool isValid() { return _hdLib; }
+
+		template <typename T> T load(char const* func)
+		{
+			return reinterpret_cast<T>(GetProcAddress(_hdLib, func));
+		}
+
+	private:
+		HINSTANCE _hdLib;
+	};
+
+#elif __unix__ || __linux__ || __APPLE__
+
+	class LibLoader
 	{
-		return reinterpret_cast<T>(GetProcAddress(_hdLib, func));
-	}
+	public:
+		LibLoader(char const* path) : _hdLib(0)
+		{
+			_hdLib = dlopen(path, RTLD_LAZY);
+			if (_hdLib)
+				std::cout << "Loaded library " << path << std::endl;
+		}
 
-private:
-	HINSTANCE _hdLib;
-};
+		~LibLoader()
+		{
+			if (_hdLib)
+			{
+				if (dlclose(_hdLib) != 0)
+					std::cout << "Failed to delete library" << std::endl;
+				else
+					std::cout << "Deleted library" << std::endl;
+			}
+		}
 
+		bool isValid() { return _hdLib; }
+
+		template <typename T> T load(char const* func)
+		{
+			return reinterpret_cast<T>(dlsym(_hdLib, func));
+		}
+
+	private:
+		void* _hdLib;
+	};
+
+#endif
 
 json createColumnWithSMAJson(const std::string& uoType)
 {

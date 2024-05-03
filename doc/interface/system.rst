@@ -32,7 +32,7 @@ Group /input/model
    
 ``INIT_STATE_SENSY_XXX``
 
-   Number of unit operations in the system
+   Initial full time derivative state vector of the :math:`\texttt{XXX}` th sensitivity system (optional, can currently not be specified on unit operation level)
    
    ================  ==================================
    **Type:** double  **Length:** :math:`\texttt{NDOF}`
@@ -40,15 +40,7 @@ Group /input/model
    
 ``INIT_STATE_SENSYDOT_XXX``
 
-   Initial full state vector of the :math:`\texttt{XXX}` th sensitivity system (optional, unit operation specific initial data is ignored)
-   
-   ================  ==================================
-   **Type:** double  **Length:** :math:`\texttt{NDOF}`
-   ================  ==================================
-   
-``NUNITS``
-
-   Initial full time derivative state vector of the :math:`\texttt{XXX}` th sensitivity system (optional, unit operation specific initial data is ignored)
+   Initial full state vector of the :math:`\texttt{XXX}` th sensitivity system (optional, can currently not be specified on unit operation level)
    
    ================  ==================================
    **Type:** double  **Length:** :math:`\texttt{NDOF}`

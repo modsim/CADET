@@ -16,7 +16,7 @@ Group /input/return
    
 ``WRITE_SOLUTION_LAST``
 
-   Write full solution state vector at last time point (optional, defaults to 0)
+   Write full solution state vector at last time point, including the state derivative vector (optional, defaults to 0)
    
    =============  ==========================
    **Type:** int  **Range:** :math:`\{0,1\}`
@@ -24,7 +24,7 @@ Group /input/return
    
 ``WRITE_SENS_LAST``
 
-   Write full sensitivity state vectors at last time point (optional, defaults to 0)
+   Write full sensitivity state vectors at last time point, including the state derivative vector (optional, defaults to 0)
    
    =============  ==========================
    **Type:** int  **Range:** :math:`\{0,1\}`
@@ -292,8 +292,16 @@ Group /input/return/unit_XXX
    
 ``WRITE_SOLUTION_LAST_UNIT``
 
-   Write solution state vector of this unit at last time point
+   Write solution state vector of this unit at last time point, including the state derivative vector (optional, defaults to 0)
    
+   =============  ==========================
+   **Type:** int  **Range:** :math:`\{0,1\}`
+   =============  ==========================
+
+``WRITE_SENS_LAST_UNIT``
+
+   Write sensitivity state vector of this unit at last time point, including the state derivative vector (optional, defaults to 0)
+
    =============  ==========================
    **Type:** int  **Range:** :math:`\{0,1\}`
    =============  ==========================

@@ -21,6 +21,13 @@
 
 #include "common/Driver.hpp"
 
+
+#define CADET_XSTR(a) #a
+#define CADET_STR(a) CADET_XSTR(a)
+
+#define CADET_COMMA ,
+
+
 extern "C"
 {
 	struct cdtDriver
@@ -406,7 +413,524 @@ namespace v1
 		return cdtOK;
 	}
 
-	cdtResult getSolutionOutlet(cdtDriver* drv, int unitOpId, double const** time, double const** data, int* nTime, int* nPort, int* nComp)
+	cdtResult getNumParTypes(cdtDriver* drv, int unitOpId, int* nParTypes)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
+		if (!sysRec)
+		{
+			LOG(Error) << "System solution recorder not available";
+			return cdtError;
+		}
+
+		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
+		if (!unitRec)
+		{
+			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
+			return cdtErrorInvalidInputs;
+		}
+
+		if (nParTypes)
+			*nParTypes = unitRec->numParticleTypes();
+
+		return cdtOK;
+	}
+
+	cdtResult getNumSensitivities(cdtDriver* drv, int* nSens)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
+		if (!sysRec)
+		{
+			LOG(Error) << "System solution recorder not available";
+			return cdtError;
+		}
+
+		if (nSens)
+			*nSens = sysRec->numSensitivites();
+
+		return cdtOK;
+	}
+
+	InternalStorageUnitOpRecorder* getUnitRecorder(cdtDriver* drv, int unitOpId, double const** time, int* nTime, cdtResult& retCode)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+		{
+			retCode = cdtErrorInvalidInputs;
+			return nullptr;
+		}
+
+		InternalStorageSystemRecorder* const sysRec = realDrv->solution();
+		if (!sysRec)
+		{
+			LOG(Error) << "System solution recorder not available";
+			retCode = cdtError;
+			return nullptr;
+		}
+
+		if (nTime)
+			*nTime = sysRec->numDataPoints();
+		if (time)
+			*time = sysRec->time();
+
+		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
+		if (!unitRec)
+		{
+			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
+			retCode = cdtErrorInvalidInputs;
+			return nullptr;
+		}
+		return unitRec;
+	}
+
+
+	#define CADET_API_GET_INLET_OUTLET(TYPE, NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##TYPE(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nPort, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+	\
+			if (!unitRec->REC_CONFIG().store##TYPE) \
+			{ \
+				LOG(Error) << CADET_STR(TYPE)" of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+	\
+			if (nPort) \
+				*nPort = unitRec->num##TYPE##Ports(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+	\
+			return cdtOK; \
+		}
+
+
+	CADET_API_GET_INLET_OUTLET(Inlet, Solution, solutionConfig, inlet,,)
+	CADET_API_GET_INLET_OUTLET(Inlet, Sensitivity, sensitivityConfig, sensInlet, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_INLET_OUTLET(Outlet, Solution, solutionConfig, outlet,,)
+	CADET_API_GET_INLET_OUTLET(Outlet, Sensitivity, sensitivityConfig, sensOutlet, CADET_COMMA int sensIdx, sensIdx )
+
+	CADET_API_GET_INLET_OUTLET(Inlet, SolutionDerivative, solutionDotConfig, inletDot,,)
+	CADET_API_GET_INLET_OUTLET(Inlet, SensitivityDerivative, sensitivityDotConfig, sensInletDot, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_INLET_OUTLET(Outlet, SolutionDerivative, solutionDotConfig, outletDot,,)
+	CADET_API_GET_INLET_OUTLET(Outlet, SensitivityDerivative, sensitivityDotConfig, sensOutletDot, CADET_COMMA int sensIdx, sensIdx )
+
+
+	#define CADET_API_GET_BULK(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Bulk(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeBulk) \
+			{ \
+				LOG(Error) << "Bulk of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_BULK(Solution, solutionConfig, bulk,,)
+	CADET_API_GET_BULK(Sensitivity, sensitivityConfig, sensBulk, CADET_COMMA int sensIdx, sensIdx )
+	CADET_API_GET_BULK(SolutionDerivative, solutionDotConfig, bulkDot,,)
+	CADET_API_GET_BULK(SensitivityDerivative, sensitivityDotConfig, sensBulkDot, CADET_COMMA int sensIdx, sensIdx )
+
+
+	#define CADET_API_GET_PARTICLE(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Particle(cdtDriver* drv, int unitOpId SENS_IDX_SIG, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeParticle) \
+			{ \
+				LOG(Error) << "Particle of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nParShells) \
+				*nParShells = unitRec->numParticleShells(parType); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX parType); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_PARTICLE(Solution, solutionConfig, particle,,)
+	CADET_API_GET_PARTICLE(Sensitivity, sensitivityConfig, sensParticle, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+	CADET_API_GET_PARTICLE(SolutionDerivative, solutionDotConfig, particleDot,,)
+	CADET_API_GET_PARTICLE(SensitivityDerivative, sensitivityDotConfig, sensParticleDot, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+
+
+	#define CADET_API_GET_SOLID(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Solid(cdtDriver* drv, int unitOpId SENS_IDX_SIG, int parType, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParShells, int* nBound) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeOutlet) \
+			{ \
+				LOG(Error) << "Solid of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nParShells) \
+				*nParShells = unitRec->numParticleShells(parType); \
+			if (nBound) \
+				*nBound = unitRec->numBoundStates(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX parType ); \
+		\
+			return cdtOK; \
+		}
+
+
+	CADET_API_GET_SOLID(Solution, solutionConfig, solid,,)
+	CADET_API_GET_SOLID(Sensitivity, sensitivityConfig, sensSolid, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+	CADET_API_GET_SOLID(SolutionDerivative, solutionDotConfig, solidDot,,)
+	CADET_API_GET_SOLID(SensitivityDerivative, sensitivityDotConfig, sensSolidDot, CADET_COMMA int sensIdx, sensIdx CADET_COMMA )
+
+
+	#define CADET_API_GET_FLUX(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Flux(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime, int* nAxialCells, int* nRadialCells, int* nParType, int* nComp) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeFlux) \
+			{ \
+				LOG(Error) << "Flux of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+		\
+			if (nAxialCells) \
+				*nAxialCells = unitRec->numAxialCells(); \
+			if (nRadialCells) \
+				*nRadialCells = unitRec->numRadialCells(); \
+			if (nParType) \
+				*nParType = unitRec->numParticleTypes(); \
+			if (nComp) \
+				*nComp = unitRec->numComponents(); \
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_FLUX(Solution, solutionConfig, flux,,)
+	CADET_API_GET_FLUX(Sensitivity, sensitivityConfig, sensFlux, CADET_COMMA int sensIdx, sensIdx)
+	CADET_API_GET_FLUX(SolutionDerivative, solutionDotConfig, fluxDot,,)
+	CADET_API_GET_FLUX(SensitivityDerivative, sensitivityDotConfig, sensFluxDot, CADET_COMMA int sensIdx, sensIdx)
+
+
+
+	#define CADET_API_GET_VOLUME(NAME, REC_CONFIG, REC_QUERY, SENS_IDX_SIG, SENS_IDX) \
+		cdtResult get##NAME##Volume(cdtDriver* drv, int unitOpId SENS_IDX_SIG, double const** time, double const** data, int* nTime) \
+		{ \
+			cdtResult retCode = cdtOK; \
+			InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, time, nTime, retCode); \
+			if (!unitRec) \
+				return retCode; \
+		\
+			if (!unitRec->REC_CONFIG().storeVolume) \
+			{ \
+				LOG(Error) << "Volume of unit " << unitOpId << " not recorded"; \
+				return cdtDataNotStored; \
+			} \
+		\
+			if (data) \
+				*data = unitRec->REC_QUERY( SENS_IDX ); \
+		\
+			return cdtOK; \
+		}
+
+	CADET_API_GET_VOLUME(Solution, solutionConfig, volume,,)
+	CADET_API_GET_VOLUME(Sensitivity, sensitivityConfig, sensVolume, CADET_COMMA int sensIdx, sensIdx)
+	CADET_API_GET_VOLUME(SolutionDerivative, solutionDotConfig, volumeDot,,)
+	CADET_API_GET_VOLUME(SensitivityDerivative, sensitivityDotConfig, sensVolumeDot, CADET_COMMA int sensIdx, sensIdx)
+
+
+	cdtResult getLastState(cdtDriver* drv, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		if (state)
+			*state = sim->getLastSolution(len);
+
+		if (nStates)
+			*nStates = len;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastStateTimeDerivative(cdtDriver* drv, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		if (state)
+			*state = sim->getLastSolutionDerivative(len);
+
+		if (nStates)
+			*nStates = len;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastUnitState(cdtDriver* drv, int unitOpId, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		unsigned int sliceStart;
+		unsigned int sliceEnd;
+		std::tie(sliceStart, sliceEnd) = sim->model()->getModelStateOffsets(unitOpId);
+
+		if (state)
+			*state = sim->getLastSolution(len) + sliceStart;
+
+		if (nStates)
+			*nStates = sliceEnd - sliceStart;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastUnitStateTimeDerivative(cdtDriver* drv, int unitOpId, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		unsigned int sliceStart;
+		unsigned int sliceEnd;
+		std::tie(sliceStart, sliceEnd) = sim->model()->getModelStateOffsets(unitOpId);
+
+		if (state)
+			*state = sim->getLastSolutionDerivative(len) + sliceStart;
+
+		if (nStates)
+			*nStates = sliceEnd - sliceStart;
+
+		return cdtOK;
+	}
+
+
+	cdtResult getLastSensitivityState(cdtDriver* drv, int sensIdx, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		const std::vector<double const*> lastY = sim->getLastSensitivities(len);
+		if ((lastY.size() <= sensIdx) || (sensIdx < 0))
+			return cdtErrorInvalidInputs;
+
+		if (state)
+			*state = lastY[sensIdx];
+
+		if (nStates)
+			*nStates = len;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastSensitivityStateTimeDerivative(cdtDriver* drv, int sensIdx, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		const std::vector<double const*> lastY = sim->getLastSensitivityDerivatives(len);
+		if ((lastY.size() <= sensIdx) || (sensIdx < 0))
+			return cdtErrorInvalidInputs;
+
+		if (state)
+			*state = lastY[sensIdx];
+
+		if (nStates)
+			*nStates = len;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastSensitivityUnitState(cdtDriver* drv, int sensIdx, int unitOpId, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		unsigned int sliceStart;
+		unsigned int sliceEnd;
+		std::tie(sliceStart, sliceEnd) = sim->model()->getModelStateOffsets(unitOpId);
+
+		const std::vector<double const*> lastY = sim->getLastSensitivities(len);
+		if ((lastY.size() <= sensIdx) || (sensIdx < 0))
+			return cdtErrorInvalidInputs;
+
+		if (state)
+			*state = lastY[sensIdx] + sliceStart;
+
+		if (nStates)
+			*nStates = sliceEnd - sliceStart;
+
+		return cdtOK;
+	}
+
+	cdtResult getLastSensitivityUnitStateTimeDerivative(cdtDriver* drv, int sensIdx, int unitOpId, double const** state, int* nStates)
+	{
+		Driver* const realDrv = drv->driver;
+		if (!realDrv)
+			return cdtErrorInvalidInputs;
+
+		cadet::ISimulator* const sim = realDrv->simulator();
+		unsigned int len = 0;
+
+		unsigned int sliceStart;
+		unsigned int sliceEnd;
+		std::tie(sliceStart, sliceEnd) = sim->model()->getModelStateOffsets(unitOpId);
+
+		const std::vector<double const*> lastY = sim->getLastSensitivityDerivatives(len);
+		if ((lastY.size() <= sensIdx) || (sensIdx < 0))
+			return cdtErrorInvalidInputs;
+
+		if (state)
+			*state = lastY[sensIdx] + sliceStart;
+
+		if (nStates)
+			*nStates = sliceEnd - sliceStart;
+
+		return cdtOK;
+	}
+
+	cdtResult getPrimaryCoordinates(cdtDriver* drv, int unitOpId, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		if (nCoords)
+			*nCoords = unitRec->numAxialCells();
+		if (data)
+			*data = unitRec->primaryCoordinates();
+		return cdtOK;
+	}
+
+	cdtResult getSecondaryCoordinates(cdtDriver* drv, int unitOpId, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		if (nCoords)
+			*nCoords = unitRec->numRadialCells();
+		if (data)
+			*data = unitRec->secondaryCoordinates();
+		return cdtOK;
+	}
+
+	cdtResult getParticleCoordinates(cdtDriver* drv, int unitOpId, int parType, double const** data, int* nCoords)
+	{
+		cdtResult retCode = cdtOK;
+		InternalStorageUnitOpRecorder* const unitRec = getUnitRecorder(drv, unitOpId, nullptr, nullptr, retCode);
+		if (!unitRec)
+			return retCode;
+
+		if (!unitRec->storeCoordinates())
+		{
+			LOG(Error) << "Coordinates of unit " << unitOpId << " not recorded";
+			return cdtDataNotStored;
+		}
+
+		int offset = 0;
+		for (int i = 0; i < parType; ++i)
+			offset += unitRec->numParticleShells(i);
+
+		if (nCoords)
+			*nCoords = unitRec->numParticleShells(parType);
+		if (data)
+			*data = unitRec->particleCoordinates() + offset;
+		return cdtOK;
+	}
+
+	cdtResult getSolutionTimes(cdtDriver* drv, double const** time, int* nTime)
 	{
 		Driver* const realDrv = drv->driver;
 		if (!realDrv)
@@ -423,27 +947,6 @@ namespace v1
 			*nTime = sysRec->numDataPoints();
 		if (time)
 			*time = sysRec->time();
-
-		InternalStorageUnitOpRecorder* const unitRec = sysRec->unitOperation(unitOpId);
-		if (!unitRec)
-		{
-			LOG(Error) << "Solution recorder for unit ID " << unitOpId << " not found";
-			return cdtErrorInvalidInputs;
-		}
-
-		if (!unitRec->solutionConfig().storeOutlet)
-		{
-			LOG(Error) << "Outlet of unit " << unitOpId << " not recorded";
-			return cdtError;
-		}
-
-		if (nPort)
-			*nPort = unitRec->numOutletPorts();
-		if (nComp)
-			*nComp = unitRec->numComponents();
-		if (data)
-			*data = unitRec->outlet();
-
 		return cdtOK;
 	}
 
@@ -465,8 +968,51 @@ extern "C"
 		ptr->createDriver = &cadet::api::v1::createDriver;
 		ptr->deleteDriver = &cadet::api::v1::deleteDriver;
 		ptr->runSimulation = &cadet::api::v1::runSimulation;
+		ptr->getNumParTypes = &cadet::api::v1::getNumParTypes;
+		ptr->getNumSensitivities = &cadet::api::v1::getNumSensitivities;
+		ptr->getSolutionInlet = &cadet::api::v1::getSolutionInlet;
 		ptr->getSolutionOutlet = &cadet::api::v1::getSolutionOutlet;
+		ptr->getSolutionBulk = &cadet::api::v1::getSolutionBulk;
+		ptr->getSolutionParticle = &cadet::api::v1::getSolutionParticle;
+		ptr->getSolutionSolid = &cadet::api::v1::getSolutionSolid;
+		ptr->getSolutionFlux = &cadet::api::v1::getSolutionFlux;
+		ptr->getSolutionVolume = &cadet::api::v1::getSolutionVolume;
+		ptr->getSolutionDerivativeInlet = &cadet::api::v1::getSolutionDerivativeInlet;
+		ptr->getSolutionDerivativeOutlet = &cadet::api::v1::getSolutionDerivativeOutlet;
+		ptr->getSolutionDerivativeBulk = &cadet::api::v1::getSolutionDerivativeBulk;
+		ptr->getSolutionDerivativeParticle = &cadet::api::v1::getSolutionDerivativeParticle;
+		ptr->getSolutionDerivativeSolid = &cadet::api::v1::getSolutionDerivativeSolid;
+		ptr->getSolutionDerivativeFlux = &cadet::api::v1::getSolutionDerivativeFlux;
+		ptr->getSolutionDerivativeVolume = &cadet::api::v1::getSolutionDerivativeVolume;
+		ptr->getSensitivityInlet = &cadet::api::v1::getSensitivityInlet;
+		ptr->getSensitivityOutlet = &cadet::api::v1::getSensitivityOutlet;
+		ptr->getSensitivityBulk = &cadet::api::v1::getSensitivityBulk;
+		ptr->getSensitivityParticle = &cadet::api::v1::getSensitivityParticle;
+		ptr->getSensitivitySolid = &cadet::api::v1::getSensitivitySolid;
+		ptr->getSensitivityFlux = &cadet::api::v1::getSensitivityFlux;
+		ptr->getSensitivityVolume = &cadet::api::v1::getSensitivityVolume;
+		ptr->getSensitivityDerivativeInlet = &cadet::api::v1::getSensitivityDerivativeInlet;
+		ptr->getSensitivityDerivativeOutlet = &cadet::api::v1::getSensitivityDerivativeOutlet;
+		ptr->getSensitivityDerivativeBulk = &cadet::api::v1::getSensitivityDerivativeBulk;
+		ptr->getSensitivityDerivativeParticle = &cadet::api::v1::getSensitivityDerivativeParticle;
+		ptr->getSensitivityDerivativeSolid = &cadet::api::v1::getSensitivityDerivativeSolid;
+		ptr->getSensitivityDerivativeFlux = &cadet::api::v1::getSensitivityDerivativeFlux;
+		ptr->getSensitivityDerivativeVolume = &cadet::api::v1::getSensitivityDerivativeVolume;
+		ptr->getLastState = &cadet::api::v1::getLastState;
+		ptr->getLastStateTimeDerivative = &cadet::api::v1::getLastStateTimeDerivative;
+		ptr->getLastUnitState = &cadet::api::v1::getLastUnitState;
+		ptr->getLastUnitStateTimeDerivative = &cadet::api::v1::getLastUnitStateTimeDerivative;
+		ptr->getLastSensitivityState = &cadet::api::v1::getLastSensitivityState;
+		ptr->getLastSensitivityStateTimeDerivative = &cadet::api::v1::getLastSensitivityStateTimeDerivative;
+		ptr->getLastSensitivityUnitState = &cadet::api::v1::getLastSensitivityUnitState;
+		ptr->getLastSensitivityUnitStateTimeDerivative = &cadet::api::v1::getLastSensitivityUnitStateTimeDerivative;
+		ptr->getPrimaryCoordinates = &cadet::api::v1::getPrimaryCoordinates;
+		ptr->getSecondaryCoordinates = &cadet::api::v1::getSecondaryCoordinates;
+		ptr->getParticleCoordinates = &cadet::api::v1::getParticleCoordinates;
+		ptr->getSolutionTimes = &cadet::api::v1::getSolutionTimes;
+
 		return cdtOK;
 	}
 
 }
+

@@ -45,7 +45,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 		if ((pId.reaction == ReactionIndep) && _singleRadiusInitC)
 		{
 			_sensParams.insert(&_initC[pId.component]);
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				_initC[r * _disc.nComp + pId.component].setADValue(adDirection, adValue);
 
 			return 1;
@@ -69,7 +69,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 			if ((pId.name == hashString("INIT_CP")) && (pId.section == SectionIndep) && (pId.boundState == BoundStateIndep) && (pId.particleType == ParTypeIndep) && (pId.component != CompIndep) && (pId.reaction == ReactionIndep))
 			{
 				_sensParams.insert(&_initCp[pId.component]);
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (unsigned int t = 0; t < _disc.nParType; ++t)
 						_initCp[r * _disc.nComp * _disc.nParType + t * _disc.nComp + pId.component].setADValue(adDirection, adValue);
@@ -98,7 +98,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 			if ((pId.name == hashString("INIT_Q")) && (pId.section == SectionIndep) && (pId.boundState != BoundStateIndep) && (pId.particleType == ParTypeIndep) && (pId.component != CompIndep) && (pId.reaction == ReactionIndep))
 			{
 				_sensParams.insert(&_initQ[_disc.nBoundBeforeType[0] + _disc.boundOffset[pId.component] + pId.boundState]);
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (unsigned int t = 0; t < _disc.nParType; ++t)
 						_initQ[r * _disc.strideBound[_disc.nParType] + _disc.nBoundBeforeType[t] + _disc.boundOffset[t * _disc.nComp + pId.component] + pId.boundState].setADValue(adDirection, adValue);
@@ -129,7 +129,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 			if ((pId.name == hashString("INIT_CP")) && (pId.section == SectionIndep) && (pId.boundState == BoundStateIndep) && (pId.particleType != ParTypeIndep) && (pId.component != CompIndep) && (pId.reaction == ReactionIndep))
 			{
 				_sensParams.insert(&_initCp[pId.particleType * _disc.nComp + pId.component]);
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 					_initCp[r * _disc.nComp * _disc.nParType + pId.particleType * _disc.nComp + pId.component].setADValue(adDirection, adValue);
 
 				return 1;
@@ -155,7 +155,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 			if ((pId.name == hashString("INIT_Q")) && (pId.section == SectionIndep) && (pId.boundState != BoundStateIndep) && (pId.particleType != ParTypeIndep) && (pId.component != CompIndep) && (pId.reaction == ReactionIndep))
 			{
 				_sensParams.insert(&_initQ[_disc.nBoundBeforeType[pId.particleType] + _disc.boundOffset[pId.particleType * _disc.nComp + pId.component] + pId.boundState]);
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 					_initQ[r * _disc.strideBound[_disc.nParType] + _disc.nBoundBeforeType[pId.particleType] + _disc.boundOffset[pId.particleType * _disc.nComp + pId.component] + pId.boundState].setADValue(adDirection, adValue);
 
 				return 1;
@@ -188,7 +188,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 			if (checkSens && !contains(_sensParams, &_initC[pId.component]))
 				return -1;
 
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				_initC[r * _disc.nComp + pId.component].setValue(val);
 
 			return 1;
@@ -214,7 +214,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 				if (checkSens && !contains(_sensParams, &_initCp[pId.component]))
 					return -1;
 
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (unsigned int t = 0; t < _disc.nParType; ++t)
 						_initCp[r * _disc.nComp * _disc.nParType + t * _disc.nComp + pId.component].setValue(val);
@@ -248,7 +248,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 				if (checkSens && !contains(_sensParams, &_initQ[_disc.nBoundBeforeType[0] + _disc.boundOffset[pId.component] + pId.boundState]))
 					return -1;
 
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				{
 					for (unsigned int t = 0; t < _disc.nParType; ++t)
 						_initQ[r * _disc.strideBound[_disc.nParType] + _disc.nBoundBeforeType[t] + _disc.boundOffset[t * _disc.nComp + pId.component] + pId.boundState].setValue(val);
@@ -284,7 +284,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 				if (checkSens && !contains(_sensParams, &_initCp[pId.particleType * _disc.nComp + pId.component]))
 					return -1;
 
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 					_initCp[r * _disc.nComp * _disc.nParType + pId.particleType * _disc.nComp + pId.component].setValue(val);
 
 				return 1;
@@ -314,7 +314,7 @@ int LumpedRateModelWithPoresDG2D::multiplexInitialConditions(const cadet::Parame
 				if (checkSens && !contains(_sensParams, &_initQ[_disc.nBoundBeforeType[pId.particleType] + _disc.boundOffset[pId.particleType * _disc.nComp + pId.component] + pId.boundState]))
 					return -1;
 
-				for (unsigned int r = 0; r < _disc.nRad; ++r)
+				for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 					_initQ[r * _disc.strideBound[_disc.nParType] + _disc.nBoundBeforeType[pId.particleType] + _disc.boundOffset[pId.particleType * _disc.nComp + pId.component] + pId.boundState].setValue(val);
 
 				return 1;
@@ -364,10 +364,10 @@ void LumpedRateModelWithPoresDG2D::applyInitialCondition(const SimulationState& 
 	double* const stateYbulk = simState.vecStateY + idxr.offsetC();
 
 	// Loop over axial cells
-	for (unsigned int col = 0; col < _disc.nCol; ++col)
+	for (unsigned int col = 0; col < _disc.axNPoints; ++col)
 	{
 		// Loop over radial cells
-		for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+		for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
 		{
 			// Loop over components in cell
 			for (unsigned comp = 0; comp < _disc.nComp; ++comp)
@@ -378,9 +378,9 @@ void LumpedRateModelWithPoresDG2D::applyInitialCondition(const SimulationState& 
 	// Loop over particles
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		for (unsigned int col = 0; col < _disc.nCol * _disc.nRad; ++col)
+		for (unsigned int col = 0; col < _disc.axNPoints * _disc.radNPoints; ++col)
 		{
-			const unsigned int rad = col % _disc.nRad;
+			const unsigned int rad = col % _disc.radNPoints;
 			const unsigned int offset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{col});
 
 			// Loop over particle cells
@@ -419,16 +419,16 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 	}
 
 	const std::vector<double> initC = paramProvider.getDoubleArray("INIT_C");
-	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.nRad);
+	_singleRadiusInitC = (initC.size() < _disc.nComp * _disc.radNPoints);
 
-	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.nRad) && !_singleRadiusInitC))
+	if (((initC.size() < _disc.nComp) && _singleRadiusInitC) || ((initC.size() < _disc.nComp * _disc.radNPoints) && !_singleRadiusInitC))
 		throw InvalidParameterException("INIT_C does not contain enough values for all components (and radial zones)");
 
 	if (!_singleRadiusInitC)
-		ad::copyToAd(initC.data(), _initC.data(), _disc.nComp * _disc.nRad);
+		ad::copyToAd(initC.data(), _initC.data(), _disc.nComp * _disc.radNPoints);
 	else
 	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
+		for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			ad::copyToAd(initC.data(), _initC.data() + r * _disc.nComp, _disc.nComp);
 	}
 
@@ -441,21 +441,21 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 
 		if (
 			((initCp.size() < _disc.nComp * _disc.nParType) && !_singleBinding && _singleRadiusInitCp) || ((initCp.size() < _disc.nComp) && _singleBinding && _singleRadiusInitCp)
-				|| ((initCp.size() < _disc.nComp * _disc.nRad) && _singleBinding && !_singleRadiusInitCp)
-				|| ((initCp.size() < _disc.nComp * _disc.nParType * _disc.nRad) && !_singleBinding && !_singleRadiusInitCp)
+				|| ((initCp.size() < _disc.nComp * _disc.radNPoints) && _singleBinding && !_singleRadiusInitCp)
+				|| ((initCp.size() < _disc.nComp * _disc.nParType * _disc.radNPoints) && !_singleBinding && !_singleRadiusInitCp)
 			)
 			throw InvalidParameterException("INIT_CP does not contain enough values for all components");
 
 		if (!_singleBinding && !_singleRadiusInitCp)
-			ad::copyToAd(initCp.data(), _initCp.data(), _disc.nComp * _disc.nParType * _disc.nRad);
+			ad::copyToAd(initCp.data(), _initCp.data(), _disc.nComp * _disc.nParType * _disc.radNPoints);
 		else if (!_singleBinding && _singleRadiusInitCp)
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 				ad::copyToAd(initCp.data(), _initCp.data() + r * _disc.nComp * _disc.nParType, _disc.nComp * _disc.nParType);
 		}
 		else if (_singleBinding && !_singleRadiusInitCp)
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			{
 				for (unsigned int t = 0; t < _disc.nParType; ++t)
 					ad::copyToAd(initCp.data() + r * _disc.nComp, _initCp.data() + t * _disc.nComp + r * _disc.nComp * _disc.nParType, _disc.nComp);
@@ -463,7 +463,7 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 		}
 		else if (_singleBinding && _singleRadiusInitCp)
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			{
 				for (unsigned int t = 0; t < _disc.nParType; ++t)
 					ad::copyToAd(initCp.data(), _initCp.data() + t * _disc.nComp + r * _disc.nComp * _disc.nParType, _disc.nComp);
@@ -476,7 +476,7 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 
 		if (!_singleRadiusInitCp)
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			{
 				for (unsigned int t = 0; t < _disc.nParType; ++t)
 					ad::copyToAd(initC.data() + r * _disc.nComp, _initCp.data() + t * _disc.nComp + r * _disc.nComp * _disc.nParType, _disc.nComp);
@@ -484,7 +484,7 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 		}
 		else
 		{
-			for (unsigned int r = 0; r < _disc.nRad; ++r)
+			for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			{
 				for (unsigned int t = 0; t < _disc.nParType; ++t)
 					ad::copyToAd(initC.data(), _initCp.data() + t * _disc.nComp + r * _disc.nComp * _disc.nParType, _disc.nComp);
@@ -504,21 +504,21 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 
 	if ((_disc.strideBound[_disc.nParType] > 0) && (
 		((initQ.size() < _disc.strideBound[_disc.nParType]) && !_singleBinding && _singleRadiusInitQ) || ((initQ.size() < _disc.strideBound[0]) && _singleBinding && _singleRadiusInitQ)
-			|| ((initQ.size() < _disc.strideBound[0] * _disc.nRad) && _singleBinding && !_singleRadiusInitQ)
-			|| ((initQ.size() < _disc.strideBound[_disc.nParType] * _disc.nRad) && !_singleBinding && !_singleRadiusInitQ)
+			|| ((initQ.size() < _disc.strideBound[0] * _disc.radNPoints) && _singleBinding && !_singleRadiusInitQ)
+			|| ((initQ.size() < _disc.strideBound[_disc.nParType] * _disc.radNPoints) && !_singleBinding && !_singleRadiusInitQ)
 		))
 		throw InvalidParameterException("INIT_Q does not contain enough values for all bound states");
 
 	if (!_singleBinding && !_singleRadiusInitQ)
-		ad::copyToAd(initQ.data(), _initQ.data(), _disc.strideBound[_disc.nParType] * _disc.nRad);
+		ad::copyToAd(initQ.data(), _initQ.data(), _disc.strideBound[_disc.nParType] * _disc.radNPoints);
 	else if (!_singleBinding && _singleRadiusInitQ)
 	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
+		for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 			ad::copyToAd(initQ.data(), _initQ.data() + r * _disc.strideBound[_disc.nParType], _disc.strideBound[_disc.nParType]);
 	}
 	else if (_singleBinding && !_singleRadiusInitQ)
 	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
+		for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 		{
 			for (unsigned int t = 0; t < _disc.nParType; ++t)
 				ad::copyToAd(initQ.data() + r * _disc.strideBound[0], _initQ.data() + _disc.nBoundBeforeType[t] + r * _disc.strideBound[_disc.nParType], _disc.strideBound[t]);
@@ -526,7 +526,7 @@ void LumpedRateModelWithPoresDG2D::readInitialCondition(IParameterProvider& para
 	}
 	else if (_singleBinding && _singleRadiusInitQ)
 	{
-		for (unsigned int r = 0; r < _disc.nRad; ++r)
+		for (unsigned int r = 0; r < _disc.radNPoints; ++r)
 		{
 			for (unsigned int t = 0; t < _disc.nParType; ++t)
 				ad::copyToAd(initQ.data(), _initQ.data() + _disc.nBoundBeforeType[t] + r * _disc.strideBound[_disc.nParType], _disc.strideBound[t]);
@@ -626,21 +626,21 @@ void LumpedRateModelWithPoresDG2D::consistentInitialState(const SimulationTime& 
 		//Problem capturing variables here
 #ifdef CADET_PARALLELIZE
 		BENCH_SCOPE(_timerConsistentInitPar);
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad), [&](std::size_t pblk)
+		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints), [&](std::size_t pblk)
 #else
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 #endif
 		{
 			LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
 			// Reuse memory of band matrix for dense matrix
-			linalg::DenseMatrixView fullJacobianMatrix(_jacPdisc[type * _disc.nCol * _disc.nRad + pblk].data(), nullptr, mask.len, mask.len);
+			linalg::DenseMatrixView fullJacobianMatrix(_jacPdisc[type * _disc.axNPoints * _disc.radNPoints + pblk].data(), nullptr, mask.len, mask.len);
 
 			// Midpoint of current column cell (z, rho coordinate) - needed in externally dependent adsorption kinetic
-			const unsigned int axialCell = pblk / _disc.nRad;
-//			const unsigned int radialCell = pblk % _disc.nRad;
+			const unsigned int axialCell = pblk / _disc.radNPoints;
+//			const unsigned int radialCell = pblk % _disc.radNPoints;
 //			const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-			const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.nCol);
+			const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
 
 			// Get workspace memory
 			BufferedArray<double> nonlinMemBuffer = tlmAlloc.array<double>(_nonlinearSolver->workspaceSize(probSize));
@@ -661,7 +661,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialState(const SimulationTime& 
 			BufferedArray<double> conservedQuantsBuffer = tlmAlloc.array<double>(numActiveComp);
 			double* const conservedQuants = static_cast<double*>(conservedQuantsBuffer);
 
-			linalg::DenseMatrixView jacobianMatrix(jacobianMem, _jacPdisc[type * _disc.nCol * _disc.nRad + pblk].pivot(), probSize, probSize);
+			linalg::DenseMatrixView jacobianMatrix(jacobianMem, _jacPdisc[type * _disc.axNPoints * _disc.radNPoints + pblk].pivot(), probSize, probSize);
 			const parts::cell::CellParameters cellResParams
 				{
 					_disc.nComp,
@@ -729,16 +729,16 @@ void LumpedRateModelWithPoresDG2D::consistentInitialState(const SimulationTime& 
 
 						// Compare
 						const double diff = ad::compareDenseJacobianWithBandedAd(
-							localAdRes - localOffsetInParticle, localOffsetInParticle, adJac.adDirOffset, _jacP[type * _disc.nCol * _disc.nRad].lowerBandwidth(),
-							_jacP[type * _disc.nCol * _disc.nRad].lowerBandwidth(), _jacP[type * _disc.nCol * _disc.nRad].upperBandwidth(), fullJacobianMatrix
+							localAdRes - localOffsetInParticle, localOffsetInParticle, adJac.adDirOffset, _jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth(),
+							_jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth(), _jacP[type * _disc.axNPoints * _disc.radNPoints].upperBandwidth(), fullJacobianMatrix
 						);
 						LOG(Debug) << "MaxDiff: " << diff;
 #endif
 
 						// Extract Jacobian from AD
 						ad::extractDenseJacobianFromBandedAd(
-							localAdRes - localOffsetInParticle, localOffsetInParticle, adJac.adDirOffset, _jacP[type * _disc.nCol * _disc.nRad].lowerBandwidth(),
-							_jacP[type * _disc.nCol * _disc.nRad].lowerBandwidth(), _jacP[type * _disc.nCol * _disc.nRad].upperBandwidth(), fullJacobianMatrix
+							localAdRes - localOffsetInParticle, localOffsetInParticle, adJac.adDirOffset, _jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth(),
+							_jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth(), _jacP[type * _disc.axNPoints * _disc.radNPoints].upperBandwidth(), fullJacobianMatrix
 						);
 
 						// Extract Jacobian from full Jacobian
@@ -885,7 +885,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialState(const SimulationTime& 
 
 	// Reset j_f to 0.0
 	double* const jf = vecStateY + idxr.offsetJf();
-	std::fill(jf, jf + _disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType, 0.0);
+	std::fill(jf, jf + _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType, 0.0);
 
 	solveForFluxes(vecStateY, idxr);
 }
@@ -957,19 +957,19 @@ void LumpedRateModelWithPoresDG2D::consistentInitialTimeDerivative(const Simulat
 	// Process the particle blocks
 #ifdef CADET_PARALLELIZE
 	BENCH_START(_timerConsistentInitPar);
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-	for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 	{
-		const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-		const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+		const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+		const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 		// Midpoint of current column cell (z, rho coordinate) - needed in externally dependent adsorption kinetic
-		const unsigned int axialCell = par / _disc.nRad;
-		const unsigned int radialCell = par % _disc.nRad;
+		const unsigned int axialCell = par / _disc.radNPoints;
+		const unsigned int radialCell = par % _disc.radNPoints;
 		const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.nCol);
+		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
 
 		// Assemble
 		linalg::FactorizableBandMatrix& fbm = _jacPdisc[pblk];
@@ -1043,7 +1043,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialTimeDerivative(const Simulat
 
 	// Reset \dot{j}_f to 0.0
 	double* const jfDot = vecStateYdot + idxr.offsetJf();
-	std::fill(jfDot, jfDot + _disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType, 0.0);
+	std::fill(jfDot, jfDot + _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType, 0.0);
 
 	solveForFluxes(vecStateYdot, idxr);
 }
@@ -1105,7 +1105,7 @@ void LumpedRateModelWithPoresDG2D::leanConsistentInitialState(const SimulationTi
 
 	// Reset j_f to 0.0
 	double* const jf = vecStateY + idxr.offsetJf();
-	std::fill(jf, jf + _disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType, 0.0);
+	std::fill(jf, jf + _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType, 0.0);
 
 	solveForFluxes(vecStateY, idxr);
 }
@@ -1176,14 +1176,14 @@ void LumpedRateModelWithPoresDG2D::leanConsistentInitialTimeDerivative(double t,
 	// instead of the *negative* one. Fortunately, we are dealing with linear systems,
 	// which means that we can just negate the solution.
 	double* const yDotSlice = vecStateYdot + idxr.offsetC();
-	for (unsigned int i = 0; i < _disc.nCol * _disc.nRad * _disc.nComp; ++i)
+	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints * _disc.nComp; ++i)
 		yDotSlice[i] = -resSlice[i];
 
 	// Step 2b: Solve for fluxes j_f by backward substitution
 
 	// Reset \dot{j}_f to 0.0
 	double* const jfDot = vecStateYdot + idxr.offsetJf();
-	std::fill(jfDot, jfDot + _disc.nComp * _disc.nCol * _disc.nRad * _disc.nParType, 0.0);
+	std::fill(jfDot, jfDot + _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType, 0.0);
 
 	solveForFluxes(vecStateYdot, idxr);
 }
@@ -1196,10 +1196,10 @@ void LumpedRateModelWithPoresDG2D::initializeSensitivityStates(const std::vector
 		double* const stateYbulk = vecSensY[param] + idxr.offsetC();
 
 		// Loop over axial cells
-		for (unsigned int col = 0; col < _disc.nCol; ++col)
+		for (unsigned int col = 0; col < _disc.axNPoints; ++col)
 		{
 			// Loop over radial cells
-			for (unsigned int rad = 0; rad < _disc.nRad; ++rad)
+			for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
 			{
 				// Loop over components in cell
 				for (unsigned comp = 0; comp < _disc.nComp; ++comp)
@@ -1210,9 +1210,9 @@ void LumpedRateModelWithPoresDG2D::initializeSensitivityStates(const std::vector
 		// Loop over particles
 		for (unsigned int type = 0; type < _disc.nParType; ++type)
 		{
-			for (unsigned int col = 0; col < _disc.nCol * _disc.nRad; ++col)
+			for (unsigned int col = 0; col < _disc.axNPoints * _disc.radNPoints; ++col)
 			{
-				const unsigned int rad = col % _disc.nRad;
+				const unsigned int rad = col % _disc.radNPoints;
 				const unsigned int offset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{col});
 
 				// Loop over particle cells
@@ -1301,7 +1301,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialSensitivity(const Simulation
 		double* const sensYdot = vecSensYdot[param];
 
 		// Copy parameter derivative dF / dp from AD and negate it
-		for (unsigned int i = _disc.nComp * _disc.nRad; i < numDofs(); ++i)
+		for (unsigned int i = _disc.nComp * _disc.radNPoints; i < numDofs(); ++i)
 			sensYdot[i] = -adRes[i].getADValue(param);
 
 		// Step 1: Solve algebraic equations
@@ -1318,13 +1318,13 @@ void LumpedRateModelWithPoresDG2D::consistentInitialSensitivity(const Simulation
 
 #ifdef CADET_PARALLELIZE
 			BENCH_SCOPE(_timerConsistentInitPar);
-			tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad), [&](std::size_t pblk)
+			tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints), [&](std::size_t pblk)
 #else
-			for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 #endif
 			{
 				// Reuse memory of band matrix for dense matrix
-				linalg::DenseMatrixView jacobianMatrix(_jacPdisc[type * _disc.nCol * _disc.nRad + pblk].data(), _jacPdisc[type * _disc.nCol * _disc.nRad + pblk].pivot(), probSize, probSize);
+				linalg::DenseMatrixView jacobianMatrix(_jacPdisc[type * _disc.axNPoints * _disc.radNPoints + pblk].data(), _jacPdisc[type * _disc.axNPoints * _disc.radNPoints + pblk].pivot(), probSize, probSize);
 
 				// Get workspace memory
 				LinearBufferAllocator tlmAlloc = threadLocalMem.get();
@@ -1345,7 +1345,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialSensitivity(const Simulation
 
 					// Extract subproblem Jacobian from full Jacobian
 					jacobianMatrix.setAll(0.0);
-					linalg::copyMatrixSubset(_jacP[type * _disc.nCol * _disc.nRad + pblk], mask, mask, jacRowOffset, 0, jacobianMatrix);
+					linalg::copyMatrixSubset(_jacP[type * _disc.axNPoints * _disc.radNPoints + pblk], mask, mask, jacRowOffset, 0, jacobianMatrix);
 
 					// Construct right hand side
 					linalg::selectVectorSubset(sensYdot + localQOffset, mask, rhs);
@@ -1355,7 +1355,7 @@ void LumpedRateModelWithPoresDG2D::consistentInitialSensitivity(const Simulation
 					linalg::fillVectorSubset(maskedMultiplier + _disc.nComp, mask, 0.0);
 
 					// Assemble right hand side
-					_jacP[type * _disc.nCol * _disc.nRad + pblk].submatrixMultiplyVector(maskedMultiplier, jacRowOffset, -static_cast<int>(_disc.nComp), _disc.strideBound[type], idxr.strideParShell(type), rhsUnmasked);
+					_jacP[type * _disc.axNPoints * _disc.radNPoints + pblk].submatrixMultiplyVector(maskedMultiplier, jacRowOffset, -static_cast<int>(_disc.nComp), _disc.strideBound[type], idxr.strideParShell(type), rhsUnmasked);
 					linalg::vectorSubsetAdd(rhsUnmasked, mask, -1.0, 1.0, rhs);
 
 					// Precondition
@@ -1392,13 +1392,13 @@ void LumpedRateModelWithPoresDG2D::consistentInitialSensitivity(const Simulation
 		// Process the particle blocks
 #ifdef CADET_PARALLELIZE
 		BENCH_START(_timerConsistentInitPar);
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 		{
-			const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-			const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 			// Assemble
 			linalg::FactorizableBandMatrix& fbm = _jacPdisc[pblk];
@@ -1585,8 +1585,8 @@ void LumpedRateModelWithPoresDG2D::solveForFluxes(double* const vecState, const 
 	_jacFC.multiplySubtract(vecState + idxr.offsetC(), jf);
 	for (unsigned int type = 0; type < _disc.nParType; ++type)
 	{
-		linalg::DoubleSparseMatrix const* const jacFPtype = _jacFP + type * _disc.nCol * _disc.nRad;
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad; ++pblk)
+		linalg::DoubleSparseMatrix const* const jacFPtype = _jacFP + type * _disc.axNPoints * _disc.radNPoints;
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
 			jacFPtype[pblk].multiplySubtract(vecState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), jf);
 	}
 }

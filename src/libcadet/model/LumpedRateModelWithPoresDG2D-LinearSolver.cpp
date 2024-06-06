@@ -145,13 +145,13 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 #endif
 		{
 #ifdef CADET_PARALLELIZE
-			tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+			tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-			for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 			{
-				const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-				const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+				const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+				const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 				// Assemble
 				assembleDiscretizedJacobianParticleBlock(type, par, alpha, idxr);
@@ -205,13 +205,13 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 #endif
 	{
 #ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 		{
-			const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-			const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 			const bool result = _jacPdisc[pblk].solve(rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}));
 			if (cadet_unlikely(!result))
 			{
@@ -232,9 +232,9 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 
 		for (unsigned int type = 0; type < _disc.nParType; ++type)
 		{
-			for (unsigned int par = 0; par < _disc.nCol * _disc.nRad; ++par)
+			for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
 			{
-				_jacFP[type * _disc.nCol * _disc.nRad + par].multiplySubtract(rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), rhs + idxr.offsetJf());
+				_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplySubtract(rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), rhs + idxr.offsetJf());
 			}
 		}
 
@@ -287,7 +287,7 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 		}
 
 		// Compute rhs_0 = y_0 - J_0^{-1} * J_{0,f} * y_f = y_0 - tempState_0
-		for (unsigned int i = 0; i < _disc.nCol * _disc.nRad * _disc.nComp; ++i)
+		for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints * _disc.nComp; ++i)
 			rhsCol[i] -= localCol[i];
 	} CADET_PARNODE_END;
 
@@ -296,13 +296,13 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 #endif
 	{
 #ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 		{
-			const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-			const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 			double* const localPar = _tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
 			double* const rhsPar = rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
@@ -380,7 +380,7 @@ int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, d
 	BENCH_SCOPE(_timerMatVec);
 
 	// Copy x over to result z, which corresponds to the application of the identity matrix
-	std::copy(x, x + _disc.nCol * _disc.nComp * _disc.nRad * _disc.nParType, z);
+	std::copy(x, x + _disc.axNPoints * _disc.nComp * _disc.radNPoints * _disc.nParType, z);
 
 	Indexer idxr(_disc);
 	std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
@@ -412,13 +412,13 @@ int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, d
 	{
 		// Handle particle blocks
 #ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nCol * _disc.nRad * _disc.nParType), [&](std::size_t pblk)
+		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
 #else
-		for (unsigned int pblk = 0; pblk < _disc.nCol * _disc.nRad * _disc.nParType; ++pblk)
+		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
 #endif
 		{
-			const unsigned int type = pblk / (_disc.nCol * _disc.nRad);
-			const unsigned int par = pblk % (_disc.nCol * _disc.nRad);
+			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
 
 			// Get this thread's temporary memory block
 			double* const tmp = _tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
@@ -443,10 +443,10 @@ int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, d
 
 		for (unsigned int type = 0; type < _disc.nParType; ++type)
 		{
-			for (unsigned int par = 0; par < _disc.nCol * _disc.nRad; ++par)
+			for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
 			{
 				// Apply J_{f,i} and subtract results from z
-				_jacFP[type * _disc.nCol * _disc.nRad + par].multiplySubtract(_tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), z);
+				_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplySubtract(_tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), z);
 			}
 		}
 	} CADET_PARNODE_END;
@@ -486,8 +486,8 @@ int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, d
  */
 void LumpedRateModelWithPoresDG2D::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
 {
-	linalg::FactorizableBandMatrix& fbm = _jacPdisc[_disc.nCol * _disc.nRad * parType + pblk];
-	const linalg::BandMatrix& bm = _jacP[_disc.nCol * _disc.nRad * parType + pblk];
+	linalg::FactorizableBandMatrix& fbm = _jacPdisc[_disc.axNPoints * _disc.radNPoints * parType + pblk];
+	const linalg::BandMatrix& bm = _jacP[_disc.axNPoints * _disc.radNPoints * parType + pblk];
 
 	// Copy normal matrix over to factorizable matrix
 	fbm.copyOver(bm);

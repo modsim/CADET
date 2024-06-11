@@ -178,6 +178,7 @@ protected:
 	Eigen::MatrixXd _axLiftM; //!< Axial lifting matrix
 	Eigen::MatrixXd _radLiftM; //!< Radial lifting matrix
 	// main eq. operators
+	Eigen::MatrixXd* _radLiftMCyl; //!< Radial lifting matrices with radial metrics for each radial element
 	Eigen::MatrixXd* _transMrCyl; //!< Radial transposed mass matrix with cylinder metrics
 	Eigen::MatrixXd* _invTransMrCyl; //!< Radial inverted transposed mass matrix with cylinder metrics
 	Eigen::MatrixXd _radInterpolationM; //!< Polynomial interpolation matrix from (radial) LGL nodes to quadrature nodes

@@ -38,7 +38,6 @@ namespace cadet
 
 namespace model
 {
-
 /**
  * @brief Computes the solution of the linear system involving the system Jacobian
  * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x = b \f]
@@ -116,358 +115,58 @@ int LumpedRateModelWithPoresDG2D::linearSolve(double t, double alpha, double out
 
 	Indexer idxr(_disc);
 
-	// ==== Step 1: Factorize diagonal Jacobian blocks
+	Eigen::Map<Eigen::VectorXd> r(rhs, numDofs()); // map rhs to Eigen object
+
+	// ==== Step 1: Factorize global Jacobian (without inlet DOFs)
 
 	// Factorize partial Jacobians only if required
-
-#ifdef CADET_PARALLELIZE
-	tbb::flow::graph g;
-#else
 	if (_factorizeJacobian)
 	{
-#endif
+		// Assemble and factorize discretized bulk Jacobian
+		assembleDiscretizedGlobalJacobian(alpha, idxr);
 
-#ifdef CADET_PARALLELIZE
-		node_t A(g, [&](msg_t)
-#endif
-		{
-			// Assemble and factorize discretized bulk Jacobian
-			const bool result = _convDispOp.assembleAndFactorizeDiscretizedJacobian(alpha);
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Factorize() failed for bulk block";
-			}
-		} CADET_PARNODE_END;
+		_globalSolver.factorize(_globalJacDisc);
 
-	// Process the particle blocks
-#ifdef CADET_PARALLELIZE
-		node_t B(g, [&](msg_t)
-#endif
-		{
-#ifdef CADET_PARALLELIZE
-			tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
-#else
-			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
-#endif
-			{
-				const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
-				const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
+		if (cadet_unlikely(_globalSolver.info() != Eigen::Success)) {
+			LOG(Error) << "Factorize() failed";
+		}
 
-				// Assemble
-				assembleDiscretizedJacobianParticleBlock(type, par, alpha, idxr);
-
-				// Factorize
-				const bool result = _jacPdisc[pblk].factorize();
-				if (cadet_unlikely(!result))
-				{
-					{
-						LOG(Error) << "Factorize() failed for par block " << pblk;
-					}
-				}
-			} CADET_PARFOR_END;
-		} CADET_PARNODE_END;
-
-#ifndef CADET_PARALLELIZE
 		// Do not factorize again at next call without changed Jacobians
 		_factorizeJacobian = false;
-	} // if (_factorizeJacobian)
-#endif
+	}
 
 	// ====== Step 1.5: Solve J c_uo = b_uo - A * c_in = b_uo - A*b_in
 
 	// rhs is passed twice but due to the values in jacA the writes happen to a different area of the rhs than the reads.
-#ifdef CADET_PARALLELIZE
-	node_t C(g, [&](msg_t)
-#endif
-	{
-		_jacInlet.multiplySubtract(rhs, rhs + idxr.offsetC());
-	} CADET_PARNODE_END;
 
-	// ==== Step 2: Solve diagonal Jacobian blocks J_i to get y_i = J_i^{-1} b_i
+	// Handle inlet DOFs:
+	// todo inlet Jacobian
+	//// Inlet at z = 0 for forward flow, at z = L for backward flow.
+	//unsigned int offInlet = (_convDispOp.forwardFlow()) ? 0 : (_disc.nCol - 1u) * idxr.strideColCell();
+
+	//for (int comp = 0; comp < _disc.nComp; comp++)
+	//{
+	//	for (int node = 0; node < (_disc.exactInt ? _disc.nNodes : 1); node++)
+	//	{
+	//		r[idxr.offsetC() + offInlet + comp * idxr.strideColComp() + node * idxr.strideColNode()] += _jacInlet(node, 0) * r[comp];
+	//	}
+	//}
+
+	// ==== Step 2: Solve system of pure DOFs
 	// The result is stored in rhs (in-place solution)
 
+	r.segment(idxr.offsetC(), numPureDofs()) = _globalSolver.solve(r.segment(idxr.offsetC(), numPureDofs()));
 
-	// Threads that are done with solving the bulk column blocks can proceed
-	// to solving the particle blocks
-#ifdef CADET_PARALLELIZE
-	node_t D(g, [&](msg_t)
-#endif
+	if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
 	{
-		const bool result = _convDispOp.solveDiscretizedJacobian(rhs + idxr.offsetC(), weight + idxr.offsetC(), nullptr, outerTol);
-		if (cadet_unlikely(!result))
-		{
-			LOG(Error) << "Solve() failed for bulk block";
-		}
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	node_t E(g, [&](msg_t)
-#endif
-	{
-#ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
-#else
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
-#endif
-		{
-			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
-			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
-			const bool result = _jacPdisc[pblk].solve(rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}));
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Solve() failed for par block " << pblk;
-			}
-		} CADET_PARFOR_END;
-	} CADET_PARNODE_END;
-
-	// Solve last row of L with backwards substitution: y_f = b_f - \sum_{i=0}^{N_z} J_{f,i} y_i
-	// Note that we cannot easily parallelize this loop since the results of the sparse
-	// matrix-vector multiplications are added in-place to rhs. We would need one copy of rhs
-	// for each thread and later fuse them together (reduction statement).
-#ifdef CADET_PARALLELIZE
-	node_t F(g, [&](msg_t)
-#endif
-	{
-		_jacFC.multiplySubtract(rhs + idxr.offsetC(), rhs + idxr.offsetJf());
-
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
-		{
-			for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
-			{
-				_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplySubtract(rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), rhs + idxr.offsetJf());
-			}
-		}
-
-		// Now, rhs contains the full intermediate solution y = L^{-1} b
-
-		// Initialize temporary storage by copying over the fluxes
-		// Note that the rest of _tempState is zeroed out in schurComplementMatrixVector()
-		std::copy(rhs + idxr.offsetJf(), rhs + numDofs(), _tempState + idxr.offsetJf());
-
-		// ==== Step 3: Solve Schur-complement to get x_f = S^{-1} y_f
-		// Column and particle parts remain unchanged.
-		// The only thing to be done is the iterative (and approximate)
-		// solution of the Schur complement system:
-		//     S * x_f = y_f
-
-		// Note that rhs is updated in-place with the solution of the Schur-complement
-		// The temporary storage is only needed to hold the right hand side of the Schur-complement
-		const double tolerance = std::sqrt(static_cast<double>(_gmres.matrixSize())) * outerTol * _schurSafety;
-
-		BENCH_START(_timerGmres);
-		_gmres.solve(tolerance, weight + idxr.offsetJf(), _tempState + idxr.offsetJf(), rhs + idxr.offsetJf());
-		BENCH_STOP(_timerGmres);
-
-		// Remove temporary results that are leftovers from schurComplementMatrixVector()
-		std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
-
-		// At this point, rhs contains the intermediate solution [y_0, ..., y_{N_z}, x_f]
-
-		// ==== Step 4: Solve U * x = y by backward substitution
-		// The fluxes are already solved and remain unchanged
-
-		// Compute tempState_0 = J_{0,f} * y_f
-		_jacCF.multiplyAdd(rhs + idxr.offsetJf(), _tempState + idxr.offsetC());
-	} CADET_PARNODE_END;
-
-	// Threads that are done with solving the bulk column blocks can proceed
-	// to solving the particle blocks
-#ifdef CADET_PARALLELIZE
-	node_t G(g, [&](msg_t)
-#endif
-	{
-		double* const localCol = _tempState + idxr.offsetC();
-		double* const rhsCol = rhs + idxr.offsetC();
-
-		// Apply J_0^{-1} to tempState_0
-		const bool result = _convDispOp.solveDiscretizedJacobian(localCol, weight + idxr.offsetC(), nullptr, outerTol);
-		if (cadet_unlikely(!result))
-		{
-			LOG(Error) << "Solve() failed for bulk block";
-		}
-
-		// Compute rhs_0 = y_0 - J_0^{-1} * J_{0,f} * y_f = y_0 - tempState_0
-		for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints * _disc.nComp; ++i)
-			rhsCol[i] -= localCol[i];
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	node_t H(g, [&](msg_t)
-#endif
-	{
-#ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
-#else
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
-#endif
-		{
-			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
-			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
-
-			double* const localPar = _tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
-			double* const rhsPar = rhs + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
-
-			// Compute tempState_i = J_{i,f} * y_f
-			_jacPF[pblk].multiplyAdd(rhs + idxr.offsetJf(), localPar);
-			// Apply J_i^{-1} to tempState_i
-			const bool result = _jacPdisc[pblk].solve(localPar);
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Solve() failed for par block " << pblk;
-			}
-
-			// Compute rhs_i = y_i - J_i^{-1} * J_{i,f} * y_f = y_i - tempState_i
-			for (int i = 0; i < idxr.strideParBlock(type); ++i)
-				rhsPar[i] -= localPar[i];
-		} CADET_PARFOR_END;
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	// Create TBB dependency graph
-	if (_factorizeJacobian)
-	{
-		make_edge(A, C);
-		make_edge(B, C);
+		LOG(Error) << "Solve() failed";
 	}
-
-	make_edge(C, D);
-	make_edge(C, E);
-	make_edge(D, F);
-	make_edge(E, F);
-	make_edge(F, G);
-	make_edge(F, H);
-
-	// Start the graph running
-	if (_factorizeJacobian)
-	{
-		// Do not factorize again at next call without changed Jacobians
-		_factorizeJacobian = false;
-
-		A.try_put(tbb::flow::continue_msg());
-		B.try_put(tbb::flow::continue_msg());
-	}
-	else
-		C.try_put(tbb::flow::continue_msg());
-
-	// Wait for results
-	g.wait_for_all();
-#endif
 
 	// The full solution is now stored in rhs
 	return 0;
 }
-
 /**
- * @brief Performs the matrix-vector product @f$ z = Sx @f$ with the Schur-complement @f$ S @f$ from the Jacobian
- * @details The Schur-complement @f$ S @f$ is given by
- *          @f[ \begin{align}
-				S &= J_f - J_{f,0} \, J_0^{-1} \, J_{0,f} - \sum_{p=1}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}} \\
-				  &= I - \sum_{p=0}^{N_z}{J_{f,p} \, J_p^{-1} \, J_{p,f}},
-			\end{align} @f]
- *          where @f$ J_f = I @f$ is the identity matrix and the off-diagonal blocks @f$ J_{i,f} @f$
- *          and @f$ J_{f,i} @f$ for @f$ i = 0, \dots, N_{z} @f$ are sparse.
- *
- *          The matrix-vector multiplication is executed in parallel as follows:
- *              -# Compute @f$ J_{f,i} \, J_i^{-1} \, J_{i,f} @f$ independently (in parallel with respect to index @f$ i @f$)
- *              -# Subtract the result from @f$ z @f$
- *
- * @param [in] x Vector @f$ x @f$ the matrix @f$ S @f$ is multiplied with
- * @param [out] z Result of the matrix-vector multiplication
- * @return @c 0 if successful, any other value in case of failure
- */
-int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, double* z) const
-{
-	BENCH_SCOPE(_timerMatVec);
-
-	// Copy x over to result z, which corresponds to the application of the identity matrix
-	std::copy(x, x + _disc.axNPoints * _disc.nComp * _disc.radNPoints * _disc.nParType, z);
-
-	Indexer idxr(_disc);
-	std::fill(_tempState + idxr.offsetC(), _tempState + idxr.offsetJf(), 0.0);
-
-#ifdef CADET_PARALLELIZE
-	tbb::flow::graph g;
-#endif
-
-	// Solve bulk column block first
-
-	// Apply J_{0,f}
-	_jacCF.multiplyAdd(x, _tempState + idxr.offsetC());
-
-#ifdef CADET_PARALLELIZE
-	node_t A(g, [&](msg_t)
-#endif
-	{
-		// Apply J_0^{-1}
-		const bool result = _convDispOp.solveDiscretizedJacobian(_tempState + idxr.offsetC(), nullptr, nullptr, 0.0);
-		if (cadet_unlikely(!result))
-		{
-			LOG(Error) << "Solve() failed for bulk block";
-		}
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	node_t B(g, [&](msg_t)
-#endif
-	{
-		// Handle particle blocks
-#ifdef CADET_PARALLELIZE
-		tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType), [&](std::size_t pblk)
-#else
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
-#endif
-		{
-			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
-			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
-
-			// Get this thread's temporary memory block
-			double* const tmp = _tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
-
-			// Apply J_{i,f}
-			_jacPF[pblk].multiplyAdd(x, tmp);
-			// Apply J_{i}^{-1}
-			const bool result = _jacPdisc[pblk].solve(tmp);
-			if (cadet_unlikely(!result))
-			{
-				LOG(Error) << "Solve() failed for par block " << pblk;
-			}
-		} CADET_PARFOR_END;
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	node_t C(g, [&](msg_t)
-#endif
-	{
-		// Apply J_{f,0} and subtract results from z
-		_jacFC.multiplySubtract(_tempState + idxr.offsetC(), z);
-
-		for (unsigned int type = 0; type < _disc.nParType; ++type)
-		{
-			for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
-			{
-				// Apply J_{f,i} and subtract results from z
-				_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplySubtract(_tempState + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), z);
-			}
-		}
-	} CADET_PARNODE_END;
-
-#ifdef CADET_PARALLELIZE
-	make_edge(A, C);
-	make_edge(B, C);
-
-	// Start the graph running
-	A.try_put(tbb::flow::continue_msg());
-	B.try_put(tbb::flow::continue_msg());
-
-	// Wait for results
-	g.wait_for_all();
-#endif
-
-	return 0;
-}
-
-/**
- * @brief Assembles a particle Jacobian block @f$ J_i @f$ (@f$ i > 0 @f$) of the time-discretized equations
+ * @brief Assembles bulk Jacobian @f$ J_i @f$ (@f$ i > 0 @f$) of the time-discretized equations
  * @details The system \f[ \left( \frac{\partial F}{\partial y} + \alpha \frac{\partial F}{\partial \dot{y}} \right) x = b \f]
  *          has to be solved. The system Jacobian of the original equations,
  *          \f[ \frac{\partial F}{\partial y}, \f]
@@ -479,28 +178,26 @@ int LumpedRateModelWithPoresDG2D::schurComplementMatrixVector(double const* x, d
  *          when a BDF method is used. The time integrator needs to solve this equation for @f$ y_0 @f$, which requires
  *          the solution of the linear system mentioned above (@f$ \alpha_0 = \alpha @f$ given in @p alpha).
  *
- * @param [in] parType Index of the particle type
- * @param [in] pblk Index of the particle block within a type
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
- * @param [in] idxr Indexer
  */
-void LumpedRateModelWithPoresDG2D::assembleDiscretizedJacobianParticleBlock(unsigned int parType, unsigned int pblk, double alpha, const Indexer& idxr)
-{
-	linalg::FactorizableBandMatrix& fbm = _jacPdisc[_disc.axNPoints * _disc.radNPoints * parType + pblk];
-	const linalg::BandMatrix& bm = _jacP[_disc.axNPoints * _disc.radNPoints * parType + pblk];
+void LumpedRateModelWithPoresDG2D::assembleDiscretizedGlobalJacobian(double alpha, Indexer idxr) {
 
-	// Copy normal matrix over to factorizable matrix
-	fbm.copyOver(bm);
+	// set to static (per section) jacobian
+	_globalJacDisc = _globalJac;
+
+	// add time derivative to bulk jacobian
+	_convDispOp.addTimeDerivativeToJacobian(alpha, _globalJacDisc);
 
 	// Add time derivatives to particle shells
-	linalg::FactorizableBandMatrix::RowIterator jac = fbm.row(0);
-	for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
-	{
-		// Mobile and stationary phase (advances jac accordingly)
-		addTimeDerivativeToJacobianParticleShell(jac, idxr, alpha, parType);
+	for (unsigned int parType = 0; parType < _disc.nParType; parType++) {
+		linalg::BandedEigenSparseRowIterator jac(_globalJacDisc, idxr.offsetCp(ParticleTypeIndex{ parType }) - idxr.offsetC());
+		for (unsigned int j = 0; j < _disc.nBulkPoints; ++j)
+		{
+			// Mobile and solid phase (advances jac accordingly)
+			addTimeDerivativeToJacobianParticleBlock(jac, idxr, alpha, parType);
+		}
 	}
 }
-
 /**
  * @brief Adds Jacobian @f$ \frac{\partial F}{\partial \dot{y}} @f$ to bead rows of system Jacobian
  * @details Actually adds @f$ \alpha \frac{\partial F}{\partial \dot{y}} @f$, which is useful
@@ -511,13 +208,41 @@ void LumpedRateModelWithPoresDG2D::assembleDiscretizedJacobianParticleBlock(unsi
  * @param [in] alpha Value of \f$ \alpha \f$ (arises from BDF time discretization)
  * @param [in] parType Index of the particle type
  */
-void LumpedRateModelWithPoresDG2D::addTimeDerivativeToJacobianParticleShell(linalg::FactorizableBandMatrix::RowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
+void LumpedRateModelWithPoresDG2D::addTimeDerivativeToJacobianParticleBlock(linalg::BandedEigenSparseRowIterator& jac, const Indexer& idxr, double alpha, unsigned int parType)
 {
-	parts::cell::addTimeDerivativeToJacobianParticleShell<linalg::FactorizableBandMatrix::RowIterator, true>(jac, alpha, static_cast<double>(_parPorosity[parType]), _disc.nComp, _disc.nBound + _disc.nComp * parType,
-		_poreAccessFactor.data() + _disc.nComp * parType, _disc.strideBound[parType], _disc.boundOffset + _disc.nComp * parType, _binding[parType]->reactionQuasiStationarity());
+	// Mobile phase
+	for (int comp = 0; comp < static_cast<int>(_disc.nComp); ++comp, ++jac)
+	{
+		// Add derivative with respect to dc_p / dt to Jacobian
+		jac[0] += alpha;
+
+		const double invBetaP = (1.0 - static_cast<double>(_parPorosity[parType])) / (static_cast<double>(_poreAccessFactor[parType * _disc.nComp + comp]) * static_cast<double>(_parPorosity[parType]));
+
+		// Add derivative with respect to dq / dt to Jacobian
+		const int nBound = static_cast<int>(_disc.nBound[parType * _disc.nComp + comp]);
+		for (int i = 0; i < nBound; ++i)
+		{
+			// Index explanation:
+			//   -comp -> go back to beginning of liquid phase
+			//   + strideParLiquid() skip to solid phase
+			//   + offsetBoundComp() jump to component (skips all bound states of previous components)
+			//   + i go to current bound state
+			jac[idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{ parType }, ComponentIndex{ static_cast<unsigned int>(comp) }) + i] += alpha * invBetaP;
+		}
+	}
+
+	// Solid phase
+	int const* const qsReaction = _binding[parType]->reactionQuasiStationarity();
+	for (unsigned int bnd = 0; bnd < _disc.strideBound[parType]; ++bnd, ++jac)
+	{
+		// Add derivative with respect to dynamic states to Jacobian
+		if (qsReaction[bnd])
+			continue;
+
+		// Add derivative with respect to dq / dt to Jacobian
+		jac[0] += alpha;
+	}
 }
 
-
 }  // namespace model
-
 }  // namespace cadet

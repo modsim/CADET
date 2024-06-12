@@ -22,12 +22,8 @@
 #include "model/ReactionModel.hpp"
 #include "model/parts/BindingCellKernel.hpp"
 #include "SimulationTypes.hpp"
-#include "linalg/DenseMatrix.hpp"
-#include "linalg/BandMatrix.hpp"
 #include "linalg/Norms.hpp"
 
-#include "Stencil.hpp"
-#include "Weno.hpp"
 #include "AdUtils.hpp"
 #include "SensParamUtil.hpp"
 
@@ -324,16 +320,8 @@ constexpr double SurfVolRatioSphere = 3.0;
 constexpr double SurfVolRatioCylinder = 2.0;
 constexpr double SurfVolRatioSlab = 1.0;
 
-int schurComplementMultiplierDPFR2D(void* userData, double const* x, double* z)
-{
-	LumpedRateModelWithPoresDG2D* const dpfr = static_cast<LumpedRateModelWithPoresDG2D*>(userData);
-	return dpfr->schurComplementMatrixVector(x, z);
-}
-
-
 LumpedRateModelWithPoresDG2D::LumpedRateModelWithPoresDG2D(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx),
-	_dynReactionBulk(nullptr), _jacP(nullptr), _jacPdisc(nullptr), _jacPF(nullptr), _jacFP(nullptr), _jacInlet(),
-	_analyticJac(true), _jacobianAdDirs(0), _factorizeJacobian(false), _tempState(nullptr),
+	_dynReactionBulk(nullptr), _jacInlet(),	_analyticJac(true), _jacobianAdDirs(0), _factorizeJacobian(false), _tempState(nullptr),
 	_initC(0), _singleRadiusInitC(true), _initCp(0), _singleRadiusInitCp(true), _initQ(0), _singleRadiusInitQ(true), _initState(0), _initStateDot(0)
 {
 }
@@ -344,15 +332,7 @@ LumpedRateModelWithPoresDG2D::~LumpedRateModelWithPoresDG2D() CADET_NOEXCEPT
 
 	delete _dynReactionBulk;
 
-	delete[] _jacPF;
-	delete[] _jacFP;
-
-	delete[] _jacP;
-	delete[] _jacPdisc;
-
-	delete[] _disc.nParCell;
 	delete[] _disc.parTypeOffset;
-	delete[] _disc.nParCellsBeforeType;
 	delete[] _disc.nBound;
 	delete[] _disc.boundOffset;
 	delete[] _disc.strideBound;
@@ -361,21 +341,19 @@ LumpedRateModelWithPoresDG2D::~LumpedRateModelWithPoresDG2D() CADET_NOEXCEPT
 
 unsigned int LumpedRateModelWithPoresDG2D::numDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp * nRad
-	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
+	// Column bulk DOFs: axNPoints * radNPoints * nComp
+	// Particle DOFs: axNPoints * radNPoints * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nParCell shells for each particle type
-	// Flux DOFs: nCol * nComp * nRad * nParType (as many as column bulk DOFs)
 	// Inlet DOFs: nComp * nRad
-	return _disc.axNPoints * _disc.radNPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType] + _disc.nComp * _disc.radNPoints;
+	return _disc.axNPoints * _disc.radNPoints * _disc.nComp + _disc.parTypeOffset[_disc.nParType] + _disc.nComp * _disc.radNPoints;
 }
 
 unsigned int LumpedRateModelWithPoresDG2D::numPureDofs() const CADET_NOEXCEPT
 {
-	// Column bulk DOFs: nCol * nComp * nRad
-	// Particle DOFs: nCol * nRad * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
+	// Column bulk DOFs: axNPoints * radNPoints * nComp
+	// Particle DOFs: axNPoints * radNPoints * nParType particles each having nComp (liquid phase) + sum boundStates (solid phase) DOFs
 	//                in each shell; there are nParCell shells for each particle type
-	// Flux DOFs: nCol * nComp * nRad * nParType (as many as column bulk DOFs)
-	return _disc.axNPoints * _disc.radNPoints * (_disc.nComp * (1 + _disc.nParType)) + _disc.parTypeOffset[_disc.nParType];
+	return _disc.axNPoints * _disc.radNPoints * _disc.nComp + _disc.parTypeOffset[_disc.nParType];
 }
 
 
@@ -395,51 +373,36 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
 
-	paramProvider.pushScope("discretization");
-
-	_disc.axNPoints = paramProvider.getInt("NCOL");
-	_disc.radNPoints = paramProvider.getInt("NRAD");
-
-	const std::vector<int> nParCell = paramProvider.getIntArray("NPAR");
-
-	const std::vector<int> nBound = paramProvider.getIntArray("NBOUND");
+	std::vector<int> nBound;
+	nBound = paramProvider.getIntArray("NBOUND");
 	if (nBound.size() < _disc.nComp)
 		throw InvalidParameterException("Field NBOUND contains too few elements (NCOMP = " + std::to_string(_disc.nComp) + " required)");
 
+	if (nBound.size() % _disc.nComp != 0)
+		throw InvalidParameterException("Field NBOUND must have a size divisible by NCOMP (" + std::to_string(_disc.nComp) + ")");
+
 	if (paramProvider.exists("NPARTYPE"))
+	{
 		_disc.nParType = paramProvider.getInt("NPARTYPE");
+		_disc.nBound = new unsigned int[_disc.nComp * _disc.nParType];
+		if (nBound.size() < _disc.nComp * _disc.nParType)
+		{
+			// Multiplex number of bound states to all particle types
+			for (unsigned int i = 0; i < _disc.nParType; ++i)
+				std::copy_n(nBound.begin(), _disc.nComp, _disc.nBound + i * _disc.nComp);
+		}
+		else
+			std::copy_n(nBound.begin(), _disc.nComp * _disc.nParType, _disc.nBound);
+	}
 	else
 	{
 		// Infer number of particle types
-		_disc.nParType = std::max(nBound.size() / _disc.nComp, nParCell.size());
-	}
-
-	if ((nParCell.size() > 1) && (nParCell.size() < _disc.nParType))
-		throw InvalidParameterException("Field NPAR must have 1 or NPARTYPE (" + std::to_string(_disc.nParType) + ") entries");
-
-	_disc.nParCell = new unsigned int[_disc.nParType];
-	if (nParCell.size() < _disc.nParType)
-	{
-		// Multiplex number of particle shells to all particle types
-		for (unsigned int i = 0; i < _disc.nParType; ++i)
-			std::fill(_disc.nParCell, _disc.nParCell + _disc.nParType, nParCell[0]);
-	}
-	else
-		std::copy_n(nParCell.begin(), _disc.nParType, _disc.nParCell);
-
-	if ((nBound.size() > _disc.nComp) && (nBound.size() < _disc.nComp * _disc.nParType))
-		throw InvalidParameterException("Field NBOUND must have NCOMP (" + std::to_string(_disc.nComp) + ") or NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ") entries");
-
-	_disc.nBound = new unsigned int[_disc.nComp * _disc.nParType];
-	if (nBound.size() < _disc.nComp * _disc.nParType)
-	{
-		// Multiplex number of bound states to all particle types
-		for (unsigned int i = 0; i < _disc.nParType; ++i)
-			std::copy_n(nBound.begin(), _disc.nComp, _disc.nBound + i * _disc.nComp);
-	}
-	else
+		_disc.nParType = nBound.size() / _disc.nComp;
+		_disc.nBound = new unsigned int[_disc.nComp * _disc.nParType];
 		std::copy_n(nBound.begin(), _disc.nComp * _disc.nParType, _disc.nBound);
+	}
 
+	// Precompute offsets and total number of bound states (DOFs in solid phase)
 	const unsigned int nTotalBound = std::accumulate(_disc.nBound, _disc.nBound + _disc.nComp * _disc.nParType, 0u);
 
 	// Precompute offsets and total number of bound states (DOFs in solid phase)
@@ -466,75 +429,13 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 
 	// Precompute offsets of particle type DOFs
 	_disc.parTypeOffset = new unsigned int[_disc.nParType + 1];
-	_disc.nParCellsBeforeType = new unsigned int[_disc.nParType + 1];
 	_disc.parTypeOffset[0] = 0;
-	_disc.nParCellsBeforeType[0] = 0;
-	unsigned int nTotalParCells = 0;
 	for (unsigned int j = 1; j < _disc.nParType + 1; ++j)
 	{
-		_disc.parTypeOffset[j] = _disc.parTypeOffset[j-1] + (_disc.nComp + _disc.strideBound[j-1]) * _disc.nParCell[j-1] * _disc.axNPoints * _disc.radNPoints;
-		_disc.nParCellsBeforeType[j] = _disc.nParCellsBeforeType[j-1] + _disc.nParCell[j-1];
-		nTotalParCells += _disc.nParCell[j-1];
-	}
-	_disc.nParCellsBeforeType[_disc.nParType] = nTotalParCells;
-
-	// Configure particle discretization
-	_parCellSize.resize(nTotalParCells);
-	_parCenterRadius.resize(nTotalParCells);
-	_parOuterSurfAreaPerVolume.resize(nTotalParCells);
-	_parInnerSurfAreaPerVolume.resize(nTotalParCells);
-
-	// Read particle discretization mode and default to "EQUIDISTANT_PAR"
-	_parDiscType = std::vector<ParticleDiscretizationMode>(_disc.nParType, ParticleDiscretizationMode::Equidistant);
-	std::vector<std::string> pdt = paramProvider.getStringArray("PAR_DISC_TYPE");
-	if ((pdt.size() == 1) && (_disc.nParType > 1))
-	{
-		// Multiplex using first value
-		pdt.resize(_disc.nParType, pdt[0]);
-	}
-	else if (pdt.size() < _disc.nParType)
-		throw InvalidParameterException("Field PAR_DISC_TYPE contains too few elements (" + std::to_string(_disc.nParType) + " required)");
-
-	for (unsigned int i = 0; i < _disc.nParType; ++i)
-	{
-		if (pdt[i] == "EQUIVOLUME_PAR")
-			_parDiscType[i] = ParticleDiscretizationMode::Equivolume;
-		else if (pdt[i] == "USER_DEFINED_PAR")
-			_parDiscType[i] = ParticleDiscretizationMode::UserDefined;
+		_disc.parTypeOffset[j] = _disc.parTypeOffset[j - 1] + (_disc.nComp + _disc.strideBound[j - 1]) * _disc.nBulkPoints;
 	}
 
-	// Read particle geometry and default to "SPHERICAL"
-	_parGeomSurfToVol = std::vector<double>(_disc.nParType, SurfVolRatioSphere);
-	if (paramProvider.exists("PAR_GEOM"))
-	{
-		std::vector<std::string> pg = paramProvider.getStringArray("PAR_GEOM");
-		if ((pg.size() == 1) && (_disc.nParType > 1))
-		{
-			// Multiplex using first value
-			pg.resize(_disc.nParType, pg[0]);
-		}
-		else if (pg.size() < _disc.nParType)
-			throw InvalidParameterException("Field PAR_GEOM contains too few elements (" + std::to_string(_disc.nParType) + " required)");
-
-		for (unsigned int i = 0; i < _disc.nParType; ++i)
-		{
-			if (pg[i] == "SPHERE")
-				_parGeomSurfToVol[i] = SurfVolRatioSphere;
-			else if (pg[i] == "CYLINDER")
-				_parGeomSurfToVol[i] = SurfVolRatioCylinder;
-			else if (pg[i] == "SLAB")
-				_parGeomSurfToVol[i] = SurfVolRatioSlab;
-			else
-				throw InvalidParameterException("Unknown particle geometry type \"" + pg[i] + "\" at index " + std::to_string(i) + " of field PAR_GEOM");
-		}
-	}
-
-	if (paramProvider.exists("PAR_DISC_VECTOR"))
-	{
-		_parDiscVector = paramProvider.getDoubleArray("PAR_DISC_VECTOR");
-		if (_parDiscVector.size() < nTotalParCells + _disc.nParType)
-			throw InvalidParameterException("Field PAR_DISC_VECTOR contains too few elements (Sum [NPAR + 1] = " + std::to_string(nTotalParCells + _disc.nParType) + " required)");
-	}
+	paramProvider.pushScope("discretization");
 
 	// Determine whether analytic Jacobian should be used but don't set it right now.
 	// We need to setup Jacobian matrices first.
@@ -544,67 +445,31 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 	const bool analyticJac = false;
 #endif
 
-	// Read bulk-particle interface discretization order
-	// Default to second order
-	_colParBoundaryOrder = 2;
-	if (paramProvider.exists("PAR_BOUNDARY_ORDER"))
-	{
-		_colParBoundaryOrder = paramProvider.getInt("PAR_BOUNDARY_ORDER");
-		if ((_colParBoundaryOrder < 1) || (_colParBoundaryOrder > 2))
-			throw InvalidParameterException("Field PAR_BOUNDARY_ORDER is out of valid range (1 or 2)");
-	}
-
-	// Initialize and configure GMRES for solving the Schur-complement
-	_gmres.initialize(_disc.axNPoints * _disc.radNPoints * _disc.nComp * _disc.nParType, paramProvider.getInt("MAX_KRYLOV"), linalg::toOrthogonalization(paramProvider.getInt("GS_TYPE")), paramProvider.getInt("MAX_RESTARTS"));
-	_gmres.matrixVectorMultiplier(&schurComplementMultiplierDPFR2D, this);
-	_schurSafety = paramProvider.getDouble("SCHUR_SAFETY");
-
 	// Allocate space for initial conditions
-	_initC.resize(_disc.nComp * _disc.radNPoints);
-	_initCp.resize(_disc.nComp * _disc.radNPoints * _disc.nParType);
-	_initQ.resize(nTotalBound * _disc.radNPoints);
+	_initC.resize(_disc.nComp);
+	_initCp.resize(_disc.nComp * _disc.nParType);
+	_initQ.resize(nTotalBound);
 
 	// Create nonlinear solver for consistent initialization
 	configureNonlinearSolver(paramProvider);
 
 	paramProvider.popScope();
 
+	const unsigned int strideRadNode = _disc.nComp;
+	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, strideRadNode);
+
+	_disc.axNPoints = _convDispOp.axNPoints();
+	_disc.radNPoints = _convDispOp.radNPoints();
+	_disc.nBulkPoints = _disc.axNPoints * _disc.radNPoints;
+
 	// Allocate memory
 	Indexer idxr(_disc);
-
-	_jacInlet.resize(_disc.nComp * _disc.radNPoints);
-
-	_jacP = new linalg::BandMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
-	_jacPdisc = new linalg::FactorizableBandMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
-	for (unsigned int j = 0; j < _disc.nParType; ++j)
-	{
-		linalg::BandMatrix* const ptrJac = _jacP + _disc.axNPoints * _disc.radNPoints * j;
-		linalg::FactorizableBandMatrix* const ptrJacDisc = _jacPdisc + _disc.axNPoints * _disc.radNPoints * j;
-		for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
-		{
-			ptrJacDisc[i].resize(_disc.nParCell[j] * (_disc.nComp + _disc.strideBound[j]), _disc.nComp + _disc.strideBound[j], _disc.nComp + 2 * _disc.strideBound[j]);
-			ptrJac[i].resize(_disc.nParCell[j] * (_disc.nComp + _disc.strideBound[j]), _disc.nComp + _disc.strideBound[j], _disc.nComp + 2 * _disc.strideBound[j]);
-		}
-	}
-
-	_jacPF = new linalg::DoubleSparseMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
-	_jacFP = new linalg::DoubleSparseMatrix[_disc.axNPoints * _disc.radNPoints * _disc.nParType];
-	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++i)
-	{
-		_jacPF[i].resize(_disc.nComp);
-		const int type = i / (_disc.axNPoints * _disc.radNPoints);
-		_jacFP[i].resize(_disc.nComp + 2 * _disc.strideBound[type]);
-	}
-
-	_jacCF.resize(_disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType);
-	_jacFC.resize(_disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType);
-
-	_discParFlux.resize(sizeof(active) * _disc.nComp);
 
 	// Set whether analytic Jacobian is used
 	useAnalyticJacobian(analyticJac);
 
 	// ==== Construct and configure binding model
+
 	clearBindingModels();
 	_binding = std::vector<IBindingModel*>(_disc.nParType, nullptr);
 
@@ -703,12 +568,22 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 		}
 	}
 
-	const unsigned int radNodeStride = _disc.nComp;
-	const unsigned int axNodeStride = _disc.radNPoints * radNodeStride;
-	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, axNodeStride, radNodeStride, _dynReactionBulk);
-
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
+
+	// todo handle the Jacobians
+	//// Allocate Jacobian memory, set and analyze pattern
+	//if (_disc.exactInt)
+	//	_jacInlet.resize(_disc.nNodes, 1); // first cell depends on inlet concentration (same for every component)
+	//else
+	//	_jacInlet.resize(1, 1); // first cell depends on inlet concentration (same for every component)
+	//_globalJac.resize(numPureDofs(), numPureDofs());
+	//_globalJacDisc.resize(numPureDofs(), numPureDofs());
+	//setGlobalJacPattern(_globalJac, _dynReactionBulk);
+	//_globalJacDisc = _globalJac;
+	//// the solver repetitively solves the linear system with a static pattern of the jacobian (set above). 
+	//// The goal of analyzePattern() is to reorder the nonzero elements of the matrix, such that the factorization step creates less fill-in
+	//_globalSolver.analyzePattern(_globalJacDisc);
 
 	return transportSuccess && bindingConfSuccess && reactionConfSuccess;
 }
@@ -719,18 +594,36 @@ bool LumpedRateModelWithPoresDG2D::configure(IParameterProvider& paramProvider)
 
 	const bool transportSuccess = _convDispOp.configure(_unitOpIdx, paramProvider, _parameters);
 
-	// Read geometry parameters
+	// Read column geometry parameters
 	_singleParRadius = readAndRegisterMultiplexTypeParam(paramProvider, _parameters, _parRadius, "PAR_RADIUS", _disc.nParType, _unitOpIdx);
 	_singleParPorosity = readAndRegisterMultiplexTypeParam(paramProvider, _parameters, _parPorosity, "PAR_POROSITY", _disc.nParType, _unitOpIdx);
 
-	// Let PAR_CORERADIUS default to 0.0 for backwards compatibility
-	if (paramProvider.exists("PAR_CORERADIUS"))
-		_singleParCoreRadius = readAndRegisterMultiplexTypeParam(paramProvider, _parameters, _parCoreRadius, "PAR_CORERADIUS", _disc.nParType, _unitOpIdx);
-	else
+	// Read particle geometry and default to "SPHERICAL"
+	_parGeomSurfToVol = std::vector<double>(_disc.nParType, SurfVolRatioSphere);
+	if (paramProvider.exists("PAR_GEOM"))
 	{
-		_singleParCoreRadius = true;
-		_parCoreRadius = std::vector<active>(_disc.nParType, 0.0);
+		std::vector<std::string> pg = paramProvider.getStringArray("PAR_GEOM");
+		if ((pg.size() == 1) && (_disc.nParType > 1))
+		{
+			// Multiplex using first value
+			pg.resize(_disc.nParType, pg[0]);
+		}
+		else if (pg.size() < _disc.nParType)
+			throw InvalidParameterException("Field PAR_GEOM contains too few elements (" + std::to_string(_disc.nParType) + " required)");
+
+		for (unsigned int i = 0; i < _disc.nParType; ++i)
+		{
+			if (pg[i] == "SPHERE")
+				_parGeomSurfToVol[i] = SurfVolRatioSphere;
+			else if (pg[i] == "CYLINDER")
+				_parGeomSurfToVol[i] = SurfVolRatioCylinder;
+			else if (pg[i] == "SLAB")
+				_parGeomSurfToVol[i] = SurfVolRatioSlab;
+			else
+				throw InvalidParameterException("Unknown particle geometry type \"" + pg[i] + "\" at index " + std::to_string(i) + " of field PAR_GEOM");
+		}
 	}
+
 
 	// Check whether PAR_TYPE_VOLFRAC is required or not
 	if ((_disc.nParType > 1) && !paramProvider.exists("PAR_TYPE_VOLFRAC"))
@@ -747,14 +640,13 @@ bool LumpedRateModelWithPoresDG2D::configure(IParameterProvider& paramProvider)
 	}
 
 	// Check whether all sizes are matched
+		// Check whether all sizes are matched
 	if (_disc.nParType != _parRadius.size())
 		throw InvalidParameterException("Number of elements in field PAR_RADIUS does not match number of particle types");
-	if (_disc.nParType * _disc.axNPoints * _disc.radNPoints != _parTypeVolFrac.size())
-		throw InvalidParameterException("Number of elements in field PAR_TYPE_VOLFRAC does not match number of particle types times number of bulk cells");
+	if (_disc.nParType * _disc.nBulkPoints != _parTypeVolFrac.size())
+		throw InvalidParameterException("Number of elements in field PAR_TYPE_VOLFRAC does not match number of particle types");
 	if (_disc.nParType != _parPorosity.size())
 		throw InvalidParameterException("Number of elements in field PAR_POROSITY does not match number of particle types");
-	if (_disc.nParType != _parCoreRadius.size())
-		throw InvalidParameterException("Number of elements in field PAR_CORERADIUS does not match number of particle types");
 
 	// Check that particle volume fractions sum to 1.0
 	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
@@ -794,11 +686,6 @@ bool LumpedRateModelWithPoresDG2D::configure(IParameterProvider& paramProvider)
 
 	if (_disc.nComp * _disc.nParType != _poreAccessFactor.size())
 		throw InvalidParameterException("Number of elements in field PORE_ACCESSIBILITY differs from NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ")");
-
-	// Add parameters to map
-
-	// Calculate the particle radial discretization variables (_parCellSize, _parCenterRadius, etc.)
-	updateRadialDisc();
 
 	// Register initial conditions parameters
 	registerParam1DArray(_parameters, _initC, [=](bool multi, unsigned int comp) { return makeParamId(hashString("INIT_C"), _unitOpIdx, comp, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
@@ -995,18 +882,8 @@ unsigned int LumpedRateModelWithPoresDG2D::threadLocalMemorySize() const CADET_N
 
 unsigned int LumpedRateModelWithPoresDG2D::numAdDirsForJacobian() const CADET_NOEXCEPT
 {
-	// We need as many directions as the highest bandwidth of the diagonal blocks:
-	// The bandwidth of the column block depends on the size of the WENO stencil, whereas
-	// the bandwidth of the particle blocks are given by the number of components and bound states.
-
-	// Get maximum stride of particle type blocks
-	int maxStride = 0;
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		maxStride = std::max(maxStride, _jacP[type * _disc.axNPoints * _disc.radNPoints].stride());
-	}
-
-	return maxStride;
+	// todo compressed/seeded AD
+	return numDofs();
 }
 
 void LumpedRateModelWithPoresDG2D::useAnalyticJacobian(const bool analyticJac)
@@ -1026,41 +903,14 @@ void LumpedRateModelWithPoresDG2D::useAnalyticJacobian(const bool analyticJac)
 
 void LumpedRateModelWithPoresDG2D::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
-	// Setup flux Jacobian blocks at the beginning of the simulation or in case of
-	// section dependent film or particle diffusion coefficients
-	if ((secIdx == 0) || isSectionDependent(_filmDiffusionMode) || isSectionDependent(_parDiffusionMode))
-		assembleOffdiagJac(t, secIdx);
-
 	Indexer idxr(_disc);
 
 	// ConvectionDispersionOperator tells us whether flow direction has changed
 	if (!_convDispOp.notifyDiscontinuousSectionTransition(t, secIdx))
 		return;
 
-	// Setup the matrix connecting inlet DOFs to first column cells
-	_jacInlet.clear();
-
-	for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
-	{
-		const double f = _convDispOp.inletFactor(secIdx, rad);
-		if (_convDispOp.currentVelocity(rad) >= 0.0)
-		{
-			// Forwards flow
-
-			// Place entries for inlet DOF to first axial cell conversion
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				_jacInlet.addElement(comp * idxr.strideColComp() + rad * idxr.strideColRadialCell(), comp, f);
-		}
-		else
-		{
-			// Backwards flow
-
-			// Place entries for inlet DOF to last column cell conversion
-			const unsigned int offset = (_disc.axNPoints - 1) * idxr.strideColAxialCell();
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				_jacInlet.addElement(offset + comp * idxr.strideColComp() + rad * idxr.strideColRadialCell(), comp, f);
-		}
-	}
+	// todo Setup the matrix connecting inlet DOFs to first column cells
+	// todo backwards flow
 }
 
 void LumpedRateModelWithPoresDG2D::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT
@@ -1100,16 +950,17 @@ void LumpedRateModelWithPoresDG2D::prepareADvectors(const AdJacobianParams& adJa
 
 	Indexer idxr(_disc);
 
-	// Particle blocks
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		const unsigned int lowerParBandwidth = _jacP[type * _disc.axNPoints * _disc.radNPoints].lowerBandwidth();
-		const unsigned int upperParBandwidth = _jacP[type * _disc.axNPoints * _disc.radNPoints].upperBandwidth();
+	// todo compressed AD
 
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			ad::prepareAdVectorSeedsForBandMatrix(adJac.adY + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adJac.adDirOffset, idxr.strideParBlock(type), lowerParBandwidth, upperParBandwidth, lowerParBandwidth);
-		}
+	const int adDirOffset = adJac.adDirOffset;
+	active * adVec = adJac.adY;
+
+	// Start with diagonal Jacobian element
+	for (int eq = 0; eq < _globalJac.rows(); ++eq)
+	{
+		// Clear previously set directions
+		adVec[eq].fillADValue(adDirOffset, 0.0);
+		adVec[eq].setADValue(eq, 1.0);
 	}
 }
 
@@ -1122,15 +973,16 @@ void LumpedRateModelWithPoresDG2D::extractJacobianFromAD(active const* const adR
 {
 	Indexer idxr(_disc);
 
-	// Particles
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
+	// todo compressed AD
+
+	for (int i = 0; i < _globalJac.rows(); i++)
 	{
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
+		for (int j = 0; j < _globalJac.cols(); j++)
 		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.axNPoints * _disc.radNPoints * type + pblk];
-			ad::extractBandedJacobianFromAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
+			_globalJac.coeffRef(i, j) = adRes[i].getADValue(j);
 		}
 	}
+
 }
 
 #ifdef CADET_CHECK_ANALYTIC_JACOBIAN
@@ -1143,22 +995,23 @@ void LumpedRateModelWithPoresDG2D::extractJacobianFromAD(active const* const adR
  */
 void LumpedRateModelWithPoresDG2D::checkAnalyticJacobianAgainstAd(active const* const adRes, unsigned int adDirOffset) const
 {
-	Indexer idxr(_disc);
+	// todo implement this function?
+	//Indexer idxr(_disc);
 
-	LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagDirPar: " << _jacP[0].lowerBandwidth();
+	//LOG(Debug) << "AD dir offset: " << adDirOffset << " DiagDirPar: " << _jacP[0].lowerBandwidth();
 
-	// Particles
-	double maxDiffPar = 0.0;
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			linalg::BandMatrix& jacMat = _jacP[_disc.axNPoints * _disc.radNPoints * type + pblk];
-			const double localDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
-			LOG(Debug) << "-> Par type " << type << " block " << pblk << " diff: " << localDiff;
-			maxDiffPar = std::max(maxDiffPar, localDiff);
-		}
-	}
+	//// Particles
+	//double maxDiffPar = 0.0;
+	//for (unsigned int type = 0; type < _disc.nParType; ++type)
+	//{
+	//	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
+	//	{
+	//		linalg::BandMatrix& jacMat = _jacP[_disc.axNPoints * _disc.radNPoints * type + pblk];
+	//		const double localDiff = ad::compareBandedJacobianWithAd(adRes + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}), adDirOffset, jacMat.lowerBandwidth(), jacMat);
+	//		LOG(Debug) << "-> Par type " << type << " block " << pblk << " diff: " << localDiff;
+	//		maxDiffPar = std::max(maxDiffPar, localDiff);
+	//	}
+	//}
 }
 
 #endif
@@ -1328,20 +1181,24 @@ int LumpedRateModelWithPoresDG2D::residualBulk(double t, unsigned int secIdx, St
 	ResidualType* res = resBase + idxr.offsetC();
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
-	for (unsigned int colCell = 0; colCell < _disc.axNPoints * _disc.radNPoints; ++colCell, y += idxr.strideColRadialCell(), res += idxr.strideColRadialCell())
+	for (unsigned int axNode = 0; axNode < _disc.axNPoints; ++axNode)
 	{
-		const unsigned int axialCell = colCell / _disc.radNPoints;
-		const unsigned int radialCell = colCell % _disc.radNPoints;
-		const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-		const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
-
-		const ColumnPosition colPos{z, r, 0.0};
-		_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
-
-		if (wantJac)
+		for (unsigned int radNode = 0; radNode < _disc.radNPoints; ++radNode, y += idxr.strideColRadialNode(), res += idxr.strideColRadialNode())
 		{
-			// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
-			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y), -1.0, _convDispOp.jacobian().row(colCell * idxr.strideColRadialCell()), tlmAlloc);
+			const double r = _convDispOp.relativeRadialCoordinate(radNode);
+			const double z = _convDispOp.relativeAxialCoordinate(axNode);;
+
+			const ColumnPosition colPos{ z, r, 0.0 };
+			_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
+
+			if (wantJac)
+			{
+				const int rowIdx = axNode * idxr.strideColAxialNode() + radNode * idxr.strideColRadialNode();
+				linalg::BandedEigenSparseRowIterator jac(_globalJac, rowIdx);
+
+				// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
+				_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y), -1.0, jac, tlmAlloc);
+			}
 		}
 	}
 
@@ -1349,14 +1206,14 @@ int LumpedRateModelWithPoresDG2D::residualBulk(double t, unsigned int secIdx, St
 }
 
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
-int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parType, unsigned int colCell, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
+int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parType, unsigned int colNode, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase, util::ThreadLocalStorage& threadLocalMem)
 {
 	Indexer idxr(_disc);
 
 	// Go to the particle block of the given column cell
-	StateType const* y = yBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
-	double const* yDot = yDotBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
-	ResidualType* res = resBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{colCell});
+	StateType const* y = yBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
+	double const* yDot = yDotBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
+	ResidualType* res = resBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
 
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
 
@@ -1368,25 +1225,21 @@ int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parTyp
 	active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
 
 	// Midpoint of current column cell (z, rho coordinate) - needed in externally dependent adsorption kinetic
-	const unsigned int axialCell = colCell / _disc.radNPoints;
-	const unsigned int radialCell = colCell % _disc.radNPoints;
-	const double r = static_cast<double>(_convDispOp.radialCenters()[radialCell]) / static_cast<double>(_convDispOp.columnRadius());
-	const double z = (0.5 + static_cast<double>(axialCell)) / static_cast<double>(_disc.axNPoints);
+	const unsigned int axialNode = colNode / _disc.radNPoints;
+	const unsigned int radialNode = colNode % _disc.radNPoints;
+	const double r = _convDispOp.relativeRadialCoordinate(radialNode);
+	const double z = _convDispOp.relativeAxialCoordinate(axialNode);
 
 	// Reset Jacobian
 	if (wantJac)
-		_jacP[_disc.axNPoints * _disc.radNPoints * parType + colCell].setAll(0.0);
+		int jo = 0; // todo
 
 	// The RowIterator is always centered on the main diagonal.
 	// This means that jac[0] is the main diagonal, jac[-1] is the first lower diagonal,
 	// and jac[1] is the first upper diagonal. We can also access the rows from left to
 	// right beginning with the last lower diagonal moving towards the main diagonal and
 	// continuing to the last upper diagonal by using the native() method.
-	linalg::BandMatrix::RowIterator jac = _jacP[_disc.axNPoints * _disc.radNPoints * parType + colCell].row(0);
-
-	active const* const outerSurfPerVol = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-	active const* const innerSurfPerVol = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-	active const* const parCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
+	linalg::BandedEigenSparseRowIterator jac(_globalJac, _disc.nBulkPoints * parType + colNode);
 
 	int const* const qsReaction = _binding[parType]->reactionQuasiStationarity();
 
@@ -1403,453 +1256,158 @@ int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parTyp
 			(_dynReaction[parType] && (_dynReaction[parType]->numReactionsCombined() > 0)) ? _dynReaction[parType] : nullptr
 		};
 
-	// Loop over particle cells
-	for (unsigned int par = 0; par < _disc.nParCell[parType]; ++par)
-	{
-		const ColumnPosition colPos{z, r, static_cast<double>(parCenterRadius[par]) / static_cast<double>(_parRadius[parType])};
+		const ColumnPosition colPos{z, r, 0.5 * static_cast<double>(_parRadius[parType])};
 
 		// Handle time derivatives, binding, dynamic reactions
-		parts::cell::residualKernel<StateType, ResidualType, ParamType, parts::cell::CellParameters, linalg::BandMatrix::RowIterator, wantJac, true>(
+		parts::cell::residualKernel<StateType, ResidualType, ParamType, parts::cell::CellParameters, linalg::BandedEigenSparseRowIterator, wantJac, true>(
 			t, secIdx, colPos, y, yDotBase ? yDot : nullptr, res, jac, cellResParams, tlmAlloc
 		);
 
-		// We still need to handle transport and quasi-stationary reactions
-
-		// Geometry
-		const ParamType outerAreaPerVolume = static_cast<ParamType>(outerSurfPerVol[par]);
-		const ParamType innerAreaPerVolume = static_cast<ParamType>(innerSurfPerVol[par]);
-
-		// Mobile phase
-		for (unsigned int comp = 0; comp < _disc.nComp; ++comp, ++res, ++y, ++yDot, ++jac)
-		{
-			const unsigned int nBound = _disc.nBound[_disc.nComp * parType + comp];
-			const ParamType invBetaP = (1.0 - static_cast<ParamType>(_parPorosity[parType])) / (static_cast<ParamType>(_poreAccessFactor[_disc.nComp * parType + comp]) * static_cast<ParamType>(_parPorosity[parType]));
-			const ParamType dp = static_cast<ParamType>(parDiff[comp]);
-
-			// Add flow through outer surface
-			// Note that inflow boundary conditions are handled in residualFlux().
-			if (cadet_likely(par != 0))
-			{
-				// Difference between two cell-centers
-				const ParamType dr = static_cast<ParamType>(parCenterRadius[par - 1]) - static_cast<ParamType>(parCenterRadius[par]);
-
-				// Molecular diffusion contribution
-				const ResidualType gradCp = (y[-idxr.strideParShell(parType)] - y[0]) / dr;
-				*res -= outerAreaPerVolume * dp * gradCp;
-
-				// Surface diffusion contribution
-				for (unsigned int i = 0; i < nBound; ++i)
-				{
-					// See above for explanation of curIdx value
-					const int curIdx = idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i;
-					const ResidualType gradQ = (y[-idxr.strideParShell(parType) + curIdx] - y[curIdx]) / dr;
-					*res -= outerAreaPerVolume * static_cast<ParamType>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) * invBetaP * gradQ;
-				}
-
-				if (wantJac)
-				{
-					const double localInvBetaP = static_cast<double>(invBetaP);
-					const double ouApV = static_cast<double>(outerAreaPerVolume);
-					const double ldr = static_cast<double>(dr);
-
-					// Liquid phase
-					jac[0] += ouApV * static_cast<double>(dp) / ldr; // dres / dc_p,i^(p,j)
-					jac[-idxr.strideParShell(parType)] = -ouApV * static_cast<double>(dp) / ldr; // dres / dc_p,i^(p,j-1)
-
-					// Solid phase
-					for (unsigned int i = 0; i < nBound; ++i)
-					{
-						// See above for explanation of curIdx value
-						const int curIdx = idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i;
-						jac[curIdx] += ouApV * localInvBetaP * static_cast<double>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) / ldr; // dres / dq_i^(p,j)
-						jac[-idxr.strideParShell(parType) + curIdx] = -ouApV * localInvBetaP * static_cast<double>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) / ldr; // dres / dq_i^(p,j-1)
-					}
-				}
-			}
-
-			// Add flow through inner surface
-			// Note that this term vanishes for the most inner shell due to boundary conditions
-			if (cadet_likely(par != _disc.nParCell[parType] - 1))
-			{
-				// Difference between two cell-centers
-				const ParamType dr = static_cast<ParamType>(parCenterRadius[par]) - static_cast<ParamType>(parCenterRadius[par + 1]);
-
-				// Molecular diffusion contribution
-				const ResidualType gradCp = (y[0] - y[idxr.strideParShell(parType)]) / dr;
-				*res += innerAreaPerVolume * dp * gradCp;
-
-				// Surface diffusion contribution
-				for (unsigned int i = 0; i < nBound; ++i)
-				{
-					// See above for explanation of curIdx value
-					const unsigned int curIdx = idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i;
-					const ResidualType gradQ = (y[curIdx] - y[idxr.strideParShell(parType) + curIdx]) / dr;
-					*res += innerAreaPerVolume * static_cast<ParamType>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) * invBetaP * gradQ;
-				}
-
-				if (wantJac)
-				{
-					const double localInvBetaP = static_cast<double>(invBetaP);
-					const double inApV = static_cast<double>(innerAreaPerVolume);
-					const double ldr = static_cast<double>(dr);
-
-					// Liquid phase
-					jac[0] += inApV * static_cast<double>(dp) / ldr; // dres / dc_p,i^(p,j)
-					jac[idxr.strideParShell(parType)] = -inApV * static_cast<double>(dp) / ldr; // dres / dc_p,i^(p,j+1)
-
-					// Solid phase
-					for (unsigned int i = 0; i < nBound; ++i)
-					{
-						// See above for explanation of curIdx value
-						const int curIdx = idxr.strideParLiquid() - comp + idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i;
-						jac[curIdx] += inApV * localInvBetaP * static_cast<double>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) / ldr; // dres / dq_i^(p,j)
-						jac[idxr.strideParShell(parType) + curIdx] = -inApV * localInvBetaP * static_cast<double>(parSurfDiff[idxr.offsetBoundComp(ParticleTypeIndex{parType}, ComponentIndex{comp}) + i]) / ldr; // dres / dq_i^(p,j-1)
-					}
-				}
-			}
-		}
-
-		// Bound phases
-		for (unsigned int bnd = 0; bnd < _disc.strideBound[parType]; ++bnd, ++res, ++y, ++jac)
-		{
-			// Skip quasi-stationary bound states
-			if (qsReaction[bnd])
-				continue;
-
-			// Add flow through outer surface
-			// Note that this term vanishes for the most outer shell due to boundary conditions
-			if (cadet_likely(par != 0))
-			{
-				// Difference between two cell-centers
-				const ParamType dr = static_cast<ParamType>(parCenterRadius[par - 1]) - static_cast<ParamType>(parCenterRadius[par]);
-
-				const ResidualType gradQ = (y[-idxr.strideParShell(parType)] - y[0]) / dr;
-				*res -= outerAreaPerVolume * static_cast<ParamType>(parSurfDiff[bnd]) * gradQ;
-
-				if (wantJac)
-				{
-					const double ouApV = static_cast<double>(outerAreaPerVolume);
-					const double ldr = static_cast<double>(dr);
-
-					jac[0] += ouApV * static_cast<double>(parSurfDiff[bnd]) / ldr; // dres / dq_i^(p,j)
-					jac[-idxr.strideParShell(parType)] += -ouApV * static_cast<double>(parSurfDiff[bnd]) / ldr; // dres / dq_i^(p,j-1)
-				}
-			}
-
-			// Add flow through inner surface
-			// Note that this term vanishes for the most inner shell due to boundary conditions
-			if (cadet_likely(par != _disc.nParCell[parType] - 1))
-			{
-				// Difference between two cell-centers
-				const ParamType dr = static_cast<ParamType>(parCenterRadius[par]) - static_cast<ParamType>(parCenterRadius[par + 1]);
-
-				const ResidualType gradQ = (y[0] - y[idxr.strideParShell(parType)]) / dr;
-				*res += innerAreaPerVolume * static_cast<ParamType>(parSurfDiff[bnd]) * gradQ;
-
-				if (wantJac)
-				{
-					const double inApV = static_cast<double>(innerAreaPerVolume);
-					const double ldr = static_cast<double>(dr);
-
-					jac[0] += inApV * static_cast<double>(parSurfDiff[bnd]) / ldr; // dres / dq_i^(p,j)
-					jac[idxr.strideParShell(parType)] += -inApV * static_cast<double>(parSurfDiff[bnd]) / ldr; // dres / dq_i^(p,j-1)
-				}
-			}
-		}
-
-		// Advance pointers over all bound states
-		yDot += idxr.strideParBound(parType);
-	}
 	return 0;
 }
 
 template <typename StateType, typename ResidualType, typename ParamType>
 int LumpedRateModelWithPoresDG2D::residualFlux(double t, unsigned int secIdx, StateType const* yBase, double const* yDotBase, ResidualType* resBase)
 {
-	Indexer idxr(_disc);
 
-	// Get offsets
-	ResidualType* const resCol = resBase + idxr.offsetC();
-	ResidualType* const resFlux = resBase + idxr.offsetJf();
+	// TODO!
 
-	StateType const* const yCol = yBase + idxr.offsetC();
-	StateType const* const yFlux = yBase + idxr.offsetJf();
+	//Indexer idxr(_disc);
 
-	// J_f block (identity matrix), adds flux state to flux equation
-	for (unsigned int i = 0; i < _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++i)
-		resFlux[i] = yFlux[i];
+	//// Get offsets
+	//ResidualType* const resCol = resBase + idxr.offsetC();
+	//ResidualType* const resFlux = resBase + idxr.offsetJf();
 
-	// Discretized film diffusion kf for finite volumes
-	ParamType* const kf_FV = _discParFlux.create<ParamType>(_disc.nComp);
+	//StateType const* const yCol = yBase + idxr.offsetC();
+	//StateType const* const yFlux = yBase + idxr.offsetJf();
 
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		ResidualType* const resParType = resBase + idxr.offsetCp(ParticleTypeIndex{type});
-		ResidualType* const resFluxType = resBase + idxr.offsetJf(ParticleTypeIndex{type});
+	//// J_f block (identity matrix), adds flux state to flux equation
+	//for (unsigned int i = 0; i < _disc.nComp * _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++i)
+	//	resFlux[i] = yFlux[i];
 
-		StateType const* const yParType = yBase + idxr.offsetCp(ParticleTypeIndex{type});
-		StateType const* const yFluxType = yBase + idxr.offsetJf(ParticleTypeIndex{type});
+	//// Discretized film diffusion kf for finite volumes
+	//ParamType* const kf_FV = _discParFlux.create<ParamType>(_disc.nComp);
 
-		const ParamType epsP = static_cast<ParamType>(_parPorosity[type]);
+	//for (unsigned int type = 0; type < _disc.nParType; ++type)
+	//{
+	//	ResidualType* const resParType = resBase + idxr.offsetCp(ParticleTypeIndex{type});
+	//	ResidualType* const resFluxType = resBase + idxr.offsetJf(ParticleTypeIndex{type});
 
-		// Ordering of diffusion:
-		// sec0type0comp0, sec0type0comp1, sec0type0comp2, sec0type1comp0, sec0type1comp1, sec0type1comp2,
-		// sec1type0comp0, sec1type0comp1, sec1type0comp2, sec1type1comp0, sec1type1comp1, sec1type1comp2, ...
-		active const* const filmDiff = getSectionDependentSlice(_filmDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
-		active const* const parDiff = getSectionDependentSlice(_parDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
+	//	StateType const* const yParType = yBase + idxr.offsetCp(ParticleTypeIndex{type});
+	//	StateType const* const yFluxType = yBase + idxr.offsetJf(ParticleTypeIndex{type});
 
-		const ParamType surfaceToVolumeRatio = _parGeomSurfToVol[type] / static_cast<ParamType>(_parRadius[type]);
-		const ParamType outerAreaPerVolume = static_cast<ParamType>(_parOuterSurfAreaPerVolume[_disc.nParCellsBeforeType[type]]);
+	//	const ParamType epsP = static_cast<ParamType>(_parPorosity[type]);
 
-		const ParamType jacPF_val = -outerAreaPerVolume / epsP;
+	//	// Ordering of diffusion:
+	//	// sec0type0comp0, sec0type0comp1, sec0type0comp2, sec0type1comp0, sec0type1comp1, sec0type1comp2,
+	//	// sec1type0comp0, sec1type0comp1, sec1type0comp2, sec1type1comp0, sec1type1comp1, sec1type1comp2, ...
+	//	active const* const filmDiff = getSectionDependentSlice(_filmDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
+	//	active const* const parDiff = getSectionDependentSlice(_parDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
 
-		// Discretized film diffusion kf for finite volumes
-		if (cadet_likely(_colParBoundaryOrder == 2))
-		{
-			const ParamType absOuterShellHalfRadius = 0.5 * static_cast<ParamType>(_parCellSize[_disc.nParCellsBeforeType[type]]);
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = 1.0 / (absOuterShellHalfRadius / epsP / static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) / static_cast<ParamType>(parDiff[comp]) + 1.0 / static_cast<ParamType>(filmDiff[comp]));
-		}
-		else
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = static_cast<ParamType>(filmDiff[comp]);
-		}
+	//	const ParamType surfaceToVolumeRatio = _parGeomSurfToVol[type] / static_cast<ParamType>(_parRadius[type]);
+	//	const ParamType outerAreaPerVolume = static_cast<ParamType>(_parOuterSurfAreaPerVolume[_disc.nParCellsBeforeType[type]]);
 
-		// J_{0,f} block, adds flux to column void / bulk volume equations
-		unsigned int idx = 0;
-		for (unsigned int i = 0; i < _disc.axNPoints; ++i)
-		{
-			for (unsigned int j = 0; j < _disc.radNPoints; ++j)
-			{
-				const ParamType invBetaC = 1.0 / static_cast<ParamType>(_convDispOp.columnPorosity(j)) - 1.0;
-				const ParamType jacCF_val = invBetaC * surfaceToVolumeRatio;
-				for (unsigned int k = 0; k < _disc.nComp; ++k, ++idx)
-				{
-					resCol[idx] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + i * _disc.nParType * _disc.radNPoints + j * _disc.nParType]) * yFluxType[idx];
-				}
-			}
-		}
+	//	const ParamType jacPF_val = -outerAreaPerVolume / epsP;
 
-		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int bnd = 0; bnd < _disc.axNPoints * _disc.radNPoints; ++bnd)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				const unsigned int eq = bnd * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				resFluxType[eq] -= kf_FV[comp] * yCol[eq];
-			}
-		}
+	//	// Discretized film diffusion kf for finite volumes
+	//	if (cadet_likely(_colParBoundaryOrder == 2))
+	//	{
+	//		const ParamType absOuterShellHalfRadius = 0.5 * static_cast<ParamType>(_parCellSize[_disc.nParCellsBeforeType[type]]);
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//			kf_FV[comp] = 1.0 / (absOuterShellHalfRadius / epsP / static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) / static_cast<ParamType>(parDiff[comp]) + 1.0 / static_cast<ParamType>(filmDiff[comp]));
+	//	}
+	//	else
+	//	{
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//			kf_FV[comp] = static_cast<ParamType>(filmDiff[comp]);
+	//	}
 
-		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				resParType[pblk * idxr.strideParBlock(type) + comp] += jacPF_val / static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * yFluxType[eq];
-			}
-		}
+	//	// J_{0,f} block, adds flux to column void / bulk volume equations
+	//	unsigned int idx = 0;
+	//	for (unsigned int i = 0; i < _disc.axNPoints; ++i)
+	//	{
+	//		for (unsigned int j = 0; j < _disc.radNPoints; ++j)
+	//		{
+	//			const ParamType invBetaC = 1.0 / static_cast<ParamType>(_convDispOp.columnPorosity(j)) - 1.0;
+	//			const ParamType jacCF_val = invBetaC * surfaceToVolumeRatio;
+	//			for (unsigned int k = 0; k < _disc.nComp; ++k, ++idx)
+	//			{
+	//				resCol[idx] += jacCF_val * static_cast<ParamType>(_parTypeVolFrac[type + i * _disc.nParType * _disc.radNPoints + j * _disc.nParType]) * yFluxType[idx];
+	//			}
+	//		}
+	//	}
 
-		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				resFluxType[eq] += kf_FV[comp] * yParType[comp + pblk * idxr.strideParBlock(type)];
-			}
-		}
+	//	// J_{f,0} block, adds bulk volume state c_i to flux equation
+	//	for (unsigned int bnd = 0; bnd < _disc.axNPoints * _disc.radNPoints; ++bnd)
+	//	{
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//		{
+	//			const unsigned int eq = bnd * idxr.strideColRadialCell() + comp * idxr.strideColComp();
+	//			resFluxType[eq] -= kf_FV[comp] * yCol[eq];
+	//		}
+	//	}
 
-		if (cadet_unlikely(_binding[type]->hasQuasiStationaryReactions() && (_disc.nParCell[type] > 1)))
-		{
-			int const* const qsReaction = _binding[type]->reactionQuasiStationarity();
+	//	// J_{p,f} block, implements bead boundary condition in outer bead shell equation
+	//	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
+	//	{
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//		{
+	//			const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
+	//			resParType[pblk * idxr.strideParBlock(type) + comp] += jacPF_val / static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * yFluxType[eq];
+	//		}
+	//	}
 
-			// Ordering of particle surface diffusion:
-			// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
-			active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[type];
-			active const* const parCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[type];
-			const ParamType absOuterShellHalfRadius = 0.5 * static_cast<ParamType>(_parCellSize[_disc.nParCellsBeforeType[type]]);
+	//	// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
+	//	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
+	//	{
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//		{
+	//			const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
+	//			resFluxType[eq] += kf_FV[comp] * yParType[comp + pblk * idxr.strideParBlock(type)];
+	//		}
+	//	}
 
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = (1.0 - static_cast<ParamType>(_parPorosity[type])) / (1.0 + epsP * static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<ParamType>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<ParamType>(filmDiff[comp])));
+	//	if (cadet_unlikely(_binding[type]->hasQuasiStationaryReactions() && (_disc.nParCell[type] > 1)))
+	//	{
+	//		int const* const qsReaction = _binding[type]->reactionQuasiStationarity();
 
-			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-			{
-				const ParamType dr = static_cast<ParamType>(parCenterRadius[0]) - static_cast<ParamType>(parCenterRadius[1]);
+	//		// Ordering of particle surface diffusion:
+	//		// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
+	//		active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[type];
+	//		active const* const parCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[type];
+	//		const ParamType absOuterShellHalfRadius = 0.5 * static_cast<ParamType>(_parCellSize[_disc.nParCellsBeforeType[type]]);
 
-				for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				{
-					const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-					const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
+	//		for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//			kf_FV[comp] = (1.0 - static_cast<ParamType>(_parPorosity[type])) / (1.0 + epsP * static_cast<ParamType>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<ParamType>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<ParamType>(filmDiff[comp])));
 
-					for (unsigned int i = 0; i < nBound; ++i)
-					{
-						const int idxBnd = idxr.offsetBoundComp(ParticleTypeIndex{type}, ComponentIndex{comp}) + i;
+	//		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
+	//		{
+	//			const ParamType dr = static_cast<ParamType>(parCenterRadius[0]) - static_cast<ParamType>(parCenterRadius[1]);
 
-						// Skip quasi-stationary bound states
-						if (!qsReaction[idxBnd])
-							continue;
+	//			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+	//			{
+	//				const unsigned int eq = pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
+	//				const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
 
-						const int curIdx = pblk * idxr.strideParBlock(type) + idxr.strideParLiquid() + idxBnd;
-						const ResidualType gradQ = (yParType[curIdx] - yParType[curIdx + idxr.strideParShell(type)]) / dr;
-						resFluxType[eq] -= kf_FV[comp] * static_cast<ParamType>(parSurfDiff[idxBnd]) * gradQ;
-					}
-				}
-			}
-		}
-	}
+	//				for (unsigned int i = 0; i < nBound; ++i)
+	//				{
+	//					const int idxBnd = idxr.offsetBoundComp(ParticleTypeIndex{type}, ComponentIndex{comp}) + i;
 
-	_discParFlux.destroy<ParamType>();
+	//					// Skip quasi-stationary bound states
+	//					if (!qsReaction[idxBnd])
+	//						continue;
+
+	//					const int curIdx = pblk * idxr.strideParBlock(type) + idxr.strideParLiquid() + idxBnd;
+	//					const ResidualType gradQ = (yParType[curIdx] - yParType[curIdx + idxr.strideParShell(type)]) / dr;
+	//					resFluxType[eq] -= kf_FV[comp] * static_cast<ParamType>(parSurfDiff[idxBnd]) * gradQ;
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
+	//_discParFlux.destroy<ParamType>();
 	return 0;
-}
-
-/**
- * @brief Assembles off diagonal Jacobian blocks
- * @details Assembles the fixed blocks @f$ J_{0,f}, \dots, J_{N_p,f} @f$ and @f$ J_{f,0}, \dots, J_{f, N_p}. @f$
- *          The blocks are fixed for each section.
- * @param [in] t Current time
- * @param [in] secIdx Index of the current section
- */
-void LumpedRateModelWithPoresDG2D::assembleOffdiagJac(double t, unsigned int secIdx)
-{
-	// Clear matrices for new assembly
-	_jacCF.clear();
-	_jacFC.clear();
-	for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints * _disc.nParType; ++pblk)
-	{
-		_jacPF[pblk].clear();
-		_jacFP[pblk].clear();
-	}
-
-	// Note that the J_f block, which is the identity matrix, is treated in the linear solver
-
-	Indexer idxr(_disc);
-
-	// Discretized film diffusion kf for finite volumes
-	double* const kf_FV = _discParFlux.create<double>(_disc.nComp);
-
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		const unsigned int typeOffset = type * _disc.axNPoints * _disc.nComp * _disc.radNPoints;
-		const double epsP = static_cast<double>(_parPorosity[type]);
-
-		// Ordering of diffusion:
-		// sec0type0comp0, sec0type0comp1, sec0type0comp2, sec0type1comp0, sec0type1comp1, sec0type1comp2,
-		// sec1type0comp0, sec1type0comp1, sec1type0comp2, sec1type1comp0, sec1type1comp1, sec1type1comp2, ...
-		active const* const filmDiff = getSectionDependentSlice(_filmDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
-		active const* const parDiff = getSectionDependentSlice(_parDiffusion, _disc.nComp * _disc.nParType, secIdx) + type * _disc.nComp;
-
-		const double surfaceToVolumeRatio = _parGeomSurfToVol[type] / static_cast<double>(_parRadius[type]);
-		const double outerAreaPerVolume = static_cast<double>(_parOuterSurfAreaPerVolume[_disc.nParCellsBeforeType[type]]);
-
-		const double jacPF_val = -outerAreaPerVolume / epsP;
-
-		// Discretized film diffusion kf for finite volumes
-		if (cadet_likely(_colParBoundaryOrder == 2))
-		{
-			const double absOuterShellHalfRadius = 0.5 * static_cast<double>(_parCellSize[_disc.nParCellsBeforeType[type]]);
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = 1.0 / (absOuterShellHalfRadius / epsP / static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) / static_cast<double>(parDiff[comp]) + 1.0 / static_cast<double>(filmDiff[comp]));
-		}
-		else
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = static_cast<double>(filmDiff[comp]);
-		}
-
-		// J_{0,f} block, adds flux to column void / bulk volume equations
-		unsigned int idx = 0;
-		for (unsigned int col = 0; col < _disc.axNPoints; ++col)
-		{
-			for (unsigned int rad = 0; rad < _disc.radNPoints; ++rad)
-			{
-				const double invBetaC = 1.0 / static_cast<double>(_convDispOp.columnPorosity(rad)) - 1.0;
-				const double jacCF_val = invBetaC * surfaceToVolumeRatio;
-
-				for (unsigned int comp = 0; comp < _disc.nComp; ++comp, ++idx)
-				{
-					// Main diagonal corresponds to j_{f,i} (flux) state variable
-					_jacCF.addElement(idx, idx + typeOffset, jacCF_val * static_cast<double>(_parTypeVolFrac[type + col * _disc.radNPoints * _disc.nParType + rad * _disc.nParType]));
-				}
-			}
-		}
-
-		// J_{f,0} block, adds bulk volume state c_i to flux equation
-		for (unsigned int col = 0; col < _disc.axNPoints * _disc.radNPoints; ++col)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				// Main diagonal corresponds to c_i state variable in each column cell
-				const unsigned int eq = col * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				_jacFC.addElement(eq + typeOffset, eq, -kf_FV[comp]);
-			}
-		}
-
-		// J_{p,f} block, implements bead boundary condition in outer bead shell equation
-		linalg::DoubleSparseMatrix* const jacPFtype = _jacPF + type * _disc.axNPoints * _disc.radNPoints;
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				const unsigned int eq = typeOffset + pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				jacPFtype[pblk].addElement(comp, eq, jacPF_val / static_cast<double>(_poreAccessFactor[comp]));
-			}
-		}
-
-		// J_{f,p} block, adds outer bead shell state c_{p,i} to flux equation
-		linalg::DoubleSparseMatrix* const jacFPtype = _jacFP + type * _disc.axNPoints * _disc.radNPoints;
-		for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-		{
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-			{
-				const unsigned int eq = typeOffset + pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-				jacFPtype[pblk].addElement(eq, comp, kf_FV[comp]);
-			}
-		}
-
-		if (cadet_unlikely(_binding[type]->hasQuasiStationaryReactions() && (_disc.nParCell[type] > 1)))
-		{
-			int const* const qsReaction = _binding[type]->reactionQuasiStationarity();
-
-			// Ordering of particle surface diffusion:
-			// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
-			active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[type];
-			active const* const parCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[type];
-			const double absOuterShellHalfRadius = 0.5 * static_cast<double>(_parCellSize[_disc.nParCellsBeforeType[type]]);
-
-			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				kf_FV[comp] = (1.0 - static_cast<double>(_parPorosity[type])) / (1.0 + epsP * static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<double>(parDiff[comp]) / (absOuterShellHalfRadius * static_cast<double>(filmDiff[comp])));
-
-			for (unsigned int pblk = 0; pblk < _disc.axNPoints * _disc.radNPoints; ++pblk)
-			{
-				const double dr = static_cast<double>(parCenterRadius[0]) - static_cast<double>(parCenterRadius[1]);
-
-				for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
-				{
-					const unsigned int eq = typeOffset + pblk * idxr.strideColRadialCell() + comp * idxr.strideColComp();
-					const unsigned int nBound = _disc.nBound[_disc.nComp * type + comp];
-
-					for (unsigned int i = 0; i < nBound; ++i)
-					{
-						const int idxBnd = idxr.offsetBoundComp(ParticleTypeIndex{type}, ComponentIndex{comp}) + i;
-
-						// Skip quasi-stationary bound states
-						if (!qsReaction[idxBnd])
-							continue;
-
-						const double v = kf_FV[comp] * static_cast<double>(parSurfDiff[idxBnd]) / dr;
-						const int curIdx = idxr.strideParLiquid() + idxBnd;
-
-						jacFPtype[pblk].addElement(eq, curIdx, -v);
-						jacFPtype[pblk].addElement(eq, curIdx + idxr.strideParShell(type), v);
-					}
-				}
-			}
-		}
-	}
-
-	_discParFlux.destroy<double>();
 }
 
 int LumpedRateModelWithPoresDG2D::residualSensFwdWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
@@ -1933,49 +1491,21 @@ void LumpedRateModelWithPoresDG2D::multiplyWithJacobian(const SimulationTime& si
 		ret[i] = alpha * yS[i] + beta * ret[i];
 	}
 
-#ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType + 1), [&](std::size_t idx)
-#else
-	for (unsigned int idx = 0; idx < _disc.axNPoints * _disc.radNPoints * _disc.nParType + 1; ++idx)
-#endif
-	{
-		if (cadet_unlikely(idx == 0))
-		{
-			_convDispOp.jacobian().multiplyVector(yS + idxr.offsetC(), alpha, beta, ret + idxr.offsetC());
-			_jacCF.multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + idxr.offsetC());
-		}
-		else
-		{
-			const unsigned int pblk = idx - 1;
-			const unsigned int type = pblk / (_disc.axNPoints * _disc.radNPoints);
-			const unsigned int par = pblk % (_disc.axNPoints * _disc.radNPoints);
+	// Main Jacobian
+	Eigen::Map<Eigen::VectorXd> ret_vec(ret + idxr.offsetC(), numPureDofs());
+	Eigen::Map<const Eigen::VectorXd> yS_vec(yS + idxr.offsetC(), numPureDofs());
+	ret_vec = alpha * _globalJac * yS_vec + beta * ret_vec;
 
-			const int localOffset = idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par});
-			_jacP[pblk].multiplyVector(yS + localOffset, alpha, beta, ret + localOffset);
-			_jacPF[pblk].multiplyVector(yS + idxr.offsetJf(), alpha, 1.0, ret + localOffset);
-		}
-	} CADET_PARFOR_END;
+	// todo
+	//// Map inlet DOFs to the column inlet (first bulk cells)
+	//// Inlet at z = 0 for forward flow, at z = L for backward flow.
+	//unsigned int offInlet = _convDispOp.forwardFlow() ? 0 : (_disc.nCol - 1u) * idxr.strideColCell();
 
-	// Handle flux equation
-
-	// Set fluxes(ret) = fluxes(yS)
-	// This applies the identity matrix in the bottom right corner of the Jaocbian (flux equation)
-	for (unsigned int i = idxr.offsetJf(); i < numDofs(); ++i)
-		ret[i] = alpha * yS[i] + beta * ret[i];
-
-	double* const retJf = ret + idxr.offsetJf();
-	_jacFC.multiplyVector(yS + idxr.offsetC(), alpha, 1.0, retJf);
-
-	for (unsigned int type = 0; type < _disc.nParType; ++type)
-	{
-		for (unsigned int par = 0; par < _disc.axNPoints * _disc.radNPoints; ++par)
-		{
-			_jacFP[type * _disc.axNPoints * _disc.radNPoints + par].multiplyVector(yS + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{par}), alpha, 1.0, retJf);
-		}
-	}
-
-	// Map inlet DOFs to the column inlet (first bulk cells)
-	_jacInlet.multiplyAdd(yS, ret + idxr.offsetC(), alpha);
+	//for (unsigned int comp = 0; comp < _disc.nComp; comp++) {
+	//	for (unsigned int node = 0; node < (_disc.exactInt ? _disc.nNodes : 1); node++) {
+	//		ret[idxr.offsetC() + offInlet + comp * idxr.strideColComp() + node * idxr.strideColNode()] += alpha * _jacInlet(node, 0) * yS[comp];
+	//	}
+	//}
 }
 
 /**
@@ -1992,9 +1522,9 @@ void LumpedRateModelWithPoresDG2D::multiplyWithDerivativeJacobian(const Simulati
 	Indexer idxr(_disc);
 
 #ifdef CADET_PARALLELIZE
-	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.axNPoints * _disc.radNPoints * _disc.nParType + 1), [&](std::size_t idx)
+	tbb::parallel_for(std::size_t(0), static_cast<std::size_t>(_disc.nBulkPoints * _disc.nParType + 1), [&](std::size_t idx)
 #else
-	for (unsigned int idx = 0; idx < _disc.axNPoints * _disc.radNPoints * _disc.nParType + 1; ++idx)
+	for (unsigned int idx = 0; idx < _disc.nBulkPoints * _disc.nParType + 1; ++idx)
 #endif
 	{
 		if (cadet_unlikely(idx == 0))
@@ -2004,30 +1534,53 @@ void LumpedRateModelWithPoresDG2D::multiplyWithDerivativeJacobian(const Simulati
 		else
 		{
 			const unsigned int idxParLoop = idx - 1;
-			const unsigned int pblk = idxParLoop % (_disc.axNPoints * _disc.radNPoints);
-			const unsigned int type = idxParLoop / (_disc.axNPoints * _disc.radNPoints);
+			const unsigned int pblk = idxParLoop % _disc.nBulkPoints;
+			const unsigned int type = idxParLoop / _disc.nBulkPoints;
 
-			const double invBetaP = (1.0 / static_cast<double>(_parPorosity[type]) - 1.0);
+			// Particle
+			double const* const localSdot = sDot + idxr.offsetCp(ParticleTypeIndex{ type }, ParticleIndex{ pblk });
+			double* const localRet = ret + idxr.offsetCp(ParticleTypeIndex{ type }, ParticleIndex{ pblk });
+
 			unsigned int const* const nBound = _disc.nBound + type * _disc.nComp;
 			unsigned int const* const boundOffset = _disc.boundOffset + type * _disc.nComp;
+
+			// Mobile phase
+			for (unsigned int comp = 0; comp < _disc.nComp; ++comp)
+			{
+				// Add derivative with respect to dc_p / dt to Jacobian
+				localRet[comp] = localSdot[comp];
+
+				const double invBetaP = (1.0 - static_cast<double>(_parPorosity[type])) / (static_cast<double>(_poreAccessFactor[type * _disc.nComp + comp]) * static_cast<double>(_parPorosity[type]));
+
+				// Add derivative with respect to dq / dt to Jacobian (normal equations)
+				for (unsigned int i = 0; i < nBound[comp]; ++i)
+				{
+					// Index explanation:
+					//   nComp -> skip mobile phase
+					//   + boundOffset[comp] skip bound states of all previous components
+					//   + i go to current bound state
+					localRet[comp] += invBetaP * localSdot[_disc.nComp + boundOffset[comp] + i];
+				}
+			}
+
+			// Solid phase
+			double const* const solidSdot = localSdot + _disc.nComp;
+			double* const solidRet = localRet + _disc.nComp;
 			int const* const qsReaction = _binding[type]->reactionQuasiStationarity();
 
-			// Particle shells
-			for (unsigned int shell = 0; shell < _disc.nParCell[type]; ++shell)
+			for (unsigned int bnd = 0; bnd < _disc.strideBound[type]; ++bnd)
 			{
-				double const* const localSdot = sDot + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}) + shell * idxr.strideParShell(type);
-				double* const localRet = ret + idxr.offsetCp(ParticleTypeIndex{type}, ParticleIndex{pblk}) + shell * idxr.strideParShell(type);
-				parts::cell::multiplyWithDerivativeJacobianKernel<true>(localSdot, localRet, _disc.nComp, nBound, boundOffset, _disc.strideBound[type], qsReaction, 1.0, invBetaP);
+				// Add derivative with respect to dynamic states to Jacobian
+				if (qsReaction[bnd])
+					solidRet[bnd] = 0.0;
+				else
+					solidRet[bnd] = solidSdot[bnd];
 			}
 		}
 	} CADET_PARFOR_END;
 
-	// Handle fluxes (all algebraic)
-	double* const dFdyDot = ret + idxr.offsetJf();
-	std::fill(dFdyDot, dFdyDot + _disc.axNPoints * _disc.nComp * _disc.radNPoints * _disc.nParType, 0.0);
-
 	// Handle inlet DOFs (all algebraic)
-	std::fill_n(ret, _disc.nComp * _disc.radNPoints, 0.0);
+	std::fill_n(ret, _disc.nComp, 0.0);
 }
 
 void LumpedRateModelWithPoresDG2D::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
@@ -2071,233 +1624,6 @@ void LumpedRateModelWithPoresDG2D::expandErrorTol(double const* errorSpec, unsig
 	// @todo Write this function
 }
 
-/**
- * @brief Computes equidistant radial nodes in the beads
- */
-void LumpedRateModelWithPoresDG2D::setEquidistantRadialDisc(unsigned int parType)
-{
-	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrInnerSurfAreaPerVolume = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-
-	const active radius = _parRadius[parType] - _parCoreRadius[parType];
-	const active dr = radius / static_cast<double>(_disc.nParCell[parType]);
-	std::fill(_parCellSize.data() + _disc.nParCellsBeforeType[parType], _parCellSize.data() + _disc.nParCellsBeforeType[parType] + _disc.nParCell[parType], dr);
-
-	if (_parGeomSurfToVol[parType] == SurfVolRatioSphere)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			const active r_out = _parRadius[parType] - static_cast<double>(cell) * dr;
-			const active r_in = _parRadius[parType] - static_cast<double>(cell + 1) * dr;
-
-			ptrCenterRadius[cell] = _parRadius[parType] - (0.5 + static_cast<double>(cell)) * dr;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = pow(r_out, 3.0) - pow(r_in, 3.0);
-
-			ptrOuterSurfAreaPerVolume[cell] = 3.0 * sqr(r_out) / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 3.0 * sqr(r_in) / vol;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioCylinder)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			const active r_out = _parRadius[parType] - static_cast<double>(cell) * dr;
-			const active r_in = _parRadius[parType] - static_cast<double>(cell + 1) * dr;
-
-			ptrCenterRadius[cell] = _parRadius[parType] - (0.5 + static_cast<double>(cell)) * dr;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = sqr(r_out) - sqr(r_in);
-
-			ptrOuterSurfAreaPerVolume[cell] = 2.0 * r_out / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 2.0 * r_in / vol;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioSlab)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			const active r_out = _parRadius[parType] - static_cast<double>(cell) * dr;
-			const active r_in = _parRadius[parType] - static_cast<double>(cell + 1) * dr;
-
-			ptrCenterRadius[cell] = _parRadius[parType] - (0.5 + static_cast<double>(cell)) * dr;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = r_out - r_in;
-
-			ptrOuterSurfAreaPerVolume[cell] = 1.0 / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 1.0 / vol;
-		}
-	}
-}
-
-/**
- * @brief Computes the radial nodes in the beads in such a way that all shells have the same volume
- */
-void LumpedRateModelWithPoresDG2D::setEquivolumeRadialDisc(unsigned int parType)
-{
-	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrInnerSurfAreaPerVolume = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-
-	if (_parGeomSurfToVol[parType] == SurfVolRatioSphere)
-	{
-		active r_out = _parRadius[parType];
-		active r_in = _parCoreRadius[parType];
-		const active volumePerShell = (pow(_parRadius[parType], 3.0) - pow(_parCoreRadius[parType], 3.0)) / static_cast<double>(_disc.nParCell[parType]);
-
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			if (cell != (_disc.nParCell[parType] - 1))
-				r_in = pow(pow(r_out, 3.0) - volumePerShell, (1.0 / 3.0));
-			else
-				r_in = _parCoreRadius[parType];
-
-			ptrCellSize[cell] = r_out - r_in;
-			ptrCenterRadius[cell] = (r_out + r_in) * 0.5;
-
-			ptrOuterSurfAreaPerVolume[cell] = 3.0 * sqr(r_out) / volumePerShell;
-			ptrInnerSurfAreaPerVolume[cell] = 3.0 * sqr(r_in) / volumePerShell;
-
-			// For the next cell: r_out == r_in of the current cell
-			r_out = r_in;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioCylinder)
-	{
-		active r_out = _parRadius[parType];
-		active r_in = _parCoreRadius[parType];
-		const active volumePerShell = (sqr(_parRadius[parType]) - sqr(_parCoreRadius[parType])) / static_cast<double>(_disc.nParCell[parType]);
-
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			if (cell != (_disc.nParCell[parType] - 1))
-				r_in = sqrt(sqr(r_out) - volumePerShell);
-			else
-				r_in = _parCoreRadius[parType];
-
-			ptrCellSize[cell] = r_out - r_in;
-			ptrCenterRadius[cell] = (r_out + r_in) * 0.5;
-
-			ptrOuterSurfAreaPerVolume[cell] = 2.0 * r_out / volumePerShell;
-			ptrInnerSurfAreaPerVolume[cell] = 2.0 * r_in / volumePerShell;
-
-			// For the next cell: r_out == r_in of the current cell
-			r_out = r_in;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioSlab)
-	{
-		active r_out = _parRadius[parType];
-		active r_in = _parCoreRadius[parType];
-		const active volumePerShell = (_parRadius[parType] - _parCoreRadius[parType]) / static_cast<double>(_disc.nParCell[parType]);
-
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			if (cell != (_disc.nParCell[parType] - 1))
-				r_in = r_out - volumePerShell;
-			else
-				r_in = _parCoreRadius[parType];
-
-			ptrCellSize[cell] = r_out - r_in;
-			ptrCenterRadius[cell] = (r_out + r_in) * 0.5;
-
-			ptrOuterSurfAreaPerVolume[cell] = 1.0 / volumePerShell;
-			ptrInnerSurfAreaPerVolume[cell] = 1.0 / volumePerShell;
-
-			// For the next cell: r_out == r_in of the current cell
-			r_out = r_in;
-		}
-	}
-}
-
-/**
- * @brief Computes all helper quantities for radial bead discretization from given radial cell boundaries
- * @details Calculates surface areas per volume for every shell and the radial shell centers.
- */
-void LumpedRateModelWithPoresDG2D::setUserdefinedRadialDisc(unsigned int parType)
-{
-	active* const ptrCellSize = _parCellSize.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrCenterRadius = _parCenterRadius.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrOuterSurfAreaPerVolume = _parOuterSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-	active* const ptrInnerSurfAreaPerVolume = _parInnerSurfAreaPerVolume.data() + _disc.nParCellsBeforeType[parType];
-
-	// Care for the right ordering and include 0.0 / 1.0 if not already in the vector.
-	std::vector<active> orderedInterfaces = std::vector<active>(_parDiscVector.begin() + _disc.nParCellsBeforeType[parType] + parType,
-		_parDiscVector.begin() + _disc.nParCellsBeforeType[parType] + parType + _disc.nParCell[parType] + 1);
-
-	// Sort in descending order
-	std::sort(orderedInterfaces.begin(), orderedInterfaces.end(), std::greater<active>());
-
-	// Force first and last element to be 1.0 and 0.0, respectively
-	orderedInterfaces[0] = 1.0;
-	orderedInterfaces.back() = 0.0;
-
-	// Map [0, 1] -> [core radius, particle radius] via linear interpolation
-	for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		orderedInterfaces[cell] = static_cast<double>(orderedInterfaces[cell]) * (_parRadius[parType] - _parCoreRadius[parType]) + _parCoreRadius[parType];
-
-	if (_parGeomSurfToVol[parType] == SurfVolRatioSphere)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			ptrCellSize[cell] = orderedInterfaces[cell] - orderedInterfaces[cell + 1];
-			ptrCenterRadius[cell] = (orderedInterfaces[cell] + orderedInterfaces[cell + 1]) * 0.5;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = pow(orderedInterfaces[cell], 3.0) - pow(orderedInterfaces[cell + 1], 3.0);
-
-			ptrOuterSurfAreaPerVolume[cell] = 3.0 * sqr(orderedInterfaces[cell]) / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 3.0 * sqr(orderedInterfaces[cell + 1]) / vol;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioCylinder)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			ptrCellSize[cell] = orderedInterfaces[cell] - orderedInterfaces[cell + 1];
-			ptrCenterRadius[cell] = (orderedInterfaces[cell] + orderedInterfaces[cell + 1]) * 0.5;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = sqr(orderedInterfaces[cell]) - sqr(orderedInterfaces[cell + 1]);
-
-			ptrOuterSurfAreaPerVolume[cell] = 2.0 * orderedInterfaces[cell] / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 2.0 * orderedInterfaces[cell + 1] / vol;
-		}
-	}
-	else if (_parGeomSurfToVol[parType] == SurfVolRatioSlab)
-	{
-		for (unsigned int cell = 0; cell < _disc.nParCell[parType]; ++cell)
-		{
-			ptrCellSize[cell] = orderedInterfaces[cell] - orderedInterfaces[cell + 1];
-			ptrCenterRadius[cell] = (orderedInterfaces[cell] + orderedInterfaces[cell + 1]) * 0.5;
-
-			// Compute denominator -> corresponding to cell volume
-			const active vol = orderedInterfaces[cell] - orderedInterfaces[cell + 1];
-
-			ptrOuterSurfAreaPerVolume[cell] = 1.0 / vol;
-			ptrInnerSurfAreaPerVolume[cell] = 1.0 / vol;
-		}
-	}
-}
-
-void LumpedRateModelWithPoresDG2D::updateRadialDisc()
-{
-	for (unsigned int i = 0; i < _disc.nParType; ++i)
-	{
-		if (_parDiscType[i] == ParticleDiscretizationMode::Equidistant)
-			setEquidistantRadialDisc(i);
-		else if (_parDiscType[i] == ParticleDiscretizationMode::Equivolume)
-			setEquivolumeRadialDisc(i);
-		else if (_parDiscType[i] == ParticleDiscretizationMode::UserDefined)
-			setUserdefinedRadialDisc(i);
-	}
-}
-
 bool LumpedRateModelWithPoresDG2D::setParameter(const ParameterId& pId, double value)
 {
 	if (pId.unitOperation == _unitOpIdx)
@@ -2308,10 +1634,6 @@ bool LumpedRateModelWithPoresDG2D::setParameter(const ParameterId& pId, double v
 			return true;
 		if (multiplexCompTypeSecParameterValue(pId, hashString("FILM_DIFFUSION"), _filmDiffusionMode, _filmDiffusion, _disc.nParType, _disc.nComp, value, nullptr))
 			return true;
-		if (multiplexCompTypeSecParameterValue(pId, hashString("PAR_DIFFUSION"), _parDiffusionMode, _parDiffusion, _disc.nParType, _disc.nComp, value, nullptr))
-			return true;
-		if (multiplexBndCompTypeSecParameterValue(pId, hashString("PAR_SURFDIFFUSION"), _parSurfDiffusionMode, _parSurfDiffusion, _disc.nParType, _disc.nComp, _disc.strideBound, _disc.nBound, _disc.boundOffset, value, nullptr))
-			return true;
 		const int mpIc = multiplexInitialConditions(pId, value, false);
 		if (mpIc > 0)
 			return true;
@@ -2319,8 +1641,6 @@ bool LumpedRateModelWithPoresDG2D::setParameter(const ParameterId& pId, double v
 			return false;
 
 		if (multiplexTypeParameterValue(pId, hashString("PAR_RADIUS"), _singleParRadius, _parRadius, value, nullptr))
-			return true;
-		if (multiplexTypeParameterValue(pId, hashString("PAR_CORERADIUS"), _singleParCoreRadius, _parCoreRadius, value, nullptr))
 			return true;
 		if (multiplexTypeParameterValue(pId, hashString("PAR_POROSITY"), _singleParPorosity, _parPorosity, value, nullptr))
 			return true;
@@ -2330,10 +1650,6 @@ bool LumpedRateModelWithPoresDG2D::setParameter(const ParameterId& pId, double v
 	}
 
 	const bool result = UnitOperationBase::setParameter(pId, value);
-
-	// Check whether particle radius or core radius has changed and update radial discretization if necessary
-	if (result && ((pId.name == hashString("PAR_RADIUS")) || (pId.name == hashString("PAR_CORERADIUS"))))
-		updateRadialDisc();
 
 	return result;
 }
@@ -2348,16 +1664,10 @@ void LumpedRateModelWithPoresDG2D::setSensitiveParameterValue(const ParameterId&
 			return;
 		if (multiplexCompTypeSecParameterValue(pId, hashString("FILM_DIFFUSION"), _filmDiffusionMode, _filmDiffusion, _disc.nParType, _disc.nComp, value, &_sensParams))
 			return;
-		if (multiplexCompTypeSecParameterValue(pId, hashString("PAR_DIFFUSION"), _parDiffusionMode, _parDiffusion, _disc.nParType, _disc.nComp, value, &_sensParams))
-			return;
-		if (multiplexBndCompTypeSecParameterValue(pId, hashString("PAR_SURFDIFFUSION"), _parSurfDiffusionMode, _parSurfDiffusion, _disc.nParType, _disc.nComp, _disc.strideBound, _disc.nBound, _disc.boundOffset, value, &_sensParams))
-			return;
 		if (multiplexInitialConditions(pId, value, true) != 0)
 			return;
 
 		if (multiplexTypeParameterValue(pId, hashString("PAR_RADIUS"), _singleParRadius, _parRadius, value, &_sensParams))
-			return;
-		if (multiplexTypeParameterValue(pId, hashString("PAR_CORERADIUS"), _singleParCoreRadius, _parCoreRadius, value, &_sensParams))
 			return;
 		if (multiplexTypeParameterValue(pId, hashString("PAR_POROSITY"), _singleParPorosity, _parPorosity, value, &_sensParams))
 			return;
@@ -2367,10 +1677,6 @@ void LumpedRateModelWithPoresDG2D::setSensitiveParameterValue(const ParameterId&
 	}
 
 	UnitOperationBase::setSensitiveParameterValue(pId, value);
-
-	// Check whether particle radius or core radius has changed and update radial discretization if necessary
-	if ((pId.name == hashString("PAR_RADIUS")) || (pId.name == hashString("PAR_CORERADIUS")))
-		updateRadialDisc();
 }
 
 bool LumpedRateModelWithPoresDG2D::setSensitiveParameter(const ParameterId& pId, unsigned int adDirection, double adValue)
@@ -2395,18 +1701,6 @@ bool LumpedRateModelWithPoresDG2D::setSensitiveParameter(const ParameterId& pId,
 			return true;
 		}
 
-		if (multiplexCompTypeSecParameterAD(pId, hashString("PAR_DIFFUSION"), _parDiffusionMode, _parDiffusion, _disc.nParType, _disc.nComp, adDirection, adValue, _sensParams))
-		{
-			LOG(Debug) << "Found parameter " << pId << ": Dir " << adDirection << " is set to " << adValue;
-			return true;
-		}
-
-		if (multiplexBndCompTypeSecParameterAD(pId, hashString("PAR_SURFDIFFUSION"), _parSurfDiffusionMode, _parSurfDiffusion, _disc.nParType, _disc.nComp, _disc.strideBound, _disc.nBound, _disc.boundOffset, adDirection, adValue, _sensParams))
-		{
-			LOG(Debug) << "Found parameter " << pId << ": Dir " << adDirection << " is set to " << adValue;
-			return true;
-		}
-
 		const int mpIc = multiplexInitialConditions(pId, adDirection, adValue);
 		if (mpIc > 0)
 		{
@@ -2417,12 +1711,6 @@ bool LumpedRateModelWithPoresDG2D::setSensitiveParameter(const ParameterId& pId,
 			return false;
 
 		if (multiplexTypeParameterAD(pId, hashString("PAR_RADIUS"), _singleParRadius, _parRadius, adDirection, adValue, _sensParams))
-		{
-			LOG(Debug) << "Found parameter " << pId << ": Dir " << adDirection << " is set to " << adValue;
-			return true;
-		}
-
-		if (multiplexTypeParameterAD(pId, hashString("PAR_CORERADIUS"), _singleParCoreRadius, _parCoreRadius, adDirection, adValue, _sensParams))
 		{
 			LOG(Debug) << "Found parameter " << pId << ": Dir " << adDirection << " is set to " << adValue;
 			return true;
@@ -2442,12 +1730,6 @@ bool LumpedRateModelWithPoresDG2D::setSensitiveParameter(const ParameterId& pId,
 	}
 
 	const bool result = UnitOperationBase::setSensitiveParameter(pId, adDirection, adValue);
-
-	// Check whether particle radius or core radius has been set active and update radial discretization if necessary
-	// Note that we need to recompute the radial discretization variables (_parCellSize, _parCenterRadius, _parOuterSurfAreaPerVolume, _parInnerSurfAreaPerVolume)
-	// because their gradient has changed (although their nominal value has not changed).
-	if ((pId.name == hashString("PAR_RADIUS")) || (pId.name == hashString("PAR_CORERADIUS")))
-		updateRadialDisc();
 
 	return result;
 }
@@ -2492,14 +1774,11 @@ int LumpedRateModelWithPoresDG2D::Exporter::writeSolidPhase(unsigned int parType
 	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType}) + _disc.nComp;
 	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 	{
-		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
-		{
-			std::copy_n(ptr, _disc.strideBound[parType], buffer);
-			buffer += _disc.strideBound[parType];
-			ptr += stride;
-		}
+		std::copy_n(ptr, _disc.strideBound[parType], buffer);
+		buffer += _disc.strideBound[parType];
+		ptr += stride;
 	}
-	return _disc.axNPoints * _disc.radNPoints * _disc.nParCell[parType] * _disc.strideBound[parType];
+	return _disc.nBulkPoints * _disc.strideBound[parType];
 }
 
 int LumpedRateModelWithPoresDG2D::Exporter::writeParticleMobilePhase(unsigned int parType, double* buffer) const
@@ -2510,28 +1789,11 @@ int LumpedRateModelWithPoresDG2D::Exporter::writeParticleMobilePhase(unsigned in
 	double const* ptr = _data + _idx.offsetCp(ParticleTypeIndex{parType});
 	for (unsigned int i = 0; i < _disc.axNPoints * _disc.radNPoints; ++i)
 	{
-		for (unsigned int j = 0; j < _disc.nParCell[parType]; ++j)
-		{
 			std::copy_n(ptr, _disc.nComp, buffer);
 			buffer += _disc.nComp;
 			ptr += stride;
-		}
 	}
-	return _disc.axNPoints * _disc.radNPoints * _disc.nParCell[parType] * _disc.nComp;
-}
-
-int LumpedRateModelWithPoresDG2D::Exporter::writeParticleFlux(double* buffer) const
-{
-	const int blockSize = numParticleFluxDofs();
-	std::copy_n(_idx.jf(_data), blockSize, buffer);
-	return blockSize;
-}
-
-int LumpedRateModelWithPoresDG2D::Exporter::writeParticleFlux(unsigned int parType, double* buffer) const
-{
-	const unsigned int blockSize = _disc.nComp * _disc.radNPoints * _disc.axNPoints;
-	std::copy_n(_idx.jf(_data) + blockSize * parType, blockSize, buffer);
-	return blockSize;
+	return _disc.nBulkPoints * _disc.nComp;
 }
 
 int LumpedRateModelWithPoresDG2D::Exporter::writeInlet(unsigned int port, double* buffer) const

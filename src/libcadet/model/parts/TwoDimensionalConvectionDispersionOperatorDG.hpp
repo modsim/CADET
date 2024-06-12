@@ -109,6 +109,7 @@ protected:
 	template <typename StateType>
 	using ConstMatrixMap = Eigen::Map<const Eigen::Matrix<StateType, Eigen::Dynamic, Eigen::Dynamic>, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
+	void calcLiftingMatricesDash();
 	Eigen::MatrixXd calcTildeSrDash(const unsigned int elemIdx);
 	Eigen::MatrixXd calcTildeMrDash(const unsigned int elemIdx);
 	Eigen::MatrixXd calcTildeMr(const unsigned int elemIdx);

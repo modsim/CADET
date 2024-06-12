@@ -482,6 +482,20 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeMr(const unsigne
 	return tildeMr;
 }
 
+void TwoDimensionalConvectionDispersionOperatorDG::calcLiftingMatricesDash()
+{
+	const active* const d_rad = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, 0);
+
+	// todo component dependence of radial dispersion
+	const int comp = 0;
+
+	for (int r = 0; r < _radNElem; r++) // todo ? use active type for column radius and radial dispersion sensitivity
+	{
+		_radLiftMCyl[r](0, 0) = static_cast<double>(d_rad[comp + r * _radNNodes * _nComp]) * static_cast<double>(_radialElemInterfaces[r]);
+		_radLiftMCyl[r](1, _radNNodes - 1) = - static_cast<double>(d_rad[comp + (r * _radNNodes + _radPolyDeg) * _nComp]) * static_cast<double>(_radialElemInterfaces[r + 1]);
+	}
+}
+
 MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeMrDash(const unsigned int elemIdx)
 {
 	MatrixXd ellEll = MatrixXd::Zero(_radNNodes, _qNNodes);
@@ -567,8 +581,8 @@ void TwoDimensionalConvectionDispersionOperatorDG::initializeDG()
 	
 	for (unsigned int rElem = 0; rElem < _radNElem; rElem++)
 	{
-		_radLiftMCyl[rElem] = dgtoolbox::liftingMatrix(_radNNodes).transpose(); // note: metrics added after updateRadialDisc()
 		// todo ? use active types for column radius sensitivity
+		_radLiftMCyl[rElem].setZero();
 		_transMrCyl[rElem] = ((static_cast<double>(_radialElemInterfaces[rElem + 1] - static_cast<double>(_radDelta[rElem]) / 2.0)) * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 0.0) + static_cast<double>(_radDelta[rElem]) / 2.0 * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 1.0)).transpose();
 		_invTransMrCyl[rElem] = _transMrCyl[rElem].inverse();
 		_transTildeMr[rElem] = calcTildeMr(rElem).transpose();
@@ -718,12 +732,6 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configure(UnitOpIdx unitOpIdx
 
 	updateRadialDisc();
 
-	for (int r = 0; r < _radNElem; r++) // todo ? use active type for column radius sensitivity
-	{
-		_radLiftMCyl[r](0, 0) = static_cast<double>(_radialElemInterfaces[r]);
-		_radLiftMCyl[r](1, _radNNodes - 1) = -static_cast<double>(_radialElemInterfaces[r + 1]);
-	}
-
 	// Read section dependent parameters (transport)
 
 	// Read VELOCITY
@@ -807,15 +815,20 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configure(UnitOpIdx unitOpIdx
 	registerParam1DArray(parameters, _colPorosities, [=](bool multi, unsigned int i) { return makeParamId(hashString("COL_POROSITY"), unitOpIdx, CompIndep, multi ? i : ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
 
 	// configure DG operators
-	initializeDG();
 	_curRadialDispersionTilde = std::vector<active>(_radNElem * _qNNodes, 0.0);
+	// todo component dependence! getSectionDependentSlice gives dispersion parameter in radial position major
 	const active* const curRadialDispersion = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, 0);
 	for (unsigned int i = 0; i < _radInterpolationM.rows(); i++) {
 		for (unsigned int j = 0; j < _radInterpolationM.cols(); j++) {
 			_curRadialDispersionTilde[i] += _radInterpolationM(i, j) * curRadialDispersion[j];
 		}
 	}
-	
+
+	initializeDG();
+
+	// update radial main eq. lifting matrix, which depends on geometry
+	calcLiftingMatricesDash();
+
 	return true;
 }
 
@@ -856,6 +869,8 @@ bool TwoDimensionalConvectionDispersionOperatorDG::notifyDiscontinuousSectionTra
 			_dir[i] = newDir;
 		}
 	}
+
+	// todo: recompute operators that involve section dependent parameters
 
 	// Change the sparsity pattern if necessary
 	if ((secIdx == 0) || hasChanged)
@@ -931,9 +946,6 @@ template <typename StateType, typename ResidualType, typename ParamType>
 int TwoDimensionalConvectionDispersionOperatorDG::residualImpl(const IModel& model, double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
 {
 	const unsigned int offsetC = _radNPoints * _nComp;
-
-	active const* const d_rho = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, secIdx);
-	active const* const d_c = getSectionDependentSlice(_axialDispersion, _radNPoints * _nComp, secIdx);
 
 	const int auxRadElemStride = _radNNodes;
 	const int auxAxNodeStride = _radNElem * auxRadElemStride;
@@ -1077,15 +1089,14 @@ int TwoDimensionalConvectionDispersionOperatorDG::residualImpl(const IModel& mod
 				else // Danckwert outflow boundary condition
 					_gStarDispZ.row(1).setZero();
 
-				// todo double check use of cylinder matrices, not just the standard, ie _transMrCyl _invTransMrCyl
 				// todo velocity radial position dependence!
 
 				// transport residual (i.e. LHS - RHS)
 				_Res -= 2.0 / static_cast<ParamType>(_axDelta) * (_axInvMM * _axLiftM).template cast<ResidualType>() * (
-					 - _fStarConvZ + _gStarDispZ.template cast<ResidualType>() * (_transTildeMr[rEidx] * _invTransMrCyl[rEidx]).template cast<ResidualType>()
-					 - _axTransStiffM.template cast<ResidualType>() * (-static_cast<ParamType>(_curVelocity[0]) * _C.template cast<ResidualType>() + _tildeGz.template cast<ResidualType>() * (_transTildeMrDash[rEidx] * _invTransMrCyl[rEidx]).template cast<ResidualType>())
+					 - _fStarConvZ + 2.0 / static_cast<ParamType>(_axDelta) * _gStarDispZ.template cast<ResidualType>() * (_transTildeMr[rEidx] * _invTransMrCyl[rEidx]).template cast<ResidualType>()
+					 - _axTransStiffM.template cast<ResidualType>() * (-static_cast<ParamType>(_curVelocity[0]) * _C.template cast<ResidualType>() + 2.0 / static_cast<ParamType>(_axDelta) * _tildeGz.template cast<ResidualType>() * (_transTildeMrDash[rEidx] * _invTransMrCyl[rEidx]).template cast<ResidualType>())
 					 )
-					 + 2.0 / static_cast<ParamType>(_radDelta[rEidx]) * (
+					 + 2.0 / static_cast<ParamType>(_radDelta[rEidx]) * 2.0 / static_cast<ParamType>(_radDelta[rEidx]) * (
 				     _gStarDispR.template cast<ResidualType>() * _radLiftMCyl[rEidx].template cast<ResidualType>()
 					 - _tildeGr.template cast<ResidualType>() * _transTildeSrDash[rEidx].template cast<ResidualType>()
 				     ) * _invTransMrCyl[rEidx].template cast<ResidualType>();

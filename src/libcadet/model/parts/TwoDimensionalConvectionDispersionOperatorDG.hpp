@@ -23,6 +23,7 @@
 #include "Memory.hpp"
 #include "model/ParameterMultiplexing.hpp"
 #include "SimulationTypes.hpp"
+#include "linalg/BandedEigenSparseRowIterator.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
@@ -73,18 +74,19 @@ public:
 	void setFlowRates(int compartment, const active& in, const active& out) CADET_NOEXCEPT;
 	void setFlowRates(active const* in, active const* out) CADET_NOEXCEPT;
 
-	bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, unsigned int axNodeStride, unsigned int radNodeStride, bool dynamicReactions);
+	bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, const unsigned int nComp, const unsigned int radNodeStride);
 	bool configure(UnitOpIdx unitOpIdx, IParameterProvider& paramProvider, std::unordered_map<ParameterId, active*>& parameters);
 	bool notifyDiscontinuousSectionTransition(double t, unsigned int secIdx);
 
-	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, WithoutParamSensitivity);
-	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, WithoutParamSensitivity);
-	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, WithParamSensitivity);
-	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, WithParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, const bool wantJac, WithoutParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, const bool wantJac, WithoutParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, const bool wantJac, WithParamSensitivity);
+	int residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, const bool wantJac, WithParamSensitivity);
 
 	bool assembleConvDispJacobian(Eigen::SparseMatrix<double, Eigen::RowMajor>& jacobian, Eigen::MatrixXd& jacInlet, const int bulkOffset);
 
 	void multiplyWithDerivativeJacobian(const SimulationTime& simTime, double const* sDot, double* ret) const;
+	void addTimeDerivativeToJacobian(double alpha, Eigen::SparseMatrix<double, Eigen::RowMajor>& jacDisc, unsigned int blockOffset = 0);
 
 	bool setParameter(const ParameterId& pId, double value);
 	bool setSensitiveParameter(std::unordered_set<active*>& sensParams, const ParameterId& pId, unsigned int adDirection, double adValue);
@@ -95,11 +97,28 @@ public:
 	inline const active& currentVelocity(int idx) const CADET_NOEXCEPT { return _curVelocity[idx]; }
 	inline const active& columnPorosity(int idx) const CADET_NOEXCEPT { return _colPorosities[idx]; }
 	//inline const active& crossSection(int idx) const CADET_NOEXCEPT { return _nodeCrossSections[idx]; } // todo needed?
+	double relativeAxialCoordinate(unsigned int idx) const
+	{
+		// const unsigned int cell = floor(idx / _nNodes);
+		// const unsigned int node = idx % _nNodes;
+		// divide by column length to get relative position
+		return (floor(idx / _axNNodes) * static_cast<double>(_axDelta) + 0.5 * static_cast<double>(_axDelta) * (1.0 + _axNodes[idx % _axNNodes])) / static_cast<double>(_colLength);
+	}
+	double relativeRadialCoordinate(unsigned int idx) const
+	{
+		const unsigned int elem = floor(idx / _radNNodes);
+		return (elem * static_cast<double>(_radDelta[elem]) + 0.5 * static_cast<double>(_radDelta[elem]) * (1.0 + _radNodes[idx % _radNNodes])) / static_cast<double>(_colRadius);
+	}
 
+	inline const unsigned int axNPoints() const CADET_NOEXCEPT { return _axNPoints; }
+	inline const unsigned int radNPoints() const CADET_NOEXCEPT { return _radNPoints; }
 	inline bool isCurrentFlowForward(int idx) const CADET_NOEXCEPT { return _curVelocity[idx] >= 0.0; }
 	const active& axialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT;
 	const active& radialDispersion(unsigned int idxSec, int idxRad, int idxComp) const CADET_NOEXCEPT;
 	double inletFactor(unsigned int idxSec, int idxRad) const CADET_NOEXCEPT;
+
+	void writeRadialCoordinates(double* coords) const;
+	void writeAxialCoordinates(double* coords) const;
 
 protected:
 
@@ -206,7 +225,7 @@ protected:
 	active _colRadius; //!< Column radius \f$ r_c \f$
 	active _axDelta; //!< Axial equidistant element spacing
 	std::vector<active> _radDelta; //!< Radial element spacing
-	std::vector<active> _radialCoordinates; //!< Coordinates of the radial discrete points
+	//std::vector<active> _radialCoordinates; //!< Coordinates of the radial discrete points // todo not needed, delete?
 	std::vector<active> _radialElemInterfaces; //!< Coordinates of the element interfaces
 	std::vector<active> _nodalCrossSections; //!< cross section area for each node
 

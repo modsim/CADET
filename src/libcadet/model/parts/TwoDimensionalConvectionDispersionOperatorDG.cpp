@@ -543,6 +543,23 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeSrDash(const uns
 	return tildeSrDash;
 }
 
+void TwoDimensionalConvectionDispersionOperatorDG::writeAxialCoordinates(double* coords) const
+{
+	double* leftElemBndries = new double[_axNElem];
+	for (int elem = 0; elem < _axNElem; elem++)
+		leftElemBndries[elem] = static_cast<double>(_axDelta) * elem;
+	dgtoolbox::writeDGCoordinates(coords, _axNElem, _axNNodes, static_cast<const double*>(&_axNodes[0]), static_cast<double>(_colLength), leftElemBndries);
+	delete[] leftElemBndries;
+}
+void TwoDimensionalConvectionDispersionOperatorDG::writeRadialCoordinates(double* coords) const
+{
+	double* leftElemBndries = new double[_radNElem];
+	for (int elem = 0; elem < _radNElem; elem++)
+		leftElemBndries[elem] = static_cast<double>(_radDelta[elem]) * elem;
+	dgtoolbox::writeDGCoordinates(coords, _radNElem, _radNNodes, static_cast<const double*>(&_radNodes[0]), static_cast<double>(_colLength), leftElemBndries);
+	delete[] leftElemBndries;
+}
+
 void TwoDimensionalConvectionDispersionOperatorDG::initializeDG()
 {
 	// LGL nodes and weights for axial and radial reference element and radial quadrature
@@ -600,10 +617,10 @@ void TwoDimensionalConvectionDispersionOperatorDG::initializeDG()
  * @param [in] dynamicReactions Determines whether the sparsity pattern accounts for dynamic reactions
  * @return @c true if configuration went fine, @c false otherwise
  */
-bool TwoDimensionalConvectionDispersionOperatorDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, unsigned int nComp, unsigned int axNodeStride, unsigned int radNodeStride, bool dynamicReactions)
+bool TwoDimensionalConvectionDispersionOperatorDG::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper, const unsigned int nComp, const unsigned int radNodeStride)
 {
 	_nComp = nComp;
-	_hasDynamicReactions = dynamicReactions;
+	//_hasDynamicReactions = dynamicReactions; // todo needed in pattern? see FV operator
 
 	// TODO: Add support for parameter dependent dispersion
 	_dispersionDep = helper.createParameterParameterDependence("CONSTANT_ONE");
@@ -663,23 +680,23 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configureModelDiscretization(
 			_quadratureRule = 1;
 		else
 			throw InvalidParameterException("Unknown quadrature rule " + quadratureRule);
+
+		_quadratureOrder = paramProvider.exists("QUADRATURE_ORDER") ? paramProvider.getInt("QUADRATURE_ORDER") : _radPolyDeg + 1; // todo or other default?
 	}
 	else
-		_quadratureRule = 1;
-
-	if (paramProvider.exists("QUADRATURE_ORDER"))
-		_quadratureOrder = paramProvider.getInt("QUADRATURE_ORDER");
-	else
-		_quadratureOrder = _radPolyDeg; // todo or nNodes?
+	{
+		_quadratureRule = 0;
+		_quadratureOrder = paramProvider.exists("QUADRATURE_ORDER") ? paramProvider.getInt("QUADRATURE_ORDER") : _radPolyDeg; // todo or nNodes?
+	}
 
 	paramProvider.popScope();
 
-	_axNodeStride = axNodeStride;
+	_axNodeStride = radNodeStride * _radNPoints;
 	_axElemStride = _axNNodes * _axNodeStride;
 	_radNodeStride = radNodeStride;
 	_radElemStride = _radNNodes * _radNodeStride;
 
-	_radialCoordinates.resize(_radNPoints + 1);
+	//_radialCoordinates.resize(_radNPoints + 1); // todo not needed, delete?
 	_radialElemInterfaces.resize(_radNElem + 1);
 	_radDelta.resize(_radNElem);
 	_nodalCrossSections.resize(_radNPoints);
@@ -922,22 +939,22 @@ const active& TwoDimensionalConvectionDispersionOperatorDG::radialDispersion(uns
  * @param [out] res Pointer to unit operation's residual vector
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
 {
 	return residualImpl<double, double, double>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, WithoutParamSensitivity)
+int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity)
 {
 	return residualImpl<active, active, double>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
 {
 	return residualImpl<double, active, active>(model, t, secIdx, y, yDot, res);
 }
 
-int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, WithParamSensitivity)
+int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
 {
 	return residualImpl<active, active, active>(model, t, secIdx, y, yDot, res);
 }
@@ -945,6 +962,12 @@ int TwoDimensionalConvectionDispersionOperatorDG::residual(const IModel& model, 
 template <typename StateType, typename ResidualType, typename ParamType>
 int TwoDimensionalConvectionDispersionOperatorDG::residualImpl(const IModel& model, double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
 {
+	//if (wantJac)
+	//{
+	//	int jo = 0;
+	//	// todo
+	//}
+
 	const unsigned int offsetC = _radNPoints * _nComp;
 
 	const int auxRadElemStride = _radNNodes;
@@ -959,6 +982,22 @@ int TwoDimensionalConvectionDispersionOperatorDG::residualImpl(const IModel& mod
 		{
 			for (unsigned int rEidx = 0; rEidx < _radNElem; rEidx++)
 			{
+
+				int* vec = new int[100];
+				for (int i = 0; i < 100; ++i)
+					vec[i] = i + 1;
+
+				// todo delete stride test
+				int radNNodes = 3;
+				int axNNodes = 4;
+				int nComp = 2;
+				int radNodeStride = nComp;
+				int axNodeStride = radNNodes * radNodeStride;
+				MatrixMap<int> ariba(vec, radNNodes, axNNodes, Stride<Dynamic, Dynamic>(radNodeStride, axNodeStride));
+				std::cout << ariba;
+				//
+
+
 				const int elemOffset = zEidx * _axElemStride + rEidx * _radElemStride;
 
 				ConstMatrixMap<StateType> _C(y + offsetC + comp + elemOffset, _radNNodes, _axNNodes, Stride<Dynamic, Dynamic>(_radNodeStride, _axNodeStride));
@@ -1132,6 +1171,26 @@ void TwoDimensionalConvectionDispersionOperatorDG::multiplyWithDerivativeJacobia
 	double const* localSdot = sDot + _nComp * _radNPoints;
 	for (unsigned int i = 0; i < _axNPoints * _nComp * _radNPoints; ++i)
 		localRet[i] = localSdot[i];
+}
+
+/**
+ * @brief Adds the derivatives with respect to @f$ \dot{y} @f$ of @f$ F(t, y, \dot{y}) @f$ to the Jacobian
+ * @details This functions computes
+ *          @f[ \begin{align*} \text{_jacCdisc} = \text{_jacCdisc} + \alpha \frac{\partial F}{\partial \dot{y}}. \end{align*} @f]
+ *          The factor @f$ \alpha @f$ is useful when constructing the linear system in the time integration process.
+ * @param [in] alpha Factor in front of @f$ \frac{\partial F}{\partial \dot{y}} @f$
+ */
+void TwoDimensionalConvectionDispersionOperatorDG::addTimeDerivativeToJacobian(double alpha, Eigen::SparseMatrix<double, Eigen::RowMajor>& jacDisc, unsigned int blockOffset)
+{
+	const int gapCell = _radNodeStride - static_cast<int>(_nComp); // for LRM2D
+	linalg::BandedEigenSparseRowIterator jac(jacDisc, blockOffset);
+
+	for (unsigned int point = 0; point < _axNPoints * _radNPoints; ++point, jac += gapCell) {
+		for (unsigned int comp = 0; comp < _nComp; ++comp, ++jac) {
+			// dc_b / dt in transport equation
+			jac[0] += alpha;
+		}
+	}
 }
 
 /**

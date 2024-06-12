@@ -157,6 +157,16 @@ Eigen::MatrixXd liftingMatrix(const unsigned int size);
  * @param [in] evalNodes evaluation nodes in [-1, 1]
  */
 Eigen::VectorXd evalLagrangeBasis(const unsigned int j, const Eigen::VectorXd baseNodes, const Eigen::VectorXd evalNodes);
+/**
+ * @brief evaluates the jth Lagrange basis functions at given nodes
+ * @param [in, out] coords DG coordinate array
+ * @param [in] nElem number of DG elements
+ * @param [in] nNodes number of DG nodes (per element)
+ * @param [in] DGnodes array of DG nodes
+ * @param [in] length domain length
+ * @param [in] leftElemBndries left element boundaries array
+ */
+void writeDGCoordinates(double* coords, const int nElem, const int nNodes, const double* DGnodes, const double length, const double* leftElemBndries);
 
 } // namespace dgtoolbox
 } // namespace parts

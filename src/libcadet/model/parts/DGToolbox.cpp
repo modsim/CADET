@@ -566,6 +566,17 @@ VectorXd evalLagrangeBasis(const unsigned int j, const VectorXd baseNodes, const
 	return ell;
 }
 
+void writeDGCoordinates(double* coords, const int nElem, const int nNodes, const double* DGnodes, const double length, const double* leftElemBndries)
+{
+	for (unsigned int i = 0; i < nElem; i++) {
+		for (unsigned int j = 0; j < nNodes; j++) {
+			// mapping 
+			coords[i * nNodes + j] = leftElemBndries[i] + 0.5 * (length / nElem) * (1.0 + DGnodes[j]);
+		}
+	}
+}
+
+
 } // namespace dgtoolbox
 } // namespace parts
 } // namespace model

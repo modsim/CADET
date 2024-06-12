@@ -266,7 +266,7 @@ protected:
 
 	// for FV the bulk jacobians are defined in the ConvDisp operator.
 	Eigen::SparseMatrix<double, RowMajor> _globalJac; //!< global Jacobian
-	Eigen::SparseMatrix<double, RowMajor> _globalJacDisc; //!< global Jacobian with time derivatove from BDF method
+	Eigen::SparseMatrix<double, RowMajor> _globalJacDisc; //!< global Jacobian with time derivative from BDF method
 	//Eigen::MatrixXd _FDjac; //!< test purpose FD jacobian
 
 	active _colPorosity; //!< Column porosity (external porosity) \f$ \varepsilon_c \f$

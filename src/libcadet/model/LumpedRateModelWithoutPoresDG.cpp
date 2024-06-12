@@ -643,7 +643,7 @@ namespace cadet
 					(_dynReaction[0] && (_dynReaction[0]->numReactionsCombined() > 0)) ? _dynReaction[0] : nullptr
 				};
 
-				// position of current column node (z coordinate) - needed in externally dependent adsorption kinetic
+				// Relative position of current node - needed in externally dependent adsorption kinetic
 				double z = _convDispOp.relativeCoordinate(blk);
 				if (wantRes)
 				{
@@ -1115,7 +1115,7 @@ namespace cadet
 				// Reuse memory of band matrix for dense matrix
 				linalg::DenseMatrixView fullJacobianMatrix(_jacDisc.valuePtr() + point * _disc.strideBound * _disc.strideBound, nullptr, mask.len, mask.len);
 
-				// z coordinate (column length normed to 1) of current node - needed in externally dependent adsorption kinetic
+				// Relative position of current node - needed in externally dependent adsorption kinetic
 				const double z = _convDispOp.relativeCoordinate(point);
 
 				// Get workspace memory
@@ -1350,7 +1350,7 @@ namespace cadet
 				if (!_binding[0]->hasQuasiStationaryReactions())
 					continue;
 
-				// Midpoint of current column node (z coordinate) - needed in externally dependent adsorption kinetic
+				// Relative position of current node - needed in externally dependent adsorption kinetic
 				double z = _convDispOp.relativeCoordinate(col);
 
 				// Get iterators to beginning of solid phase

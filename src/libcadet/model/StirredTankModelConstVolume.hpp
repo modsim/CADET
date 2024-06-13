@@ -36,11 +36,11 @@ namespace model
 
 /**
  * @brief Continuous stirred tank (reactor) model
- * @details This is a simple CSTR model with variable volume using the ``well mixed assumption''.
+ * @details This is a simple CSTR model with constant volume using the ``well mixed assumption''.
  * @f[\begin{align}
 	\frac{\mathrm{d}}{\mathrm{d} t}\left( V \left[ c_i + \frac{1}{\beta} \sum_{j=1}^{N_{\text{bnd},i}} q_{i,j} \right] \right) &= F_{\text{in}} c_{\text{in},i} - F_{\text{out}} c_i \\
 	a \frac{\partial q_{i,j}}{\partial t} &= f_{\text{iso},i,j}(c, q) \\
-	\frac{\partial V}{\partial t} &= F_{\text{in}} - F_{\text{out}} - F_{\text{filter}}
+	F_{\text{in}} - F_{\text{out}} - F_{\text{filter}} = 0
 \end{align} @f]
  * The model can be used as a plain stir tank without any binding states.
  */
@@ -63,7 +63,7 @@ public:
 	virtual unsigned int numOutletPorts() const CADET_NOEXCEPT { return 1; }
 	virtual bool canAccumulate() const CADET_NOEXCEPT { return true; }
 
-	static const char* identifier() { return "CSTRConstVol"; }
+	static const char* identifier() { return "CSTR_CONSTANT_VOLUME"; }
 	virtual const char* unitOperationName() const CADET_NOEXCEPT { return identifier(); }
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper);
@@ -74,6 +74,8 @@ public:
 
 	virtual void reportSolution(ISolutionRecorder& recorder, double const* const solution) const;
 	virtual void reportSolutionStructure(ISolutionRecorder& recorder) const;
+
+	virtual int jacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem);
 
 	virtual int residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem);
 	virtual int residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem, bool updateJacobian, bool paramSensitivity);
@@ -130,7 +132,7 @@ public:
 	inline const std::vector<active>& flowRateFilter() const { return _flowRateFilter; }
 	inline std::vector<active>& flowRateFilter() { return _flowRateFilter; }
 	inline void flowRateFilter(const std::vector<active>& frf) { _flowRateFilter = frf; }
-	inline void setFlowRates(double in, double out) CADET_NOEXCEPT { _flowRateIn = in; _flowRateOut = out; }
+	inline void setFlowRates(double in, double out) CADET_NOEXCEPT { _flowRate = in; _flowRate = out; }
 
 protected:
 
@@ -154,8 +156,7 @@ protected:
 	unsigned int _totalBound; //!< Total number of all bound states in all particle types
 
 	active _porosity; //!< Porosity \f$ \varepsilon \f$
-	active _flowRateIn; //!< Volumetric flow rate of incoming stream
-	active _flowRateOut; //!< Volumetric flow rate of drawn outgoing stream
+	active _flowRate; //!< Volumetric flow rate (incoming and outgoing stream)
 	active _curFlowRateFilter; //!< Current volumetric flow rate of liquid outtake stream for this section
 	std::vector<active> _flowRateFilter; //!< Volumetric flow rate of liquid outtake stream
 	std::vector<active> _parTypeVolFrac; //!< Volume fraction of each particle type
@@ -166,6 +167,7 @@ protected:
 	bool _factorizeJac; //!< Flag that tracks whether the Jacobian needs to be factorized
 
 	std::vector<active> _initConditions; //!< Initial conditions, ordering: Liquid phase concentration, solid phase concentration, volume
+	active _volume; //!< Constant tank volume
 	std::vector<double> _initConditionsDot; //!< Initial conditions for time derivative
 
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume

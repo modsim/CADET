@@ -81,12 +81,12 @@ CSTRConstVolumeModel::~CSTRConstVolumeModel() CADET_NOEXCEPT
 
 unsigned int CSTRConstVolumeModel::numDofs() const CADET_NOEXCEPT
 {
-	return 2 * _nComp + _totalBound + 1;
+	return 2 * _nComp + _totalBound;
 }
 
 unsigned int CSTRConstVolumeModel::numPureDofs() const CADET_NOEXCEPT
 {
-	return _nComp + _totalBound + 1;
+	return _nComp + _totalBound;
 }
 
 bool CSTRConstVolumeModel::usesAD() const CADET_NOEXCEPT
@@ -102,8 +102,9 @@ bool CSTRConstVolumeModel::usesAD() const CADET_NOEXCEPT
 
 void CSTRConstVolumeModel::setFlowRates(active const* in, active const* out) CADET_NOEXCEPT 
 { 
-	_flowRateIn = in[0];
-	_flowRateOut = out[0];
+	if(in[0] != out[0])
+		throw InvalidParameterException("Flow rate in != Flow rate out, but model being used is CSTR with constant flow rate. For variable flow rate model, switch to CSTR model");
+	_flowRate = in[0];
 }
 
 bool CSTRConstVolumeModel::configureModelDiscretization(IParameterProvider& paramProvider, const IConfigHelper& helper)
@@ -162,7 +163,7 @@ bool CSTRConstVolumeModel::configureModelDiscretization(IParameterProvider& para
 	}
 
 	// Allocate Jacobian
-	const unsigned int nVar = _nComp + _totalBound + 1;
+	const unsigned int nVar = _nComp + _totalBound;
 	_jac.resize(nVar, nVar);
 	_jacFact.resize(nVar, nVar);
 
@@ -497,7 +498,7 @@ void CSTRConstVolumeModel::readInitialCondition(IParameterProvider& paramProvide
 	const std::vector<double> initC = paramProvider.getDoubleArray("INIT_C");
 
 	if (initC.size() < _nComp)
-		throw InvalidParameterException("INIT_C does not contain enough values for all components");
+		throw InvalidParameterException("INIT_C does not contain enough values");
 	
 	ad::copyToAd(initC.data(), _initConditions.data(), _nComp);
 
@@ -509,22 +510,20 @@ void CSTRConstVolumeModel::readInitialCondition(IParameterProvider& paramProvide
 	else
 		ad::fillAd(_initConditions.data() + _nComp, _totalBound, 0.0);
 
-	if (paramProvider.exists("INIT_VOLUME"))
-		_initConditions[_nComp + _totalBound].setValue(paramProvider.getDouble("INIT_VOLUME"));
-	else
-		_initConditions[_nComp + _totalBound].setValue(0.0);
+	_volume.setValue(paramProvider.getDouble("VOLUME"));
 }
 
 void CSTRConstVolumeModel::consistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
+	/*
 	double * const c = vecStateY + _nComp;
 	const double v = c[_nComp + _totalBound];
 
 	// Check if volume is 0
 	if (v == 0.0)
 	{
-		const double flowIn = static_cast<double>(_flowRateIn);
-		const double flowOut = static_cast<double>(_flowRateOut);
+		const double flowIn = static_cast<double>(_flowRate);
+		const double flowOut = static_cast<double>(_flowRate);
 
 		// Volume: \dot{V} = F_{in} - F_{out} - F_{filter}
 		const double vDot = flowIn - flowOut - static_cast<double>(_curFlowRateFilter);
@@ -870,16 +869,18 @@ void CSTRConstVolumeModel::consistentInitialState(const SimulationTime& simTime,
 			_binding[type]->postConsistentInitialState(simTime.t, simTime.secIdx, colPos, c + _nComp + _offsetParType[type], c, tlmAlloc);
 		}
 	}
+	*/
 }
 
 void CSTRConstVolumeModel::consistentInitialTimeDerivative(const SimulationTime& simTime, double const* vecStateY, double* const vecStateYdot, util::ThreadLocalStorage& threadLocalMem) 
 {
+	/*
 	double const* const c = vecStateY + _nComp;
 	double* const cDot = vecStateYdot + _nComp;
 	const double v = c[_nComp + _totalBound];
 
-	const double flowIn = static_cast<double>(_flowRateIn);
-	const double flowOut = static_cast<double>(_flowRateOut);
+	const double flowIn = static_cast<double>(_flowRate);
+	const double flowOut = static_cast<double>(_flowRate);
 
 	// Note that the residual has not been negated, yet. We will do that now.
 	for (unsigned int i = 0; i < numDofs(); ++i)
@@ -1029,10 +1030,12 @@ void CSTRConstVolumeModel::consistentInitialTimeDerivative(const SimulationTime&
 	{
 		LOG(Error) << "Solve() failed";
 	}
+	*/
 }
 
 void CSTRConstVolumeModel::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
+	/*
 	// It is assumed that the bound states are (approximately) correctly initialized.
 	// Thus, only the liquid phase has to be initialized
 
@@ -1042,8 +1045,8 @@ void CSTRConstVolumeModel::leanConsistentInitialState(const SimulationTime& simT
 	// Check if volume is 0
 	if (v == 0.0)
 	{
-		const double flowIn = static_cast<double>(_flowRateIn);
-		const double flowOut = static_cast<double>(_flowRateOut);
+		const double flowIn = static_cast<double>(_flowRate);
+		const double flowOut = static_cast<double>(_flowRate);
 
 		// Volume: \dot{V} = F_{in} - F_{out} - F_{filter}
 		const double vDot = flowIn - flowOut - static_cast<double>(_curFlowRateFilter);
@@ -1096,10 +1099,12 @@ void CSTRConstVolumeModel::leanConsistentInitialState(const SimulationTime& simT
 			}
 		}
 	}
+	*/
 }
 
 void CSTRConstVolumeModel::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
+	/*
 	// It is assumed that the bound states are (approximately) correctly initialized.
 	// Thus, only the liquid phase has to be initialized
 
@@ -1108,8 +1113,8 @@ void CSTRConstVolumeModel::leanConsistentInitialTimeDerivative(double t, double 
 	double* const resC = res + _nComp;
 	const double v = c[_nComp];
 
-	const double flowIn = static_cast<double>(_flowRateIn);
-	const double flowOut = static_cast<double>(_flowRateOut);
+	const double flowIn = static_cast<double>(_flowRate);
+	const double flowOut = static_cast<double>(_flowRate);
 
 	// Volume: \dot{V} = F_{in} - F_{out} - F_{filter}
 	const double vDot = flowIn - flowOut - static_cast<double>(_curFlowRateFilter);
@@ -1219,12 +1224,18 @@ void CSTRConstVolumeModel::leanConsistentInitialTimeDerivative(double t, double 
 			cDot[i] = (-resC[i] - vDot * (c[i] + invBeta * qSum) - v * invBeta * qDotSum) / v;
 		}
 	}
+	*/
 }
 
 void CSTRConstVolumeModel::leanConsistentInitialSensitivity(const SimulationTime& simTime, const ConstSimulationState& simState,
 	std::vector<double*>& vecSensY, std::vector<double*>& vecSensYdot, active const* const adRes, util::ThreadLocalStorage& threadLocalMem)
 {
 	consistentInitialSensitivity(simTime, simState, vecSensY, vecSensYdot, adRes, threadLocalMem);
+}
+
+int CSTRConstVolumeModel::jacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
+{
+	return residual(simTime, simState, res, adJac, threadLocalMem, true, false);
 }
 
 int CSTRConstVolumeModel::residual(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, util::ThreadLocalStorage& threadLocalMem)
@@ -1237,13 +1248,13 @@ int CSTRConstVolumeModel::residualImpl(double t, unsigned int secIdx, StateType 
 {
 	StateType const* const cIn = y;
 	StateType const* const c = y + _nComp;
-	const StateType& v = y[2 * _nComp + _totalBound];
+	const StateType& v = static_cast<StateType>(_volume);
 
 	double const* const cDot = yDot ? yDot + _nComp : nullptr;
-	const double vDot = yDot ? yDot[2 * _nComp + _totalBound] : 0.0;
+	const double vDot = 0.0;
 
-	const ParamType flowIn = static_cast<ParamType>(_flowRateIn);
-	const ParamType flowOut = static_cast<ParamType>(_flowRateOut);
+	const ParamType flowIn = static_cast<ParamType>(_flowRate);
+	const ParamType flowOut = static_cast<ParamType>(_flowRate);
 
 	// Inlet DOF
 	for (unsigned int i = 0; i < _nComp; ++i)
@@ -1300,39 +1311,11 @@ int CSTRConstVolumeModel::residualImpl(double t, unsigned int secIdx, StateType 
 
 		// Assemble Jacobian: Liquid phase
 
-		// Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+		// Concentrations: V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
 		const double vDotTimeFactor = static_cast<double>(vDot);
 		for (unsigned int i = 0; i < _nComp; ++i)
 		{
 			_jac.native(i, i) = vDotTimeFactor + static_cast<double>(flowOut);
-
-			if (cadet_likely(yDot))
-			{
-				double qDotSum = 0.0;
-				const double vDotInvBeta = vDotTimeFactor * static_cast<double>(invBeta);
-				for (unsigned int type = 0; type < _nParType; ++type)
-				{
-					double const* const qiDot = cDot + _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
-					const unsigned int localOffset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
-
-					const double vDotInvBetaParVolFrac = vDotInvBeta * static_cast<double>(_parTypeVolFrac[type]);
-					double qDotSumType = 0.0;
-					for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
-					{
-						_jac.native(i, localOffset + j) = vDotInvBetaParVolFrac;
-						// + _nComp: Moves over liquid phase components
-						// + _offsetParType[type]: Moves to particle type
-						// + _boundOffset[i]: Moves over bound states of previous components
-						// + j: Moves to current bound state j of component i
-
-						qDotSumType += qiDot[j];
-					}
-
-					qDotSum += static_cast<double>(_parTypeVolFrac[type]) * qDotSumType;
-				}
-
-				_jac.native(i, _nComp + _totalBound) = (cDot[i] + static_cast<double>(invBeta) * qDotSum);
-			}
 		}
 	}
 
@@ -1352,9 +1335,6 @@ int CSTRConstVolumeModel::residualImpl(double t, unsigned int secIdx, StateType 
 
 		if (wantJac)
 		{
-			for (unsigned int comp = 0; comp < _nComp; ++comp)
-				_jac.native(comp, _nComp + _totalBound) += static_cast<double>(flux[comp]);
-
 			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(c), -static_cast<double>(v), _jac.row(0), subAlloc);
 		}
 	}
@@ -1433,17 +1413,6 @@ int CSTRConstVolumeModel::residualImpl(double t, unsigned int secIdx, StateType 
 			{
 				// Assemble Jacobian: Reaction
 
-				// dRes / dV
-				idx = 0;
-				for (unsigned int comp = 0; comp < _nComp; ++comp)
-				{
-					double sum = 0;
-					for (unsigned int bnd = 0; bnd < _nBound[type * _nComp + comp]; ++bnd, ++idx)
-						sum += static_cast<double>(fluxSolid[idx]);
-
-					_jac.native(comp, _nComp + _totalBound) += static_cast<double>(fluxLiquid[comp]) + static_cast<double>(invBeta) * static_cast<double>(_parTypeVolFrac[type]) * sum;
-				}
-
 				// dRes / dC and dRes / dQ
 				BufferedArray<double> fluxJacobianMem = subAlloc.array<double>((_strideBound[type] + _nComp) * (_strideBound[type] + _nComp));
 				linalg::DenseMatrixView jacFlux(static_cast<double*>(fluxJacobianMem), nullptr, _strideBound[type] + _nComp, _strideBound[type] + _nComp);
@@ -1475,9 +1444,6 @@ int CSTRConstVolumeModel::residualImpl(double t, unsigned int secIdx, StateType 
 			}
 		}
 	}
-
-	// Volume: \dot{V} = F_{in} - F_{out} - F_{filter}
-	res[2 * _nComp + _totalBound] = vDot - flowIn + flowOut + static_cast<ParamType>(_curFlowRateFilter);
 
 	return 0;
 }
@@ -1743,7 +1709,7 @@ void CSTRConstVolumeModel::consistentInitialSensitivity(const SimulationTime& si
 
 void CSTRConstVolumeModel::multiplyWithJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* yS, double alpha, double beta, double* ret)
 {
-	const double flowIn = static_cast<double>(_flowRateIn);
+	const double flowIn = static_cast<double>(_flowRate);
 	double* const resTank = ret + _nComp;
 
 	// Inlet DOFs
@@ -1836,7 +1802,7 @@ void CSTRConstVolumeModel::multiplyWithDerivativeJacobian(const SimulationTime& 
 int CSTRConstVolumeModel::linearSolve(double t, double alpha, double tol, double* const rhs, double const* const weight,
 	const ConstSimulationState& simState)
 {
-	const double flowIn = static_cast<double>(_flowRateIn);
+	const double flowIn = static_cast<double>(_flowRate);
 
 	// Handle inlet equations by backsubstitution
 	for (unsigned int i = 0; i < _nComp; ++i)
@@ -1865,14 +1831,14 @@ void CSTRConstVolumeModel::addTimeDerivativeJacobian(double t, double alpha, con
 {
 	double const* const c = simState.vecStateY + _nComp;
 	double const* const q = simState.vecStateY + 2 * _nComp;
-	const double v = simState.vecStateY[2 * _nComp + _totalBound];
+	const double v = static_cast<double>(_volume);
 	const double invBeta = 1.0 / static_cast<double>(_porosity) - 1.0;
 	const double timeV = v * alpha;
 	const double vInvBeta = timeV * invBeta;
 
 	// Assemble Jacobian: dRes / dyDot
 
-	// Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+	// Concentrations: V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
 	for (unsigned int i = 0; i < _nComp; ++i)
 	{
 		mat.native(i, i) += timeV;
@@ -1897,7 +1863,6 @@ void CSTRConstVolumeModel::addTimeDerivativeJacobian(double t, double alpha, con
 
 			qSum += static_cast<double>(_parTypeVolFrac[type]) * qSumType;
 		}
-		mat.native(i, _nComp + _totalBound) += alpha * (c[i] + invBeta * qSum);
 	}
 
 	// Bound states
@@ -1922,9 +1887,6 @@ void CSTRConstVolumeModel::addTimeDerivativeJacobian(double t, double alpha, con
 			mat.native(globalIdx, globalIdx) += alpha;
 		}
 	}
-
-	// Volume: \dot{V} - F_{in} + F_{out} + F_{filter} == 0
-	mat.native(_nComp + _totalBound, _nComp + _totalBound) += alpha;
 }
 
 /**
@@ -2023,9 +1985,9 @@ int CSTRConstVolumeModel::Exporter::writeOutlet(double* buffer) const
 
 
 
-void registerCSTRConstVolumeModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx)>>& models)
+void registerCSTRConstVolumeModel(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {
-	models[CSTRConstVolumeModel::identifier()] = [](UnitOpIdx uoId) { return new CSTRConstVolumeModel(uoId); };
+	models[CSTRConstVolumeModel::identifier()] = [](UnitOpIdx uoId, IParameterProvider&) { return new CSTRConstVolumeModel(uoId); };
 }
 
 }  // namespace model

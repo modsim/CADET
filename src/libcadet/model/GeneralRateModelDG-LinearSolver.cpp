@@ -126,9 +126,9 @@ int GeneralRateModelDG::linearSolve(double t, double alpha, double outerTol, dou
 		// Assemble and factorize discretized bulk Jacobian
 		assembleDiscretizedGlobalJacobian(alpha, idxr);
 
-		_globalSolver.factorize(_globalJacDisc.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()));
+		_linearSolver->factorize(_globalJacDisc.block(idxr.offsetC(), idxr.offsetC(), numPureDofs(), numPureDofs()));
 
-		if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+		if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 		{
 			LOG(Error) << "Factorize() failed";
 		}
@@ -152,9 +152,9 @@ int GeneralRateModelDG::linearSolve(double t, double alpha, double outerTol, dou
 	// ==== Step 2: Solve system of pure DOFs
 	// The result is stored in rhs (in-place solution)
 
-	r.segment(idxr.offsetC(), numPureDofs()) = _globalSolver.solve(r.segment(idxr.offsetC(), numPureDofs()));
+	r.segment(idxr.offsetC(), numPureDofs()) = _linearSolver->solve(r.segment(idxr.offsetC(), numPureDofs()));
 
-	if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+	if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 	{
 		LOG(Error) << "Solve() failed";
 	}

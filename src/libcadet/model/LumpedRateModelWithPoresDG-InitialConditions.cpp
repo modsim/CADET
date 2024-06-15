@@ -732,16 +732,16 @@ namespace cadet
 #endif
 
 			// Factorize
-			_globalSolver.factorize(_globalJacDisc);
+			_linearSolver->factorize(_globalJacDisc);
 
-			if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+			if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 			{
 				LOG(Error) << "Factorize() failed";
 			}
 			// Solve
-			yDot.segment(idxr.offsetC(), numPureDofs()) = _globalSolver.solve(yDot.segment(idxr.offsetC(), numPureDofs()));
+			yDot.segment(idxr.offsetC(), numPureDofs()) = _linearSolver->solve(yDot.segment(idxr.offsetC(), numPureDofs()));
 
-			if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+			if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 			{
 				LOG(Error) << "Solve() failed";
 			}
@@ -881,23 +881,23 @@ namespace cadet
 			}
 
 			const int bulkRows = idxr.offsetCp() - idxr.offsetC();
-			_globalSolver.analyzePattern(_globalJacDisc.block(0, 0, bulkRows, bulkRows));
-			_globalSolver.factorize(_globalJacDisc.block(0, 0, bulkRows, bulkRows));
+			_linearSolver->analyzePattern(_globalJacDisc.block(0, 0, bulkRows, bulkRows));
+			_linearSolver->factorize(_globalJacDisc.block(0, 0, bulkRows, bulkRows));
 
-			if (_globalSolver.info() != Success) {
+			if (_linearSolver->info() != Success) {
 				LOG(Error) << "factorization failed in sensitivity initialization";
 			}
 
 			Eigen::Map<Eigen::VectorXd> ret_vec(rhs, bulkRows);
-			ret_vec = _globalSolver.solve(ret_vec);
+			ret_vec = _linearSolver->solve(ret_vec);
 
 			// Use the factors to solve the linear system 
-			if (_globalSolver.info() != Success) {
+			if (_linearSolver->info() != Success) {
 				LOG(Error) << "solve failed in sensitivity initialization";
 			}
 
 			// reset linear solver to global Jacobian
-			_globalSolver.analyzePattern(_globalJacDisc);
+			_linearSolver->analyzePattern(_globalJacDisc);
 		}
 
 		void LumpedRateModelWithPoresDG::initializeSensitivityStates(const std::vector<double*>& vecSensY) const
@@ -1133,16 +1133,16 @@ namespace cadet
 				Eigen::Map<VectorXd> yDot(sensYdot, numPureDofs());
 
 				// Factorize
-				_globalSolver.factorize(_globalJacDisc);
+				_linearSolver->factorize(_globalJacDisc);
 
-				if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+				if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 				{
 					LOG(Error) << "Factorize() failed";
 				}
 				// Solve
-				yDot.segment(0, numPureDofs()) = _globalSolver.solve(yDot.segment(0, numPureDofs()));
+				yDot.segment(0, numPureDofs()) = _linearSolver->solve(yDot.segment(0, numPureDofs()));
 
-				if (cadet_unlikely(_globalSolver.info() != Eigen::Success))
+				if (cadet_unlikely(_linearSolver->info() != Eigen::Success))
 				{
 					LOG(Error) << "Solve() failed";
 				}

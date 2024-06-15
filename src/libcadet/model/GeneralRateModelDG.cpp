@@ -100,6 +100,8 @@ GeneralRateModelDG::~GeneralRateModelDG() CADET_NOEXCEPT
 	delete[] _disc.g_pSum;
 	delete[] _disc.surfaceFluxParticle;
 	delete[] _disc.localFlux;
+
+	delete _linearSolver;
 }
 
 unsigned int GeneralRateModelDG::numDofs() const CADET_NOEXCEPT
@@ -157,6 +159,8 @@ bool GeneralRateModelDG::configureModelDiscretization(IParameterProvider& paramP
 	const bool newNPartypeInterface = paramProvider.exists("NPARTYPE");
 
 	paramProvider.pushScope("discretization");
+
+	_linearSolver = cadet::linalg::setLinearSolver(paramProvider.exists("LINEAR_SOLVER") ? paramProvider.getString("LINEAR_SOLVER") : "SparseLU");
 
 	if (!newNBoundInterface && paramProvider.exists("NBOUND")) // done here and in this order for backwards compatibility
 		nBound = paramProvider.getIntArray("NBOUND");
@@ -871,7 +875,7 @@ bool GeneralRateModelDG::configure(IParameterProvider& paramProvider)
 	_globalJacDisc = _globalJac;
 	// the solver repetitively solves the linear system with a static pattern of the jacobian (set above). 
 	// The goal of analyzePattern() is to reorder the nonzero elements of the matrix, such that the factorization step creates less fill-in
-	_globalSolver.analyzePattern(_globalJacDisc.block(_disc.nComp, _disc.nComp, numPureDofs(), numPureDofs()));
+	_linearSolver->analyzePattern(_globalJacDisc.block(_disc.nComp, _disc.nComp, numPureDofs(), numPureDofs()));
 
 	return transportSuccess && parSurfDiffDepConfSuccess && bindingConfSuccess && dynReactionConfSuccess;
 }

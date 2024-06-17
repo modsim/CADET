@@ -418,14 +418,7 @@ void CSTRModel::useAnalyticJacobian(const bool analyticJac)
 
 void CSTRModel::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
-	if (_flowRateFilter.size() > 1)
-	{
-		_curFlowRateFilter = _flowRateFilter[secIdx];
-	}
-	else if (_flowRateFilter.size() == 1)
-	{
-		_curFlowRateFilter = _flowRateFilter[0];
-	}
+	_curFlowRateFilter = getSectionDependentScalar(_flowRateFilter, secIdx);
 }
 
 void CSTRModel::reportSolution(ISolutionRecorder& recorder, double const* const solution) const

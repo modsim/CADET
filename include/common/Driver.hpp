@@ -239,25 +239,25 @@ public:
 
 		// Configure main solver parameters
 		pp.pushScope("solver");
-		_sim->configure(pp);
-		
+
 		// Configure section times
 		std::vector<double> secTimes;
 		std::vector<bool> secCont;
 		extractSectionTimes(pp, secTimes, secCont);
+		_sim->setSectionTimes(secTimes, secCont);
+		_sim->configure(pp);
 
 		pp.popScope(); // solver scope
 
+		// Create and configure model
 		pp.pushScope("model");
 
-		// Create and configure model
 		cadet::IModelSystem* model = _builder->createSystem(pp);
 		if (!model)
 			throw InvalidParameterException("Invalid model");
 
 		// Hand model over to simulator
 		_sim->initializeModel(*model);
-		_sim->setSectionTimes(secTimes, secCont);
 
 		// Specify initial values
 		if (pp.exists("INIT_STATE_Y"))

@@ -64,6 +64,13 @@ public:
 	 * @return @c true if particles are always represented by a single element, otherwise @c false
 	 */
 	virtual bool isParticleLumped() const CADET_NOEXCEPT = 0;
+	
+	/**
+	 * @brief Returns whether the associated model discretization has a smoothness indicator
+	 * @details discretizations may contain a smoothness indicator for oscillation suppression
+	 * @return @c true if indicator is present, otherwise @c false
+	 */
+	virtual bool hasSmoothnessIndicator() const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Returns whether the primary coordinate is always a single element
@@ -86,11 +93,25 @@ public:
 	virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT = 0;
 
 	/**
+	 * @brief If existent (i.e. DG), returns the polynomial degree of the primary coordinate discretization.
+	 * @details For axial flow columns discretized by DG, this is the axial polynomial degree
+	 * @return Polynomial degree of primary coordinate discretization
+	 */
+	virtual unsigned int primaryPolynomialDegree() const CADET_NOEXCEPT = 0;
+
+	/**
 	 * @brief Returns the number of secondary coordinates / points
 	 * @details For axial flow columns, this is the number of radial points
 	 * @return Number of secondary coordinates / points
 	 */
 	virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT = 0;
+
+	/**
+	 * @brief If existent (i.e. DG), returns the polynomial degree of the secondary coordinate discretization.
+	 * @details For axial flow columns discretized by DG, this is the radial polynomial degree
+	 * @return Polynomial degree of secondary coordinate discretization
+	 */
+	virtual unsigned int secondaryPolynomialDegree() const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Returns the number of inlet ports
@@ -116,6 +137,12 @@ public:
 	 * @return Number of particle shells
 	 */
 	virtual unsigned int numParticleShells(unsigned int parType) const CADET_NOEXCEPT = 0;
+
+	/**
+	 * @brief If existent (i.e. DG), returns the polynomial degree of the particle discretization of a given particle type.
+	 * @return Polynomial degree of particle discretization
+	 */
+	virtual unsigned int particlePolynomialDegree(unsigned int parType) const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Returns the total number of bound states for all components of a given particle type
@@ -321,6 +348,13 @@ public:
 	 */
 	virtual int writeOutlet(double* buffer) const = 0;
 
+	/**
+	 * @brief Writes the smoothness indicator if present, i.e. only for DG
+	 * @details Writes the smoothness indicator for each DG element.
+	 * @param [out] buffer Pointer to buffer that receives the data
+	 * @return Number of written items
+	 */
+	virtual int writeSmoothnessIndicator(double* buffer) const = 0;
 
 	/**
 	 * @brief Returns primary coordinates (e.g., axial for axial flow columns)

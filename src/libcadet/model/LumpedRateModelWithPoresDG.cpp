@@ -1,7 +1,7 @@
 // =============================================================================
 //  CADET
 //
-//  Copyright © 2008-2021: The CADET Authors
+//  Copyright � 2008-2021: The CADET Authors
 //            Please see the AUTHORS and CONTRIBUTORS file.
 //
 //  All rights reserved. This program and the accompanying materials
@@ -667,7 +667,8 @@ void LumpedRateModelWithPoresDG::useAnalyticJacobian(const bool analyticJac)
 
 void LumpedRateModelWithPoresDG::notifyDiscontinuousSectionTransition(double t, unsigned int secIdx, const ConstSimulationState& simState, const AdJacobianParams& adJac)
 {
-	updateSection(secIdx);
+	_disc.curSection = secIdx;
+	_disc.newStaticJac = true;
 
 	_convDispOp.notifyDiscontinuousSectionTransition(t, secIdx, _jacInlet);
 }
@@ -790,7 +791,7 @@ void LumpedRateModelWithPoresDG::extractJacobianFromAD(active const* const adRes
 		offsetParticleTypeDirs += idxr.strideParBlock(type);
 	}
 
-	/* Film diffusion flux entries are handled analytically (only cross dependent entries) */
+	/* Film diffusion flux entries are handled analytically  */
 	calcFluxJacobians(_disc.curSection, true);
 
 }
@@ -982,20 +983,16 @@ int LumpedRateModelWithPoresDG::residual(const SimulationTime& simTime, const Co
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
 int LumpedRateModelWithPoresDG::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
-	// check for section switch
-	updateSection(secIdx);
-	bool success = 1;
-
+	
 	if (wantJac)
 	{
 		if (_disc.newStaticJac) // static (per section) transport Jacobian
 		{
-			success = calcStaticAnaGlobalJacobian(secIdx);
+			bool success = calcStaticAnaGlobalJacobian(secIdx);
 			_disc.newStaticJac = false;
 			if (cadet_unlikely(!success))
 				LOG(Error) << "Jacobian pattern did not fit the Jacobian estimation";
 		}
-
 	}
 
 	BENCH_START(_timerResidualPar);
@@ -1138,7 +1135,7 @@ int LumpedRateModelWithPoresDG::residualFlux(double t, unsigned int secIdx, Stat
 	return 0;
 }
 
-void LumpedRateModelWithPoresDG::assembleFluxJacobian(double t, unsigned int secIdx)
+void LumpedRateModelWithPoresDG::assembleFluxJacobian(unsigned int secIdx)
 {
 	calcFluxJacobians(secIdx);
 }

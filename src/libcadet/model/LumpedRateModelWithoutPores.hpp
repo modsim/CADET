@@ -295,7 +295,11 @@ protected:
 		virtual bool hasVolume() const CADET_NOEXCEPT { return false; }
 		virtual bool isParticleLumped() const CADET_NOEXCEPT { return false; }
 		virtual bool hasPrimaryExtent() const CADET_NOEXCEPT { return true; }
+		virtual bool hasSmoothnessIndicator() const CADET_NOEXCEPT { return false; }
 
+		virtual unsigned int primaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int secondaryPolynomialDegree() const CADET_NOEXCEPT { return 0; }
+		virtual unsigned int particlePolynomialDegree(unsigned int parType) const CADET_NOEXCEPT { return 0; }
 		virtual unsigned int numComponents() const CADET_NOEXCEPT { return _disc.nComp; }
 		virtual unsigned int numPrimaryCoordinates() const CADET_NOEXCEPT { return _disc.nCol; }
 		virtual unsigned int numSecondaryCoordinates() const CADET_NOEXCEPT { return 0; }
@@ -325,6 +329,7 @@ protected:
 		virtual int writeOutlet(unsigned int port, double* buffer) const;
 		virtual int writeOutlet(double* buffer) const;
 
+		virtual int writeSmoothnessIndicator(double* indicator) const { return 0; }
 
 		virtual int writePrimaryCoordinates(double* coords) const
 		{

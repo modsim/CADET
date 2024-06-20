@@ -430,7 +430,7 @@ endif()
 # ---------------------------------------------------
 
 add_library(CADET::CompileOptions INTERFACE IMPORTED)
-target_compile_features(CADET::CompileOptions INTERFACE cxx_std_17)
+target_compile_features(CADET::CompileOptions INTERFACE cxx_std_23)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (WIN32)

@@ -1,0 +1,15 @@
+name: cadet-core-docs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - doxygen
+  - myst-parser
+  - sphinx
+  - sphinx-sitemap
+  - pip
+  - pip:
+    - breathe
+    - exhale
+    - sphinxcontrib-bibtex
+    - sphinx_multiversion

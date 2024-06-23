@@ -115,6 +115,10 @@ jobs:
           .\cadet-cli.exe --version
           .\createLWE.exe
           .\cadet-cli.exe LWE.h5
+      - name: Check numerical reference tests
+        run: |
+          cd "${env:BUILD_DIR}\test"
+          .\testRunner.exe [Reference]
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -169,6 +169,7 @@ set (LIBCADET_NONLINALG_SOURCES
 )
 if (ENABLE_DG)
 	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/BandedEigenSparseRowIterator.hpp)
+	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/EigenSolverWrapper.cpp)
 endif()
 
 if (ENABLE_2D_MODELS)

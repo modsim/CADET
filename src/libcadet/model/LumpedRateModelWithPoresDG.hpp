@@ -27,6 +27,7 @@
 #include "model/parts/ConvectionDispersionOperatorDG.hpp"
 #include "AutoDiff.hpp"
 #include "linalg/BandedEigenSparseRowIterator.hpp"
+#include "linalg/EigenSolverWrapper.hpp"
 #include "Memory.hpp"
 #include "model/ModelUtils.hpp"
 #include "ParameterMultiplexing.hpp"
@@ -259,8 +260,7 @@ protected:
 	parts::AxialConvectionDispersionOperatorBaseDG _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
 
-	Eigen::SparseLU<Eigen::SparseMatrix<double>> _globalSolver; //!< linear solver for the bulk concentration
-	//Eigen::BiCGSTAB<Eigen::SparseMatrix<double, RowMajor>, Eigen::DiagonalPreconditioner<double>> _globalSolver;
+	cadet::linalg::EigenSolverBase* _linearSolver; //!< Linear solver
 
 	Eigen::MatrixXd _jacInlet; //!< Jacobian inlet DOF block matrix connects inlet DOFs to first bulk cells
 

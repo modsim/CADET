@@ -28,6 +28,7 @@
 #include "linalg/SparseMatrix.hpp"
 #include "linalg/BandMatrix.hpp"
 #include "linalg/BandedEigenSparseRowIterator.hpp"
+#include "linalg/EigenSolverWrapper.hpp"
 #include "linalg/Gmres.hpp"
 #include "Memory.hpp"
 #include "model/ModelUtils.hpp"
@@ -227,9 +228,7 @@ namespace cadet
 			// used as auxiliary supplier 
 			parts::AxialConvectionDispersionOperatorBaseDG _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 
-			// linear solver (Eigen lib)
-			Eigen::SparseLU<Eigen::SparseMatrix<double>> _linSolver;
-			//Eigen::BiCGSTAB<Eigen::SparseMatrix<double, RowMajor>, Eigen::DiagonalPreconditioner<double>> solver; (needs _tempState, cant solve inplace)
+			cadet::linalg::EigenSolverBase* _linearSolver; //!< Linear solver
 
 			Eigen::SparseMatrix<double, RowMajor> _jac; //!< Jacobian
 			Eigen::SparseMatrix<double, RowMajor> _jacDisc; //!< Jacobian with time derivatives from BDF method

@@ -62,6 +62,7 @@ namespace cadet
 
 			delete[] _disc.nBound;
 			delete[] _disc.boundOffset;
+			delete _linearSolver;
 		}
 
 		unsigned int LumpedRateModelWithoutPoresDG::numDofs() const CADET_NOEXCEPT
@@ -98,6 +99,8 @@ namespace cadet
 			const bool newNBoundInterface = paramProvider.exists("NBOUND");
 
 			paramProvider.pushScope("discretization");
+
+			_linearSolver = cadet::linalg::setLinearSolver(paramProvider.exists("LINEAR_SOLVER") ? paramProvider.getString("LINEAR_SOLVER") : "SparseLU");
 
 			if (!newNBoundInterface && paramProvider.exists("NBOUND")) // done here and in this order for backwards compatibility
 				nBound = paramProvider.getIntArray("NBOUND");
@@ -284,7 +287,7 @@ namespace cadet
 
 			// the solver repetitively solves the linear system with a static pattern of the jacobian (set above). 
 			// The goal of analyzePattern() is to reorder the nonzero elements of the matrix, such that the factorization step creates less fill-in
-			_linSolver.analyzePattern(_jacDisc);
+			_linearSolver->analyzePattern(_jacDisc);
 
 			return bindingConfSuccess && reactionConfSuccess;
 		}
@@ -862,18 +865,18 @@ namespace cadet
 			// Factorize Jacobian only if required
 			if (_factorizeJacobian)
 			{
-				_linSolver.factorize(_jacDisc);
+				_linearSolver->factorize(_jacDisc);
 
-				if (_linSolver.info() != Success) {
+				if (_linearSolver->info() != Success) {
 					LOG(Error) << "factorization failed";
 					success = false;
 				}
 			}
 
 			// Use the factors to solve the linear system 
-			r.segment(idxr.offsetC(), numPureDofs()) = _linSolver.solve(r.segment(idxr.offsetC(), numPureDofs()));
+			r.segment(idxr.offsetC(), numPureDofs()) = _linearSolver->solve(r.segment(idxr.offsetC(), numPureDofs()));
 
-			if (_linSolver.info() != Success) {
+			if (_linearSolver->info() != Success) {
 				LOG(Error) << "solve() failed";
 				result = false;
 			}
@@ -1379,17 +1382,17 @@ namespace cadet
 				}
 			}
 
-			_linSolver.factorize(_jacDisc);
+			_linearSolver->factorize(_jacDisc);
 			
-			if (_linSolver.info() != Success) {
+			if (_linearSolver->info() != Success) {
 				LOG(Error) << "factorization failed in consistent initialization";
 			}
 
 			Eigen::Map<VectorXd> yp(vecStateYdot + idxr.offsetC(), numPureDofs());
 
-			yp = _linSolver.solve(yp);
+			yp = _linearSolver->solve(yp);
 
-			if (_linSolver.info() != Success) {
+			if (_linearSolver->info() != Success) {
 				LOG(Error) << "Solve failed in consistent initialization";
 			}
 
@@ -1678,17 +1681,17 @@ namespace cadet
 					}
 				}
 		
-				_linSolver.factorize(_jacDisc);
+				_linearSolver->factorize(_jacDisc);
 
-				if (_linSolver.info() != Success) {
+				if (_linearSolver->info() != Success) {
 					LOG(Error) << "factorization failed in sensitivity initialization";
 				}
 
 				Map<VectorXd> sensYdot_vec(sensYdot + idxr.offsetC(), numPureDofs());
-				sensYdot_vec = _linSolver.solve(sensYdot_vec);
+				sensYdot_vec = _linearSolver->solve(sensYdot_vec);
 
 				// Use the factors to solve the linear system 
-				if (_linSolver.info() != Success) {
+				if (_linearSolver->info() != Success) {
 					LOG(Error) << "solve failed in sensitivity initialization";
 				}
 			}

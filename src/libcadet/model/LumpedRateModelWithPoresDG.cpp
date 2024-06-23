@@ -67,6 +67,8 @@ LumpedRateModelWithPoresDG::~LumpedRateModelWithPoresDG() CADET_NOEXCEPT
 	delete[] _disc.boundOffset;
 	delete[] _disc.strideBound;
 	delete[] _disc.nBoundBeforeType;
+
+	delete _linearSolver;
 }
 
 unsigned int LumpedRateModelWithPoresDG::numDofs() const CADET_NOEXCEPT
@@ -106,6 +108,8 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 	const bool newNPartypeInterface = paramProvider.exists("NPARTYPE");
 
 	paramProvider.pushScope("discretization");
+
+	_linearSolver = cadet::linalg::setLinearSolver(paramProvider.exists("LINEAR_SOLVER") ? paramProvider.getString("LINEAR_SOLVER") : "SparseLU");
 
 	if (!newNBoundInterface && paramProvider.exists("NBOUND")) // done here and in this order for backwards compatibility
 		nBound = paramProvider.getIntArray("NBOUND");
@@ -408,7 +412,7 @@ bool LumpedRateModelWithPoresDG::configureModelDiscretization(IParameterProvider
 	_globalJacDisc = _globalJac;
 	// the solver repetitively solves the linear system with a static pattern of the jacobian (set above). 
 	// The goal of analyzePattern() is to reorder the nonzero elements of the matrix, such that the factorization step creates less fill-in
-	_globalSolver.analyzePattern(_globalJacDisc);
+	_linearSolver->analyzePattern(_globalJacDisc);
 
 	return transportSuccess && bindingConfSuccess && reactionConfSuccess;
 }

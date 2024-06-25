@@ -186,7 +186,7 @@ protected:
 	Eigen::VectorXd _radNodes; //!< radial LGL nodes on the reference element
 	Eigen::VectorXd _radInvWeights; //!< radial LGL inverted weights on the reference element
 	Eigen::VectorXd _qNodes; //!< quadrature nodes on the reference element
-	Eigen::VectorXd _qWeights; //!< quadrature inverted weights on the reference element
+	Eigen::VectorXd _qWeights; //!< quadrature weights on the reference element
 	// operators
 	Eigen::MatrixXd _axStiffM; //!< Radial stiffness matrix
 	Eigen::MatrixXd _axTransStiffM; //!< Axial transposed stiffness matrix

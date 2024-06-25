@@ -482,20 +482,6 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeMr(const unsigne
 	return tildeMr;
 }
 
-void TwoDimensionalConvectionDispersionOperatorDG::calcLiftingMatricesDash()
-{
-	const active* const d_rad = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, 0);
-
-	// todo component dependence of radial dispersion
-	const int comp = 0;
-
-	for (int r = 0; r < _radNElem; r++) // todo ? use active type for column radius and radial dispersion sensitivity
-	{
-		_radLiftMCyl[r](0, 0) = static_cast<double>(d_rad[comp + r * _radNNodes * _nComp]) * static_cast<double>(_radialElemInterfaces[r]);
-		_radLiftMCyl[r](1, _radNNodes - 1) = - static_cast<double>(d_rad[comp + (r * _radNNodes + _radPolyDeg) * _nComp]) * static_cast<double>(_radialElemInterfaces[r + 1]);
-	}
-}
-
 MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeMrDash(const unsigned int elemIdx)
 {
 	MatrixXd ellEll = MatrixXd::Zero(_radNNodes, _qNNodes);
@@ -510,7 +496,7 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeMrDash(const uns
 		{
 			for (unsigned int k = 0; k < _qNNodes; k++)
 			{
-				tildeMrDash(j, (m - 1) * _qNNodes + k) = static_cast<double>(dgtoolbox::mapRefToPhys<active>(_radDelta, elemIdx, _qNodes[k])) * static_cast<double>(_curRadialDispersionTilde[elemIdx * _qNNodes + k]) * ellEll(m, k) * ellEll(j, k) * _qWeights[k];
+				tildeMrDash(j, m * _qNNodes + k) = static_cast<double>(dgtoolbox::mapRefToPhys<active>(_radDelta, elemIdx, _qNodes[k])) * static_cast<double>(_curRadialDispersionTilde[elemIdx * _qNNodes + k]) * ellEll(m, k) * ellEll(j, k) * _qWeights[k];
 			}
 		}
 	}
@@ -527,7 +513,7 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeSrDash(const uns
 		ellEll.row(j) = dgtoolbox::evalLagrangeBasis(j, _radNodes, _qNodes);
 
 	MatrixXd tildeDr = dgtoolbox::derivativeMatrix(_quadratureOrder, _qNodes);
-	MatrixXd tildeSr = _qWeights.diagonal() * tildeDr;
+	MatrixXd tildeSr = _qWeights.asDiagonal() * tildeDr;
 
 	for (unsigned int j = 0; j < _radNNodes; j++)
 	{
@@ -535,7 +521,7 @@ MatrixXd TwoDimensionalConvectionDispersionOperatorDG::calcTildeSrDash(const uns
 		{
 			for (unsigned int k = 0; k < _qNNodes; k++)
 			{
-				tildeSrDash(j, (m - 1) * _qNNodes + k) = static_cast<double>(dgtoolbox::mapRefToPhys<active>(_radDelta, elemIdx, _qNodes[k])) * static_cast<double>(_curRadialDispersionTilde[k]) * tildeSr(j, k) * ellEll(m, k);
+				tildeSrDash(j, m * _qNNodes + k) = static_cast<double>(dgtoolbox::mapRefToPhys<active>(_radDelta, elemIdx, _qNodes[k])) * static_cast<double>(_curRadialDispersionTilde[k]) * tildeSr(j, k) * ellEll(m, k);
 			}
 		}
 	}
@@ -562,6 +548,12 @@ void TwoDimensionalConvectionDispersionOperatorDG::writeRadialCoordinates(double
 
 void TwoDimensionalConvectionDispersionOperatorDG::initializeDG()
 {
+	_axInvWeights = VectorXd::Zero(_axNNodes);
+	_axNodes = VectorXd::Zero(_axNNodes);
+	_radInvWeights = VectorXd::Zero(_radNNodes);
+	_radNodes = VectorXd::Zero(_radNNodes);
+	_qNodes = VectorXd::Zero(_qNNodes);
+	_qWeights = VectorXd::Zero(_qNNodes);
 	// LGL nodes and weights for axial and radial reference element and radial quadrature
 	dgtoolbox::lglNodesWeights(_axPolyDeg, _axNodes, _axInvWeights, true);
 	dgtoolbox::lglNodesWeights(_radPolyDeg, _radNodes, _radInvWeights, true);
@@ -595,17 +587,6 @@ void TwoDimensionalConvectionDispersionOperatorDG::initializeDG()
 	_transTildeMrDash = new MatrixXd[_radNElem];
 	_transTildeSrDash = new MatrixXd[_radNElem];
 	_radLiftMCyl = new MatrixXd[_radNElem];
-	
-	for (unsigned int rElem = 0; rElem < _radNElem; rElem++)
-	{
-		// todo ? use active types for column radius sensitivity
-		_radLiftMCyl[rElem].setZero();
-		_transMrCyl[rElem] = ((static_cast<double>(_radialElemInterfaces[rElem + 1] - static_cast<double>(_radDelta[rElem]) / 2.0)) * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 0.0) + static_cast<double>(_radDelta[rElem]) / 2.0 * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 1.0)).transpose();
-		_invTransMrCyl[rElem] = _transMrCyl[rElem].inverse();
-		_transTildeMr[rElem] = calcTildeMr(rElem).transpose();
-		_transTildeMrDash[rElem] = calcTildeMrDash(rElem).transpose();
-		_transTildeSrDash[rElem] = calcTildeMrDash(rElem).transpose();
-	}
 }
 
 /**
@@ -688,7 +669,7 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configureModelDiscretization(
 		_quadratureRule = 0;
 		_quadratureOrder = paramProvider.exists("QUADRATURE_ORDER") ? paramProvider.getInt("QUADRATURE_ORDER") : _radPolyDeg; // todo or nNodes?
 	}
-
+	_qNNodes = _quadratureOrder + 1;
 	paramProvider.popScope();
 
 	_axNodeStride = radNodeStride * _radNPoints;
@@ -702,7 +683,7 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configureModelDiscretization(
 	_nodalCrossSections.resize(_radNPoints);
 	_curVelocity.resize(_radNPoints);
 
-	return 0;
+	return true;
 }
 
 /**
@@ -746,8 +727,6 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configure(UnitOpIdx unitOpIdx
 	else
 		_radialDiscretizationMode = RadialDiscretizationMode::Equidistant;
 	paramProvider.popScope();
-
-	updateRadialDisc();
 
 	// Read section dependent parameters (transport)
 
@@ -831,7 +810,7 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configure(UnitOpIdx unitOpIdx
 	parameters[makeParamId(hashString("COL_RADIUS"), unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = &_colRadius;
 	registerParam1DArray(parameters, _colPorosities, [=](bool multi, unsigned int i) { return makeParamId(hashString("COL_POROSITY"), unitOpIdx, CompIndep, multi ? i : ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep); });
 
-	// configure DG operators
+	// interpolate radial dispersion to quadrature nodes
 	_curRadialDispersionTilde = std::vector<active>(_radNElem * _qNNodes, 0.0);
 	// todo component dependence! getSectionDependentSlice gives dispersion parameter in radial position major
 	const active* const curRadialDispersion = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, 0);
@@ -841,10 +820,28 @@ bool TwoDimensionalConvectionDispersionOperatorDG::configure(UnitOpIdx unitOpIdx
 		}
 	}
 
+	// compute standard DG operators
 	initializeDG();
 
-	// update radial main eq. lifting matrix, which depends on geometry
-	calcLiftingMatricesDash();
+	// compute nodal cross section areas and radial element interfaces
+	updateRadialDisc();
+
+	// compute DG operators that depend on radial geometry after updateRadialDisc
+	const active* const d_rad = getSectionDependentSlice(_radialDispersion, _radNPoints * _nComp, 0);
+	// todo component dependence of radial dispersion
+	const int comp = 0;
+	for (unsigned int rElem = 0; rElem < _radNElem; rElem++)
+	{
+		// todo ? use active types for column radius sensitivity
+		_radLiftMCyl[rElem] = MatrixXd::Zero(2, _radNNodes);
+		_radLiftMCyl[rElem](0, 0) = static_cast<double>(d_rad[comp + rElem * _radNNodes * _nComp]) * static_cast<double>(_radialElemInterfaces[rElem]);
+		_radLiftMCyl[rElem](1, _radNNodes - 1) = -static_cast<double>(d_rad[comp + (rElem * _radNNodes + _radPolyDeg) * _nComp]) * static_cast<double>(_radialElemInterfaces[rElem + 1]);
+		_transMrCyl[rElem] = ((static_cast<double>(_radialElemInterfaces[rElem + 1] - static_cast<double>(_radDelta[rElem]) / 2.0)) * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 0.0) + static_cast<double>(_radDelta[rElem]) / 2.0 * dgtoolbox::mMatrix(_radPolyDeg, _radNodes, 0.0, 1.0)).transpose();
+		_invTransMrCyl[rElem] = _transMrCyl[rElem].inverse();
+		_transTildeMr[rElem] = calcTildeMr(rElem).transpose();
+		_transTildeMrDash[rElem] = calcTildeMrDash(rElem).transpose();
+		_transTildeSrDash[rElem] = calcTildeSrDash(rElem).transpose();
+	}
 
 	return true;
 }
@@ -1221,7 +1218,7 @@ void TwoDimensionalConvectionDispersionOperatorDG::setEquidistantRadialDisc()
 		else
 			_radialElemInterfaces[r+1] = h * (r + 1);
 		
-		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, 0);
+		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, -1.0);
 		for (unsigned int node = 0;node < _radNNodes; ++node)
 			_nodalCrossSections[r * _radNNodes + node] = pi * (pow(leftEnd + (1.0 / _radInvWeights[node]), 2.0) - pow(leftEnd, 2.0));
 	}
@@ -1243,7 +1240,7 @@ void TwoDimensionalConvectionDispersionOperatorDG::setEquivolumeRadialDisc()
 
 		_radDelta[r] = _radialElemInterfaces[r + 1] - _radialElemInterfaces[r];
 
-		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, 0);
+		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, -1.0);
 		for (unsigned int node = 0; node < _radNNodes; ++node)
 			_nodalCrossSections[r * _radNNodes + node] = pi * (pow(leftEnd + (1.0 / _radInvWeights[node]), 2.0) - pow(leftEnd, 2.0));
 	}
@@ -1256,7 +1253,7 @@ void TwoDimensionalConvectionDispersionOperatorDG::setUserdefinedRadialDisc()
 	{
 		_radDelta[r] = _radialElemInterfaces[r + 1] - _radialElemInterfaces[r];
 
-		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, 0);
+		active leftEnd = dgtoolbox::mapRefToPhys<active>(_radDelta, r, -1.0);
 		for (unsigned int node = 0; node < _radNNodes; ++node)
 			_nodalCrossSections[r * _radNNodes + node] = pi * (pow(leftEnd + (1.0 / _radInvWeights[node]), 2.0) - pow(leftEnd, 2.0));
 	}

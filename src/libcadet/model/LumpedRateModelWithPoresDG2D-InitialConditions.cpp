@@ -1088,9 +1088,6 @@ void LumpedRateModelWithPoresDG2D::consistentInitialTimeDerivative(const Simulat
  */
 void LumpedRateModelWithPoresDG2D::leanConsistentInitialState(const SimulationTime& simTime, double* const vecStateY, const AdJacobianParams& adJac, double errorTol, util::ThreadLocalStorage& threadLocalMem)
 {
-	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
-		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
-
 	BENCH_SCOPE(_timerConsistentInit);
 
 	Indexer idxr(_disc);
@@ -1149,9 +1146,6 @@ void LumpedRateModelWithPoresDG2D::leanConsistentInitialState(const SimulationTi
  */
 void LumpedRateModelWithPoresDG2D::leanConsistentInitialTimeDerivative(double t, double const* const vecStateY, double* const vecStateYdot, double* const res, util::ThreadLocalStorage& threadLocalMem)
 {
-	if (isSectionDependent(_parDiffusionMode) || isSectionDependent(_parSurfDiffusionMode))
-		LOG(Warning) << "Lean consistent initialization is not appropriate for section-dependent pore and surface diffusion";
-
 	BENCH_SCOPE(_timerConsistentInit);
 
 	Indexer idxr(_disc);

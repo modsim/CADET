@@ -282,10 +282,6 @@ protected:
 	// Vectorial parameters
 	std::vector<active> _filmDiffusion; //!< Film diffusion coefficient \f$ k_f \f$
 	MultiplexMode _filmDiffusionMode;
-	std::vector<active> _parDiffusion; //!< Particle diffusion coefficient \f$ D_p \f$
-	MultiplexMode _parDiffusionMode;
-	std::vector<active> _parSurfDiffusion; //!< Particle surface diffusion coefficient \f$ D_s \f$
-	MultiplexMode _parSurfDiffusionMode;
 	std::vector<active> _poreAccessFactor; //!< Pore accessibility factor \f$ F_{\text{acc}} \f$
 	MultiplexMode _poreAccessFactorMode;
 

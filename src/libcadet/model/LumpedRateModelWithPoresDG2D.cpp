@@ -427,14 +427,6 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 			_disc.nBoundBeforeType[j + 1] = _disc.nBoundBeforeType[j] + _disc.strideBound[j];
 	}
 
-	// Precompute offsets of particle type DOFs
-	_disc.parTypeOffset = new unsigned int[_disc.nParType + 1];
-	_disc.parTypeOffset[0] = 0;
-	for (unsigned int j = 1; j < _disc.nParType + 1; ++j)
-	{
-		_disc.parTypeOffset[j] = _disc.parTypeOffset[j - 1] + (_disc.nComp + _disc.strideBound[j - 1]) * _disc.nBulkPoints;
-	}
-
 	paramProvider.pushScope("discretization");
 
 	// Determine whether analytic Jacobian should be used but don't set it right now.
@@ -461,6 +453,12 @@ bool LumpedRateModelWithPoresDG2D::configureModelDiscretization(IParameterProvid
 	_disc.axNPoints = _convDispOp.axNPoints();
 	_disc.radNPoints = _convDispOp.radNPoints();
 	_disc.nBulkPoints = _disc.axNPoints * _disc.radNPoints;
+
+	// Precompute offsets of particle type DOFs
+	_disc.parTypeOffset = new unsigned int[_disc.nParType + 1];
+	_disc.parTypeOffset[0] = 0;
+	for (unsigned int j = 1; j < _disc.nParType + 1; ++j)
+		_disc.parTypeOffset[j] = _disc.parTypeOffset[j - 1] + (_disc.nComp + _disc.strideBound[j - 1]) * _disc.nBulkPoints;
 
 	// Allocate memory
 	Indexer idxr(_disc);
@@ -659,22 +657,9 @@ bool LumpedRateModelWithPoresDG2D::configure(IParameterProvider& paramProvider)
 
 	// Read vectorial parameters (which may also be section dependent; transport)
 	_filmDiffusionMode = readAndRegisterMultiplexCompTypeSecParam(paramProvider, _parameters, _filmDiffusion, "FILM_DIFFUSION", _disc.nParType, _disc.nComp, _unitOpIdx);
-	_parDiffusionMode = readAndRegisterMultiplexCompTypeSecParam(paramProvider, _parameters, _parDiffusion, "PAR_DIFFUSION", _disc.nParType, _disc.nComp, _unitOpIdx);
-
-	if (paramProvider.exists("PAR_SURFDIFFUSION"))
-		_parSurfDiffusionMode = readAndRegisterMultiplexBndCompTypeSecParam(paramProvider, _parameters, _parSurfDiffusion, "PAR_SURFDIFFUSION", _disc.nParType, _disc.nComp, _disc.strideBound, _disc.nBound, _unitOpIdx);
-	else
-	{
-		_parSurfDiffusionMode = MultiplexMode::Component;
-		_parSurfDiffusion.resize(_disc.strideBound[_disc.nParType], 0.0);
-	}
 
 	if ((_filmDiffusion.size() < _disc.nComp * _disc.nParType) || (_filmDiffusion.size() % (_disc.nComp * _disc.nParType) != 0))
 		throw InvalidParameterException("Number of elements in field FILM_DIFFUSION is not a positive multiple of NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ")");
-	if ((_parDiffusion.size() < _disc.nComp * _disc.nParType) || (_parDiffusion.size() % (_disc.nComp * _disc.nParType) != 0))
-		throw InvalidParameterException("Number of elements in field PAR_DIFFUSION is not a positive multiple of NCOMP * NPARTYPE (" + std::to_string(_disc.nComp * _disc.nParType) + ")");
-	if ((_parSurfDiffusion.size() < _disc.strideBound[_disc.nParType]) || ((_disc.strideBound[_disc.nParType] > 0) && (_parSurfDiffusion.size() % _disc.strideBound[_disc.nParType] != 0)))
-		throw InvalidParameterException("Number of elements in field PAR_SURFDIFFUSION is not a positive multiple of NTOTALBND (" + std::to_string(_disc.strideBound[_disc.nParType]) + ")");
 
 	if (paramProvider.exists("PORE_ACCESSIBILITY"))
 		_poreAccessFactorMode = readAndRegisterMultiplexCompTypeSecParam(paramProvider, _parameters, _poreAccessFactor, "PORE_ACCESSIBILITY", _disc.nParType, _disc.nComp, _unitOpIdx);
@@ -1228,13 +1213,6 @@ int LumpedRateModelWithPoresDG2D::residualParticle(double t, unsigned int parTyp
 	ResidualType* res = resBase + idxr.offsetCp(ParticleTypeIndex{parType}, ParticleIndex{ colNode });
 
 	LinearBufferAllocator tlmAlloc = threadLocalMem.get();
-
-	// Prepare parameters
-	active const* const parDiff = getSectionDependentSlice(_parDiffusion, _disc.nComp * _disc.nParType, secIdx) + parType * _disc.nComp;
-
-	// Ordering of particle surface diffusion:
-	// bnd0comp0, bnd0comp1, bnd0comp2, bnd1comp0, bnd1comp1, bnd1comp2
-	active const* const parSurfDiff = getSectionDependentSlice(_parSurfDiffusion, _disc.strideBound[_disc.nParType], secIdx) + _disc.nBoundBeforeType[parType];
 
 	// Midpoint of current column cell (z, rho coordinate) - needed in externally dependent adsorption kinetic
 	const unsigned int axialNode = colNode / _disc.radNPoints;

@@ -34,19 +34,19 @@ namespace dgtoolbox
 {
 /**
  * @brief computes the node in physical space corresponding to a reference node
- * @param [in] deltaX element spacing
+ * @param [in] delta element spacing
  * @param [in] elemIdx element index starting at 0
  * @param [in] xi reference node
  */
 template <typename ParamType>
-ParamType mapRefToPhys(const std::vector<ParamType> deltaX, const unsigned int elemIdx, const double xi)
+ParamType mapRefToPhys(const std::vector<ParamType> delta, const unsigned int elemIdx, const double xi)
 {
-	//return std::accumulate(deltaX.begin(), deltaX.begin() + elemIdx, 0.0) + deltaX[elemIdx] / 2.0 * (xi + 1.0);
+	//return std::accumulate(delta.begin(), delta.begin() + elemIdx, delta[elemIdx] / 2.0 * (xi + 1.0));
 
 	ParamType map = 0.0;
 	for (unsigned int i = 0; i < elemIdx; i++)
-		map += deltaX[i];
-	return map + deltaX[elemIdx] / 2.0 * (xi + 1.0);
+		map += delta[i];
+	return map + delta[elemIdx] / 2.0 * (xi + 1.0);
 }
 /**
  * @brief computes the node in referece space corresponding to a physical node

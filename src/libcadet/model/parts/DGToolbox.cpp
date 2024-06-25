@@ -475,10 +475,10 @@ MatrixXd polynomialInterpolationMatrix(const VectorXd newNodes, const VectorXd o
 	const unsigned int nOldNodes = oldNodes.size();
 	MatrixXd intM = MatrixXd::Zero(nNewNodes, nOldNodes);
 
-	for (unsigned int k = 0; k <= nNewNodes; k++)
+	for (unsigned int k = 0; k < nNewNodes; k++)
 	{
 		bool rowHasMatch = false;
-		for (unsigned int j = 0; j <= nOldNodes; j++)
+		for (unsigned int j = 0; j < nOldNodes; j++)
 		{
 			if (almostEqual(newNodes[k], oldNodes[j]))
 			{
@@ -494,13 +494,13 @@ MatrixXd polynomialInterpolationMatrix(const VectorXd newNodes, const VectorXd o
 
 		double s = 0.0;
 
-		for (unsigned int j = 0; j <= nOldNodes; j++)
+		for (unsigned int j = 0; j < nOldNodes; j++)
 		{
 			double t = baryWeights[j] / (newNodes[k] - oldNodes[j]);
 			intM(k, j) = t;
 			s = s + t;
 		}
-		for (unsigned int j = 0; j <= nOldNodes; j++)
+		for (unsigned int j = 0; j < nOldNodes; j++)
 		{
 			intM(k, j) /= s;
 		}
@@ -530,7 +530,7 @@ MatrixXd liftingMatrix(const unsigned int size)
 	MatrixXd liftingMatrix = MatrixXd::Zero(size, 2);
 
 	liftingMatrix(0, 0) = 1.0;
-	liftingMatrix(size - 1, 2) = -1.0;
+	liftingMatrix(size - 1, 1) = -1.0;
 
 	return liftingMatrix;
 }

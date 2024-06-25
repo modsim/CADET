@@ -167,7 +167,6 @@ public:
 	virtual bool supportsMultistate() const CADET_NOEXCEPT { return false; }
 	virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
 	virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT { return true; }
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const
 	{
@@ -215,6 +214,8 @@ protected:
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_reactionQuasistationarity;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nComp;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nBoundStates;
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx)
 	{

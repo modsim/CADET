@@ -74,6 +74,8 @@ protected:
 	void configureNonlinearSolver(IParameterProvider& paramProvider);
 	void configureNonlinearSolver();
 
+	unsigned int maxBindingAdDirs() const CADET_NOEXCEPT;
+
 	UnitOpIdx _unitOpIdx; //!< Unit operation index
 	std::vector<IBindingModel*> _binding; //!< Binding model
 	bool _singleBinding; //!< Determines whether only a single binding model is present

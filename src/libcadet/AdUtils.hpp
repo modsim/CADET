@@ -19,8 +19,11 @@
 #define LIBCADET_ADUTILS_HPP_
 
 #include "AutoDiff.hpp"
+#include "CompileTimeConfig.hpp"
 
-#include<Eigen/Sparse>
+#ifdef ENABLE_DG
+	#include <Eigen/Sparse>
+#endif
 
 namespace cadet
 {
@@ -66,21 +69,24 @@ void prepareAdVectorSeedsForBandMatrix(active* const adVec, int adDirOffset, int
  */
 void extractBandedJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, linalg::BandMatrix& mat);
 
-/**
- * @brief Extracts a band (sub)matrix (Eigen lib) from band compressed AD seed vectors
- * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
-			assemble the Jacobian block which is a band matrix. The block must be on the main diagonal.
- * @param [in] adVec Vector of AD datatypes with band compressed seed vectors
- * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
- * @param [in] diagDir Diagonal direction index
- * @param [in] lowerBandwidth lower band width
- * @param [in] upperBandwidth upper band width
- * @param [in] blockOffset offset to diagonal block
- * @param [in] nCols number of columns of the extracted block
- * @param [out] mat Eigen matrix to be populated with the Jacobian block
- */
-void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
-	const int blockOffset, const int nCols, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset = 0);
+#ifdef ENABLE_DG
+	/**
+	 * @brief Extracts a band (sub)matrix (Eigen lib) from band compressed AD seed vectors
+	 * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
+				assemble the Jacobian block which is a band matrix. The block must be on the main diagonal.
+	* @param [in] adVec Vector of AD datatypes with band compressed seed vectors
+	* @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
+	* @param [in] diagDir Diagonal direction index
+	* @param [in] lowerBandwidth lower band width
+	* @param [in] upperBandwidth upper band width
+	* @param [in] blockOffset offset to diagonal block
+	* @param [in] nCols number of columns of the extracted block
+	* @param [out] mat Eigen matrix to be populated with the Jacobian block
+	*/
+	void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
+		const int blockOffset, const int nCols, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset = 0);
+#endif
+
 /**
  * @brief Extracts a band matrix (Eigen lib) from band compressed AD seed vectors
  * @details Uses the results of an AD computation with seed vectors set by prepareAdVectorSeedsForBandMatrix() to
@@ -100,7 +106,7 @@ void extractBandedEigenJacobianFromAd(active const* const adVec, int adDirOffset
  * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
  * @param [in] cols Nnumber of Jacobian columns (length of the AD vector and number of seed vectors)
  */
-void prepareAdVectorSeedsForDenseMatrix(active* const adVec, int adDirOffset, int cols); 
+void prepareAdVectorSeedsForDenseMatrix(active* const adVec, int adDirOffset, int cols);
 
 /**
  * @brief Extracts a dense matrix from AD seed vectors
@@ -126,7 +132,7 @@ void extractDenseJacobianFromAd(active const* const adVec, int adDirOffset, lina
  * @param [in] upperBandwidth Upper bandwidth (number of upper superdiagonals) of the banded Jacobian
  * @param [out] mat Dense matrix to be populated with the Jacobian submatrix
  */
-void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir, 
+void extractDenseJacobianFromBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir,
 	int lowerBandwidth, int upperBandwidth, linalg::detail::DenseMatrixBase& mat);
 
 /**
@@ -199,7 +205,7 @@ double compareDenseJacobianWithAd(active const* const adVec, int adDirOffset, co
  * @param [in] mat Dense matrix populated with the dense Jacobian submatrix
  * @return The maximum absolute relative difference between the matrix elements
  */
-double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir, 
+double compareDenseJacobianWithBandedAd(active const* const adVec, int row, int adDirOffset, int diagDir,
 	int lowerBandwidth, int upperBandwidth, const linalg::detail::DenseMatrixBase& mat);
 
 /**
@@ -295,64 +301,6 @@ inline void resetAd(active* const adVec, int size)
 	for (int i = 0; i < size; ++i)
 		adVec[i] = 0.0;
 }
-
-/**
- * @brief Interface for extracting Jacobians via AD
- */
-class IJacobianExtractor
-{
-public:
-	virtual ~IJacobianExtractor() { }
-
-	/**
-	 * @brief Extracts a Jacobian from an AD vector
-	 * @details Extracts a Jacobian matrix from an AD vector into a matrix.
-	 * @param [in] adRes AD vector used for evaluating a function
-	 * @param [in] row Index of the first row to be extracted from the AD data
-	 * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
-	 * @param [out] mat Matrix which stores the Jacobian
-	 */
-	virtual void extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const = 0;
-
-	/**
-	 * @brief Compares the AD Jacobian with a given Jacobian matrix and returns the maximum absolute difference
-	 * @param [in] adRes AD vector used for evaluating a function
-	 * @param [in] row Index of the first row to be extracted from the AD data
-	 * @param [in] adDirOffset Offset in the AD directions (can be used to move past parameter sensitivity directions)
-	 * @param [in] mat Matrix which stores another Jacobian used for comparison
-	 * @return Maximum absolute difference between AD and given Jacobian matrix
-	 */
-	virtual double compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const = 0;
-};
-
-/**
- * @brief Extracts Jacobians from AD setup for dense matrices
- * @details The seed vectors in the AD vector are standard unit vectors.
- */
-class DenseJacobianExtractor : public IJacobianExtractor
-{
-public:
-	DenseJacobianExtractor();
-	virtual void extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const;
-	virtual double compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const;
-protected:
-};
-
-/**
- * @brief Extracts Jacobians from AD setup for band matrices
- * @details The seed vectors in the AD vector use band compression.
- */
-class BandedJacobianExtractor : public IJacobianExtractor
-{
-public:
-	BandedJacobianExtractor(int diagDir, int lowerBandwidth, int upperBandwidth);
-	virtual void extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const;
-	virtual double compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const;
-protected:
-	int _diagDir;
-	int _lowerBandwidth;
-	int _upperBandwidth;
-};
 
 } // namespace ad
 

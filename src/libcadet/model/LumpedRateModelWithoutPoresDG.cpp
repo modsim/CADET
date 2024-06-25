@@ -386,10 +386,11 @@ namespace cadet
 
 		unsigned int LumpedRateModelWithoutPoresDG::requiredADdirs() const CADET_NOEXCEPT
 		{
+			const unsigned int numDirsBinding = maxBindingAdDirs();
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
-			return _jacobianAdDirs;
+			return numDirsBinding + _jacobianAdDirs;
 #else
-			return _convDispOp.requiredADdirs();
+			return numDirsBinding + _convDispOp.requiredADdirs();
 #endif
 		}
 

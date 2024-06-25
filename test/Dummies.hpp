@@ -12,6 +12,7 @@
 
 #include "cadet/Model.hpp"
 #include "cadet/ParameterId.hpp"
+#include "cadet/ParameterProvider.hpp"
 
 #include "ConfigurationHelper.hpp"
 
@@ -62,4 +63,31 @@ namespace
 #endif
 	};
 
+	class DummyParameterProvider : public cadet::IParameterProvider
+	{
+	public:
+
+		DummyParameterProvider() { }
+		virtual ~DummyParameterProvider() CADET_NOEXCEPT { }
+
+		virtual double getDouble(const std::string& paramName) { return 0.0; }
+		virtual int getInt(const std::string& paramName) { return 0; }
+		virtual uint64_t getUint64(const std::string& paramName) { return 0; }
+		virtual bool getBool(const std::string& paramName) { return false; }
+		virtual std::string getString(const std::string& paramName) { return ""; }
+
+		virtual std::vector<double> getDoubleArray(const std::string& paramName) { return std::vector<double>(); }
+		virtual std::vector<int> getIntArray(const std::string& paramName) { return std::vector<int>(); }
+		virtual std::vector<uint64_t> getUint64Array(const std::string& paramName) { return std::vector<uint64_t>(); }
+		virtual std::vector<bool> getBoolArray(const std::string& paramName) { return std::vector<bool>(); }
+		virtual std::vector<std::string> getStringArray(const std::string& paramName) { return std::vector<std::string>(); }
+
+		virtual bool exists(const std::string& paramName) { return false; }
+		virtual bool isArray(const std::string& paramName) { return false; }
+
+		virtual std::size_t numElements(const std::string& paramName) { return 0; }
+
+		virtual void pushScope(const std::string& scope) { }
+		virtual void popScope() { }
+	};
 }

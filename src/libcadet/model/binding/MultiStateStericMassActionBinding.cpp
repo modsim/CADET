@@ -156,7 +156,6 @@ public:
 		return res;
 	}
 
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 	virtual bool hasSalt() const CADET_NOEXCEPT { return true; }
 	virtual bool supportsMultistate() const CADET_NOEXCEPT { return true; }
 	virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
@@ -206,6 +205,8 @@ protected:
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_reactionQuasistationarity;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nComp;
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nBoundStates;
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,

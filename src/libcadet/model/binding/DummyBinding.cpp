@@ -144,8 +144,8 @@ public:
 	virtual bool hasDynamicReactions() const CADET_NOEXCEPT { return true; }
 	virtual bool dependsOnTime() const CADET_NOEXCEPT { return false; }
 	virtual bool requiresWorkspace() const CADET_NOEXCEPT { return false; }
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 	virtual int const* reactionQuasiStationarity() const CADET_NOEXCEPT { return _stateQuasistationarity.data(); }
+	virtual unsigned int requiredADdirs() const CADET_NOEXCEPT { return 0; }
 
 	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const { return false; }
 	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const { }
@@ -154,6 +154,8 @@ protected:
 	int _nComp; //!< Number of components
 	unsigned int const* _nBoundStates; //!< Array with number of bound states for each component
 	std::vector<int> _stateQuasistationarity; //!< Determines whether each bound state is quasi-stationary (@c true) or not (@c false)
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 };
 
 namespace binding

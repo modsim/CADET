@@ -30,6 +30,7 @@ namespace cadet
 			void registerMobilePhaseModulatorLangmuirModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
 			void registerExtendedMobilePhaseModulatorLangmuirModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
 			void registerStericMassActionModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
+			void registerNoJacobianStericMassActionModel(std::unordered_map<std::string, std::function<model::IBindingModel* ()>>& bindings);
 			void registerBiStericMassActionModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
 			void registerMultiStateStericMassActionModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
 //			void registerSimplifiedMultiStateStericMassActionModel(std::unordered_map<std::string, std::function<model::IBindingModel*()>>& bindings);
@@ -59,6 +60,7 @@ namespace cadet
 		model::binding::registerMobilePhaseModulatorLangmuirModel(_bindingModels);
 		model::binding::registerExtendedMobilePhaseModulatorLangmuirModel(_bindingModels);
 		model::binding::registerStericMassActionModel(_bindingModels);
+		model::binding::registerNoJacobianStericMassActionModel(_bindingModels);
 		model::binding::registerBiStericMassActionModel(_bindingModels);
 		model::binding::registerMultiStateStericMassActionModel(_bindingModels);
 //		model::binding::registerSimplifiedMultiStateStericMassActionModel(_bindingModels);

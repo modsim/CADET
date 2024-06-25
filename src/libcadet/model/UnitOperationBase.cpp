@@ -43,6 +43,22 @@ UnitOperationBase::~UnitOperationBase() CADET_NOEXCEPT
 	delete _nonlinearSolver;
 }
 
+unsigned int UnitOperationBase::maxBindingAdDirs() const CADET_NOEXCEPT
+{
+	if (_singleBinding)
+	{
+		if (!_binding.empty())
+			return _binding[0]->requiredADdirs();
+		else
+			return 0;
+	}
+
+	unsigned int dirs = 0;
+	for (IBindingModel* bm : _binding)
+		dirs = std::max(dirs, bm->requiredADdirs());
+	return dirs;
+}
+
 void UnitOperationBase::clearBindingModels() CADET_NOEXCEPT
 {
 	if (_singleBinding)

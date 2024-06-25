@@ -171,7 +171,6 @@ public:
 	virtual bool supportsMultistate() const CADET_NOEXCEPT { return true; }
 	virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
 	virtual bool hasQuasiStationaryReactions() const CADET_NOEXCEPT { return true; }
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const
 	{
@@ -223,6 +222,8 @@ protected:
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_nBoundStates;
 
 	unsigned int _numBindingComp; //!< Number of binding components
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,

@@ -21,9 +21,11 @@
 #include "model/BindingModel.hpp"
 #include "model/binding/BindingModelMacros.hpp"
 #include "ParamIdUtil.hpp"
+#include "AdUtils.hpp"
 
 #include <vector>
 #include <unordered_map>
+#include <numeric>
 
 namespace cadet
 {
@@ -68,7 +70,16 @@ public:
 	virtual bool supportsMultistate() const CADET_NOEXCEPT { return false; }
 	virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
 
-	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT { return 0; }
+	virtual bool requiresWorkspace() const CADET_NOEXCEPT { return !implementsAnalyticJacobian(); }
+	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT
+	{
+		if (implementsAnalyticJacobian())
+			return 0;
+
+		// Need storage for residuals (totalNumBoundStates) and AD variables (_nComp + totalNumBoundStates)
+		const int requiredAdVars = _nComp + totalNumBoundStates + totalNumBoundStates;
+		return requiredAdVars * sizeof(active) + alignof(active);
+	}
 
 	virtual void setExternalFunctions(IExternalFunction** extFuns, unsigned int size) { }
 
@@ -81,6 +92,15 @@ public:
 	virtual bool preConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const { return true; }
 	virtual void postConsistentInitialState(double t, unsigned int secIdx, const ColumnPosition& colPos, double* y, double const* yCp, LinearBufferAllocator workSpace) const { }
 
+	virtual unsigned int requiredADdirs() const CADET_NOEXCEPT
+	{
+		if (implementsAnalyticJacobian())
+			return 0;
+		return std::accumulate(_nBoundStates, _nBoundStates + _nComp, 0) + _nComp;
+	}
+
+	CADET_BINDINGMODEL_JACOBIAN_BOILERPLATE
+
 protected:
 	int _nComp; //!< Number of components
 	unsigned int const* _nBoundStates; //!< Array with number of bound states for each component
@@ -89,6 +109,13 @@ protected:
 	bool _hasDynamic; //!< Caches whether the model contains dynamic reaction fluxes
 
 	std::unordered_map<ParameterId, active*> _parameters; //!< Map used to translate ParameterIds to actual variables
+
+	/**
+	 * @brief Returns whether the function analyticJacobian() is implemented
+	 * @details The Jacobian can be calculated using automatic differentiation (AD) if analyticJacobian() is not implemented.
+	 * @return @c true if analyticJacobian() is implemented, otherwise @c false
+	 */
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Configures the binding model
@@ -101,6 +128,29 @@ protected:
 	 * @return @c true if the configuration was successful, otherwise @c false
 	 */
 	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx) = 0;
+
+	template <typename RowIterator>
+	void jacobianImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, double const* yCp, int offsetCp, RowIterator jac, LinearBufferAllocator workSpace) const
+	{
+		const int nTotalBound = std::accumulate(_nBoundStates, _nBoundStates + _nComp, 0);
+		active* const adVec = static_cast<active*>(workSpace.array<active>(nTotalBound * 2 + _nComp));
+		active* const adRes = adVec + nTotalBound + _nComp;
+
+		// Compute Jacobian via AD (dense matrix extraction)
+		cadet::ad::prepareAdVectorSeedsForDenseMatrix(adVec, 0, nTotalBound + _nComp);
+		ad::copyToAd(yCp, adVec, _nComp);
+		ad::copyToAd(y, adVec + _nComp, nTotalBound);
+		flux(t, secIdx, colPos, adVec + _nComp, adVec, adRes, workSpace, cadet::WithoutParamSensitivity());
+
+		// Copy AD Jacobian to row iterator
+		for (int i = 0; i < nTotalBound; ++i)
+		{
+			for (int j = 0; j < nTotalBound + _nComp; ++j)
+				jac[j - i - _nComp] = adRes[i].getADValue(j);
+
+			++jac;
+		}
+	}
 };
 
 
@@ -120,11 +170,11 @@ public:
 	virtual const char* name() const CADET_NOEXCEPT { return handler_t::identifier(); }
 	virtual void setExternalFunctions(IExternalFunction** extFuns, unsigned int size) { _paramHandler.setExternalFunctions(extFuns, size); }
 	virtual bool dependsOnTime() const CADET_NOEXCEPT { return handler_t::dependsOnTime(); }
-	virtual bool requiresWorkspace() const CADET_NOEXCEPT { return handler_t::requiresWorkspace(); }
+	virtual bool requiresWorkspace() const CADET_NOEXCEPT { return handler_t::requiresWorkspace() || BindingModelBase::requiresWorkspace(); }
 
 	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT
 	{
-		return _paramHandler.cacheSize(nComp, totalNumBoundStates, nBoundStates);
+		return BindingModelBase::workspaceSize(nComp, totalNumBoundStates, nBoundStates) + _paramHandler.cacheSize(nComp, totalNumBoundStates, nBoundStates);
 	}
 
 protected:

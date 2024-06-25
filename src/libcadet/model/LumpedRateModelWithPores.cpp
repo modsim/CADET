@@ -734,11 +734,12 @@ void LumpedRateModelWithPores<ConvDispOperator>::reportSolutionStructure(ISoluti
 template <typename ConvDispOperator>
 unsigned int LumpedRateModelWithPores<ConvDispOperator>::requiredADdirs() const CADET_NOEXCEPT
 {
+	const unsigned int numDirsBinding = maxBindingAdDirs();
 #ifndef CADET_CHECK_ANALYTIC_JACOBIAN
-	return _jacobianAdDirs;
+	return numDirsBinding + _jacobianAdDirs;
 #else
 	// If CADET_CHECK_ANALYTIC_JACOBIAN is active, we always need the AD directions for the Jacobian
-	return numAdDirsForJacobian();
+	return numDirsBinding + numAdDirsForJacobian();
 #endif
 }
 

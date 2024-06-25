@@ -401,7 +401,6 @@ public:
 	virtual const char* name() const CADET_NOEXCEPT { return ParamHandler_t::identifier(); }
 	virtual bool requiresConfiguration() const CADET_NOEXCEPT { return true; }
 	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT { return true; }
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nBound, unsigned int const* boundOffset)
 	{
@@ -616,6 +615,7 @@ public:
 
 	virtual bool dependsOnTime() const CADET_NOEXCEPT { return ParamHandler_t::dependsOnTime(); }
 	virtual bool requiresWorkspace() const CADET_NOEXCEPT { return ParamHandler_t::requiresWorkspace(); }
+	virtual unsigned int requiredADdirs() const CADET_NOEXCEPT { return 0; }
 	virtual int const* reactionQuasiStationarity() const CADET_NOEXCEPT { return _reactionQuasistationarity.data(); }
 
 protected:
@@ -626,6 +626,8 @@ protected:
 	ParamHandler_t _paramHandler; //!< Parameters
 
 	std::unordered_map<ParameterId, active*> _parameters; //!< Map used to translate ParameterIds to actual variables
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 	template <typename StateType, typename ResidualType, typename ParamType>
 	int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos,

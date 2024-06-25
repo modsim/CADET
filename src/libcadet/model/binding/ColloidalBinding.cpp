@@ -146,8 +146,6 @@ public:
 
 	static const char* identifier() { return ParamHandler_t::identifier(); }
 
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
-
 	virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const
 	{
 		if (!this->hasQuasiStationaryReactions())
@@ -159,7 +157,7 @@ public:
 		// TODO: Compute derivative
 	}
 
-	CADET_BINDINGMODELBASE_BOILERPLATE
+	CADET_BINDINGMODEL_RESIDUAL_BOILERPLATE
 
 protected:
 	using ParamHandlerBindingModelBase<ParamHandler_t>::_paramHandler;
@@ -169,6 +167,8 @@ protected:
 
 	int _startIdx;
 	const double _rFactor;
+
+	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return false; }
 
 	virtual bool configureImpl(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx)
 	{

@@ -126,7 +126,6 @@ namespace cadet
 			virtual bool hasSalt() const CADET_NOEXCEPT { return false; }
 			virtual bool supportsMultistate() const CADET_NOEXCEPT { return true; }
 			virtual bool supportsNonBinding() const CADET_NOEXCEPT { return true; }
-			virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 			/*virtual void timeDerivativeQuasiStationaryFluxes(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* yCp, double const* y, double* dResDt, LinearBufferAllocator workSpace) const
 			{
@@ -215,6 +214,8 @@ namespace cadet
 			using ParamHandlerBindingModelBase<ParamHandler_t>::_nBoundStates;
 
 			unsigned int _numBindingComp; //!< Number of binding components
+
+			virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 			template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 			int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,

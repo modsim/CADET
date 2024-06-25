@@ -87,8 +87,6 @@ namespace cadet
 
 			static const char* identifier() { return ParamHandler_t::identifier(); }
 
-			virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
-
 			CADET_BINDINGMODELBASE_BOILERPLATE
 
 		protected:
@@ -99,6 +97,8 @@ namespace cadet
 
 			const double _threshold = 1e-14;
 			
+			virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
+
 			template <typename StateType, typename CpStateType, typename ResidualType, typename ParamType>
 			int fluxImpl(double t, unsigned int secIdx, const ColumnPosition& colPos, StateType const* y,
 				CpStateType const* yCp, ResidualType* res, LinearBufferAllocator workSpace) const

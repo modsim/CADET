@@ -107,13 +107,6 @@ public:
 	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT = 0;
 
 	/**
-	 * @brief Returns whether the function analyticJacobian() is implemented or not
-	 * @details If analytic Jacobians are not implemented, the owning unit operation can default to AD.
-	 * @return @c true if analyticJacobian() is implemented, otherwise @c false
-	 */
-	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT = 0;
-
-	/**
 	 * @brief Sets fixed parameters of the binding model (e.g., the number of components and bound states)
 	 * @details This function is called prior to configure() by the underlying model.
 	 *          It can only be called once. Whereas non-structural model parameters
@@ -260,6 +253,14 @@ public:
 	 * @return Size of the workspace in bytes
 	 */
 	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nBoundStates) const CADET_NOEXCEPT = 0;
+
+	/**
+	 * @brief Returns the amount of required AD seed vectors / directions
+	 * @details Only internally required AD directions count (e.g., for Jacobian computation).
+	 *          Directions used for parameter sensitivities should not be included here.
+	 * @return The number of required AD seed vectors / directions
+	 */
+	virtual unsigned int requiredADdirs() const CADET_NOEXCEPT = 0;
 
 	/**
 	 * @brief Evaluates the fluxes

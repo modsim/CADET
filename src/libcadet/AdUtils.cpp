@@ -15,7 +15,9 @@
 #include "linalg/SparseMatrix.hpp"
 #include "AdUtils.hpp"
 
-#include <Eigen/Sparse>
+#ifdef ENABLE_DG
+	#include <Eigen/Sparse>
+#endif
 #include <limits>
 #include <algorithm>
 
@@ -99,34 +101,36 @@ void extractBandedEigenJacobianFromAd(active const* const adVec, int adDirOffset
 	}
 }
 
-void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
-	const int blockOffset, const int nRows, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
-{
-	const int stride = lowerBandwidth + 1 + upperBandwidth;
-	for (int eq = blockOffset; eq < blockOffset + nRows; ++eq)
+#ifdef ENABLE_DG
+	void extractBandedBlockEigenJacobianFromAd(active const* const adVec, int adDirOffset, int diagDir, const int lowerBandwidth, const int upperBandwidth,
+		const int blockOffset, const int nRows, Eigen::SparseMatrix<double, Eigen::RowMajor>& mat, const int matrixOffset)
 	{
-		// Start with lowest subdiagonal and stay in the range of the columns:
-		// diagDir might be too big for the matrix and, hence, dir ranges between
-		// diagDir - lowerBandwidth <= dir <= diagDir + upperBandwidth
-		int dir = diagDir - lowerBandwidth + eq % stride;
-
-		// Loop over diagonals
-		for (int diag = 0; diag < stride; ++diag)
+		const int stride = lowerBandwidth + 1 + upperBandwidth;
+		for (int eq = blockOffset; eq < blockOffset + nRows; ++eq)
 		{
-			if (eq - lowerBandwidth + diag >= blockOffset && // left block boundary
-				eq - lowerBandwidth + diag < blockOffset + nRows && // right block boundary
-				adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
-				)
-				mat.coeffRef(matrixOffset + eq, matrixOffset + eq - lowerBandwidth + diag) = adVec[eq].getADValue(adDirOffset + dir);
+			// Start with lowest subdiagonal and stay in the range of the columns:
+			// diagDir might be too big for the matrix and, hence, dir ranges between
+			// diagDir - lowerBandwidth <= dir <= diagDir + upperBandwidth
+			int dir = diagDir - lowerBandwidth + eq % stride;
 
-			// Wrap around at end of row and jump to lowest subdiagonal
-			if (dir == diagDir + upperBandwidth)
-				dir = diagDir - lowerBandwidth;
-			else
-				++dir;
+			// Loop over diagonals
+			for (int diag = 0; diag < stride; ++diag)
+			{
+				if (eq - lowerBandwidth + diag >= blockOffset && // left block boundary
+					eq - lowerBandwidth + diag < blockOffset + nRows && // right block boundary
+					adVec[eq].getADValue(adDirOffset + dir) != 0.0 // keep pattern
+					)
+					mat.coeffRef(matrixOffset + eq, matrixOffset + eq - lowerBandwidth + diag) = adVec[eq].getADValue(adDirOffset + dir);
+
+				// Wrap around at end of row and jump to lowest subdiagonal
+				if (dir == diagDir + upperBandwidth)
+					dir = diagDir - lowerBandwidth;
+				else
+					++dir;
+			}
 		}
 	}
-}
+#endif
 
 void prepareAdVectorSeedsForDenseMatrix(active* const adVec, int adDirOffset, int cols)
 {
@@ -337,33 +341,6 @@ void adMatrixVectorMultiply(const linalg::SparseMatrix<active>& mat, double cons
 	{
 		y[rows[i]] = alpha * values[i].getADValue(adDir) * x[cols[i]] + beta * y[rows[i]];
 	}
-}
-
-DenseJacobianExtractor::DenseJacobianExtractor() { }
-
-void DenseJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
-{
-	extractDenseJacobianFromAd(adRes + row, adDirOffset + row, mat);
-}
-
-double DenseJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
-{
-	return compareDenseJacobianWithAd(adRes + row, adDirOffset + row, mat);
-}
-
-
-BandedJacobianExtractor::BandedJacobianExtractor(int diagDir, int lowerBandwidth, int upperBandwidth)
-	: _diagDir(diagDir), _lowerBandwidth(lowerBandwidth), _upperBandwidth(upperBandwidth)
-	{ }
-
-void BandedJacobianExtractor::extractJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
-{
-	extractDenseJacobianFromBandedAd(adRes, row, adDirOffset, _diagDir, _lowerBandwidth, _upperBandwidth, mat);
-}
-
-double BandedJacobianExtractor::compareWithJacobian(active const* adRes, int row, int adDirOffset, linalg::detail::DenseMatrixBase& mat) const
-{
-	return compareDenseJacobianWithBandedAd(adRes, row, adDirOffset, _diagDir, _lowerBandwidth, _upperBandwidth, mat);
 }
 
 }  // namespace ad

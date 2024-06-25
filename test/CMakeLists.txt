@@ -69,7 +69,7 @@ add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp Unit
 	CSTR-Residual.cpp CSTR-Simulation.cpp
 	ConvectionDispersionOperator.cpp
 	CellKernelTests.cpp
-	BindingModelTests.cpp BindingModels.cpp
+	BindingModelTests.cpp BindingModels.cpp BindingModelAutoJacobian.cpp
 	ReactionModelTests.cpp ReactionModels.cpp
 	ParamDepTests.cpp ParameterDependencies.cpp
 	ModelSystem.cpp

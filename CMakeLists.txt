@@ -85,6 +85,18 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #   Other configuration options
 # ---------------------------------------------------
 
+# Option that allows users to build release or debug version
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
+	message(STATUS "Build type: ${CMAKE_BUILD_TYPE} (default)")
+endif()
+
+# Default IPO setting: OFF for Debug, ON for all other build types
+set(DEFAULT_IPO_ENABLED ON)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(DEFAULT_IPO_ENABLED OFF)
+endif()
+
 include(FeatureSummary)
 
 option(ENABLE_LOGGING "Enables logging" ON)
@@ -130,7 +142,7 @@ add_feature_info(ENABLE_TESTS ENABLE_TESTS "Build CADET tests")
 option(ENABLE_PACKAGED_SUNDIALS "Use packaged SUNDIALS code" ON)
 add_feature_info(ENABLE_PACKAGED_SUNDIALS ENABLE_PACKAGED_SUNDIALS "Use packaged SUNDIALS code")
 
-option(ENABLE_IPO "Enable interprocedural optimization if compiler supports it" ON)
+option(ENABLE_IPO "Enable interprocedural optimization if compiler supports it" ${DEFAULT_IPO_ENABLED})
 add_feature_info(ENABLE_IPO ENABLE_IPO "Enable interprocedural optimization if compiler supports it")
 
 option(ENABLE_STATIC_LINK_DEPS "Prefer static over dynamic linking of dependencies" OFF)
@@ -155,12 +167,6 @@ if (UNIX)
 	if ("${isSystemDir}" STREQUAL "-1")
 		set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 	endif()
-endif()
-
-# Option that allows users to build release or debug version
-if (NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
-	message(STATUS "Build type: ${CMAKE_BUILD_TYPE} (default)")
 endif()
 
 # ---------------------------------------------------

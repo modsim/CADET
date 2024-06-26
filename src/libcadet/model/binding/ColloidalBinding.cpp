@@ -398,10 +398,10 @@ protected:
 				if (phEnabled)
 				{
 					const double pH = yCp[1];
+					logKeq_dPh = pow(pH, static_cast<double>(p->kEqPhExp[i]) - 1.0) * static_cast<double>(p->kEqPhExp[i]) * logKeq;
 					const double pHfactor = pow(pH, static_cast<double>(p->kEqPhExp[i]));
 					logKeq *= pHfactor;
 					logKeq_dSalt *= pHfactor;
-					logKeq_dPh = pow(pH, static_cast<double>(p->kEqPhExp[i]) - 1.0) * static_cast<double>(p->kEqPhExp[i]) * logKeq;
 				}
 
 				double bpp_i = pow(cpSalt, static_cast<double>(p->bppSaltPowerExp[i])) * static_cast<double>(p->bppSaltPowerFact[i]) + exp(cpSalt * static_cast<double>(p->bppSaltExpExp[i])) * static_cast<double>(p->bppSaltExpFact[i]);

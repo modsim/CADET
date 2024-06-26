@@ -1245,76 +1245,111 @@ CADET_BINDINGTEST("GENERALIZED_ION_EXCHANGE", "EXT_GENERALIZED_ION_EXCHANGE", (1
 	)json", \
 	1e-10, 1e-8, CADET_NONBINDING_LIQUIDPHASE_COMP_USED, CADET_COMPARE_BINDING_VS_NONBINDING)
 
-// TODO: fix Jacobian (tests) for colloidal binding model
-//TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD with PH", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
-//{
-//	const unsigned int nBound[] = {0, 0, 1, 1, 1};
-//	const double state[] = {0.9, 1.1, 1.5, 2.3, 2.9, 3.2, 2.1, 1.7};
-//	char const* const config = R"json({
-//			"COL_PHI": 0.56,
-//			"COL_KAPPA_EXP": 1.8,
-//			"COL_KAPPA_FACT": 1e7,
-//			"COL_KAPPA_CONST": 1.2,
-//			"COL_CORDNUM": 4.0,
-//			"COL_LOGKEQ_PH_EXP": [0.0, 0.0, 1.3, 2.3, 1.8],
-//			"COL_LOGKEQ_SALT_POWEXP": [0.0, 0.0, 1.4, 1.5, 1.6],
-//			"COL_LOGKEQ_SALT_POWFACT": [0.0, 0.0, 1.7, 1.9, 2.0],
-//			"COL_LOGKEQ_SALT_EXPFACT": [0.0, 0.0, 2.1, 2.2, 2.4],
-//			"COL_LOGKEQ_SALT_EXPARGMULT": [0.0, 0.0, 2.5, 2.6, 0.6],
-//			"COL_BPP_PH_EXP": [0.0, 0.0, 2.5, 2.4, 2.3],
-//			"COL_BPP_SALT_POWEXP": [0.0, 0.0, 1.1, 1.2, 1.3],
-//			"COL_BPP_SALT_POWFACT": [0.0, 0.0, 2.9, 2.8, 2.7],
-//			"COL_BPP_SALT_EXPFACT": [0.0, 0.0, 1.3, 1.7, 2.1],
-//			"COL_BPP_SALT_EXPARGMULT": [0.0, 0.0, 3.0, 2.8, 2.6],
-//			"COL_RADIUS": [0.0, 0.0, 1.1e-8, 2.0e-8, 3.0e-8],
-//			"COL_KKIN": [0.0, 0.0, 0.9, 1.4, 1.9],
-//			"COL_LINEAR_THRESHOLD": 1e-8,
-//			"COL_USE_PH": 1
-//		})json";
-//	for (int bindMode = 0; bindMode < 2; ++bindMode)
-//	{
-//		const bool isKinetic = bindMode;
-//		SECTION(std::string("Binding mode ") + (isKinetic ? "dynamic" : "quasi-stationary"))
-//		{
-//			cadet::test::binding::testJacobianAD("MULTI_COMPONENT_COLLOIDAL", sizeof(nBound) / sizeof(unsigned int), nBound, isKinetic, config, state);
-//		}
-//	}
-//}
-//
-//TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD without PH", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
-//{
-//	const unsigned int nBound[] = {0, 1, 1, 1};
-//	const double state[] = {0.9, 1.1, 2.3, 2.9, 3.2, 2.1, 1.7};
-//	char const* const config = R"json({
-//			"COL_PHI": 0.56,
-//			"COL_KAPPA_EXP": 1.8,
-//			"COL_KAPPA_FACT": 1e7,
-//			"COL_KAPPA_CONST": 1.2,
-//			"COL_CORDNUM": 4.0,
-//			"COL_LOGKEQ_PH_EXP": [0.0, 1.3, 2.3, 1.8],
-//			"COL_LOGKEQ_SALT_POWEXP": [0.0, 1.4, 1.5, 1.6],
-//			"COL_LOGKEQ_SALT_POWFACT": [0.0, 1.7, 1.9, 2.0],
-//			"COL_LOGKEQ_SALT_EXPFACT": [0.0, 2.1, 2.2, 2.4],
-//			"COL_LOGKEQ_SALT_EXPARGMULT": [0.0, 2.5, 2.6, 0.6],
-//			"COL_BPP_PH_EXP": [0.0, 2.5, 2.4, 2.3],
-//			"COL_BPP_SALT_POWEXP": [0.0, 1.1, 1.2, 1.3],
-//			"COL_BPP_SALT_POWFACT": [0.0, 2.9, 2.8, 2.7],
-//			"COL_BPP_SALT_EXPFACT": [0.0, 1.3, 1.7, 2.1],
-//			"COL_BPP_SALT_EXPARGMULT": [0.0, 3.0, 2.8, 2.6],
-//			"COL_RADIUS": [0.0, 1.1e-8, 2.0e-8, 3.0e-8],
-//			"COL_KKIN": [0.0, 0.9, 1.4, 1.9],
-//			"COL_LINEAR_THRESHOLD": 1e-8,
-//			"COL_USE_PH": 0
-//		})json";
-//	for (int bindMode = 0; bindMode < 2; ++bindMode)
-//	{
-//		const bool isKinetic = bindMode;
-//		SECTION(std::string("Binding mode ") + (isKinetic ? "dynamic" : "quasi-stationary"))
-//		{
-//			cadet::test::binding::testJacobianAD("MULTI_COMPONENT_COLLOIDAL", sizeof(nBound) / sizeof(unsigned int), nBound, isKinetic, config, state);
-//		}
-//	}
-//}
+	TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD with PH single protein", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
+			{
+				const unsigned int nBound[] = { 0, 0, 1 };
+				const double state[] = { 0.9, 1.1, 1.5e-2, 3.2e-2 };
+				char const* const config = R"json({
+			"COL_PHI": 49232983.6522396,
+			"COL_KAPPA_EXP": 1.8,
+			"COL_KAPPA_FACT": 1e7,
+			"COL_KAPPA_CONST": 1.2,
+			"COL_CORDNUM": 4.0,
+			"COL_LOGKEQ_PH_EXP": [0.0, 0.0, 1.3, 2.3, 1.8],
+			"COL_LOGKEQ_SALT_POWEXP": [0.0, 0.0, 1.4, 1.5, 1.6],
+			"COL_LOGKEQ_SALT_POWFACT": [0.0, 0.0, 1.7, 1.9, 2.0],
+			"COL_LOGKEQ_SALT_EXPFACT": [0.0, 0.0, 2.1, 2.2, 2.4],
+			"COL_LOGKEQ_SALT_EXPARGMULT": [0.0, 0.0, 2.5, 2.6, 0.6],
+			"COL_BPP_PH_EXP": [0.0, 0.0, 2.5, 2.4, 2.3],
+			"COL_BPP_SALT_POWEXP": [0.0, 0.0, 1.1, 1.2, 1.3],
+			"COL_BPP_SALT_POWFACT": [0.0, 0.0, 2.9, 2.8, 2.7],
+			"COL_BPP_SALT_EXPFACT": [0.0, 0.0, 1.3, 1.7, 2.1],
+			"COL_BPP_SALT_EXPARGMULT": [0.0, 0.0, 3.0, 2.8, 2.6],
+			"COL_RADIUS": [0.0, 0.0, 1.1e-8, 2.0e-8, 3.0e-8],
+			"COL_KKIN": [0.0, 0.0, 0.9, 1.4, 1.9],
+			"COL_LINEAR_THRESHOLD": 1e-12,
+			"COL_USE_PH": 1
+		})json";
+				for (int bindMode = 0; bindMode < 2; ++bindMode)
+				{
+					const bool isKinetic = bindMode;
+					SECTION(std::string("Binding mode ") + (isKinetic ? "dynamic" : "quasi-stationary"))
+					{
+						cadet::test::binding::testJacobianAD("MULTI_COMPONENT_COLLOIDAL", sizeof(nBound) / sizeof(unsigned int), nBound, isKinetic, config, state);
+					}
+				}
+			}	
+
+
+	TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD with PH multi protein", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
+	{
+		const unsigned int nBound[] = { 0, 0, 1, 1, 1};
+		const double state[] = { 0.9, 1.1, 1.5e-2, 3.2e-3, 1.5e-5, 3.2e-5, 1.5e-5, 3.2e-5 };
+		char const* const config = R"json({
+			"COL_PHI": 49232983.6522396,
+			"COL_KAPPA_EXP": 1.8,
+			"COL_KAPPA_FACT": 1e7,
+			"COL_KAPPA_CONST": 1.2,
+			"COL_CORDNUM": 4.0,
+			"COL_LOGKEQ_PH_EXP": [0.0, 0.0, 1.3, 2.3, 1.8],
+			"COL_LOGKEQ_SALT_POWEXP": [0.0, 0.0, 1.4, 1.5, 1.6],
+			"COL_LOGKEQ_SALT_POWFACT": [0.0, 0.0, 1.7, 1.9, 2.0],
+			"COL_LOGKEQ_SALT_EXPFACT": [0.0, 0.0, 2.1, 2.2, 2.4],
+			"COL_LOGKEQ_SALT_EXPARGMULT": [0.0, 0.0, 2.5, 2.6, 0.6],
+			"COL_BPP_PH_EXP": [0.0, 0.0, 2.5, 2.4, 2.3],
+			"COL_BPP_SALT_POWEXP": [0.0, 0.0, 1.1, 1.2, 1.3],
+			"COL_BPP_SALT_POWFACT": [0.0, 0.0, 2.9, 2.8, 2.7],
+			"COL_BPP_SALT_EXPFACT": [0.0, 0.0, 1.3, 1.7, 2.1],
+			"COL_BPP_SALT_EXPARGMULT": [0.0, 0.0, 3.0, 2.8, 2.6],
+			"COL_RADIUS": [0.0, 0.0, 1.1e-8, 2.0e-8, 3.0e-8],
+			"COL_KKIN": [0.0, 0.0, 0.9, 1.4, 1.9],
+			"COL_LINEAR_THRESHOLD": 1e-12,
+			"COL_USE_PH": 1
+		})json";
+		for (int bindMode = 0; bindMode < 2; ++bindMode)
+		{
+			const bool isKinetic = bindMode;
+			SECTION(std::string("Binding mode ") + (isKinetic ? "dynamic" : "quasi-stationary"))
+			{
+				cadet::test::binding::testJacobianAD("MULTI_COMPONENT_COLLOIDAL", sizeof(nBound) / sizeof(unsigned int), nBound, isKinetic, config, state);
+			}
+		}
+	}
+
+TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD without PH", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
+{
+	const unsigned int nBound[] = {0, 1, 1, 1};
+	const double state[] = {0.9, 1.1e-1, 3.2e-3, 1e-2, 2e-3, 1e-4, 1e-3};
+	char const* const config = R"json({
+			"COL_PHI": 49232983.6522396,
+			"COL_KAPPA_EXP": 1.8,
+			"COL_KAPPA_FACT": 1e7,
+			"COL_KAPPA_CONST": 1.2,
+			"COL_CORDNUM": 4.0,
+			"COL_LOGKEQ_PH_EXP": [0.0, 1.3, 2.3, 1.8],
+			"COL_LOGKEQ_SALT_POWEXP": [0.0, 1.4, 1.5, 1.6],
+			"COL_LOGKEQ_SALT_POWFACT": [0.0, 1.7, 1.9, 2.0],
+			"COL_LOGKEQ_SALT_EXPFACT": [0.0, 2.1, 2.2, 2.4],
+			"COL_LOGKEQ_SALT_EXPARGMULT": [0.0, 2.5, 2.6, 0.6],
+			"COL_BPP_PH_EXP": [0.0, 2.5, 2.4, 2.3],
+			"COL_BPP_SALT_POWEXP": [0.0, 1.1, 1.2, 1.3],
+			"COL_BPP_SALT_POWFACT": [0.0, 2.9, 2.8, 2.7],
+			"COL_BPP_SALT_EXPFACT": [0.0, 1.3, 1.7, 2.1],
+			"COL_BPP_SALT_EXPARGMULT": [0.0, 3.0, 2.8, 2.6],
+			"COL_RADIUS": [0.0, 1.1e-8, 2.0e-8, 3.0e-8],
+			"COL_KKIN": [0.0, 0.9, 1.4, 1.9],
+			"COL_LINEAR_THRESHOLD": 1e-12,
+			"COL_USE_PH": 0
+		})json";
+	for (int bindMode = 0; bindMode < 2; ++bindMode)
+	{
+		const bool isKinetic = bindMode;
+		SECTION(std::string("Binding mode ") + (isKinetic ? "dynamic" : "quasi-stationary"))
+		{
+			cadet::test::binding::testJacobianAD("MULTI_COMPONENT_COLLOIDAL", sizeof(nBound) / sizeof(unsigned int), nBound, isKinetic, config, state);
+		}
+	}
+}
 
 TEST_CASE("MULTI_COMPONENT_COLLOIDAL binding model analytic Jacobian vs AD with PH low conc", "[Jacobian],[AD],[BindingModel],[MULTI_COMPONENT_COLLOIDAL]")
 {

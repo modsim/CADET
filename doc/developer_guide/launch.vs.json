@@ -1,0 +1,15 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "cadet-cli.exe (Install) (bin/cadet-cli.exe)",
+      "name": "CoreDebug.txt",
+      "args": [
+        "path_to_setup_file/model.h5>"
+      ]
+    }
+  ]
+}

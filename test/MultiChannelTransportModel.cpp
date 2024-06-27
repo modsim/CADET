@@ -469,6 +469,18 @@ TEST_CASE("MCT numerical Benchmark comparison with LRM (1 channel no exchange, n
 	cadet::test::column::testReferenceBenchmark(modelFilePath, refFilePath, "001", absTol, relTol, disc, false);
 }
 
+TEST_CASE("MCT numerical Benchmark comparison with linear binding LRM (2 channel with exchange, no reaction case)", "[MCT],[Simulation],[Reference],[mctReference],[testHere]") // todo CI flag: currently only runs locally but fails on server
+{
+	const std::string& modelFilePath = std::string("/data/model_MCT2ch_1comp_benchmark1.json");
+	const std::string& refFilePath = std::string("/data/ref_LRM_dynLin_1comp_benchmark2.h5");
+	const std::vector<double> absTol = { RelApprox::defaultEpsilon() };
+	const std::vector<double> relTol = { RelApprox::defaultMargin() };
+	cadet::test::column::FVparams disc(357);
+	disc.setNRad(2); // will be used as NCHANNEL
+
+	cadet::test::column::testReferenceBenchmarkDifferentMorphology(modelFilePath, refFilePath, "001", absTol, relTol, disc, false);
+}
+
 TEST_CASE("MCT numerical Benchmark for 1 channel no exchange, with reaction case", "[MCT],[Simulation],[Reference],[mctReference]") // todo CI flag: currently only runs locally but fails on server
 {
 	const std::string& modelFilePath = std::string("/data/model_MCT1ch_noEx_reac_benchmark1.json");

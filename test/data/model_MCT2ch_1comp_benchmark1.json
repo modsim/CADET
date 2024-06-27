@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "source": "Antonia Berger",
+    "info": "Numerical benchmark case for CADET-Core tests",
+    "name": "model_MCT1ch_noEx_noReac_benchmark1"
+  },
+  "model": {
+    "NUNITS": 3,
+    "connections": {
+      "CONNECTIONS_INCLUDE_DYNAMIC_FLOW": 1,
+      "CONNECTIONS_INCLUDE_PORTS": 1,
+      "NSWITCHES": 2,
+      "switch_000": {
+        "CONNECTIONS": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -1.0,
+          -1.0,
+          0.016166666666666666,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          2.0,
+          0.0,
+          0.0,
+          -1.0,
+          -1.0,
+          0.016166666666666666,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "SECTION": 0
+      },
+      "switch_001": {
+        "CONNECTIONS": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -1.0,
+          -1.0,
+          0.016166666666666666,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          2.0,
+          0.0,
+          0.0,
+          -1.0,
+          -1.0,
+          0.016166666666666666,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "SECTION": 1
+      }
+    },
+    "unit_000": {
+      "INLET_TYPE": "PIECEWISE_CUBIC_POLY",
+      "NCOMP": 1,
+      "UNIT_TYPE": "INLET",
+      "sec_000": {
+        "CONST_COEFF": [
+          1.0
+        ],
+        "CUBE_COEFF": [
+          0.0
+        ],
+        "LIN_COEFF": [
+          0.0
+        ],
+        "QUAD_COEFF": [
+          0.0
+        ]
+      },
+      "sec_001": {
+        "CONST_COEFF": [
+          0.0
+        ],
+        "CUBE_COEFF": [
+          0.0
+        ],
+        "LIN_COEFF": [
+          0.0
+        ],
+        "QUAD_COEFF": [
+          0.0
+        ]
+      }
+    },
+    "unit_001": {
+      "CHANNEL_CROSS_SECTION_AREAS": [
+        0.001683893662324129,
+        0.00334265458341954
+      ],
+      "COL_DISPERSION": 4e-15,
+      "COL_LENGTH": 3620.774955340619,
+      "EXCHANGE_MATRIX": [
+        0.0,
+        2.0,
+        1.0,
+        0.0
+      ],
+      "INIT_C": [
+        0.0,
+        0.0
+      ],
+      "NCOMP": 1,
+      "UNIT_TYPE": "MULTI_CHANNEL_TRANSPORT",
+      "VELOCITY": 1
+    },
+    "unit_002": {
+      "NCOMP": 1,
+      "UNIT_TYPE": "OUTLET",
+      "discretization": {
+        "NBOUND": [
+          0
+        ]
+      }
+    }
+  },
+  "solver": {
+    "sections": {
+      "NSEC": 2,
+      "SECTION_CONTINUITY": [
+        0
+      ],
+      "SECTION_TIMES": [
+        0.0,
+        61.856,
+        3000.0
+      ]
+    }
+  }
+}

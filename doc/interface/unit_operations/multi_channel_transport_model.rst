@@ -1,7 +1,12 @@
 .. _multi_channel_transport_model_config:
 
 Multichannel Transport model (MCT model) 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+========================================
+
+Group /input/model/unit_XXX - UNIT_TYPE = MULTI_CHANNEL_TRANSPORT
+-----------------------------------------------------------------
+
+For information on model equations, refer to :ref:`multi_channel_transport_model`.
 
 ``UNIT_TYPE``
 
@@ -129,14 +134,6 @@ Multichannel Transport model (MCT model)
    ================  ========================  ===============================================
    **Type:** double  **Range:** :math:`[0,1]`  **Length:** :math:`\texttt{NCHANNEL}*\texttt{NCHANNEL}*\texttt{NCOMP}`
    ================  ========================  ===============================================
-
-``NCOL``
-
-   Number of axial column discretization cells
-   
-   =============  =========================  =============
-   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
-   =============  =========================  =============
    
 ``NCHANNEL``
 
@@ -158,6 +155,10 @@ Multichannel Transport model (MCT model)
    ================  ====================== ======================================
    **Type:** double  **Range:** :math:`> 0`  **Length:** :math:`\texttt{NCHANNEL}`
    ================  ====================== ======================================
+  
+  
+Group /input/model/unit_XXX/discretization - UNIT_TYPE = MULTI_CHANNEL_TRANSPORT
+--------------------------------------------------------------------------------
    
 ``USE_ANALYTIC_JACOBIAN``
 
@@ -167,6 +168,14 @@ Multichannel Transport model (MCT model)
    **Type:** int  **Range:** :math:`\{0, 1\}`  **Length:** 1
    =============  ===========================  =============
    
+``NCOL``
+
+   Number of axial column discretization cells
+   
+   =============  =========================  =============
+   **Type:** int  **Range:** :math:`\geq 1`  **Length:** 1
+   =============  =========================  =============
+
 ``LINEAR_SOLVER_BULK``
 
    Linear solver used for the sparse column bulk block. This field is optional, the best available method is selected (i.e., sparse direct solver if possible).  Valid values are: 
@@ -181,10 +190,10 @@ Multichannel Transport model (MCT model)
 
 ``RECONSTRUCTION``
 
-   Type of reconstruction method for fluxes
+   Type of reconstruction method for FV fluxes
    
    ================  ================================  =============
    **Type:** string  **Range:** :math:`\texttt{WENO}`  **Length:** 1
    ================  ================================  =============
    
-
+For further discretization parameters, see also :ref:`flux_restruction_methods` (FV specific)), and :ref:`non_consistency_solver_parameters`.

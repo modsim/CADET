@@ -1597,6 +1597,112 @@ namespace column
 		destroyModelBuilder(mb);
 	}
 
+	void testReferenceBenchmarkDifferentMorphology(const std::string& modelFileRelPath, const std::string& refFileRelPath, const std::string& unitID, const std::vector<double> absTol, const std::vector<double> relTol, const DiscParams& disc, const bool compare_sens)
+	{
+		const int unitOpID = std::stoi(unitID);
+
+		// read json model setup file
+		const std::string setupFile = std::string(getTestDirectory()) + modelFileRelPath;
+		JsonParameterProvider pp_setup(JsonParameterProvider::fromFile(setupFile));
+
+		// adjust numerical parameters
+		nlohmann::json* setupJson = pp_setup.data();
+
+		// copy over some numerical parameters from reference file, e.g. consistent initialization
+		cadet::io::HDF5Reader rd;
+		const std::string refFile = std::string(getTestDirectory()) + refFileRelPath;
+		rd.openFile(refFile, "r");
+		ParameterProviderImpl<cadet::io::HDF5Reader> pp_ref(rd);
+		setNumericalMethod(pp_ref, *setupJson, unitID, true);
+		pp_ref.popScope();
+
+		// copy solution times
+		pp_ref.pushScope("input");
+		pp_ref.pushScope("solver");
+		setupJson[0]["solver"]["USER_SOLUTION_TIMES"] = pp_ref.getDoubleArray("USER_SOLUTION_TIMES");
+		pp_ref.popScope();
+
+		// copy multiplex data
+		copyMultiplexData(pp_ref, *setupJson, unitID);
+
+		// copy return data
+		copyReturnData(pp_ref, *setupJson, unitID);
+
+		// copy sensitivity setup
+		if (pp_ref.exists("sensitivity") && compare_sens)
+			copySensitivities(pp_ref, *setupJson, unitID);
+
+		pp_ref.popScope();
+		rd.closeFile();
+
+		// set remaining spatial numerical parameters
+		disc.setDisc(pp_setup, unitID);
+
+		// run simulation
+		Driver drv;
+		drv.configure(pp_setup);
+		drv.run();
+
+		// get simulation result
+		InternalStorageUnitOpRecorder const* const simData = drv.solution()->unitOperation(unitOpID);
+		double const* sim_outlet = simData->outlet();
+
+		// read h5 reference data
+		rd.openFile(refFile, "r");
+
+		// get outlet and sensitivity reference
+		pp_ref.pushScope("output");
+		pp_ref.pushScope("solution");
+		pp_ref.pushScope("unit_" + unitID);
+		std::vector<double> ref_outlet;
+		if (pp_ref.exists("SOLUTION_OUTLET"))
+			ref_outlet = pp_ref.getDoubleArray("SOLUTION_OUTLET");
+		else
+			ref_outlet = pp_ref.getDoubleArray("SOLUTION_OUTLET_PORT_000");
+		pp_ref.popScope();
+		pp_ref.popScope();
+
+		// compare the simulation results with the reference data
+		for (unsigned int i = 0; i < ref_outlet.size(); ++i)
+		{
+			CAPTURE(i);
+			CAPTURE(sim_outlet[i * 2]);
+			CAPTURE(sim_outlet[1 + i * 2]);
+			CHECK(i != 1500);
+
+			//CHECK((sim_outlet[i * 2]) == cadet::test::makeApprox(ref_outlet[i], relTol[0], absTol[0]));
+		}
+
+		if (pp_ref.exists("sensitivity") && compare_sens)
+		{
+			pp_ref.pushScope("sensitivity");
+
+			unsigned int sensID = 0;
+			std::string sensParam = std::to_string(sensID);
+			sensParam = "param_" + std::string(3 - sensParam.length(), '0') + sensParam;
+			CAPTURE(sensParam);
+
+			while (pp_ref.exists(sensParam))
+			{
+				pp_ref.pushScope(sensParam);
+				pp_ref.pushScope("unit_" + unitID);
+				const std::vector<double> ref_sens = pp_ref.getDoubleArray("SENS_OUTLET");
+				pp_ref.popScope();
+				pp_ref.popScope();
+
+				double const* sim_sens = simData->sensOutlet(sensID);
+
+				for (unsigned int i = 0; i < ref_sens.size(); ++i)
+					CHECK((sim_sens[i]) == cadet::test::makeApprox(ref_sens[i], relTol[sensID + 1], absTol[sensID + 1]));
+
+				sensID++;
+				sensParam = std::to_string(sensID);
+				sensParam = "param_" + std::string(3 - sensParam.length(), '0') + sensParam;
+			}
+		}
+		rd.closeFile();
+	}
+
 	void testReferenceBenchmark(const std::string& modelFileRelPath, const std::string& refFileRelPath, const std::string& unitID, const std::vector<double> absTol, const std::vector<double> relTol, const DiscParams& disc, const bool compare_sens)
 	{
 		const int unitOpID = std::stoi(unitID);
@@ -1654,7 +1760,11 @@ namespace column
 		pp_ref.pushScope("output");
 		pp_ref.pushScope("solution");
 		pp_ref.pushScope("unit_" + unitID);
-		const std::vector<double> ref_outlet = pp_ref.getDoubleArray("SOLUTION_OUTLET");
+		std::vector<double> ref_outlet;
+		if (pp_ref.exists("SOLUTION_OUTLET"))
+			ref_outlet = pp_ref.getDoubleArray("SOLUTION_OUTLET");
+		else
+			ref_outlet = pp_ref.getDoubleArray("SOLUTION_OUTLET_PORT_000");
 		pp_ref.popScope();
 		pp_ref.popScope();
 

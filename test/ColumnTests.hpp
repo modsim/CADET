@@ -365,6 +365,7 @@ namespace column
 	 * @param [in] compare_sens Specifies whether sensitivities are included
 	 */
 	void testReferenceBenchmark(const std::string& modelFileRelPath, const std::string& refFileRelPath, const std::string& unitID, const std::vector<double> absTol, const std::vector<double> relTol, const cadet::test::column::DiscParams& disc, const bool compare_sens = false);
+	void testReferenceBenchmarkDifferentMorphology(const std::string& modelFileRelPath, const std::string& refFileRelPath, const std::string& unitID, const std::vector<double> absTol, const std::vector<double> relTol, const DiscParams& disc, const bool compare_sens = false);
 
 	/**
 	 * @brief Runs an EOC test comparing against numerical reference data (outlet data)

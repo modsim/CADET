@@ -45,6 +45,7 @@ namespace
 		config["NCOMP"] = 1;
 		config["COL_DISPERSION"] = colDisp;
 		config["EXCHANGE_MATRIX"] = exchangeMatrix;
+		config["NCHANNEL"] = crossSectionAreas.size();
 
 		// Geometry
 		config["COL_LENGTH"] = colLength;
@@ -59,7 +60,6 @@ namespace
 			json disc;
 
 			disc["NCOL"] = nCol;
-			disc["NCHANNEL"] = crossSectionAreas.size();
 
 			disc["USE_ANALYTIC_JACOBIAN"] = true;
 

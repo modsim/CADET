@@ -164,8 +164,12 @@ namespace column
 
 		if (nRadCells)
 		{
-			if(unitType == "MULTI_CHANNEL_TRANSPORT")
+			if (unitType == "MULTI_CHANNEL_TRANSPORT")
+			{
+				jpp.popScope();
 				jpp.set("NCHANNEL", nRadCells);
+				jpp.pushScope("discretization");
+			}
 			else
 				jpp.set("NRAD", nRadCells);
 		}
@@ -365,8 +369,12 @@ namespace column
 
 		jpp.pushScope("discretization");
 
-		if (!mctModel)
+		if (mctModel)
+		{
+			jpp.popScope();
 			jpp.set("NCHANNEL", static_cast<int>(nRad));
+			jpp.pushScope("discretization");
+		}
 		else
 			jpp.set("NRAD", static_cast<int>(nRad));
 

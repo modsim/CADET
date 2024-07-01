@@ -11,12 +11,12 @@ This model can be improved by introducing a radial coordinate :math:`\rho \in [0
 .. math::
    :label: ModelColumn2D
 
-   	\varepsilon_c \frac{\partial c^l_i}{\partial t} = &-\varepsilon_c u \frac{\partial c^l_i}{\partial z} + \varepsilon_c D_{\text{ax},i} \frac{\partial^2 c^l_i}{\partial z^2} + \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho D_{\text{rad},i} \frac{\partial}{\partial \rho} \left( \varepsilon_c c^l_i \right) \right) \\ 
-    &- \left(1 - \varepsilon_c\right) \sum_j d_j \frac{ 3 k_{f,j,i} }{r_{p,j}} \left[ c^l_i - c^p_{j,i}(\cdot, \cdot, \cdot, r_{p,j}) \right] + \varepsilon_c f_{\text{react},i}^l\left(c^l\right). 
+   	\varepsilon_c \frac{\partial c^\ell_i}{\partial t} = &-\varepsilon_c u \frac{\partial c^\ell_i}{\partial z} + \varepsilon_c D_{\text{ax},i} \frac{\partial^2 c^\ell_i}{\partial z^2} + \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho D_{\text{rad},i} \frac{\partial}{\partial \rho} \left( \varepsilon_c c^\ell_i \right) \right) \\ 
+    &- \left(1 - \varepsilon_c\right) \sum_j d_j \frac{ 3 k_{f,j,i} }{r_{p,j}} \left[ c^\ell_i - c^p_{j,i}(\cdot, \cdot, \cdot, r_{p,j}) \right] + \varepsilon_c f_{\text{react},i}^\ell\left(c^\ell\right). 
 
 Here, 
 
-  - :math:`c^l_i\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [0, R] \rightarrow \mathbb{R}^{\geq 0}`,
+  - :math:`c^\ell_i\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [0, R] \rightarrow \mathbb{R}^{\geq 0}`,
   - :math:`c^p_{j,i}\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [0, R] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}`, and 
   - :math:`c^s_{j,i,m_{j,i}}\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [0, R] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}` 
   
@@ -34,14 +34,14 @@ The Danckwerts boundary conditions at the column in- and outlet, Eq. :eq:`BCInl
     :label: BCInlet2D 
 
     \begin{aligned}
-        u(\rho) c_{\text{in},i}(t,\rho) &= u(\rho) c^l_i(t,0,\rho) - D_{\text{ax},i}(\rho) \frac{\partial c^l_i}{\partial z}(t, 0, \rho) & \forall t > 0, \rho \in (0,R),
+        u(\rho) c_{\text{in},i}(t,\rho) &= u(\rho) c^\ell_i(t,0,\rho) - D_{\text{ax},i}(\rho) \frac{\partial c^\ell_i}{\partial z}(t, 0, \rho) & \forall t > 0, \rho \in (0,R),
     \end{aligned}
 
 .. math::
     :label: BCOutlet2D
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial z}(t, L, \rho) &= 0 & \forall t > 0, \rho \in (0,R). 
+        \frac{\partial c^\ell_i}{\partial z}(t, L, \rho) &= 0 & \forall t > 0, \rho \in (0,R). 
     \end{aligned}
 
 Conditions for the radial direction are added:
@@ -50,14 +50,14 @@ Conditions for the radial direction are added:
     :label: BCRadial2DInner
 
     \begin{aligned}
-        \frac{\partial{c^l_i}}{\partial \rho}(\cdot, \cdot, 0) &= 0,  \\
+        \frac{\partial{c^\ell_i}}{\partial \rho}(\cdot, \cdot, 0) &= 0,  \\
     \end{aligned}
 
 .. math::
    :label: BCRadial2DOuter
 
     \begin{aligned}
-        \frac{\partial{c^l_i}}{\partial \rho}(\cdot, \cdot, R) &= 0. 
+        \frac{\partial{c^\ell_i}}{\partial \rho}(\cdot, \cdot, R) &= 0. 
     \end{aligned}
 
 While the inner condition Eq.\ :eq:`BCRadial2DInner` represents symmetry at the column center, the outer condition Eq. :eq:`BCRadial2DOuter` is a no-flux condition.

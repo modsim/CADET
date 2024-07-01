@@ -14,4 +14,5 @@ Unit Operations
     2d_general_rate_model
     cstr
     radial_flow_models
+    multi_channel_transport_model
 

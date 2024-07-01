@@ -10,14 +10,14 @@ Hence, the model equations are given by
 .. math::
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial t} &= -u \frac{\partial c^l_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^l_i}{\partial z^2} - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^l_i - c^p_{j,i} \right] + f_{\text{react},i}^l\left(c^l\right),
+        \frac{\partial c^\ell_i}{\partial t} &= -u \frac{\partial c^\ell_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^\ell_i}{\partial z^2} - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^\ell_i - c^p_{j,i} \right] + f_{\text{react},i}^\ell\left(c^\ell\right),
     \end{aligned}
 
 .. math::
     :label: ModelParticleLRMP
 
     \begin{aligned}
-        \frac{\partial c^p_{j,i}}{\partial t} + \frac{1 - \varepsilon_{p,j}}{F_{\text{acc},j,i} \varepsilon_{p,j}} \frac{\partial}{\partial t} \sum_{m_{j,i}} c^s_{j,i,m_{j,i}} &= \frac{3}{F_{\text{acc},j,i} \varepsilon_{p,j} r_{p,j}}k_{f,j,i}\left[ c^l_i - c^p_{j,i} \right] \\
+        \frac{\partial c^p_{j,i}}{\partial t} + \frac{1 - \varepsilon_{p,j}}{F_{\text{acc},j,i} \varepsilon_{p,j}} \frac{\partial}{\partial t} \sum_{m_{j,i}} c^s_{j,i,m_{j,i}} &= \frac{3}{F_{\text{acc},j,i} \varepsilon_{p,j} r_{p,j}}k_{f,j,i}\left[ c^\ell_i - c^p_{j,i} \right] \\
         &+ f_{\text{react},j,i}^p\left( c_j^p, c_j^s \right) + \frac{1 - \varepsilon_{p,j}}{F_{\text{acc},j,i} \varepsilon_{p,j}} f_{\text{react},j,i}^s\left( c_j^p, c_j^s \right)
     \end{aligned}
 
@@ -27,8 +27,8 @@ The equations are complemented by Danckwerts boundary conditions :cite:`Danckwer
 .. math::
 
     \begin{aligned}
-        u c_{\text{in},i}(t) &= u c^l_i(t,0) - D_{\text{ax},i} \frac{\partial c^l_i}{\partial z}(t, 0) & \forall t > 0,\\
-        \frac{\partial c^l_i}{\partial z}(t, L) &= 0 & \forall t > 0.
+        u c_{\text{in},i}(t) &= u c^\ell_i(t,0) - D_{\text{ax},i} \frac{\partial c^\ell_i}{\partial z}(t, 0) & \forall t > 0,\\
+        \frac{\partial c^\ell_i}{\partial z}(t, L) &= 0 & \forall t > 0.
     \end{aligned}
 
 As for the general rate model, both quasi-stationary and dynamic binding models are supported:
@@ -45,7 +45,7 @@ By default, the following initial conditions are applied for all :math:`z \in [0
 .. math::
 
     \begin{aligned}
-        c^l_i(0, z) &= 0, & c^p_{j,i}(0, z) &= 0, & c^s_{j,i,m_{j,i}}(0,z) &= 0.
+        c^\ell_i(0, z) &= 0, & c^p_{j,i}(0, z) &= 0, & c^s_{j,i,m_{j,i}}(0,z) &= 0.
     \end{aligned}
 
 :ref:`MUOPGRMMultiParticleTypes` types are supported.
@@ -75,7 +75,7 @@ Consider a hollow (double walled) column with inner column diameter :math:`\math
 .. math::
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial t} &= -\frac{u}{\rho} \frac{\partial c^l_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho \frac{\partial c^l_i}{\partial \rho} \right) - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^l_i - c^p_{j,i} \right] + f_{\text{react},i}^l\left(c^l\right),
+        \frac{\partial c^\ell_i}{\partial t} &= -\frac{u}{\rho} \frac{\partial c^\ell_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho \frac{\partial c^\ell_i}{\partial \rho} \right) - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^\ell_i - c^p_{j,i} \right] + f_{\text{react},i}^\ell\left(c^\ell\right),
     \end{aligned}
 
 The equations are complemented by Eq. :ref:`ModelParticleLRMP` and the Danckwerts boundary conditions :cite:`Danckwerts1953`
@@ -83,8 +83,8 @@ The equations are complemented by Eq. :ref:`ModelParticleLRMP` and the Danckwert
 .. math::
 
     \begin{aligned}
-        u c_{\text{in},i}(t) &= u c^l_i(t,0) - D_{\text{rad},i} \frac{\partial c^l_i}{\partial \rho}(t, 0) & \forall t > 0,\\
-        \frac{\partial c^l_i}{\partial \rho}(t, \mathrm{P}) &= 0 & \forall t > 0.
+        u c_{\text{in},i}(t) &= u c^\ell_i(t,0) - D_{\text{rad},i} \frac{\partial c^\ell_i}{\partial \rho}(t, 0) & \forall t > 0,\\
+        \frac{\partial c^\ell_i}{\partial \rho}(t, \mathrm{P}) &= 0 & \forall t > 0.
     \end{aligned}
 
 The complementing binding equations are described by the same equations as for the axial LRMP.

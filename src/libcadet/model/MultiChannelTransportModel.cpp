@@ -356,11 +356,11 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 {
 	// ==== Read discretization
 	_disc.nComp = paramProvider.getInt("NCOMP");
+	_disc.nChannel = paramProvider.getInt("NCHANNEL");
 
 	paramProvider.pushScope("discretization");
 
 	_disc.nCol = paramProvider.getInt("NCOL");
-	_disc.nChannel = paramProvider.getInt("NCHANNEL");
 	if(_disc.nChannel < 1)
 		throw InvalidParameterException("NCHANNEL must be > 0");
 

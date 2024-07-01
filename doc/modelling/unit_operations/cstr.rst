@@ -11,8 +11,8 @@ Assuming that the fluid inside the tank is well-mixed and that the volume can va
 .. math::
 
     \begin{aligned}
-        \frac{\mathrm{d}}{\mathrm{d}t} \left(\left[ c_i + \frac{1-\varepsilon}{\varepsilon} \sum_j d_j \sum_{m_{j,i}} c^s_{j,i,m_{j,i}} \right] V\right) &= F_{\text{in}} c_{\text{in},i} - F_{\text{out}} c_i + V f_{\text{react},i}^l\left( c \right) \\
-    &+ V \frac{1-\varepsilon}{\varepsilon}\sum_j d_j f_{\text{react},j,i}^s\left( c, c_j^s \right),
+        \frac{\mathrm{d}}{\mathrm{d}t} \left(\left[ c^\ell_i + \frac{1-\varepsilon}{\varepsilon} \sum_j d_j \sum_{m_{j,i}} c^s_{j,i,m_{j,i}} \right] V\right) &= F_{\text{in}} c^\ell_{\text{in},i} - F_{\text{out}} c^\ell_i + V f_{\text{react},i}^l\left( c^\ell \right) \\
+    &+ V \frac{1-\varepsilon}{\varepsilon}\sum_j d_j f_{\text{react},j,i}^s\left( c^\ell, c_j^s \right),
     \end{aligned}
 
 which balances the mass, the binding equation
@@ -20,8 +20,8 @@ which balances the mass, the binding equation
 .. math::
 
     \begin{aligned}
-        \text{quasi-stationary: }& & 0 &= f_{\text{ads},j}\left( c, c^s_j\right), \\
-        \text{dynamic: }& & \frac{\partial c^s_j}{\partial t} &= f_{\text{ads},j}\left( c, c^s_j\right) + f_{\text{react},j}^s\left( c, c_j^s \right),
+        \text{quasi-stationary: }& & 0 &= f_{\text{ads},j}\left( c^\ell, c^s_j\right), \\
+        \text{dynamic: }& & \frac{\partial c^s_j}{\partial t} &= f_{\text{ads},j}\left( c^\ell, c^s_j\right) + f_{\text{react},j}^s\left( c^\ell, c_j^s \right),
     \end{aligned}
 
 depending on whether quasi-stationary or dynamic binding is used, and the evolution of volume

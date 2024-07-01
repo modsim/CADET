@@ -42,7 +42,7 @@ The main assumptions are:
    * - :math:`r`
      - :math:`\left[r_{c,j}, r_{p,j}\right]`
      - Generic bead radial coordinate 
-   * - :math:`c^l_{i}(t,z)`
+   * - :math:`c^\ell_{i}(t,z)`
      - :math:`\left[0, T_{\text{end}}\right] \times [0, L]`
      - Interstitial concentration of the :math:`i`\ th component
    * - :math:`c^p_{j,i}(t, z, r)`
@@ -68,12 +68,12 @@ Consider a column of length :math:`L>0` filled with spherical beads of (possibly
     :label: ModelColumn
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial t} = -u \frac{\partial c^l_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^l_i}{\partial z^2} &- \frac{1}{\beta_c} \sum_j d_j \frac{3}{r_{p,j}} k_{f,j,i} \left[ c^l_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] \\
-        &+ f_{\text{react},i}^l\left(c^l\right). 
+        \frac{\partial c^\ell_i}{\partial t} = -u \frac{\partial c^\ell_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^\ell_i}{\partial z^2} &- \frac{1}{\beta_c} \sum_j d_j \frac{3}{r_{p,j}} k_{f,j,i} \left[ c^\ell_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] \\
+        &+ f_{\text{react},i}^\ell\left(c^\ell\right). 
     \end{aligned}
 
-Here, :math:`c^l_i\colon \left[0, T_{\text{end}}\right] \times [0, L] \rightarrow \mathbb{R}^{\geq 0}` denotes the concentration in the interstitial column volume, :math:`c^p_{j,i}\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}` the liquid phase concentration in the beads, :math:`k_{f,j,i}` the film diffusion coefficient, :math:`D_{\text{ax},i}` the dispersion coefficient, :math:`u` the interstitial velocity, :math:`d_j` the volume fraction of particle type :math:`j`, and :math:`\beta_c = \varepsilon_c / (1 - \varepsilon_c)` the column phase ratio, where :math:`\varepsilon_c` is the column porosity (ratio of interstitial volume to total column volume).
-If reactions are considered, the term :math:`f_{\text{react},i}^l\left(c^l\right)` represents the net change of concentration :math:`c_i` due to reactions involving component :math:`i`.
+Here, :math:`c^\ell_i\colon \left[0, T_{\text{end}}\right] \times [0, L] \rightarrow \mathbb{R}^{\geq 0}` denotes the concentration in the interstitial column volume, :math:`c^p_{j,i}\colon \left[0, T_{\text{end}}\right] \times [0, L] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}` the liquid phase concentration in the beads, :math:`k_{f,j,i}` the film diffusion coefficient, :math:`D_{\text{ax},i}` the dispersion coefficient, :math:`u` the interstitial velocity, :math:`d_j` the volume fraction of particle type :math:`j`, and :math:`\beta_c = \varepsilon_c / (1 - \varepsilon_c)` the column phase ratio, where :math:`\varepsilon_c` is the column porosity (ratio of interstitial volume to total column volume).
+If reactions are considered, the term :math:`f_{\text{react},i}^\ell\left(c^\ell\right)` represents the net change of concentration :math:`c_i` due to reactions involving component :math:`i`.
 
 Danckwerts boundary conditions :cite:`Danckwerts1953` are applied to inlet and outlet of the column:
 
@@ -81,14 +81,14 @@ Danckwerts boundary conditions :cite:`Danckwerts1953` are applied to inlet and o
     :label: BCOutlet
 
     \begin{aligned}
-        u c_{\text{in},i}(t) &= u c^l_i(t,0) - D_{\text{ax},i} \frac{\partial c^l_i}{\partial z}(t, 0) & \forall t > 0,
+        u c_{\text{in},i}(t) &= u c^\ell_i(t,0) - D_{\text{ax},i} \frac{\partial c^\ell_i}{\partial z}(t, 0) & \forall t > 0,
     \end{aligned}
 
 .. math::
     :label: BCInlet
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial z}(t, L) &= 0 & \forall t > 0. 
+        \frac{\partial c^\ell_i}{\partial z}(t, L) &= 0 & \forall t > 0. 
     \end{aligned}
 
 Note that the outlet boundary condition Eq. :eq:`BCOutlet` is also known as “do nothing” or natural outflow condition.
@@ -135,7 +135,7 @@ The boundary conditions of the bead model the film diffusion and are given for a
     :label: BCBeadIn
 
     \begin{aligned}
-        k_{f,j,i}\left[ c^l_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] &= F_{\text{acc},j,i} \varepsilon_{p,j} D_{p,j,i} \frac{\partial c^p_{j,i}}{\partial r}(\cdot, \cdot, r_{p,j}) \\
+        k_{f,j,i}\left[ c^\ell_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] &= F_{\text{acc},j,i} \varepsilon_{p,j} D_{p,j,i} \frac{\partial c^p_{j,i}}{\partial r}(\cdot, \cdot, r_{p,j}) \\
         &+ \left( 1 - \varepsilon_{p,j}\right) D_{s,j,i} \sum_{m_{j,i}} \frac{\partial c^s_{j,i,m_{j,i}}}{\partial r}(\cdot, \cdot, r_{p,j}),
     \end{aligned}
 
@@ -152,7 +152,7 @@ By default, the following initial conditions are applied for all :math:`z \in [0
     :label: InitialConditions
 
     \begin{aligned}
-        c^l_i(0, z) &= 0, & c^p_{j,i}(0, z, r) &= 0, & c^s_{j,i,m_{j,i}}(0,z,r) &= 0. 
+        c^\ell_i(0, z) &= 0, & c^p_{j,i}(0, z, r) &= 0, & c^s_{j,i,m_{j,i}}(0,z,r) &= 0. 
     \end{aligned}
 
 .. _ModelGRMBead:
@@ -317,12 +317,12 @@ Consider a hollow (double walled) column with inner column diameter :math:`\math
     :label: ModelRadialColumn
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial t} = -\frac{u}{\rho} \frac{\partial c^l_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho} \left(\rho \frac{\partial c^l_i}{\partial \rho} \right) &- \frac{1}{\beta_c} \sum_j d_j \frac{3}{r_{p,j}} k_{f,j,i} \left[ c^l_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] \\
-        &+ f_{\text{react},i}^l\left(c^l\right). 
+        \frac{\partial c^\ell_i}{\partial t} = -\frac{u}{\rho} \frac{\partial c^\ell_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho} \left(\rho \frac{\partial c^\ell_i}{\partial \rho} \right) &- \frac{1}{\beta_c} \sum_j d_j \frac{3}{r_{p,j}} k_{f,j,i} \left[ c^\ell_i - c^p_{j,i}(\cdot, \cdot, r_{p,j}) \right] \\
+        &+ f_{\text{react},i}^\ell\left(c^\ell\right). 
     \end{aligned}
 
-Here, :math:`c^l_i\colon \left[0, T_{\text{end}}\right] \times [\mathrm{P}_c, \mathrm{P}] \rightarrow \mathbb{R}^{\geq 0}` denotes the concentration in the interstitial column volume, :math:`c^p_{j,i}\colon \left[0, T_{\text{end}}\right] \times [P_c, P] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}` the liquid phase concentration in the beads, :math:`k_{f,j,i}` the film diffusion coefficient, :math:`D_{\text{rad},i}` the dispersion coefficient, :math:`u` the interstitial velocity, :math:`d_j` the volume fraction of particle type :math:`j`, and :math:`\beta_c = \varepsilon_c / (1 - \varepsilon_c)` the column phase ratio, where :math:`\varepsilon_c` is the column porosity (ratio of interstitial volume to total column volume).
-If reactions are considered, the term :math:`f_{\text{react},i}^l\left(c^l\right)` represents the net change of concentration :math:`c_i` due to reactions involving component :math:`i`.
+Here, :math:`c^\ell_i\colon \left[0, T_{\text{end}}\right] \times [\mathrm{P}_c, \mathrm{P}] \rightarrow \mathbb{R}^{\geq 0}` denotes the concentration in the interstitial column volume, :math:`c^p_{j,i}\colon \left[0, T_{\text{end}}\right] \times [P_c, P] \times [r_{c,j}, r_{p,j}] \rightarrow \mathbb{R}^{\geq 0}` the liquid phase concentration in the beads, :math:`k_{f,j,i}` the film diffusion coefficient, :math:`D_{\text{rad},i}` the dispersion coefficient, :math:`u` the interstitial velocity, :math:`d_j` the volume fraction of particle type :math:`j`, and :math:`\beta_c = \varepsilon_c / (1 - \varepsilon_c)` the column phase ratio, where :math:`\varepsilon_c` is the column porosity (ratio of interstitial volume to total column volume).
+If reactions are considered, the term :math:`f_{\text{react},i}^\ell\left(c^\ell\right)` represents the net change of concentration :math:`c_i` due to reactions involving component :math:`i`.
 
 Danckwerts boundary conditions :cite:`Danckwerts1953` are applied to inlet and outlet of the column:
 
@@ -330,14 +330,14 @@ Danckwerts boundary conditions :cite:`Danckwerts1953` are applied to inlet and o
     :label: BCOutlet
 
     \begin{aligned}
-        u c_{\text{in},i}(t) &= u c^l_i(t,0) - D_{\text{rad},i} \frac{\partial c^l_i}{\partial \rho}(t, 0) & \forall t > 0,
+        u c_{\text{in},i}(t) &= u c^\ell_i(t,0) - D_{\text{rad},i} \frac{\partial c^\ell_i}{\partial \rho}(t, 0) & \forall t > 0,
     \end{aligned}
 
 .. math::
     :label: BCInlet
 
     \begin{aligned}
-        \frac{\partial c^l_i}{\partial \rho}(t, \mathrm{P}) &= 0 & \forall t > 0. 
+        \frac{\partial c^\ell_i}{\partial \rho}(t, \mathrm{P}) &= 0 & \forall t > 0. 
     \end{aligned}
 
 Note that the outlet boundary condition Eq. :eq:`BCOutlet` is also known as “do nothing” or natural outflow condition.

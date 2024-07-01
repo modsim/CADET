@@ -28,6 +28,9 @@ json createColumnWithSMAJson(const std::string& uoType, const std::string& spati
 	config["PAR_DIFFUSION"] = {7e-10, 6.07e-11, 6.07e-11, 6.07e-11};
 	config["PAR_SURFDIFFUSION"] = {0.0, 0.0, 0.0, 0.0};
 
+	if (uoType == "MULTI_CHANNEL_TRANSPORT")
+		config["NCHANNEL"] = 1;
+
 	// Geometry
 	if (uoType.substr(0, 6) == "RADIAL")
 	{
@@ -113,7 +116,6 @@ json createColumnWithSMAJson(const std::string& uoType, const std::string& spati
 		if (uoType == "MULTI_CHANNEL_TRANSPORT")
 		{
 			disc["NCOL"] = 16;
-			disc["NCHANNEL"] = 1;
 		}
 
 		disc["PAR_DISC_TYPE"] = std::string("EQUIDISTANT_PAR");
@@ -188,6 +190,9 @@ json createColumnWithTwoCompLinearJson(const std::string& uoType, const std::str
 	config["FILM_DIFFUSION"] = {6.9e-6, 6.9e-6};
 	config["PAR_DIFFUSION"] = {7e-10, 6.07e-11};
 	config["PAR_SURFDIFFUSION"] = {1e-10, 1e-10};
+
+	if (uoType == "MULTI_CHANNEL_TRANSPORT")
+		config["NCHANNEL"] = 3;
 
 	// Geometry
 	if (uoType.substr(0, 6) == "RADIAL")
@@ -270,10 +275,7 @@ json createColumnWithTwoCompLinearJson(const std::string& uoType, const std::str
 		}
 
 		if (uoType == "MULTI_CHANNEL_TRANSPORT")
-		{
 			disc["NCOL"] = 8;
-			disc["NCHANNEL"] = 3;
-		}
 
 		disc["PAR_DISC_TYPE"] = std::string("EQUIDISTANT_PAR");
 
@@ -508,6 +510,9 @@ cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoTyp
 			grm["PAR_DIFFUSION"] = {7e-10};
 			grm["PAR_SURFDIFFUSION"] = {0.0};
 
+			if (uoType == "MULTI_CHANNEL_TRANSPORT")
+				grm["NCHANNEL"] = 3;
+
 			// Geometry
 			if (uoType.substr(0, 6) == "RADIAL")
 			{
@@ -586,9 +591,6 @@ cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoTyp
 					disc["NRAD"] = 3;
 					disc["RADIAL_DISC_TYPE"] = "EQUIDISTANT";
 				}
-
-				if (uoType == "MULTI_CHANNEL_TRANSPORT")
-					disc["NCHANNEL"] = 3;
 
 				disc["PAR_DISC_TYPE"] = std::string("EQUIDISTANT_PAR");
 
@@ -769,6 +771,8 @@ json createLinearBenchmarkColumnJson(bool dynamicBinding, bool nonBinding, const
 	grm["FILM_DIFFUSION"] = {0.01 / (100.0 * 60.0)};
 	grm["PAR_DIFFUSION"] = {3.003e-6};
 	grm["PAR_SURFDIFFUSION"] = {0.0};
+	if (uoType == "MULTI_CHANNEL_TRANSPORT")
+		grm["NCHANNEL"] = 3;
 
 	// Geometry
 	if (uoType.substr(0, 6) == "RADIAL")
@@ -854,9 +858,6 @@ json createLinearBenchmarkColumnJson(bool dynamicBinding, bool nonBinding, const
 			disc["NRAD"] = 3;
 			disc["RADIAL_DISC_TYPE"] = "EQUIDISTANT";
 		}
-
-		if (uoType == "MULTI_CHANNEL_TRANSPORT")
-			disc["NCHANNEL"] = 3;
 
 		disc["PAR_DISC_TYPE"] = std::string("EQUIDISTANT_PAR");
 

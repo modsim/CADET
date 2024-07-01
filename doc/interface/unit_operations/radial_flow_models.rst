@@ -1,6 +1,6 @@
 .. _radial_flow_models_config:
 
-Radial FLow Models
+Radial Flow Models
 ==================
 
 Radial flow models are available for the LRM, LRMP and GRM.
@@ -13,7 +13,7 @@ In this document, we specify the unit type as the radial GRM, but the LRM and LR
 Group /input/model/unit_XXX - UNIT_TYPE - RADIAL_GENERAL_RATE_MODEL
 -------------------------------------------------------------------
 
-For information on model equations, refer to :ref:`lumped_rate_model_without_pores` or :ref:`lumped_rate_model_with_pores` or :ref:`general_rate_model`, respectively.
+For information on model equations, refer to :ref:`lumped_rate_model_without_pores_model` or :ref:`lumped_rate_model_with_pores_model` or :ref:`general_rate_model_model`, respectively.
 
 
 ``UNIT_TYPE``
@@ -26,7 +26,7 @@ For information on model equations, refer to :ref:`lumped_rate_model_without_por
 
 ``COL_DISPERSION``
 
-   ´Radial dispersion coefficient
+   Radial dispersion coefficient
 
    **Unit:** :math:`\mathrm{m}_{\mathrm{IV}}^{2}\,\mathrm{s}^{-1}`
    

@@ -12,14 +12,15 @@ The same model equations arise in describing other biological and technical proc
 The MCT model equations are given for all channels :math:`l \in \{1, \dots, N_k\}` and components :math:`i \in \{1, \dots, N_c\}` by
 
 .. math::
+    :label: ModelMCT
 
     \begin{aligned}
-    \frac{\partial c_{i,l}^\ell}{\partial t}
-    =
-    - u_l \frac{\partial c_{i,l}^\ell}{\partial z}
-    + D_{\text{ax},i,l} \frac{\partial^2 c_{i,l}^\ell}{\partial z^2}
-    + \sum_{k=1}^{N_k} e^i_{kl} c_{i,k}^\ell A_k / A_l - e^i_{lk} c_{i,l}^\ell
-    + f_{\text{react},i,l}\left( c^\ell_l \right),
+        \frac{\partial c_{i,l}^\ell}{\partial t}
+        =
+        - u_l \frac{\partial c_{i,l}^\ell}{\partial z}
+        + D_{\text{ax},i,l} \frac{\partial^2 c_{i,l}^\ell}{\partial z^2}
+        + \sum_{k=1}^{N_k} e^i_{kl} c_{i,k}^\ell A_k / A_l - e^i_{lk} c_{i,l}^\ell
+        + f_{\text{react},i,l}\left( c^\ell_l \right),
     \end{aligned}
 
 where :math:`e^i_{lk}` denotes the exchange rate of component :math:`i` from channel :math:`l` to channel :math:`k`, and :math:`A_l` denotes the cross section area of channel :math:`l`.
@@ -36,7 +37,11 @@ The equations are complemented by Danckwerts boundary conditions :cite:`Danckwer
 The MCT model describes :math:`N_k` one-dimensional spatially parallel channels (see :numref:`fig-model-class`).
 In each channel :math:`l`, molecules of different species :math:`i`, represented by a liquid phase concentration :math:`c^\ell_{i,l}`, can be transported with flux velocities :math:`v_{i,l}` while undergoing axial diffusion: :math:`D_{\text{ax},i,l}`.
 Molecules can be laterally exchanged between any pair of channels :math:`l` and :math:`k` with rate constant :math:`e^i_{lk}`.
+We note that the exchange fluxes are computed from the exchange rates w.r.t. the source channel volume, that is, channels with the same exchange rate but different volume will produce differently large exchange fluxes.
+For further elaboration on this, please refer to the second use-case section below.
 If reactions are considered, the term :math:`f_{\text{react},i,l}\left(c^\ell_l\right)` represents the net change of concentration :math:`c^\ell_{il}` due to reactions in channel :math:`l` involving component :math:`i`.
+
+For information on model parameters see :ref:`multi_channel_transport_model_config`.
 
 .. _fig-model-class:
 .. figure:: multi_channel_transport_model_class.png
@@ -105,7 +110,36 @@ All parameters can be zero to exclude the respective mechanism from the model.
 A chart of all resulting valid models of the model family can be found in Bühler et al. :cite:`Buehler2014`.
 
 
+Use-case: Lumped Rate Model without pores and linear kinetic binding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The MCT can be used to model a LRM with linear binding, if specific parameters are chosen.
+To demonstrate this, we derive the LRM with linear binding equations from the MCT defined above.
 
+We consider the MCT with two channels, which are used to represent the liquid and solid phase of the LRM, and only take one component into account, for the sake of brevity.
+The channel volumes :math:`V_1, V_2 > 0` and cross section areas :math:`A_1,A_2>0` are chosen according to the total column porosity (here :math:`\varepsilon_t \in (0,1)` of the LRM, i.e. e.g. :math:`A_1 = \varepsilon_t A`, with :math:`A` being the LRM column cross section area.
+We set the transport parameters of the second channel to zero, change notation for the concentrations, :math:`c_{0,1}^\ell, c_{0,2}^\ell \rightarrow c^\ell, c^s`, and get
 
-For information on model parameters see :ref:`multi_channel_transport_model_config`.
+.. math::
+
+    \frac{\partial c^\ell}{\partial t} = - u \frac{\partial c^\ell}{\partial z} + D_\text{ax} \frac{\partial^2 c^\ell}{\partial z^2} + e_{21}^0 c^s A_2 / A_1 - e_{12}^0 c^\ell,
+    \\
+    \frac{\partial c^s}{\partial t} = e_{12}^0 c^\ell A_1 / A_2 - e_{21}^0 c^s.
+
+To model the linear binding, we define the exchange rates according to the adsorption and desorption rates and adjust for the channel volumes:
+Since the binding fluxes are computed from the binding rates w.r.t bead surface area (i.e. solid volume), we need to adjust the exchange rate from the first to the second channel accordingly; remember that exchange fluxes are computed based on exchange rates w.r.t channel (in this case liquid) volume. 
+That is, we define :math:`e_{12}^0 = k_a A_2 / A_1 = k_a \frac{1-\varepsilon_t}{\varepsilon_t}` and :math:`e_{12}^0 = k_d` and get
+
+.. math::
+
+        \frac{\partial c^\ell}{\partial t} = - u \frac{\partial c^\ell}{\partial z} + D_\text{ax} \frac{\partial^2 c^\ell}{\partial z^2} + k_d A_2 / A_1 c^s - k_a A_2 / A_1 c^\ell,
+        \\
+        \frac{\partial c^s}{\partial t} = k_a c^\ell - k_d c^s.
+
+Adding :math:`\frac{1-\varepsilon_t}{\varepsilon_t}` times the second channel equation to the first channel equation, we get the standard formulation of the :ref:`lumped_rate_model_without_pores_model` with (kinetic) linear binding:
+
+.. math::
+
+        \frac{\partial c^\ell}{\partial t} + \frac{1-\varepsilon_t}{\varepsilon_t} \frac{\partial c^s}{\partial t} = - u \frac{\partial c^\ell}{\partial z} + D_\text{ax} \frac{\partial^2 c^\ell}{\partial z^2},
+        \\
+        \frac{\partial c^s}{\partial t} = k_a c^\ell - k_d c^s.

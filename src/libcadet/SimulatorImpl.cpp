@@ -1516,6 +1516,11 @@ namespace cadet
 		if (paramProvider.exists("USER_SOLUTION_TIMES"))
 			_solutionTimes = paramProvider.getDoubleArray("USER_SOLUTION_TIMES");
 
+		if (static_cast<double>(_solutionTimes.back()) > static_cast<double>(_sectionTimes.back()))
+		{
+			throw InvalidParameterException("USER_SOLUTION_TIMES exceed section times");
+		}
+
 		if (paramProvider.exists("CONSISTENT_INIT_MODE"))
 			_consistentInitMode = toConsistentInitialization(paramProvider.getInt("CONSISTENT_INIT_MODE"));
 

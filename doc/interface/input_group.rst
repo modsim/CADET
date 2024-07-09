@@ -10,13 +10,12 @@ Input Group
     unit_operations/index
     binding/index
     reactions
-    spatial_discretization_methods
+    population_balance_model
     flux_reconstruction
     consistent_initialization
     return_data
     sensitivities
     solver
     parameter_dependencies
-    population_balance_model
-
+    spatial_discretization_methods
 

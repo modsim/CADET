@@ -950,7 +950,8 @@ void CSTRModelVarPor::consistentInitialTimeDerivative(const SimulationTime& simT
 		else
 		{
 			const double factor = flowIn / denom;
-			const double invBeta = 1.0 / porosity - 1.0;
+			//AB const double invBeta = 1.0 / porosity - 1.0;
+			const double vsolid = static_cast<double>(_constSolidVolume);
 			for (unsigned int i = 0; i < _nComp; ++i, ++itRow)
 			{
 				itRow.setAll(0.0);
@@ -965,7 +966,8 @@ void CSTRModelVarPor::consistentInitialTimeDerivative(const SimulationTime& simT
 				for (unsigned int type = 0; type < _nParType; ++type)
 				{
 					const int innerIdx = bndIdx + _offsetParType[type] + _boundOffset[type * _nComp + i];
-					const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * invBeta;
+					//const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * invBeta;
+					const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * vsolid;
 					for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
 					{
 						itRow[innerIdx + j] = innerFactor;
@@ -1196,8 +1198,8 @@ void CSTRModelVarPor::leanConsistentInitialTimeDerivative(double t, double const
 	}
 	else
 	{
-		const double invBeta = 1.0 / porosity - 1.0;
-
+		//AB const double invBeta = 1.0 / porosity - 1.0;
+		const double vsolid = static_cast<double>(_constSolidVolume);
 		// Concentrations: V * (\dot{c} + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,m}]) = c_in * F_in + c * F_out - \dot{V} * (c + 1 / beta * [sum_j sum_m d_j q_{j,m}])
 		//             <=> V * \dot{c} = c_in * F_in + c * F_out - \dot{V} * (c + 1 / beta * [sum_j sum_m d_j q_{j,m}]) - V / beta * [sum_j sum_m d_j \dot{q}_{j,m}]
 		//                             = -res - \dot{V} * (c + 1 / beta * [sum_j sum_m d_j q_{j,m}]) - V / beta * [sum_j sum_m d_j \dot{q}_{j,m}]
@@ -1220,8 +1222,8 @@ void CSTRModelVarPor::leanConsistentInitialTimeDerivative(double t, double const
 				qSum += static_cast<double>(_parTypeVolFrac[type]) * qSumType;
 				qDotSum += static_cast<double>(_parTypeVolFrac[type]) * qDotSumType;
 			}
-
-			cDot[i] = (-resC[i] - vDot * (c[i] + invBeta * qSum) - v * invBeta * qDotSum) / v;
+			//AB cDot[i] = (-resC[i] - vDot * (c[i] + invBeta * qSum) - v * invBeta * qDotSum) / v;
+			cDot[i] = (-resC[i] - vDot * (c[i] + vsolid * qSum) - v * vsolid * qDotSum) / v;
 		}
 	}
 }
@@ -1246,11 +1248,11 @@ template <typename StateType, typename ResidualType, typename ParamType, bool wa
 int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, LinearBufferAllocator tlmAlloc)
 {
 	// TODO Update residual
-	StateType const* const cIn = y; // Q: pointer to a constant StateType stored in cIn which is also const?
+	StateType const* const cIn = y; 
 	StateType const* const c = y + _nComp;
-	const StateType& v = y[2 * _nComp + _totalBound]; // Q: Why is v a reference?
+	const StateType& v = y[2 * _nComp + _totalBound]; //AB Q: Why is v a reference?
 
-	double const* const cDot = yDot ? yDot + _nComp : nullptr; // Q: what is the "?" doing?
+	double const* const cDot = yDot ? yDot + _nComp : nullptr; 
 	const double vDot = yDot ? yDot[2 * _nComp + _totalBound] : 0.0;
 
 	const ParamType flowIn = static_cast<ParamType>(_flowRateIn);
@@ -1263,8 +1265,8 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 	}
 
 	// Concentrations: \dot{V} * (c + 1 / beta * [sum_j q_j]) + V * (\dot{c} + 1 / beta * [sum_j \dot{q}_j]) = c_in * F_in - c * F_out Q
-	// Concentrations: \dot{V} * (c) + V * (\dot{c}) + vsoild * sum_j \dot{q}_j] = c_in * F_in - c * F_out Q
-	//const ParamType invBeta = 1.0 / static_cast<ParamType>(_porosity) - 1.0;
+	//AB Concentrations: \dot{V} * c + V * \dot{c} + vsoild * sum_j sum_m \dot{q}_{j,m}] = c_in * F_in - c * F_out Q
+	//AB const ParamType invBeta = 1.0 / static_cast<ParamType>(_porosity) - 1.0;
 	const ParamType vsolid = static_cast<ParamType>(_constSolidVolume);
 	ResidualType* const resC = res + _nComp;
 	for (unsigned int i = 0; i < _nComp; ++i)
@@ -1319,19 +1321,19 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 		const double vDotTimeFactor = static_cast<double>(vDot);
 		for (unsigned int i = 0; i < _nComp; ++i)
 		{
-			_jac.native(i, i) = vDotTimeFactor + static_cast<double>(flowOut); //AB dF/dci = v_liquidDot - F_out ? why not "-"?
+			_jac.native(i, i) = vDotTimeFactor + static_cast<double>(flowOut); //AB dF/dci = v_liquidDot - F_out ? 
 
 			if (cadet_likely(yDot))
 			{
 				double qDotSum = 0.0;
-				const double vDotInvBeta = vDotTimeFactor * static_cast<double>(invBeta);
+				//AB const double vDotInvBeta = vDotTimeFactor * static_cast<double>(invBeta);
 				for (unsigned int type = 0; type < _nParType; ++type)
 				{
 					double const* const qiDot = cDot + _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
 					const unsigned int localOffset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
 
 					//AB const double vDotInvBetaParVolFrac = vDotInvBeta * static_cast<double>(_parTypeVolFrac[type]); 
-					const double vsolidParVolFrac = vsolid * static_cast<double>(_parTypeVolFrac[type]); 
+					const double vsolidParVolFrac = static_cast<double>(vsolid) * static_cast<double>(_parTypeVolFrac[type]); 
 					double qDotSumType = 0.0;
 					for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
 					{
@@ -1355,7 +1357,6 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 	}
 
 	// Reactions in liquid phase
-	//AB Q: not adjusted also not sure what this is doing
 	const ColumnPosition colPos{0.0, 0.0, 0.0};
 
 	if (_dynReactionBulk && (_dynReactionBulk->numReactionsLiquid() > 0))
@@ -1372,7 +1373,7 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 		if (wantJac)
 		{
 			for (unsigned int comp = 0; comp < _nComp; ++comp)
-				_jac.native(comp, _nComp + _totalBound) += static_cast<double>(flux[comp]);
+				_jac.native(comp, _nComp + _totalBound) += static_cast<double>(flux[comp]); //AB dF/dvliquid = flux
 
 			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(c), -static_cast<double>(v), _jac.row(0), subAlloc);
 		}
@@ -1453,17 +1454,17 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 			if (wantJac)
 			{
 				// Assemble Jacobian: Reaction
-				//AB kann das nicht weg? dF/dV = 0
+				//AB kann das nicht weg? dF_{reac}/dV = 0
 				// dRes / dV
-				idx = 0;
-				for (unsigned int comp = 0; comp < _nComp; ++comp)
-				{
-					double sum = 0;
-					for (unsigned int bnd = 0; bnd < _nBound[type * _nComp + comp]; ++bnd, ++idx)
-						sum += static_cast<double>(fluxSolid[idx]);
+				//idx = 0;
+				//for (unsigned int comp = 0; comp < _nComp; ++comp)
+				//{
+				//	double sum = 0;
+				//	for (unsigned int bnd = 0; bnd < _nBound[type * _nComp + comp]; ++bnd, ++idx)
+				//		sum += static_cast<double>(fluxSolid[idx]);
 
-					_jac.native(comp, _nComp + _totalBound) += static_cast<double>(fluxLiquid[comp]) + static_cast<double>(invBeta) * static_cast<double>(_parTypeVolFrac[type]) * sum;
-				}
+				//	_jac.native(comp, _nComp + _totalBound) += static_cast<double>(fluxLiquid[comp]) + static_cast<double>(invBeta) * static_cast<double>(_parTypeVolFrac[type]) * sum;
+				//}
 
 				// dRes / dC and dRes / dQ
 				BufferedArray<double> fluxJacobianMem = subAlloc.array<double>((_strideBound[type] + _nComp) * (_strideBound[type] + _nComp));
@@ -1473,7 +1474,7 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 
 				idx = 0;
 				//AB const double liquidFactor = static_cast<double>(v) * static_cast<double>(invBeta) * static_cast<double>(_parTypeVolFrac[type]);
-				const double liquidFactor = vsolid * static_cast<double>(_parTypeVolFrac[type]);
+				const double liquidFactor = static_cast<double>(vsolid) * static_cast<double>(_parTypeVolFrac[type]);
 				for (unsigned int comp = 0; comp < _nComp; ++comp)
 				{
 					// Add bulk part of reaction to mobile phase Jacobian
@@ -1796,25 +1797,30 @@ void CSTRModelVarPor::multiplyWithDerivativeJacobian(const SimulationTime& simTi
 	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
 	const double invBeta = 1.0 / porosity - 1.0;
 	const double timeV = v;
+	const double vSolid = static_cast<double>(_constSolidVolume);
 	const double vInvBeta = timeV * invBeta;
 	double* const r = ret + _nComp;
 	double const* const s = sDot + _nComp;
 
-	// TODO Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+	//  Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+	//AB \dot{V} * (c_i) + V * (\dot{c}_i) + vsolid * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+
 	for (unsigned int i = 0; i < _nComp; ++i)
 	{
-		r[i] = timeV * s[i];
+		r[i] = timeV * s[i]; //AB dRes/dcDot
 
 		double qSum = 0.0;
 		for (unsigned int type = 0; type < _nParType; ++type)
 		{
 			double const* const qi = q + _offsetParType[type] + _boundOffset[type * _nComp + i];
 			const unsigned int localOffset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
-			const double vInvBetaParVolFrac = vInvBeta * static_cast<double>(_parTypeVolFrac[type]);
+			//AB const double vInvBetaParVolFrac = vInvBeta * static_cast<double>(_parTypeVolFrac[type]);
+			const double vSolidParVolFrac = vSolid * static_cast<double>(_parTypeVolFrac[type]);
 			double qSumType = 0.0;
 			for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
 			{
-				r[i] += vInvBetaParVolFrac * s[localOffset + j];
+				//AB r[i] += vInvBetaParVolFrac * s[localOffset + j];
+				r[i] += vSolidParVolFrac * s[localOffset + j]; //AB dRes/d_qDot
 				// + _nComp: Moves over liquid phase components
 				// + _offsetParType[type]: Moves to particle type
 				// + _boundOffset[i]: Moves over bound states of previous components
@@ -1825,7 +1831,8 @@ void CSTRModelVarPor::multiplyWithDerivativeJacobian(const SimulationTime& simTi
 
 			qSum += static_cast<double>(_parTypeVolFrac[type]) * qSumType;
 		}
-		r[i] += (c[i] + invBeta * qSum) * s[_nComp + _totalBound];
+		//AB r[i] += (c[i] + invBeta * qSum) * s[_nComp + _totalBound];
+		r[i] += c[i] * s[_nComp + _totalBound]; //dRes/dvSolidDot
 	}
 
 	// Bound states
@@ -1860,7 +1867,6 @@ int CSTRModelVarPor::linearSolve(double t, double alpha, double tol, double* con
 	const ConstSimulationState& simState)
 {
 	const double flowIn = static_cast<double>(_flowRateIn);
-
 	// Handle inlet equations by backsubstitution
 	for (unsigned int i = 0; i < _nComp; ++i)
 	{
@@ -1886,42 +1892,47 @@ int CSTRModelVarPor::linearSolve(double t, double alpha, double tol, double* con
 template <typename MatrixType>
 void CSTRModelVarPor::addTimeDerivativeJacobian(double t, double alpha, const ConstSimulationState& simState, MatrixType& mat)
 {	
-	// TODO Update Jacobian with parameter V^s
 	double const* const c = simState.vecStateY + _nComp;
 	double const* const q = simState.vecStateY + 2 * _nComp;
 	const double v = simState.vecStateY[2 * _nComp + _totalBound];
-	const double invBeta = 1.0 / static_cast<double>(_porosity) - 1.0;
+	const double vsolid = static_cast<double>(_constSolidVolume);
+	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	const double invBeta = 1.0 / porosity - 1.0;
 	const double timeV = v * alpha;
 	const double vInvBeta = timeV * invBeta;
 
 	// Assemble Jacobian: dRes / dyDot
 	
 	// Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+	//AB Concentrations: \dot{V} * c_i + V * \dot{c}_i +vsolid * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
+
 	for (unsigned int i = 0; i < _nComp; ++i)
 	{
-		mat.native(i, i) += timeV;
+		mat.native(i, i) += timeV; // dRes /dcDot
 
 		double qSum = 0.0;
 		for (unsigned int type = 0; type < _nParType; ++type)
 		{
 			double const* const qi = q + _offsetParType[type] + _boundOffset[type * _nComp + i];
 			const unsigned int localOffset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + i];
-			const double vInvBetaParVolFrac = vInvBeta * static_cast<double>(_parTypeVolFrac[type]);
-			double qSumType = 0.0;
+			const double vSolidParVolFrac = vsolid * static_cast<double>(_parTypeVolFrac[type]);
+			//AB double qSumType = 0.0;
 			for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
 			{
-				mat.native(i, localOffset + j) += vInvBetaParVolFrac;
+				mat.native(i, localOffset + j) += vSolidParVolFrac; // dRes /dqDot
 				// + _nComp: Moves over liquid phase components
 				// + _offsetParType[type]: Moves to particle type
 				// + _boundOffset[i]: Moves over bound states of previous components
 				// + j: Moves to current bound state j of component i
 
-				qSumType += qi[j];
+				//AB qSumType += qi[j];
 			}
 
-			qSum += static_cast<double>(_parTypeVolFrac[type]) * qSumType;
+			//AB qSum += static_cast<double>(_parTypeVolFrac[type]) * qSumType;
 		}
-		mat.native(i, _nComp + _totalBound) += alpha * (c[i] + invBeta * qSum);
+		//AB mat.native(i, _nComp + _totalBound) += alpha * (c[i] + invBeta * qSum); 
+		mat.native(i, _nComp + _totalBound) += alpha * c[i]; // dRes /dV
+
 	}
 
 	// Bound states

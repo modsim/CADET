@@ -50,7 +50,8 @@
 	"constantParameters":
 		[
 			{ "type": "ReferenceConcentrationParameter", "varName": ["refC0", "refQ"], "objName": "refConcentration", "confPrefix": "GIEX_"},
-			{ "type": "ReferenceConcentrationParameter", "varName": ["refPhC0", "refPhQ"], "objName": "refConcentrationPh", "confPrefix": "GIEX_PH", "skipConfig": true}
+			{ "type": "ReferenceConcentrationParameter", "varName": ["refPhC0", "refPhQ"], "objName": "refConcentrationPh", "confPrefix": "GIEX_PH", "skipConfig": true},
+			{ "type": "ScalarBoolParameter", "varName": "useProtonConcentration", "confName": "GIEX_USE_PROTON_CONCENTRATION"}
 		]
 }
 </codegen>*/
@@ -65,6 +66,8 @@
  refC0, refQ = Reference concentrations
  refPhC0,refPhQ = Reference concentrations for pH dependent powers
 */
+
+// TODO: Actually use useProtonConcentration parameter
 
 namespace cadet
 {

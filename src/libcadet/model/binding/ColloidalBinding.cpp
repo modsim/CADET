@@ -51,7 +51,8 @@
 	"constantParameters":
 		[
 			{ "type": "ScalarParameter", "varName": "linThreshold", "confName": "COL_LINEAR_THRESHOLD"},
-			{ "type": "ScalarBoolParameter", "varName": "usePh", "confName": "COL_USE_PH"}
+			{ "type": "ScalarBoolParameter", "varName": "includePh", "confName": "COL_INCLUDE_PH"},
+			{ "type": "ScalarBoolParameter", "varName": "useProtonConcentration", "confName": "COL_USE_PROTON_CONCENTRATION"}
 		]
 }
 </codegen>*/
@@ -62,6 +63,8 @@
  kD = Desorption rate
  qMax = Capacity
 */
+
+// TODO: Actually use useProtonConcentration parameter
 
 namespace cadet
 {
@@ -180,10 +183,10 @@ protected:
 		if (_nBoundStates[0] != 0)
 			throw InvalidParameterException("Salt component (index 0) must be non-binding (NBOUND = 0)");
 
-		if (_paramHandler.usePh().get() && (_nComp <= 2))
+		if (_paramHandler.includePh().get() && (_nComp <= 2))
 			throw InvalidParameterException("No protein component present (existing two components are salt and PH)");
 
-		if (_paramHandler.usePh().get())
+		if (_paramHandler.includePh().get())
 		{
 			_startIdx = 2;
 			if (_nBoundStates[1] != 0)

@@ -11,7 +11,7 @@ In this tutorial, we will build a simple forward simulation with a breakthrough 
 
 .. figure:: _images/breakthrough_system.png
 
-For this purpose, we use `CADET-Process <https://cadet-process.readthedocs.io/>`_, a object oriented Python frontend for CADET.
+For this purpose, we use `CADET-Process <https://cadet-process.readthedocs.io/>`_, an object oriented Python frontend for CADET.
 CADET still must be downloaded (or built from source) as explained in the :ref:`installation guide <installation>`.  
 
 1. Setting Up the Model
@@ -131,3 +131,53 @@ Finally, we plot the concentration signal at the outlet of the column.
 .. image:: _images/breakthrough_chromatogram.png
 
 For further details on the front end and more examples please refer to the `CADET-Process <https://cadet-process.readthedocs.io/>`_ documentation.
+
+Using CADET-Python
+------------------
+
+While we generally recommend the use of ``Cadet-Process`` as described above, you can also directly use ``CADET-Python``, a file based API for CADET, to set up the model input for CADET.
+``CADET-Python`` almost exactly maps to the documented CADET file format, specified in the Interface specification section, except that all dataset names are lowercase.
+The package includes a Cadet class which serves as a generic HDF5 frontend.
+In a python program, you need to import this class and initalize it:
+
+.. code-block:: Python3
+
+    from cadet import Cadet
+    sim = Cadet()
+
+Only if you want to use your own source build, you need to specify the path to the cadet-cli executable
+
+.. code-block:: Python3
+    
+    Cadet.cadet_path = path_to_executable
+
+Now you need to setup the model.
+As an example for how to specify the input, we consider setting the external porosity for the column model (unit_001).
+From file format, the path for this is /input/model/unit_001/COL_POROSITY.
+In CADET-Python, this becomes:
+
+.. code-block:: Python3
+
+    sim.root.input.model.unit_001.col_porosity = 0.33
+
+Finally, you can name the h5 input file to be generated, save and run it.
+
+.. code-block:: Python3
+
+    model.filename = 'model.h5'
+    model.save()
+    data = model.run()
+
+The results of your simulation can be again accessed through the Cadet class:
+
+.. code-block:: Python3
+
+    if data.returncode == 0:
+        print("Simulation completed successfully")
+        model.load()   
+    else:
+        print(data)
+        raise Exception("Simulation failed")
+
+    time = model.root.output.solution.solution_times
+    c = model.root.output.solution.unit_001.solution_outlet

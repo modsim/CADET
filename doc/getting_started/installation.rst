@@ -33,8 +33,10 @@ Install from source
 Install a frontend
 ------------------
 
-As of now, only a Python frontend is provided.
-The ``CADET-Process`` frontend facilitates modeling processes using an object oriented model builder.
+CADET provides a Python API, called ``CADET-Python``, which can be used to set the model input according to the Interface specifications section.
+Setting up the model using ``CADET-Python`` can become very tedious, especially for systems, and is outdated now that an actual frontend is available:
+
+We recommend using the ``CADET-Process`` frontend, which facilitates modeling processes using an object oriented model builder.
 This interface layer provides convenient access to all model parameters in the system.
 It automatically checks validity of the parameter values and sets reasonable default values where possible.
 
@@ -47,3 +49,8 @@ To install ``CADET-Process``, open an `anaconda shell` or `mamba shell` and exec
 
     pip install CADET-Process
 
+If you want to use ``CADET-Python``, open an `anaconda shell` or `mamba shell` and execute:
+
+.. code-block:: bash
+
+    pip install CADET-Python 

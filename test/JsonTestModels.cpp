@@ -1058,11 +1058,12 @@ cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool non
 json createCSTRJson(unsigned int nComp)
 {
 	json config;
-	config["UNIT_TYPE"] = std::string("CSTR");
+	config["UNIT_TYPE"] = std::string("CSTRVarPor");
 	config["NCOMP"] = static_cast<int>(nComp);
 	config["INIT_VOLUME"] = 1.0;
 	config["INIT_C"] = std::vector<double>(nComp, 0.0);
 	config["FLOWRATE_FILTER"] = {0.0};
+	config["INIT_SOLID_VOLUME"] = 0.0;
 	return config;
 }
 

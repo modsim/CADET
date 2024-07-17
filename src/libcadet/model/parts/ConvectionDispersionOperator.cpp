@@ -86,9 +86,6 @@ bool AxialConvectionDispersionOperatorBase::configureModelDiscretization(IParame
 
 	const std::string recType = paramProvider.exists("RECONSTRUCTION") ? paramProvider.getString("RECONSTRUCTION") : "WENO";
 
-	cadet_assert(_weno == nullptr);
-	cadet_assert(_koren == nullptr);
-	cadet_assert(_reconstrDerivatives == nullptr);
 
 	if (recType == "WENO")
 	{

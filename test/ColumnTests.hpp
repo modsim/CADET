@@ -44,6 +44,17 @@ namespace column
 		virtual void setDisc(JsonParameterProvider& jpp, const std::string unitID = "000") const = 0;
 	};
 
+	struct Dummyparams : public DiscParams {
+
+		int getNAxCells() const override { return 0; }
+		int getNParCells() const override { return 0; }
+
+		void setDisc(JsonParameterProvider& jpp, const std::string unitID = "000") const
+		{
+			// No discretization to be set
+		}
+	};
+
 	struct FVparams : public DiscParams {
 		int nAxCells;
 		int nParCells;

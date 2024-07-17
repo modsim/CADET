@@ -314,7 +314,7 @@ Finite Volumes (Default)
    **Type:** double  **Range:** :math:`\geq 0`  **Length:** 1
    ================  =========================  =============
 
-For further discretization parameters, see also :ref:`flux_restruction_methods` (FV specific)), and :ref:`non_consistency_solver_parameters`.
+For further discretization parameters, see also :ref:`flux_reconstruction_methods` (FV specific)), and :ref:`non_consistency_solver_parameters`.
 
 
 Discontinuous Galerkin

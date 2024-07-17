@@ -426,7 +426,8 @@ namespace column
 		pp.popScope();
 
 		pp.pushScope("unit_" + unitID);
-		if (setupJson.find("discretization") != setupJson.end())
+
+		if (pp.getString("UNIT_TYPE") != "CSTR") // check for units that dont have a spatial discretization
 		{
 			pp.pushScope("discretization");
 			nlohmann::json discretization = setupJson["model"]["unit_" + unitID]["discretization"];

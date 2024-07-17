@@ -10,35 +10,35 @@ CADET offers two spatial discretization methods: Finite Volumes (FV) and Discont
 While both methods approximate the same solution to the underlying models, they may differ in terms of computational performance.
 Generally, FV can be more performant for small problem sizes and solutions with steep gradients, while DG excels for large problem sizes and smooth solutions.
 
-In the following, we give a brief introduction to the numerical theory that is most relevant for the computational performance of the methods.
+In the following, we give a brief introduction to the numerical theory w.r.t. the computational performance of the methods.
 Based on that theory and our experience, we give advice on which method to use in which scenario, how to identify the more performant method, and how to specify the discretization parameters.
-For a comprehensive description on the FV and DG methods as they are implemented in CADET, we refer to our publications on `CADET-FV <https://doi.org/10.1016/j.compchemeng.2010.03.008>`_  and `CADET-DG <https://doi.org/10.1016/j.compchemeng.2023.108340>`_.
+For a comprehensive description of the FV and DG variants that are implemented in CADET, we refer to our publications on `CADET-FV <https://doi.org/10.1016/j.compchemeng.2010.03.008>`_  and `CADET-DG <https://doi.org/10.1016/j.compchemeng.2023.108340>`_.
 
 Discrete system size
 --------------------
 
-Numerical methods discretize the continuous (here: spatial) domain of the equations into a finite set of discrete points.
-Then, a system of equations is formulated for those points, and both system size and number of unknowns / degrees of freedom (DoF) are given by the number of discrete points.
-This system can be linear or non-linear, depending on the method (this will become important again in the section on smooth solutions).
-The wall clock time to compute the solution depends on the system size and, thus, on the number of discrete points.
-Conversely, the numerical solution is more accurate with more discrete points.
-Thus, we trade computation time for approximation accuracy by specifying the parameters that determine the number of discrete points.
-For the FV scheme, the number of axial discrete points in the column is given by the number of volume cells ``NCOL``.
-For the DG scheme, the number of axial discrete points in the column is given by the number of polynomial interpolation nodes (= ``POLYDEG`` + 1) times the number of DG elements ``NELEM``.
-The LRMP and GRM additionally consider particle equations that are also discretized.
-In the spatially discretized equations, a single particle is incorporated at each axial discrete point, which increases the total number of DOF per axial point, especially for the GRM where particles are fully resolved.
-The parameters for the GRM particle discretization are given for FV in ``NPAR`` and for DG in ``PAR_POLYDEG`` and ``PAR_NELEM``.
+The FV and DG method discretize the continuous (here: spatial) domain of the partial differential algebraic equations (PDAE) into a finite set of discrete points.
+Then, a system of (semi-discrete) equations is formulated on those points, resulting in a system of ordinary differential algebraic equations (ODAE).
+The system size and number of unknowns, which we also call degrees of freedom (DoF), is given by the number of (spatial) discrete points (times the number of components for multi-component systems).
+In the following, we will only refer to the spatial DoF.
+
+The ODAE system can be linear or non-linear, depending on the method, which will become important again in the section on smooth solutions.
+The numerical solution becomes more accurate with more discrete points but the wall clock time to solve the equations increases.
+That is, we trade compute time for approximation accuracy.
+
+For the FV scheme, the number of axial discrete points in the column is specified by the number of volume cells ``NCOL``.
+For the DG scheme, the number of axial discrete points in the column is specified by the number of polynomial interpolation nodes (= ``POLYDEG`` + 1) times the number of DG elements ``NELEM``.
+The GRM additionally considers particle equations that are also spatially discretized and the particle discrete points are correspondingly given by ``NPAR`` for FV and for DG via ``PAR_POLYDEG`` and ``PAR_NELEM``.
 
 Order of convergence
 --------------------
 
 The computational performance of a numerical method depends on its theoretical order of convergence.
-The order of convergence refers to the rate at which the method's approximation approaches the exact solution under refinement of the spatial grid.
+The order of convergence refers to the rate at which the numerical approximation approaches the exact solution under refinement of the spatial grid.
+Consequently, higher order methods often require less spatial discrete points to compute an approximation of the desired accuracy and can thus be computationally more efficient.
 
-A higher-order method can be faster than a low-order method:
-Imagine a high- and a low-order method's approximation to exhibit similarly bad approximation accuracy due to a coarse spatial resolution.
-Refining the grid for both methods by the same number of discrete points improves the approximation accuracy of the higher-order method more than the other one.
-Thus, the low-order method requires more DOFs and ultimately more compute time to compute a solution of the same accuracy.
+The theoretical order of convergence for the CADET-FV scheme is globally limited by 2. It is locally (except column boundaries) limited by 3 and can be varied by specifying the input in :ref:`flux_reconstruction_methods`.
+For the CADET-DG scheme, the theoretical order of convergence is :math:`N_d + 1` with :math:`N_d` denoting the polynomial degree, and can thus be user-defined by specifying the field ``POLYDEG`` (and ``PAR_POLYDEG`` for the particles in the GRM).
 
 The theoretical order of convergence is an asymptotic property, however.
 Having the exact solution, we can compute an experimental order of convergence (EOC) via the formula
@@ -52,15 +52,15 @@ Having the exact solution, we can compute an experimental order of convergence (
 
 with :math:`\varepsilon_{k}` and :math:`n_{k}` denoting some error norm and the degrees of freedom of the kth approximation.
 The EOC approaches the theoretical order of convergence for :math:`k \rightarrow \infty` but is typically lower for underresolved problems.
-High-order methods typically suffer from start-off problems, i.e. they typically won't exhibit their high order until the grid is fine enough and a certain accuracy is already reached.
+High-order methods typically suffer from "start-off" problems, i.e. they typically won't exhibit their theoretical order for very coarse grids.
 That is, increasing the number of discrete points from, e.g., 2 to 4 typically does not improve the solution according to the theoretical order of convergence but by a much smaller EOC.
-The EOC is highly problem-dependent, and it is generally unknown when a high-order method will actually be faster than a lower-order method.
-Experience shows that higher-order methods work well for smooth solutions.
 
-The theoretical order of convergence for the CADET-FV scheme is fixed at 2.
-For the CADET-DG scheme, it is :math:`N_d + 1` with :math:`N_d` denoting the polynomial degree, and can thus be user-defined by specifying the field ``POLYDEG`` (and ``PAR_POLYDEG`` for the GRM).
-As a convergence order of :math:`\gt 6` is hardly realized within the approximation error of engineering tolerance (due to start-off problems), we recommend a maximum polynomial order of 5.
-As the FV scheme oftentimes yields an EOC of around 2.5 and is computationally more enhanced (less arithmetic operations per DOF and customized factorization) than the DG code, we recommend a polynomial degree of at least 3 to top this.
+For smooth solutions, we typically observe an EOC of around 2.5 for the default CADET-FV method and around :math:`N_d` for the CADET-DG method.
+To our experience, DG with :math:`N_d>6` does usually not realize an EOC of :math:`>6` for approximation errors within engineering tolerances, i.e. higher rates only show for excessively small error tolerances that are not relevant in application.
+We thus recommend to choose :math:`3 \leq N_d \leq 5` for using the DG method.
+
+One could still think that the higher the order of the method the better the performance, but that is unfortunately not true.
+The most important keyword here is the "smoothness" of the solution.
 
 Smooth solutions
 ----------------
@@ -71,22 +71,22 @@ That is, strong gradients and high frequencies are used to identify non-smooth p
 Godunov's order barrier theorem shows why the concept of smoothness plays a crucial role in the deployment of numerical methods.
 It states that linear high-order methods that are monotonous are at most first-order accurate.
 Linear higher-order (:math:`\gt 1`) methods thus suffer from artificial oscillations at non-smooth parts of the solution, specifically at discontinuities and strong gradients.
-Some higher-order methods, such as CADET-FV (2nd order), contain a non-linear mechanism to suppress these oscillations.
-The non-linear WENO mechanism employed in CADET-FV can be fine-tuned via the fields specified here :ref:`flux_restruction_methods`.
-Unfortunately, non-linear higher-order methods (order :math:`\geq 3`) are either not applicable (e.g., undefined boundary treatment) or have other shortcomings, such as more highly problem-dependent parameters.
+Some higher-order methods, such as the FV variants implemented in CADET, contain a non-linear mechanism to suppress these oscillations.
+The non-linear WENO mechanism employed in CADET-FV can be fine-tuned via the fields specified here :ref:`flux_reconstruction_methods`.
+Unfortunately, non-linear higher-order methods (here :math:`\geq 3`) are either not applicable (e.g., undefined boundary treatment) or have other shortcomings, such as more highly problem-dependent parameters.
 
-CADET-DG is a linear high-order method (arbitrary order) and thus exhibits oscillatory behaviour at strong gradients, which increases the approximation error and results in a smaller EOC for lower resolutions.
-As strong gradients are a local phenomena that can be captured by employing more discrete points, DG becomes more performant again for higher resolutions.
+The DG variant that is implemented in CADET is a linear high-order method (arbitrary order) and thus exhibits oscillatory behaviour at strong gradients, which increases the approximation error and results in a smaller EOC for lower resolutions.
+Since strong gradients are local phenomena which can be captured by employing more discrete points, DG becomes more performant again for higher resolutions.
 This, however, might happen after the engineering error tolerance is by far surpassed.
 Hence, CADET-FV as a stabilized lower-order method can be more performant, depending on the setting.
 The DG scheme reduces its oscillatory behaviour by adding artificial numerical dispersion at element interfaces.
-Thus, the use of a lower polynomial degree and more elements is recommended for rather non-smooth problems.
+Thus, the use of a lower polynomial degree and more elements is recommended for non-smooth solutions.
 
 In Chromatography, mathematical discontinuities never happen, as there are always some dispersive effects in reality.
 Chromatography models, however, allow for discontinuities if dispersion parameters are set to zero.
 Moreover, steep and self-sharpening concentration fronts might appear due to binding.
 Binding models that might cause self-sharpening concentration fronts are often associated with competitive Langmuir type isotherms for components with differently strong binding properties.
-Nonetheless, a lot of chromatography settings yield rather smooth concentration profiles, for which DG is the better choice in terms of computational performance.
+Nonetheless, many chromatography settings yield rather smooth concentration profiles, for which DG is the better choice in terms of computational performance.
 
 Recommendations on the choice of spatial discretization methods
 ---------------------------------------------------------------
@@ -116,6 +116,7 @@ Refinement strategy
 A common problem in numerical simulation is that the number of discrete points required to yield an accurate approximation within a specific tolerance is unknown.
 We thus recommend determining the approximation error via comparison with a refined reference approximation.
 Both the theoretical order of convergence and the EOC can be used to estimate the required number of discrete points.
+An EOC that is significantly lower than the theoretical order indicates that the problem is numerically underresolved.
 
 Note on DG solution vector
 --------------------------

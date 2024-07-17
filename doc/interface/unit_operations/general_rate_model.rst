@@ -484,10 +484,11 @@ Group /input/model/unit_XXX/discretization - UNIT_TYPE - GENERAL_RATE_MODEL
 Spatial discretization - Numerical Methods
 ------------------------------------------
 
-CADET offers two spatial discretization methods: Finite Volumes (FV) and Discontinuous Galerkin (DG). Only the input fields for the chosen method need to be specified.
+CADET offers two spatial discretization methods: Finite Volumes (FV) and Discontinuous Galerkin (DG). Each method has it's own set of input fields.
 While both methods approximate the same solution to the same underlying model, they may differ in terms of computational performance.
-Generally, FV is more performant for solutions with steep gradients or discontinuities, while DG excels for rather smooth solutions.
-We note that DG is only faster in the sense that less spatial discrete points are required to achieve the same accuracy as FV. For the same number of discrete points, DG will be slower, but more accurate.
+With our currently implemented variants of FV and DG, FV perform better for solutions with steep gradients or discontinuities, while DG can be much faster for rather smooth solutions.
+For the same number of discrete points, DG will generally be slower but often more accurate.
+
 For further information on the choice of discretization methods and their parameters, see :ref:`spatial_discretization_methods`.
 
 ``SPATIAL_METHOD``

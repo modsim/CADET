@@ -60,7 +60,6 @@ namespace
 	}
 }
 
-
 CSTRModelVarPor::CSTRModelVarPor(UnitOpIdx unitOpIdx) : UnitOperationBase(unitOpIdx), _nComp(0), _nParType(0), _nBound(nullptr), _boundOffset(nullptr), _strideBound(nullptr), _offsetParType(nullptr),
 	_totalBound(0), _analyticJac(true), _jac(), _jacFact(), _factorizeJac(false), _initConditions(0), _initConditionsDot(0), _dynReactionBulk(nullptr)
 {
@@ -966,7 +965,7 @@ void CSTRModelVarPor::consistentInitialTimeDerivative(const SimulationTime& simT
 				for (unsigned int type = 0; type < _nParType; ++type)
 				{
 					const int innerIdx = bndIdx + _offsetParType[type] + _boundOffset[type * _nComp + i];
-					//const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * invBeta;
+					//AB const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * invBeta;
 					const double innerFactor = static_cast<double>(_parTypeVolFrac[type]) * vsolid;
 					for (unsigned int j = 0; j < _nBound[type * _nComp + i]; ++j)
 					{
@@ -1988,7 +1987,6 @@ void CSTRModelVarPor::checkAnalyticJacobianAgainstAd(active const* const adRes, 
 
 #endif
 
-
 unsigned int CSTRModelVarPor::Exporter::numSolidPhaseDofs() const CADET_NOEXCEPT
 {
 	return _totalBound;
@@ -2055,8 +2053,6 @@ int CSTRModelVarPor::Exporter::writeOutlet(double* buffer) const
 	std::copy_n(_data + _nComp, _nComp, buffer);
 	return _nComp;
 }
-
-
 
 void registerCSTRModelVarPor(std::unordered_map<std::string, std::function<IUnitOperation*(UnitOpIdx, IParameterProvider&)>>& models)
 {

@@ -278,7 +278,7 @@ inline void checkSensitivityConsistentInitialization(const std::function<cadet::
 	destroyModelBuilder(mb);
 }
 
-TEST_CASE("StirredTankModel Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModel Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -306,7 +306,7 @@ TEST_CASE("StirredTankModel Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],
 	}
 }
 
-TEST_CASE("StirredTankModel Jacobian vs AD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD]")
+TEST_CASE("StirredTankModel Jacobian vs AD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -334,7 +334,7 @@ TEST_CASE("StirredTankModel Jacobian vs AD w/o binding model", "[CSTR],[UnitOp],
 	}
 }
 
-TEST_CASE("StirredTankModel time derivative Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModel time derivative Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -362,8 +362,7 @@ TEST_CASE("StirredTankModel time derivative Jacobian vs FD w/o binding model", "
 	}
 }
 
-
-TEST_CASE("StirredTankModel Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModel Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -399,7 +398,7 @@ TEST_CASE("StirredTankModel Jacobian vs FD with linear binding", "[CSTR],[UnitOp
 	}
 }
 
-TEST_CASE("StirredTankModel Jacobian vs AD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD]")
+TEST_CASE("StirredTankModel Jacobian vs AD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -435,7 +434,7 @@ TEST_CASE("StirredTankModel Jacobian vs AD with linear binding", "[CSTR],[UnitOp
 	}
 }
 
-TEST_CASE("StirredTankModel time derivative Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModel time derivative Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian],[CI]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -471,7 +470,7 @@ TEST_CASE("StirredTankModel time derivative Jacobian vs FD with linear binding",
 	}
 }
 
-TEST_CASE("StirredTankModel consistent initialization with linear binding", "[CSTR],[ConsistentInit]")
+TEST_CASE("StirredTankModel consistent initialization with linear binding", "[CSTR],[ConsistentInit],[CI]")
 {
 	// Fill state vector with initial values
 	std::vector<double> y(2 + 2 * 2 + 1, 0.0);
@@ -570,7 +569,7 @@ TEST_CASE("StirredTankModel consistent sensitivity initialization with SMA bindi
 	}, y.data(), yDot.data(), 1e-8);
 }
 
-TEST_CASE("StirredTankModel inlet DOF Jacobian", "[CSTR],[UnitOp],[Jacobian],[Inlet]")
+TEST_CASE("StirredTankModel inlet DOF Jacobian", "[CSTR],[UnitOp],[Jacobian],[Inlet],[CI]")
 {
 	cadet::IModelBuilder* const mb = cadet::createModelBuilder();
 	REQUIRE(nullptr != mb);

@@ -37,7 +37,7 @@
  * @param [in] jpp Configuration of the CSTR
  * @return Runnable CSTR
  */
-cadet::model::CSTRModelVarPor* createAndConfigureCSTR(cadet::IModelBuilder& mb, cadet::JsonParameterProvider& jpp)
+cadet::model::CSTRModelVarPor* createAndConfigureCSTRVarPor(cadet::IModelBuilder& mb, cadet::JsonParameterProvider& jpp)
 {
 	// Create a CSTR
 	cadet::IModel* const iCstr = mb.createUnitOperation(jpp, 0);
@@ -59,7 +59,7 @@ cadet::model::CSTRModelVarPor* createAndConfigureCSTR(cadet::IModelBuilder& mb, 
  */
 inline cadet::JsonParameterProvider createTwoComponentLinearTestCase()
 {
-	cadet::JsonParameterProvider jpp = createCSTR(2);
+	cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
 	cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
 	cadet::test::addLinearBindingModel(jpp, true, {0.1, 0.2}, {1.0, 0.9});
 	cadet::test::setInitialConditions(jpp, {1.0, 2.0}, {3.0, 4.0}, 6.0);
@@ -90,11 +90,11 @@ inline void checkJacobianAD(double flowRateIn, double flowRateOut, double flowRa
 
 	// CSTR with 2 components
 	const unsigned int nComp = 2;
-	cadet::JsonParameterProvider jpp = createCSTR(nComp);
+	cadet::JsonParameterProvider jpp = createCSTRVarPor(nComp);
 	modelRefiner(jpp, nComp);
 
-	cadet::model::CSTRModelVarPor* const cstrAna = createAndConfigureCSTR(*mb, jpp);
-	cadet::model::CSTRModelVarPor* const cstrAD = createAndConfigureCSTR(*mb, jpp);
+	cadet::model::CSTRModelVarPor* const cstrAna = createAndConfigureCSTRVarPor(*mb, jpp);
+	cadet::model::CSTRModelVarPor* const cstrAD = createAndConfigureCSTRVarPor(*mb, jpp);
 	if (flowRateFilter > 0.0)
 	{
 		cstrAna->flowRateFilter().push_back(flowRateFilter);
@@ -155,10 +155,10 @@ inline void checkJacobianFD(double flowRateIn, double flowRateOut, double flowRa
 
 	// CSTR with 2 components
 	const unsigned int nComp = 2;
-	cadet::JsonParameterProvider jpp = createCSTR(nComp);
+	cadet::JsonParameterProvider jpp = createCSTRVarPor(nComp);
 	modelRefiner(jpp, nComp);
 
-	cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(*mb, jpp);
+	cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(*mb, jpp);
 	if (flowRateFilter > 0.0)
 		cstr->flowRateFilter().push_back(flowRateFilter);
 
@@ -200,10 +200,10 @@ inline void checkTimeDerivativeJacobianFD(double flowRateIn, double flowRateOut,
 
 	// CSTR with 2 components
 	const unsigned int nComp = 2;
-	cadet::JsonParameterProvider jpp = createCSTR(nComp);
+	cadet::JsonParameterProvider jpp = createCSTRVarPor(nComp);
 	modelRefiner(jpp, nComp);
 
-	cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(*mb, jpp);
+	cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(*mb, jpp);
 	if (flowRateFilter > 0.0)
 		cstr->flowRateFilter().push_back(flowRateFilter);
 
@@ -269,7 +269,7 @@ inline void checkSensitivityConsistentInitialization(const std::function<cadet::
 			const bool adEnabled = (adMode > 0);
 			SECTION(std::string(isKinetic ? " Kinetic binding" : " Quasi-stationary binding") + " with AD " + (adEnabled ? "enabled" : "disabled"))
 			{
-				cadet::model::CSTRModelVarPor* const cstr = modelCreator(*mb, isKinetic);
+				cadet::model::CSTRModelVarPor* const cstr = modelCreator(*mb, isKinetic); //?AB what is the model Creator?
 				cadet::test::unitoperation::testConsistentInitializationSensitivity(cstr, adEnabled, y, yDot, absTol);
 				mb->destroyUnitOperation(cstr);
 			}
@@ -278,7 +278,7 @@ inline void checkSensitivityConsistentInitialization(const std::function<cadet::
 	destroyModelBuilder(mb);
 }
 
-TEST_CASE("StirredTankModelVarPor Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModelVarPor Jacobian vs FD w/o binding model", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -306,7 +306,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs FD w/o binding model", "[CSTR],[Un
 	}
 }
 
-TEST_CASE("StirredTankModelVarPor Jacobian vs AD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD],[testHere]")
+TEST_CASE("StirredTankModelVarPor Jacobian vs AD w/o binding model", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian],[AD],[klappt]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -334,7 +334,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs AD w/o binding model", "[CSTR],[Un
 	}
 }
 
-TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD w/o binding model", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD w/o binding model", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian],[klappt]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -362,8 +362,7 @@ TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD w/o binding mod
 	}
 }
 
-
-TEST_CASE("StirredTankModelVarPor Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModelVarPor Jacobian vs FD with linear binding", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -399,7 +398,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs FD with linear binding", "[CSTR],[
 	}
 }
 
-TEST_CASE("StirredTankModelVarPor Jacobian vs AD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian],[AD]")
+TEST_CASE("StirredTankModelVarPor Jacobian vs AD with linear binding", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian],[AD],[klappt]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -435,7 +434,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs AD with linear binding", "[CSTR],[
 	}
 }
 
-TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD with linear binding", "[CSTR],[UnitOp],[Residual],[Jacobian]")
+TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD with linear binding", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian]")
 {
 	const double rateList[] = {0.0, 0.0, 0.0,
 	                           1.0, 0.0, 0.0,
@@ -471,24 +470,24 @@ TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD with linear bin
 	}
 }
 
-TEST_CASE("StirredTankModelVarPor consistent initialization with linear binding", "[CSTR],[ConsistentInit]")
+TEST_CASE("StirredTankModelVarPor consistent initialization with linear binding", "[CSTRVarPor],[ConsistentInit]")
 {
 	// Fill state vector with initial values
 	std::vector<double> y(2 + 2 * 2 + 1, 0.0);
 	cadet::test::util::populate(y.data(), [](unsigned int idx) { return std::abs(std::sin(idx * 0.13)) + 1e-4; }, y.size());
 
 	checkConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
-		cadet::JsonParameterProvider jpp = createCSTR(2);
+		cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
 		cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
 		cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 
-		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(mb, jpp);
+		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
 		cstr->setFlowRates(1.0, 1.0);
 		return cstr;
 	}, y.data(), 1e-14, 1e-14);
 }
 
-TEST_CASE("StirredTankModelVarPor consistent initialization with SMA binding", "[CSTR],[ConsistentInit]")
+TEST_CASE("StirredTankModelVarPor consistent initialization with SMA binding", "[CSTRVarPor],[ConsistentInit],[NeedFix]")
 {
 // Optimal values:
 //	const double bindingCell[] = {1.2, 2.0, 1.0, 1.5, 858.034, 66.7896, 3.53273, 2.53153};
@@ -501,17 +500,17 @@ TEST_CASE("StirredTankModelVarPor consistent initialization with SMA binding", "
 	y[4 + 8] = 1.0;
 
 	checkConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
-		cadet::JsonParameterProvider jpp = createCSTR(4);
+		cadet::JsonParameterProvider jpp = createCSTRVarPor(4);
 		cadet::test::addBoundStates(jpp, {1, 1, 1, 1}, 0.5);
 		cadet::test::addSMABindingModel(jpp, dynamic, 1.2e3, {0.0, 35.5, 1.59, 7.7}, {0.0, 1000.0, 1000.0, 1000.0}, {0.0, 4.7, 5.29, 3.7}, {0.0, 11.83, 10.6, 10.0});
 
-		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(mb, jpp);
+		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
 		cstr->setFlowRates(1.0, 1.0);
 		return cstr;
 	}, y.data(), 1e-14, 1e-5);
 }
 
-TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with linear binding", "[CSTR],[ConsistentInit],[Sensitivity]")
+TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with linear binding", "[CSTRVarPor],[ConsistentInit],[Sensitivity],[NeedFix]")
 {
 	// Fill state vector with initial values
 	std::vector<double> y(2 + 2 * 2 + 1, 0.0);
@@ -524,21 +523,21 @@ TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with lin
 	// vectors are all zero (only sensitivities wrt. initial conditions produce non-zero initial values).
 
 	checkSensitivityConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
-		cadet::JsonParameterProvider jpp = createCSTR(2);
+		cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
 		cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
 		cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 
-		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(mb, jpp);
+		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
 		cstr->setFlowRates(1.0, 1.0);
 		cstr->setSensitiveParameter(cadet::makeParamId("INIT_VOLUME", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 0, 1.0);
 		cstr->setSensitiveParameter(cadet::makeParamId("LIN_KA", 0, 0, cadet::ParTypeIndep, 0, cadet::ReactionIndep, cadet::SectionIndep), 1, 1.0);
-		cstr->setSensitiveParameter(cadet::makeParamId("POROSITY", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 2, 1.0);
+		cstr->setSensitiveParameter(cadet::makeParamId("CONST_SOLID_VOLUME", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 2, 1.0);
 
 		return cstr;
 	}, y.data(), yDot.data(), 1e-14);
 }
 
-TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with SMA binding", "[CSTR],[ConsistentInit],[Sensitivity]")
+TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with SMA binding", "[CSTRVarPor],[ConsistentInit],[Sensitivity],[NeedFix]")
 {
 	// Fill state vector with initial values
 	std::vector<double> y(4 + 2 * 4 + 1, 0.0);
@@ -556,21 +555,21 @@ TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with SMA
 	// vectors are all zero (only sensitivities wrt. initial conditions produce non-zero initial values).
 
 	checkSensitivityConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
-		cadet::JsonParameterProvider jpp = createCSTR(4);
+		cadet::JsonParameterProvider jpp = createCSTRVarPor(4);
 		cadet::test::addBoundStates(jpp, {1, 1, 1, 1}, 0.5);
 		cadet::test::addSMABindingModel(jpp, dynamic, 1.2e3, {0.0, 35.5, 1.59, 7.7}, {0.0, 1000.0, 1000.0, 1000.0}, {0.0, 4.7, 5.29, 3.7}, {0.0, 11.83, 10.6, 10.0});
 
-		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(mb, jpp);
+		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
 		cstr->setFlowRates(1.0, 1.0);
 		cstr->setSensitiveParameter(cadet::makeParamId("INIT_VOLUME", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 0, 1.0);
 		cstr->setSensitiveParameter(cadet::makeParamId("SMA_NU", 0, 1, cadet::ParTypeIndep, 0, cadet::ReactionIndep, cadet::SectionIndep), 1, 1.0);
-		cstr->setSensitiveParameter(cadet::makeParamId("POROSITY", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 2, 1.0);
+		cstr->setSensitiveParameter(cadet::makeParamId("CONST_SOLID_VOLUME", 0, cadet::CompIndep, cadet::ParTypeIndep, cadet::BoundStateIndep, cadet::ReactionIndep, cadet::SectionIndep), 2, 1.0);
 
 		return cstr;
 	}, y.data(), yDot.data(), 1e-8);
 }
 
-TEST_CASE("StirredTankModelVarPor inlet DOF Jacobian", "[CSTR],[UnitOp],[Jacobian],[Inlet]")
+TEST_CASE("StirredTankModelVarPor inlet DOF Jacobian", "[CSTRVarPor],[UnitOp],[Jacobian],[Inlet]")
 {
 	cadet::IModelBuilder* const mb = cadet::createModelBuilder();
 	REQUIRE(nullptr != mb);
@@ -580,8 +579,8 @@ TEST_CASE("StirredTankModelVarPor inlet DOF Jacobian", "[CSTR],[UnitOp],[Jacobia
 		const bool adEnabled = (adMode > 0);
 		SECTION(std::string("AD ") + (adEnabled ? "enabled" : "disabled"))
 		{
-			cadet::JsonParameterProvider jpp = createCSTR(4);
-			cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTR(*mb, jpp);
+			cadet::JsonParameterProvider jpp = createCSTRVarPor(4);
+			cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(*mb, jpp);
 			cadet::test::unitoperation::testInletDofJacobian(cstr, adEnabled);
 			mb->destroyUnitOperation(cstr);
 		}
@@ -589,133 +588,133 @@ TEST_CASE("StirredTankModelVarPor inlet DOF Jacobian", "[CSTR],[UnitOp],[Jacobia
 	destroyModelBuilder(mb);
 }
 
-TEST_CASE("CSTRVarPor multiple particle types Jacobian analytic vs AD", "[CSTR],[Jacobian],[AD],[ParticleType]")
+TEST_CASE("CSTRVarPor multiple particle types Jacobian analytic vs AD", "[CSTRVarPor],[Jacobian],[AD],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::particle::testJacobianMixedParticleTypes(jpp);
 }
 
-TEST_CASE("CSTRVarPor multiple particle types time derivative Jacobian vs FD", "[CSTR],[UnitOp],[Residual],[Jacobian],[ParticleType]")
+TEST_CASE("CSTRVarPor multiple particle types time derivative Jacobian vs FD", "[CSTRVarPor],[UnitOp],[Residual],[Jacobian],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::particle::testTimeDerivativeJacobianMixedParticleTypesFD(jpp, 1e-6, 0.0, 9e-4);
 }
 
-TEST_CASE("CSTRVarPorVarPor dynamic reactions Jacobian vs AD bulk", "[CSTR],[Jacobian],[AD],[ReactionModel]")
+TEST_CASE("CSTRVarPorVarPor dynamic reactions Jacobian vs AD bulk", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, false, false);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD particle", "[CSTR],[Jacobian],[AD],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, false, true, false);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD modified particle", "[CSTR],[Jacobian],[AD],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD modified particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, false, true, true);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD bulk and particle", "[CSTR],[Jacobian],[AD],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD bulk and particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, true, false);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD bulk and modified particle", "[CSTR],[Jacobian],[AD],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions Jacobian vs AD bulk and modified particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, true, true);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk", "[CSTR],[Jacobian],[Residual],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, false, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD particle", "[CSTR],[Jacobian],[Residual],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, false, true, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD modified particle", "[CSTR],[Jacobian],[Residual],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD modified particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, false, true, true, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk and particle", "[CSTR],[Jacobian],[Residual],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk and particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, true, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk and modified particle", "[CSTR],[Jacobian],[Residual],[ReactionModel]")
+TEST_CASE("CSTRVarPor dynamic reactions time derivative Jacobian vs FD bulk and modified particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, true, true, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk", "[CSTR],[Jacobian],[AD],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, false, false);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD particle", "[CSTR],[Jacobian],[AD],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, false, true, false);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD modified particle", "[CSTR],[Jacobian],[AD],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD modified particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, false, true, true);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk and particle", "[CSTR],[Jacobian],[AD],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk and particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, true, false);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk and modified particle", "[CSTR],[Jacobian],[AD],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions Jacobian vs AD bulk and modified particle", "[CSTRVarPor],[Jacobian],[AD],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testUnitJacobianDynamicReactionsAD(jpp, true, true, true);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk", "[CSTR],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, false, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD particle", "[CSTR],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, false, true, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD modified particle", "[CSTR],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD modified particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, false, true, true, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk and particle", "[CSTR],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk and particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, true, false, 1e-6, 1e-14, 8e-4);
 }
 
-TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk and modified particle", "[CSTR],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
+TEST_CASE("CSTRVarPor multi particle types dynamic reactions time derivative Jacobian vs FD bulk and modified particle", "[CSTRVarPor],[Jacobian],[Residual],[ReactionModel],[ParticleType]")
 {
 	cadet::JsonParameterProvider jpp = createTwoComponentLinearThreeParticleTypesTestCase();
 	cadet::test::reaction::testTimeDerivativeJacobianDynamicReactionsFD(jpp, true, true, true, 1e-6, 1e-14, 8e-4);

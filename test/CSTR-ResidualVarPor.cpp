@@ -60,7 +60,7 @@ cadet::model::CSTRModelVarPor* createAndConfigureCSTRVarPor(cadet::IModelBuilder
 inline cadet::JsonParameterProvider createTwoComponentLinearTestCase()
 {
 	cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
-	cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 	cadet::test::addLinearBindingModel(jpp, true, {0.1, 0.2}, {1.0, 0.9});
 	cadet::test::setInitialConditions(jpp, {1.0, 2.0}, {3.0, 4.0}, 6.0);
 	cadet::test::setFlowRates(jpp, 0, 1.0);
@@ -390,7 +390,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs FD with linear binding", "[CSTRVar
 			SECTION("Fin = " + std::to_string(row[0]) + " Fout = " + std::to_string(row[1]) + " Ffilter = " + std::to_string(row[2]) + bndMode)
 			{
 				checkJacobianFD(row[0], row[1], row[2], [=](cadet::JsonParameterProvider& jpp, unsigned int nComp) {
-					cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+					cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 					cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 				});
 			}
@@ -426,7 +426,7 @@ TEST_CASE("StirredTankModelVarPor Jacobian vs AD with linear binding", "[CSTRVar
 			SECTION("Fin = " + std::to_string(row[0]) + " Fout = " + std::to_string(row[1]) + " Ffilter = " + std::to_string(row[2]) + bndMode)
 			{
 				checkJacobianAD(row[0], row[1], row[2], [=](cadet::JsonParameterProvider& jpp, unsigned int nComp) {
-					cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+					cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 					cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 				});
 			}
@@ -462,7 +462,7 @@ TEST_CASE("StirredTankModelVarPor time derivative Jacobian vs FD with linear bin
 			SECTION("Fin = " + std::to_string(row[0]) + " Fout = " + std::to_string(row[1]) + " Ffilter = " + std::to_string(row[2]) + bndMode)
 			{
 				checkTimeDerivativeJacobianFD(row[0], row[1], row[2], [=](cadet::JsonParameterProvider& jpp, unsigned int nComp) {
-					cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+					cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 					cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 				});
 			}
@@ -478,7 +478,7 @@ TEST_CASE("StirredTankModelVarPor consistent initialization with linear binding"
 
 	checkConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
 		cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
-		cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+		cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 		cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 
 		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
@@ -490,20 +490,20 @@ TEST_CASE("StirredTankModelVarPor consistent initialization with linear binding"
 TEST_CASE("StirredTankModelVarPor consistent initialization with SMA binding", "[CSTRVarPor],[ConsistentInit],[NeedFix]")
 {
 // Optimal values:
-//	const double bindingCell[] = {1.2, 2.0, 1.0, 1.5, 858.034, 66.7896, 3.53273, 2.53153};
-	const double bindingCell[] = {1.2, 2.0, 1.0, 1.5, 860.0, 66.0, 3.5, 2.5};
+	const double bindingCell[] = {1.2, 2.0, 1.0, 1.5, 858.034, 66.7896, 3.53273, 2.53153};
+//	const double bindingCell[] = {1.2, 2.0, 1.0, 1.5, 860.0, 66.0, 3.5, 2.5};
 
 	// Fill state vector with initial values
+	// state structure [4xinlet, 4x liquid, 4x bound, 1x volume]
 	std::vector<double> y(4 + 2 * 4 + 1, 0.0);
-	cadet::test::util::populate(y.data(), [](unsigned int idx) { return std::abs(std::sin(idx * 0.13)) + 1e-4; }, 4);
+	cadet::test::util::populate(y.data(), [](unsigned int idx) { return std::abs(std::sin(idx * 0.13)) + 1e-4; }, 4); //?AB
 	std::copy(bindingCell, bindingCell + 8, y.data() + 4);
 	y[4 + 8] = 1.0;
 
 	checkConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
 		cadet::JsonParameterProvider jpp = createCSTRVarPor(4);
-		cadet::test::addBoundStates(jpp, {1, 1, 1, 1}, 0.5);
+		cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1, 1, 1}, 0.5);
 		cadet::test::addSMABindingModel(jpp, dynamic, 1.2e3, {0.0, 35.5, 1.59, 7.7}, {0.0, 1000.0, 1000.0, 1000.0}, {0.0, 4.7, 5.29, 3.7}, {0.0, 11.83, 10.6, 10.0});
-
 		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
 		cstr->setFlowRates(1.0, 1.0);
 		return cstr;
@@ -524,7 +524,7 @@ TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with lin
 
 	checkSensitivityConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
 		cadet::JsonParameterProvider jpp = createCSTRVarPor(2);
-		cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+		cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 		cadet::test::addLinearBindingModel(jpp, dynamic, {5.0, 4.0}, {2.0, 3.0});
 
 		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);
@@ -556,7 +556,7 @@ TEST_CASE("StirredTankModelVarPor consistent sensitivity initialization with SMA
 
 	checkSensitivityConsistentInitialization([](cadet::IModelBuilder& mb, bool dynamic) -> cadet::model::CSTRModelVarPor* {
 		cadet::JsonParameterProvider jpp = createCSTRVarPor(4);
-		cadet::test::addBoundStates(jpp, {1, 1, 1, 1}, 0.5);
+		cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1, 1, 1}, 0.5);
 		cadet::test::addSMABindingModel(jpp, dynamic, 1.2e3, {0.0, 35.5, 1.59, 7.7}, {0.0, 1000.0, 1000.0, 1000.0}, {0.0, 4.7, 5.29, 3.7}, {0.0, 11.83, 10.6, 10.0});
 
 		cadet::model::CSTRModelVarPor* const cstr = createAndConfigureCSTRVarPor(mb, jpp);

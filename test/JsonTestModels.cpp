@@ -1080,7 +1080,7 @@ json createCSTRVarPorJson(unsigned int nComp)
 	config["INIT_VOLUME"] = 1.0;
 	config["INIT_C"] = std::vector<double>(nComp, 0.0);
 	config["FLOWRATE_FILTER"] = { 0.0 };
-	config["CONST_SOLID_VOLUME"] = 0.0;
+	config["CONST_SOLID_VOLUME"] = 0.5;
 	return config;
 }
 

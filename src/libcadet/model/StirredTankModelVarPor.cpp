@@ -80,7 +80,7 @@ CSTRModelVarPor::~CSTRModelVarPor() CADET_NOEXCEPT
 
 unsigned int CSTRModelVarPor::numDofs() const CADET_NOEXCEPT
 {
-	return 2 * _nComp + _totalBound + 1;
+	return 2 * _nComp + _totalBound + 1; //AB! _nComp + _totalBound + 1 ?
 }
 
 unsigned int CSTRModelVarPor::numPureDofs() const CADET_NOEXCEPT
@@ -312,7 +312,7 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 			_parameters[initParams[i]] = ic + i;
 	}
 
-	_parameters[makeParamId(hashString("INIT_LIQUID_VOLUME"), _unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = _initConditions.data() + _nComp + _totalBound;
+	_parameters[makeParamId(hashString("INIT_VOLUME"), _unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = _initConditions.data() + _nComp + _totalBound;
 
 	// Reconfigure binding model
 	bool bindingConfSuccess = true;
@@ -508,8 +508,8 @@ void CSTRModelVarPor::readInitialCondition(IParameterProvider& paramProvider)
 	else
 		ad::fillAd(_initConditions.data() + _nComp, _totalBound, 0.0);
 
-	if (paramProvider.exists("INIT_LIQUID_VOLUME"))
-		_initConditions[_nComp + _totalBound].setValue(paramProvider.getDouble("INIT_LIQUID_VOLUME"));
+	if (paramProvider.exists("INIT_VOLUME"))
+		_initConditions[_nComp + _totalBound].setValue(paramProvider.getDouble("INIT_VOLUME"));
 	else
 		_initConditions[_nComp + _totalBound].setValue(0.0);
 }

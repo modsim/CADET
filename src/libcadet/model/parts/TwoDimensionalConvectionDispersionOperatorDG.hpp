@@ -213,6 +213,7 @@ protected:
 	Eigen::MatrixXd* _transTildeMr; //!< Main eq. transposed mass matrix adjusted for cylindrical metrics and dispersion
 	Eigen::MatrixXd* _transTildeMrDash; //!< Main eq. transposed mass matrix on quadrature nodes adjusted for cylindrical metrics and dispersion
 	Eigen::MatrixXd* _transTildeSrDash; //!< Main eq. transposed stiffness matrix on quadrature nodes adjusted for cylindrical metrics and dispersion
+	Eigen::MatrixXd* _SrCyl; //!< Main eq. stiffness matrix with cylindrical metrics
 	
 	// todo add active operators. double types serve as cache for the base values, then parameters (e.g. diffusion) need to be added in every residual call
 	//Eigen::Matrix<active, Eigen::Dynamic, Eigen::Dynamic>* _AtildeMr; //!< Active type main eq. mass matrix adjusted for cylindrical metrics and dispersion

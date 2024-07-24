@@ -17,13 +17,12 @@ For a comprehensive description of the FV and DG variants that are implemented i
 Discrete system size
 --------------------
 
-The FV and DG method discretize the continuous (here: spatial) domain of the partial differential algebraic equations (PDAE) into a finite set of discrete points.
+The FV and DG method discretize the continuous spatial domain of the partial differential algebraic equations (PDAE) into a finite set of discrete points.
 Then, a system of (semi-discrete) equations is formulated on those points, resulting in a system of ordinary differential algebraic equations (ODAE).
 The system size and number of unknowns, which we also call degrees of freedom (DoF), is given by the number of (spatial) discrete points (times the number of components for multi-component systems).
 In the following, we will only refer to the spatial DoF.
 
-The ODAE system can be linear or non-linear, depending on the method, which will become important again in the section on smooth solutions.
-The numerical solution becomes more accurate with more discrete points but the wall clock time to solve the equations increases.
+The numerical solution becomes more accurate with more discrete points used, but the compute time required to solve the equations also increases.
 That is, we trade compute time for approximation accuracy.
 
 For the FV scheme, the number of axial discrete points in the column is specified by the number of volume cells ``NCOL``.
@@ -37,7 +36,8 @@ The computational performance of a numerical method depends on its theoretical o
 The order of convergence refers to the rate at which the numerical approximation approaches the exact solution under refinement of the spatial grid.
 Consequently, higher order methods often require less spatial discrete points to compute an approximation of the desired accuracy and can thus be computationally more efficient.
 
-The theoretical order of convergence for the CADET-FV scheme is globally limited by 2. It is locally (except column boundaries) limited by 3 and can be varied by specifying the input in :ref:`flux_reconstruction_methods`.
+The theoretical order of convergence for the CADET-FV scheme is globally limited to 2.
+It is locally (except column boundaries) limited to 3 and can be varied by specifying the input of :ref:`flux_reconstruction_methods`.
 For the CADET-DG scheme, the theoretical order of convergence is :math:`N_d + 1` with :math:`N_d` denoting the polynomial degree, and can thus be user-defined by specifying the field ``POLYDEG`` (and ``PAR_POLYDEG`` for the particles in the GRM).
 
 The theoretical order of convergence is an asymptotic property, however.
@@ -50,14 +50,14 @@ Having the exact solution, we can compute an experimental order of convergence (
         EOC_k = \frac{log(\varepsilon_{k+1} / \varepsilon_{k}) }{log(n_{k} / n_{k+1})},
     \end{aligned}
 
-with :math:`\varepsilon_{k}` and :math:`n_{k}` denoting some error norm and the degrees of freedom of the kth approximation.
+with :math:`\varepsilon_{k}` and :math:`n_{k}` denoting some error norm and the degrees of freedom of the $k$th approximation.
 The EOC approaches the theoretical order of convergence for :math:`k \rightarrow \infty` but is typically lower for underresolved problems.
 High-order methods typically suffer from "start-off" problems, i.e. they typically won't exhibit their theoretical order for very coarse grids.
 That is, increasing the number of discrete points from, e.g., 2 to 4 typically does not improve the solution according to the theoretical order of convergence but by a much smaller EOC.
 
 For smooth solutions, we typically observe an EOC of around 2.5 for the default CADET-FV method and around :math:`N_d` for the CADET-DG method.
 To our experience, DG with :math:`N_d>6` does usually not realize an EOC of :math:`>6` for approximation errors within engineering tolerances, i.e. higher rates only show for excessively small error tolerances that are not relevant in application.
-We thus recommend to choose :math:`3 \leq N_d \leq 5` for using the DG method.
+We thus recommend to choose :math:`3 \leq N_d \leq 5` for the DG method.
 
 One could still think that the higher the order of the method the better the performance, but that is unfortunately not true.
 The most important keyword here is the "smoothness" of the solution.
@@ -100,7 +100,7 @@ We recommend the FV method for
 We recommend the DG method for
 
 - Large problem sizes, e.g., high resolutions and more complex models (i.e. the LRMP and specifically the GRM)
-- Smooth problems, e.g., sufficient dispersion
+- Smooth problems, i.e., sufficient band broadening
 
 Recommendations on DG discretization parameters
 -----------------------------------------------

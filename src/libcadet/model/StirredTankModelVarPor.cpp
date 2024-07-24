@@ -80,7 +80,7 @@ CSTRModelVarPor::~CSTRModelVarPor() CADET_NOEXCEPT
 
 unsigned int CSTRModelVarPor::numDofs() const CADET_NOEXCEPT
 {
-	return 2 * _nComp + _totalBound + 1; //AB! _nComp + _totalBound + 1 ?
+	return 2 * _nComp + _totalBound + 1; 
 }
 
 unsigned int CSTRModelVarPor::numPureDofs() const CADET_NOEXCEPT
@@ -311,7 +311,7 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 		for (unsigned int i = 0; i < _strideBound[type]; ++i)
 			_parameters[initParams[i]] = ic + i;
 	}
-
+	//AB muessten wir nicht INIT_Volume nicht als parameter setzen?
 	_parameters[makeParamId(hashString("INIT_VOLUME"), _unitOpIdx, CompIndep, ParTypeIndep, BoundStateIndep, ReactionIndep, SectionIndep)] = _initConditions.data() + _nComp + _totalBound;
 
 	// Reconfigure binding model
@@ -1222,7 +1222,7 @@ void CSTRModelVarPor::leanConsistentInitialTimeDerivative(double t, double const
 				qDotSum += static_cast<double>(_parTypeVolFrac[type]) * qDotSumType;
 			}
 			//AB cDot[i] = (-resC[i] - vDot * (c[i] + invBeta * qSum) - v * invBeta * qDotSum) / v;
-			cDot[i] = (-resC[i] - vDot * (c[i] + vsolid * qSum) - v * vsolid * qDotSum) / v;
+			cDot[i] = (-resC[i] - vDot * (c[i] + vsolid * qSum) - vsolid * qDotSum) / v;
 		}
 	}
 }
@@ -1249,7 +1249,7 @@ int CSTRModelVarPor::residualImpl(double t, unsigned int secIdx, StateType const
 	// TODO Update residual
 	StateType const* const cIn = y; 
 	StateType const* const c = y + _nComp;
-	const StateType& v = y[2 * _nComp + _totalBound]; //AB Q: Why is v a reference?
+	const StateType& v = y[2 * _nComp + _totalBound]; 
 
 	double const* const cDot = yDot ? yDot + _nComp : nullptr; 
 	const double vDot = yDot ? yDot[2 * _nComp + _totalBound] : 0.0;

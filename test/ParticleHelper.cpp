@@ -121,7 +121,7 @@ namespace
 		replicateFieldDataDouble(jpp, "PAR_POROSITY", factors);
 		replicateFieldDataDouble(jpp, "PORE_ACCESSIBILITY", factors);
 
-		replicateFieldDataDouble(jpp, "INIT_CP", nTypes);
+		replicateFieldDataDouble(jpp, "INIT_C", nTypes);
 		replicateFieldDataDouble(jpp, "INIT_Q", nTypes);
 
 		replicateFieldDataString(jpp, "ADSORPTION_MODEL", nTypes);

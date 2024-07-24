@@ -1080,7 +1080,7 @@ json createCSTRVarPorJson(unsigned int nComp)
 	config["INIT_VOLUME"] = 1.0;
 	config["INIT_C"] = std::vector<double>(nComp, 0.0);
 	config["FLOWRATE_FILTER"] = { 0.0 };
-	config["CONST_SOLID_VOLUME"] = 0.5;
+	config["CONST_SOLID_VOLUME"] = 0.0;
 	return config;
 }
 
@@ -1395,8 +1395,8 @@ cadet::JsonParameterProvider createCSTRVarPorBenchmark(unsigned int nSec, double
 		{
 			json ti;
 
-			ti["ABSTOL"] = 1e-8;
-			ti["RELTOL"] = 1e-6;
+			ti["ABSTOL"] = 1e-12;
+			ti["RELTOL"] = 1e-12;
 			ti["ALGTOL"] = 1e-12;
 			ti["INIT_STEP_SIZE"] = 1e-6;
 			ti["MAX_STEPS"] = 10000;

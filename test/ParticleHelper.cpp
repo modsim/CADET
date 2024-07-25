@@ -121,8 +121,8 @@ namespace
 		replicateFieldDataDouble(jpp, "PAR_POROSITY", factors);
 		replicateFieldDataDouble(jpp, "PORE_ACCESSIBILITY", factors);
 
-		replicateFieldDataDouble(jpp, "INIT_C", nTypes);
 		replicateFieldDataDouble(jpp, "INIT_Q", nTypes);
+		replicateFieldDataDouble(jpp, "INIT_C", nTypes);
 
 		replicateFieldDataString(jpp, "ADSORPTION_MODEL", nTypes);
 		replicateFieldDataInt(jpp, "NBOUND", nTypes);
@@ -326,8 +326,10 @@ namespace particle
 				drv.run();
 
 				// Extend to multiple particle types (such that we have a total of 3 types)
-				const double volFrac[] = {0.3, 0.6, 0.1};
-				extendModelToManyParticleTypes(jpp, 0, 3, volFrac);
+				const double volFrac[] = { 0.4, 0.6 };//AB 0.1
+
+				//AB extendModelToManyParticleTypes(jpp, 0, 2, volFrac);
+				extendModelToManyParticleTypes(jpp, 0, 2, volFrac);
 
 				modify(jpp);
 

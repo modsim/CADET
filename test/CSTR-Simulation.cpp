@@ -191,7 +191,7 @@ TEST_CASE("CSTR vs analytic solution (V decreasing) w/o binding model", "[CSTR],
 	});
 }
 
-TEST_CASE("CSTR vs analytic solution (V constant) with dynamic linear binding", "[CSTR],[Simulation],[NeedFlix]")
+TEST_CASE("CSTR vs analytic solution (V constant) with dynamic linear binding", "[CSTR],[Simulation]")
 {
 	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
@@ -466,7 +466,7 @@ TEST_CASE("CSTR separate identical particle types match", "[CSTR],[Simulation],[
 	cadet::test::particle::testSeparateIdenticalParticleTypes(jpp, 1e-15, 1e-15);
 }
 
-TEST_CASE("CSTR linear binding single particle matches particle distribution", "[CSTR],[Simulation],[ParticleType],[NeedFix]")
+TEST_CASE("CSTR linear binding single particle matches particle distribution", "[CSTR],[Simulation],[ParticleType],[CRASH]")
 {
 	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
 	cadet::test::particle::testLinearMixedParticleTypes(jpp, 5e-8, 5e-5);

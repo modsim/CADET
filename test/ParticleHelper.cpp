@@ -33,15 +33,23 @@
 namespace
 {
 	template <typename T>
-	void replicateData(std::vector<T>& data, unsigned int nTimes)
-	{
-		data.reserve(data.size() * nTimes);
-		const typename std::vector<T>::iterator itEnd = data.end();
-		for (unsigned int i = 0; i < nTimes - 1; ++i)
-		{
-			data.insert(data.end(), data.begin(), itEnd);
-		}
-	}
+    void replicateData(std::vector<T>& data, unsigned int nTimes)
+    {
+        if (data.empty() || nTimes <= 1)
+        {
+            return;
+        }
+
+        std::vector<T> replicatedData;
+        replicatedData.reserve(data.size() * nTimes);
+
+        for (unsigned int i = 0; i < nTimes; ++i)
+        {
+            replicatedData.insert(replicatedData.end(), data.begin(), data.end());
+        }
+
+        data = std::move(replicatedData);
+    }
 
 	void replicateFieldDataDouble(cadet::JsonParameterProvider& jpp, const std::string& field, const std::vector<double>& factors)
 	{
@@ -121,8 +129,8 @@ namespace
 		replicateFieldDataDouble(jpp, "PAR_POROSITY", factors);
 		replicateFieldDataDouble(jpp, "PORE_ACCESSIBILITY", factors);
 
-		replicateFieldDataDouble(jpp, "INIT_Q", nTypes);
 		replicateFieldDataDouble(jpp, "INIT_C", nTypes);
+		replicateFieldDataDouble(jpp, "INIT_Q", nTypes);
 
 		replicateFieldDataString(jpp, "ADSORPTION_MODEL", nTypes);
 		replicateFieldDataInt(jpp, "NBOUND", nTypes);
@@ -326,10 +334,9 @@ namespace particle
 				drv.run();
 
 				// Extend to multiple particle types (such that we have a total of 3 types)
-				const double volFrac[] = { 0.4, 0.6 };//AB 0.1
+				const double volFrac[] = { 0.3, 0.6, 0.1 };
 
-				//AB extendModelToManyParticleTypes(jpp, 0, 2, volFrac);
-				extendModelToManyParticleTypes(jpp, 0, 2, volFrac);
+				extendModelToManyParticleTypes(jpp, 0, 3, volFrac);
 
 				modify(jpp);
 

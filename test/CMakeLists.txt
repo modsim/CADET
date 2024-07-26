@@ -66,6 +66,7 @@ add_executable(testRunner testRunner.cpp JsonTestModels.cpp ColumnTests.cpp Unit
 	GeneralRateModelDG.cpp LumpedRateModelWithPoresDG.cpp LumpedRateModelWithoutPoresDG.cpp
 	RadialGeneralRateModel.cpp RadialLumpedRateModelWithPores.cpp RadialLumpedRateModelWithoutPores.cpp
 	MultiChannelTransportModel.cpp
+	Crystallization.cpp
 	CSTR-Residual.cpp CSTR-Simulation.cpp
 	ConvectionDispersionOperator.cpp
 	CellKernelTests.cpp

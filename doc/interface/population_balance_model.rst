@@ -8,7 +8,7 @@ Typical applications consider crystallization in a :ref:`cstr_config` or, to mod
 
 The particle size domain (internal coordinate) is discretized by the FV method, giving us a finite set of particle sizes under consideration :math:`\{x_1, \dots, x_{N_x}\}`.
 Every particle size considered is treated as an individual component of the unit operation and the field ``NCOMP`` of that unit operation in which the crystallization happens, must be specified accordingly as :math:`N_x + 2`.
-The two additional components account for the solute :math:`c` and solubility :math:`c_\text{eq}`.
+The two additional components account for the solute :math:`c` and solubility :math:`c_\text{eq}`. Users need to make sure that the solute :math:`c` is registered as the first component while the solubility :math:`c_\text{eq}` is registered as the last component.
 *That is, by setting the ``NCOMP`` field, you specify the number of FV cells for the internal coordinate.*
 
 Group /input/model/unit_XXX

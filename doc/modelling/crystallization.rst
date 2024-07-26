@@ -94,7 +94,7 @@ For the external coordinate :math:`z`, Danckwerts boundary conditions are applie
         \left. \left( n v_\text{ax}-D_{ax}\frac{\partial n}{\partial z} \right) \right|_{z=0} = v_\text{ax} n_{in,x}, \qquad \left.\frac{\partial n}{\partial z}\right|_{z=L}=0.
     \end{aligned}
 
-The mass balance equation for the solute :math:`c(t, z)\colon [0,T-\text{end}] \times [0,L] \mapsto \mathbb{R]}^+` is given by
+The mass balance equation for the solute :math:`c(t, z)\colon [0,T-\text{end}] \times [0,L] \mapsto \mathbb{R}^+` is given by
 
 .. math::
 
@@ -114,7 +114,7 @@ As for the particle phase, the solute mass concentration subjects to the Danckwe
 Constitutive equations
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Constitutive equations describe the kinetic processes in the governing equations. The relative supersaturation :math:`s>0` is:
+Constitutive equations describe the kinetic processes in the governing equations. The relative supersaturation :math:`s \geq 0` is:
 
 .. math::
 

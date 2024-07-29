@@ -269,7 +269,25 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 	_constSolidVolume = 0.0;
 	if (paramProvider.exists("CONST_SOLID_VOLUME"))
 		_constSolidVolume = paramProvider.getDouble("CONST_SOLID_VOLUME");
+	else if (paramProvider.exists("POROSITY")) {
 
+		const double eps = paramProvider.getDouble("POROSITY");
+		const double initVolume = paramProvider.getDouble("INIT_VOLUME");
+
+		_constSolidVolume = initVolume /  eps - initVolume;
+		throw InvalidParameterException("Warning: CSTR don't support POROSITY. Instead CADET set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME.");
+	}
+
+	if (paramProvider.exists("POROSITY") && paramProvider.exists("CONST_SOLID_VOLUME")){
+
+		const double eps = paramProvider.exists("POROSITY");
+		const double sVolume = paramProvider.exists("CONST_SOLID_VOLUME");
+		const double initVolume = paramProvider.getDouble("INIT_VOLUME");
+
+		if (sVolume != initVolume / eps - initVolume)
+			throw InvalidParameterException("CSTR don't support POROSITY. And  CONST_SOLID_VOLUME != INIT_VOLUME / POROSITY - INIT_VOLUME.");
+
+	}
 	if (_totalBound > 0)
 	{
 		// Let PAR_TYPE_VOLFRAC default to 1.0 for backwards compatibility
@@ -518,8 +536,12 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 {
 	double * const c = vecStateY + _nComp;
 	const double v = c[_nComp + _totalBound];
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	const double vsolid = static_cast<double>(_constSolidVolume);
 
+	double porosity = 0.0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0){
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
 	// Check if liquid volume is 0
 	if (v == 0.0)
 	{
@@ -597,6 +619,7 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 		int* localMask = static_cast<int*>(qsMask) + _nComp;
 		for (unsigned int type = 0; type < _nParType; localMask += _strideBound[type], ++type)
 		{
+			bool test = !_binding[type]->hasQuasiStationaryReactions();
 			if (!_binding[type]->hasQuasiStationaryReactions())
 				continue;
 
@@ -647,17 +670,18 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 		// Save values of conserved moieties
 		const unsigned int numActiveComp = numMaskActive(mask, _nComp);
 		BufferedArray<double> conservedQuants = tlmAlloc.array<double>(numActiveComp);
-		const double epsQ = 1.0 - porosity;
+		//AB const double epsQ = 1.0 - porosity;
 		unsigned int idx = 0;
 		for (unsigned int comp = 0; comp < _nComp; ++comp)
 		{
 			if (!qsMask[comp])
 				continue;
 
-			conservedQuants[idx] = porosity * c[comp];
+			//AB conservedQuants[idx] = porosity * c[comp];
+			conservedQuants[idx] = v * c[comp];
 			for (unsigned int type = 0; type < _nParType; ++type)
 			{
-				const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);
+				const double factor = vsolid * static_cast<double>(_parTypeVolFrac[type]);
 				for (unsigned int state = 0; state < _nBound[type * _nComp + comp]; ++state)
 				{
 					const unsigned int bndIdx = _offsetParType[type] + _boundOffset[type * _nComp + comp] + state;
@@ -727,18 +751,19 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 				mat.submatrixSetAll(0.0, 0, 0, numActiveComp, probSize);
 
 				unsigned int rIdx = 0;
-				const double epsQ = 1.0 - porosity;
+				//AB const double epsQ = 1.0 - porosity;
 
 				for (unsigned int comp = 0; comp < _nComp; ++comp)
 				{
 					if (!mask.mask[comp])
 						continue;
 
-					mat.native(rIdx, rIdx) = porosity;
+					mat.native(rIdx, rIdx) = v;
 
 					for (unsigned int type = 0; type < _nParType; ++type)
 					{
-						const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);;
+						//AB const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);
+						const double factor = vsolid * static_cast<double>(_parTypeVolFrac[type]);
 
 						const unsigned int offset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + comp];
 						unsigned int bIdx = numActiveComp + numMaskActive(mask, _nComp, _boundOffset[type * _nComp + comp]);
@@ -777,18 +802,20 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 				mat.submatrixSetAll(0.0, 0, 0, numActiveComp, probSize);
 
 				unsigned int rIdx = 0;
-				const double epsQ = 1.0 - porosity;
+				// const double epsQ = 1.0 - porosity;
 
 				for (unsigned int comp = 0; comp < _nComp; ++comp)
 				{
 					if (!mask.mask[comp])
 						continue;
 
-					mat.native(rIdx, rIdx) = porosity;
+					//ABmat.native(rIdx, rIdx) = porosity;
+					mat.native(rIdx, rIdx) = v;
 
 					for (unsigned int type = 0; type < _nParType; ++type)
 					{
-						const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);;
+						//AB const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);;
+						const double factor = vsolid * static_cast<double>(_parTypeVolFrac[type]);
 
 						const unsigned int offset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + comp];
 						unsigned int bIdx = numActiveComp + numMaskActive(mask, _nComp, _boundOffset[type * _nComp + comp]);
@@ -829,18 +856,19 @@ void CSTRModelVarPor::consistentInitialState(const SimulationTime& simTime, doub
 				// Calculate residual of conserved moieties
 				std::fill_n(r, numActiveComp, 0.0);
 				unsigned int rIdx = 0;
-				const double epsQ = 1.0 - porosity;
+				//AB const double epsQ = 1.0 - porosity;
 
 				for (unsigned int comp = 0; comp < _nComp; ++comp)
 				{
 					if (!mask.mask[comp])
 						continue;
 
-					r[rIdx] = porosity * x[rIdx] - conservedQuants[rIdx];
-
+					//AB r[rIdx] = porosity * x[rIdx] - conservedQuants[rIdx];
+					r[rIdx] = v * x[rIdx] - conservedQuants[rIdx];
 					for (unsigned int type = 0; type < _nParType; ++type)
 					{
-						const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);;
+						//AB const double factor = epsQ * static_cast<double>(_parTypeVolFrac[type]);;
+						const double factor = vsolid * static_cast<double>(_parTypeVolFrac[type]);;
 
 						const unsigned int offset = _nComp + _offsetParType[type] + _boundOffset[type * _nComp + comp];
 						unsigned int bIdx = numActiveComp + numMaskActive(mask, _nComp, _boundOffset[type * _nComp + comp]);
@@ -878,7 +906,11 @@ void CSTRModelVarPor::consistentInitialTimeDerivative(const SimulationTime& simT
 	double const* const c = vecStateY + _nComp;
 	double* const cDot = vecStateYdot + _nComp;
 	const double v = c[_nComp + _totalBound];
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	double porosity = 0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0){
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
+	const double vsolid = static_cast<double>(_constSolidVolume);
 
 	const double flowIn = static_cast<double>(_flowRateIn);
 	const double flowOut = static_cast<double>(_flowRateOut);
@@ -955,7 +987,7 @@ void CSTRModelVarPor::consistentInitialTimeDerivative(const SimulationTime& simT
 			{
 				itRow.setAll(0.0);
 
-				// Jacobian of c_i + 1 / beta * [sum_j sum_m d_j q_{i,m}]
+				// Jacobian of c_i + vsolid * [sum_j sum_m d_j q_{i,m}]
 
 				// d/dc_i
 				itRow[0] = 1.0;
@@ -1042,8 +1074,11 @@ void CSTRModelVarPor::leanConsistentInitialState(const SimulationTime& simTime, 
 
 	double * const c = vecStateY + _nComp;
 	const double v = c[_nComp];
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
-
+	double porosity = 0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0) {
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
+	const double vsolid = static_cast<double>(_constSolidVolume);
 	// Check if volume is 0
 	if (v == 0.0)
 	{
@@ -1084,7 +1119,8 @@ void CSTRModelVarPor::leanConsistentInitialState(const SimulationTime& simTime, 
 		for (unsigned int i = 0; i < _nComp; ++i)
 			c[i] = vecStateY[i] * flowIn / denom;;
 
-		const double qFactor = vDot * (1.0 / porosity - 1.0) / denom;
+		//const double qFactor = vDot * (1.0 / porosity - 1.0) / denom;
+		const double qFactor = vDot * vsolid / denom;
 		for (unsigned int type = 0; type < _nParType; ++type)
 		{
 			unsigned int const* const bo = _boundOffset + type * _nComp;
@@ -1112,8 +1148,11 @@ void CSTRModelVarPor::leanConsistentInitialTimeDerivative(double t, double const
 	double* const cDot = vecStateYdot + _nComp;
 	double* const resC = res + _nComp;
 	const double v = c[_nComp];
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
-
+	double porosity = 0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0) {
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
+	const double vsolid = static_cast<double>(_constSolidVolume);
 	const double flowIn = static_cast<double>(_flowRateIn);
 	const double flowOut = static_cast<double>(_flowRateOut);
 
@@ -1166,7 +1205,9 @@ void CSTRModelVarPor::leanConsistentInitialTimeDerivative(double t, double const
 		}
 		else
 		{
-			const double qFactor = 2.0 * vDot * (1.0 / porosity - 1.0) / denom;
+			//AB const double qFactor = 2.0 * vDot * (1.0 / porosity - 1.0) / denom;
+			const double qFactor = 2.0 * vDot * vsolid / denom;
+
 			const double factor = flowIn / denom;
 
 			for (unsigned int i = 0; i < _nComp; ++i)
@@ -1793,13 +1834,17 @@ void CSTRModelVarPor::multiplyWithDerivativeJacobian(const SimulationTime& simTi
 	double const* const c = simState.vecStateY + _nComp;
 	double const* const q = simState.vecStateY + 2 * _nComp;
 	const double v = simState.vecStateY[2 * _nComp + _totalBound];
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
-	const double invBeta = 1.0 / porosity - 1.0;
 	const double timeV = v;
 	const double vSolid = static_cast<double>(_constSolidVolume);
-	const double vInvBeta = timeV * invBeta;
 	double* const r = ret + _nComp;
 	double const* const s = sDot + _nComp;
+
+	double porosity = 0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0) {
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
+	double invBeta = 1.0 / porosity - 1.0;
+	double vInvBeta = timeV * invBeta;
 
 	//  Concentrations: \dot{V} * (c_i + 1 / beta * [sum_j sum_m d_j q_{j,i,m}]) + V * (\dot{c}_i + 1 / beta * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
 	//AB \dot{V} * (c_i) + V * (\dot{c}_i) + vsolid * [sum_j sum_m d_j \dot{q}_{j,i,m}]) - c_{in,i} * F_in + c_i * F_out == 0
@@ -1895,10 +1940,14 @@ void CSTRModelVarPor::addTimeDerivativeJacobian(double t, double alpha, const Co
 	double const* const q = simState.vecStateY + 2 * _nComp;
 	const double v = simState.vecStateY[2 * _nComp + _totalBound];
 	const double vsolid = static_cast<double>(_constSolidVolume);
-	const double porosity = v / (static_cast<double>(_constSolidVolume) + v);
-	const double invBeta = 1.0 / porosity - 1.0;
 	const double timeV = v * alpha;
-	const double vInvBeta = timeV * invBeta;
+
+	double porosity = 0;
+	if ((static_cast<double>(_constSolidVolume) + v) != 0.0) {
+		porosity = v / (static_cast<double>(_constSolidVolume) + v);
+	}
+	double invBeta = 1.0 / porosity - 1.0;
+	double vInvBeta = timeV * invBeta;
 
 	// Assemble Jacobian: dRes / dyDot
 	
@@ -2027,6 +2076,12 @@ int CSTRModelVarPor::Exporter::writeVolume(double* buffer) const
 	*buffer = _data[2 * _nComp + _totalBound];
 	return 1;
 }
+
+/*int CSTRModelVarPor::Exporter::writePorosity(double vSolid, double* buffer) const
+{
+	*buffer = _data[2 * _nComp + _totalBound] / ( vSolid + _data[2 * _nComp + _totalBound]);
+	return 1;
+}*/
 
 int CSTRModelVarPor::Exporter::writeInlet(unsigned int port, double* buffer) const
 {

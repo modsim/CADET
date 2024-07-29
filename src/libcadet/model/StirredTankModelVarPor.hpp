@@ -208,7 +208,8 @@ protected:
 		virtual int writeParticleMobilePhase(unsigned int parType, double* buffer) const { return 0; }
 		virtual int writeParticleFlux(double* buffer) const { return 0; }
 		virtual int writeParticleFlux(unsigned int parType, double* buffer) const { return 0; }
-		virtual int writeVolume(double* buffer) const;
+		virtual int writeVolume( double* buffer) const;
+		//AB virtual int writePorosity(double vsolid,double* buffer) const { return 0; }
 		virtual int writeInlet(unsigned int port, double* buffer) const;
 		virtual int writeInlet(double* buffer) const;
 		virtual int writeOutlet(unsigned int port, double* buffer) const;

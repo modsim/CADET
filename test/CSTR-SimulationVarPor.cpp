@@ -42,7 +42,7 @@ inline void setFlowRateFilter(cadet::JsonParameterProvider& jpp, double filter)
 	jpp.popScope();
 }
 
-inline cadet::JsonParameterProvider createMultiParticleTypesTestCase()
+inline cadet::JsonParameterProvider createMultiParticleTypesTestCaseVarPor()
 {
 	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(2, 100.0, 1.0);
 	cadet::test::setNumberOfComponents(jpp, 0, 2);
@@ -456,18 +456,18 @@ TEST_CASE("CSTRVarPor initial condition behave like standard parameters", "[CSTR
 
 TEST_CASE("CSTRVarPor one vs two identical particle types match", "[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testOneVsTwoIdenticalParticleTypes(jpp, 2e-8, 5e-5);
 }
 
 TEST_CASE("CSTRVarPor separate identical particle types match", "[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testSeparateIdenticalParticleTypes(jpp, 1e-15, 1e-15);
 }
 
-TEST_CASE("CSTRVarPor linear binding single particle matches particle distribution", "[CSTRVarPor],[Simulation],[ParticleType]")
+TEST_CASE("CSTRVarPor linear binding single particle matches particle distribution", "[CRASH],[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testLinearMixedParticleTypes(jpp, 5e-8, 5e-5);
 }

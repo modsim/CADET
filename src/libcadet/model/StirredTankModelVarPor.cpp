@@ -30,6 +30,8 @@
 
 #include <algorithm>
 #include <functional>
+#include <iostream>
+
 
 namespace cadet
 {
@@ -270,12 +272,11 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 	if (paramProvider.exists("CONST_SOLID_VOLUME"))
 		_constSolidVolume = paramProvider.getDouble("CONST_SOLID_VOLUME");
 	else if (paramProvider.exists("POROSITY")) {
-
-		const double eps = paramProvider.getDouble("POROSITY");
-		const double initVolume = paramProvider.getDouble("INIT_VOLUME");
-
-		_constSolidVolume = initVolume /  eps - initVolume;
-		throw InvalidParameterException("Warning: CSTR don't support POROSITY. Instead CADET set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME.");
+		
+		// std::cerr << "Warning: CSTR don't support POROSITY. CADET is trying to set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME." << std::endl;
+		// std::cerr << "Please press ENTER to continue. " << std::endl;
+		// AB std::cin.get(); 
+		throw InvalidParameterException("CSTR don't support POROSITY. Pleas set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME." );
 	}
 
 	if (paramProvider.exists("POROSITY") && paramProvider.exists("CONST_SOLID_VOLUME")){
@@ -285,8 +286,9 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 		const double initVolume = paramProvider.getDouble("INIT_VOLUME");
 
 		if (sVolume != initVolume / eps - initVolume)
-			throw InvalidParameterException("CSTR don't support POROSITY. And  CONST_SOLID_VOLUME != INIT_VOLUME / POROSITY - INIT_VOLUME.");
 
+			// throw InvalidParameterException("CONST_SOLID_VOLUME do not match PORISITY = INIT_VOLUME / (CONST_SOLID_VOLUME + INIT_VOLUME) ");
+			throw InvalidParameterException("CSTR don't support POROSITY. Pleas set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME.");
 	}
 	if (_totalBound > 0)
 	{

@@ -85,7 +85,7 @@ For information on model equations, refer to :ref:`cstr_model`.
    
 ``INIT_VOLUME``
 
-   Initial tank volume
+   Initial liquid volume
 
    **Unit:** :math:`\mathrm{m}^{3}`
    
@@ -113,13 +113,15 @@ For information on model equations, refer to :ref:`cstr_model`.
    **Type:** double  **Range:** :math:`\mathbb{R}`  **Length:** :math:`\texttt{NDOF} / 2\texttt{NDOF}`
    ================  =============================  ====================================================
    
-``POROSITY``
+``CONST_SOLID_VOLUME``
 
-   Porosity :math:`\varepsilon` (defaults to 1)
+   Volume of solid phase 
+
+   **Unit:** :math:`\mathrm{m}^{3}` (defaults to 0)
    
-   ================  ========================  =============
-   **Type:** double  **Range:** :math:`(0,1]`  **Length:** 1
-   ================  ========================  =============
+   ================  =========================  =============
+   **Type:** double  **Range:** :math:`\geq 0`  **Length:** 1
+   ================  =========================  =============
    
 ``FLOWRATE_FILTER``
 

@@ -285,10 +285,11 @@ bool CSTRModelVarPor::configure(IParameterProvider& paramProvider)
 		const double sVolume = paramProvider.exists("CONST_SOLID_VOLUME");
 		const double initVolume = paramProvider.getDouble("INIT_VOLUME");
 
-        if (std::abs(sVolume - (initVolume / eps - initVolume)) <= std::numeric_limits<double>::epsilon() * std::max(std::abs(sVolume), std::abs(initVolume / eps - initVolume))) {
+		if (std::abs(sVolume - (initVolume / eps - initVolume)) <= std::numeric_limits<double>::epsilon() * std::max(std::abs(sVolume), std::abs(initVolume / eps - initVolume))){
 
 			// throw InvalidParameterException("CONST_SOLID_VOLUME do not match PORISITY = INIT_VOLUME / (CONST_SOLID_VOLUME + INIT_VOLUME) ");
 			throw InvalidParameterException("CSTR don't support POROSITY. Pleas set CONST_SOLID_VOLUME = INIT_VOLUME / POROSITY - INIT_VOLUME.");
+		}
 	}
 	if (_totalBound > 0)
 	{

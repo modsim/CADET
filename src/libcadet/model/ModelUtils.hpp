@@ -83,6 +83,17 @@ inline unsigned int numBoundStates(unsigned int const* const nBound, unsigned in
 }
 
 /**
+ * @brief Returns the number of bound states
+ * @param [in] nBound Array with number of bound states for each component
+ * @param [in] nComp Number of components
+ * @return Number of bound states
+ */
+inline unsigned int numExchangeStates(unsigned int nChannel, unsigned int nComp)
+{
+	return nChannel * nComp;
+}
+
+/**
  * @brief Returns the number of binding components (i.e., components that have at least @c 1 bound state)
  * @param [in] nBound Array with number of bound states for each component
  * @param [in] nComp Number of components

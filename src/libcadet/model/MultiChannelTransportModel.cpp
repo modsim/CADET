@@ -18,6 +18,7 @@
 #include "cadet/SolutionRecorder.hpp"
 #include "ConfigurationHelper.hpp"
 #include "model/ReactionModel.hpp"
+#include "model/PhaseTransitionModel.hpp"
 #include "SimulationTypes.hpp"
 
 #include "Stencil.hpp"
@@ -407,13 +408,24 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 		if (_dynReactionBulk->usesParamProviderInDiscretizationConfig())
 			paramProvider.popScope();
 	}
+	bool exchangeConfSuccess = true;
+
+	//_exchange = nullptr
+	std::vector<std::string> exchModelNames = { "NONE" };
+	if (paramProvider.exists("EXCHANGE_MODEL"))
+		exchModelNames = paramProvider.getStringArray("EXCHANGE_MODEL");
+
+
+	bool exchConfSuccess = true;
+	//exchConfSuccess = _exchange->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nChannel , _disc.boundOffset) && bindingConfSuccess; 
+	//Q: + i * _disc.nBound + i * _disc.nComp for LRMP
 
 	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nCol, _disc.nChannel, _dynReactionBulk);
 
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
 
-	return transportSuccess && reactionConfSuccess;
+	return transportSuccess && reactionConfSuccess && exchConfSuccess;
 }
 
 bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
@@ -437,8 +449,29 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		dynReactionConfSuccess = _dynReactionBulk->configure(paramProvider, _unitOpIdx, ParTypeIndep);
 		paramProvider.popScope();
 	}
+	/*
+	if (!_exchange.empty()){
 
-	return transportSuccess && dynReactionConfSuccess;
+		const unsigned int maxChannelStates = *std::max_element(_disc.strideBound, _disc.strideBound + _disc.nParType);
+		std::vector<ParameterId> initParams(maxBoundStates); //Q was macht initParams ? 
+
+		_exchange->fillChannelInitialParameters(initParams.data(), _unitOpIdx, type);
+
+		active* const iq = _initQ.data() + _disc.nBoundBeforeType[type];
+		for (unsigned int i = 0; i < _disc.strideBound[type]; ++i){
+			_parameters[initParams[i]] = iq + i;
+		}
+		
+	}
+	*/
+	bool exchangeConfSuccess = true;
+	/* if (!_exchange.empty()){
+	
+		exchangeConfSuccess = _exchange-> configure(paramProvider, _unitOpIdx, type) && bindingConfSuccess;
+
+	}
+	*/
+	return transportSuccess && dynReactionConfSuccess && exchangeConfSuccess;
 }
 
 

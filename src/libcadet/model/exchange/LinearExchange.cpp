@@ -364,7 +364,7 @@ class LinearExchangeBase : public IPhaseTransitionModel
 {
 public:
 
-	LinearExchangeBase() : _nComp(0), _nChannel(0), _reactionQuasistationarity(0, false) { }
+	LinearExchangeBase() : _nComp(0), _nChannel(0) { }
 	virtual ~LinearExchangeBase() CADET_NOEXCEPT { }
 
 	static const char* identifier() { return ParamHandler_t::identifier(); }
@@ -375,13 +375,7 @@ public:
 	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nChannel, unsigned int const* boundOffset)
 	{
 		_nComp = nComp;
-		_nChannel = nChannel;
-
-		// if (hasMultipleBoundStates(nChannel, nComp))
-		//	 throw InvalidParameterException("Linear exchange model does not support multiple bound states");
-		// Why do we throw this error? (see next line) 
-
-		_reactionQuasistationarity.resize(numExchangeStates(nChannel, nComp), false);
+		_nChannel = nChannel; // nChannel realy int ? -> by not nBoundStates not ?
 
 		return true;
 	}
@@ -390,8 +384,8 @@ public:
 	{
 		_parameters.clear();
 
-		// Read parameters (k_a and k_d)
-		_paramHandler.configure(paramProvider, _nComp, _nChannel);
+		// Read parameters (k_a and k_d,corss section area)
+		_paramHandler.configure(paramProvider, _nComp, _nChannel); // add cross section area in parameter
 
 		// Register parameters
 		_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nChannel);
@@ -399,16 +393,16 @@ public:
 		return true;
 	}
 
-	virtual void fillBoundPhaseInitialParameters(ParameterId* params, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx) const CADET_NOEXCEPT
+	virtual void fillExchangeInitialParameters(ParameterId* params, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx) const CADET_NOEXCEPT
 	{
 		unsigned int ctr = 0;
 		for (int c = 0; c < _nComp; ++c)
 		{
-			for (unsigned int bp = 0; bp < _nChannel[c]; ++bp, ++ctr)
-				params[ctr] = makeParamId(hashString("INIT_Q"), unitOpIdx, c, parTypeIdx, bp, ReactionIndep, SectionIndep);
+			for (unsigned int bp = 0; bp < _nChannel; ++bp, ++ctr)
+				params[ctr] = makeParamId(hashString("INIT_C"), unitOpIdx, c, parTypeIdx, bp, ReactionIndep, SectionIndep);
 		}
 	}
-
+	// ----------------------------------------------------------------------------------------------------------------------------// 
 	virtual std::unordered_map<ParameterId, double> getAllParameterValues() const
 	{
 		std::unordered_map<ParameterId, double> data;

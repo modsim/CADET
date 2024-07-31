@@ -90,7 +90,6 @@ public:
 	static const char* identifier() { return "LINEAR"; }
 
 	LinearParamHandler() CADET_NOEXCEPT : _kA(&_localParams.kA), _kD(&_localParams.kD) { }
-
 	/**
 	 * @brief Reads parameters and verifies them
 	 * @details See IBindingModel::configure() for details.
@@ -126,8 +125,7 @@ public:
 	 * @param [in] nComp Number of components
 	 * @param [in] nBoundStates Array with number of bound states for each component
 	 */
-	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) \
-	{
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nBoundStates) {
 		_kA.reserve(numElem, numSlices, nComp, nBoundStates);
 		_kD.reserve(numElem, numSlices, nComp, nBoundStates);
 	}
@@ -389,7 +387,7 @@ protected:
  *          See @cite Guiochon2006
  * @tparam ParamHandler_t Type that can add support for external function dependence
  */
-template <class ParamHandler_t>
+template <class ParamHandler_t> // nicht fuer LinearExchange
 class LinearBindingBase : public IBindingModel
 {
 public:

@@ -479,6 +479,8 @@ unsigned int MultiChannelTransportModel::threadLocalMemorySize() const CADET_NOE
 {
 	LinearMemorySizer lms;
 
+	//Add exchange memory
+
 	// Memory for residualImpl()
 	if (_dynReactionBulk && _dynReactionBulk->requiresWorkspace())
 		lms.fitBlock(_dynReactionBulk->workspaceSize(_disc.nComp, 0, nullptr));
@@ -611,7 +613,7 @@ int MultiChannelTransportModel::residual(const SimulationTime& simTime, const Co
 	// Evaluate residual do not compute Jacobian or parameter sensitivities
 	return residualImpl<double, double, double, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, res, threadLocalMem);
 }
-
+//Q Do we need different types of residual calculation ?
 int MultiChannelTransportModel::jacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
@@ -871,6 +873,7 @@ void MultiChannelTransportModel::multiplyWithJacobian(const SimulationTime& simT
  */
 void MultiChannelTransportModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
 {
+	// Add Exchange here
 	_convDispOp.multiplyWithDerivativeJacobian(simTime, sDot, ret);
 
 	// Handle inlet DOFs (all algebraic)
@@ -879,6 +882,7 @@ void MultiChannelTransportModel::multiplyWithDerivativeJacobian(const Simulation
 
 void MultiChannelTransportModel::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
 {
+	// Add exchange here
 }
 
 unsigned int MultiChannelTransportModel::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT

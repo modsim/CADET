@@ -908,6 +908,57 @@ CADET_BINDINGTEST("SASKA", "EXT_SASKA", (1,1), (1,0,1), (1.0, 2.0, 0.0, 0.0), (1
 	1e-10, 1e-10, CADET_NONBINDING_LIQUIDPHASE_COMP_USED, CADET_COMPARE_BINDING_VS_NONBINDING)
 
 
+CADET_BINDINGTEST("MULTI_COMPONENT_LDF_FREUNDLICH", "EXT_MULTI_COMPONENT_LDF_FREUNDLICH", (1,1), (1,0,1), (1.0, 2.0, 0.0, 0.0), (1.0, 3.0, 2.0, 0.0, 0.0), \
+	R"json( "MCLDFFRL_KLDF": [1.14, 2.0],
+	        "MCLDFFRL_KF": [1.3, 0.9],
+	        "MCLDFFRL_EXP": [0.8, 3.5],
+	        "MCLDFFRL_A": [3.0, 2.2, 1.5, 0.5],
+	        "MCLDFFRL_TAU": 0.1
+	)json", \
+	R"json( "MCLDFFRL_KLDF": [1.14, 1.0, 2.0],
+	        "MCLDFFRL_KF": [1.3, 2.0, 0.9],
+	        "MCLDFFRL_EXP": [0.8, 3.0, 3.5],
+	        "MCLDFFRL_A": [2.2, 1.1, 0.4, 0.1, 0.94, 2.8, 0.5, 1.2, 2.4],
+	        "MCLDFFRL_TAU": 0.1
+	)json", \
+	R"json( "EXT_MCLDFFRL_KLDF": [0.0, 0.0],
+	        "EXT_MCLDFFRL_KLDF_T": [1.14, 2.0],
+	        "EXT_MCLDFFRL_KLDF_TT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_KLDF_TTT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_KF": [0.0, 0.0],
+	        "EXT_MCLDFFRL_KF_T": [1.3, 0.9],
+	        "EXT_MCLDFFRL_KF_TT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_KF_TTT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP": [0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP_T": [0.8, 3.5],
+	        "EXT_MCLDFFRL_EXP_TT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP_TTT": [0.0, 0.0],
+	        "EXT_MCLDFFRL_A": [0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_A_T": [3.0, 2.2, 1.5, 0.5],
+	        "EXT_MCLDFFRL_A_TT": [0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_A_TTT": [0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_TAU": 0.1
+	)json", \
+	R"json( "EXT_MCLDFFRL_KLDF": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_KLDF_T": [1.14, 1.0, 2.0],
+	        "EXT_MCLDFFRL_KLDF_TT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_KLDF_TTT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_KF": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_KF_T": [1.3, 2.0, 0.9],
+	        "EXT_MCLDFFRL_KF_TT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_KF_TTT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP_T": [0.8, 3.0, 3.5],
+	        "EXT_MCLDFFRL_EXP_TT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_EXP_TTT": [0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_A": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_A_T": [2.2, 1.1, 0.4, 0.1, 0.94, 2.8, 0.5, 1.2, 2.4],
+	        "EXT_MCLDFFRL_A_TT": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_A_TTT": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+	        "EXT_MCLDFFRL_TAU": 0.1
+	)json", \
+	1e-10, 1e-10, CADET_NONBINDING_LIQUIDPHASE_COMP_USED, CADET_DONT_COMPARE_BINDING_VS_NONBINDING)
+
 CADET_BINDINGTEST("MULTI_COMPONENT_SPREADING", "EXT_MULTI_COMPONENT_SPREADING", (2,2), (2,0,2), (1.2, 1.5, 0.1, 0.2, 0.3, 0.4), (1.2, 0.5, 1.5, 0.1, 0.2, 0.3, 0.4), \
 	R"json( "MCSPR_KA": [1.14, 2.0, 1.5, 1.9],
 	        "MCSPR_KD": [0.004, 0.008, 0.006, 0.002],

@@ -908,6 +908,66 @@ CADET_BINDINGTEST("SASKA", "EXT_SASKA", (1,1), (1,0,1), (1.0, 2.0, 0.0, 0.0), (1
 	1e-10, 1e-10, CADET_NONBINDING_LIQUIDPHASE_COMP_USED, CADET_COMPARE_BINDING_VS_NONBINDING)
 
 
+CADET_BINDINGTEST("MULTI_COMPONENT_SIPS", "EXT_MULTI_COMPONENT_SIPS", (1,1), (1,0,1), (1.0, 0.0, 0.0, 0.0), (1.0, 3.0, 0.0, 0.0, 0.0), \
+	R"json( "SIPS_KA": [1.14, 2.0],
+	        "SIPS_KD": [0.004, 0.008],
+	        "SIPS_QMAX": [4.88, 3.5],
+	        "SIPS_EXP": [1.2, 0.7],
+	        "SIPS_REFC0": 2.0,
+	        "SIPS_REFQ": 1.1,
+	        "SIPS_LINEAR_THRESHOLD": 1e-10
+	)json", \
+	R"json( "SIPS_KA": [1.14, 1.0, 2.0],
+	        "SIPS_KD": [0.004, 2.0, 0.008],
+	        "SIPS_QMAX": [4.88, 3.0, 3.5],
+	        "SIPS_EXP": [1.2, 1.5,  0.7],
+	        "SIPS_REFC0": 2.0,
+	        "SIPS_REFQ": 1.1,
+	        "SIPS_LINEAR_THRESHOLD": 1e-10
+	)json", \
+	R"json( "EXT_SIPS_KA": [0.0, 0.0],
+	        "EXT_SIPS_KA_T": [1.14, 2.0],
+	        "EXT_SIPS_KA_TT": [0.0, 0.0],
+	        "EXT_SIPS_KA_TTT": [0.0, 0.0],
+	        "EXT_SIPS_KD": [0.0, 0.0],
+	        "EXT_SIPS_KD_T": [0.004, 0.008],
+	        "EXT_SIPS_KD_TT": [0.0, 0.0],
+	        "EXT_SIPS_KD_TTT": [0.0, 0.0],
+	        "EXT_SIPS_QMAX": [0.0, 0.0],
+	        "EXT_SIPS_QMAX_T": [4.88, 3.5],
+	        "EXT_SIPS_QMAX_TT": [0.0, 0.0],
+	        "EXT_SIPS_QMAX_TTT": [0.0, 0.0],
+	        "EXT_SIPS_EXP": [0.0, 0.0],
+	        "EXT_SIPS_EXP_T": [1.2, 0.7],
+	        "EXT_SIPS_EXP_TT": [0.0, 0.0],
+	        "EXT_SIPS_EXP_TTT": [0.0, 0.0],
+	        "EXT_SIPS_REFC0": 2.0,
+	        "EXT_SIPS_REFQ": 1.1,
+	        "EXT_SIPS_LINEAR_THRESHOLD": 1e-10
+	)json", \
+	R"json( "EXT_SIPS_KA": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_KA_T": [1.14, 1.0, 2.0],
+	        "EXT_SIPS_KA_TT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_KA_TTT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_KD": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_KD_T": [0.004, 2.0, 0.008],
+	        "EXT_SIPS_KD_TT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_KD_TTT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_QMAX": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_QMAX_T": [4.88, 3.0, 3.5],
+	        "EXT_SIPS_QMAX_TT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_QMAX_TTT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_EXP": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_EXP_T": [1.2, 1.5, 0.7],
+	        "EXT_SIPS_EXP_TT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_EXP_TTT": [0.0, 0.0, 0.0],
+	        "EXT_SIPS_REFC0": 2.0,
+	        "EXT_SIPS_REFQ": 1.1,
+	        "EXT_SIPS_LINEAR_THRESHOLD": 1e-10
+	)json", \
+	1e-10, 1e-10, CADET_NONBINDING_LIQUIDPHASE_COMP_UNUSED, CADET_COMPARE_BINDING_VS_NONBINDING)
+
+
 CADET_BINDINGTEST("MULTI_COMPONENT_SPREADING", "EXT_MULTI_COMPONENT_SPREADING", (2,2), (2,0,2), (1.2, 1.5, 0.1, 0.2, 0.3, 0.4), (1.2, 0.5, 1.5, 0.1, 0.2, 0.3, 0.4), \
 	R"json( "MCSPR_KA": [1.14, 2.0, 1.5, 1.9],
 	        "MCSPR_KD": [0.004, 0.008, 0.006, 0.002],

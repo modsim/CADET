@@ -258,14 +258,14 @@ bool LumpedRateModelWithoutPores<ConvDispOperator>::configureModelDiscretization
 	clearDynamicReactionModels();
 	_dynReaction.push_back(nullptr);
 
-	if (paramProvider.exists("REACTION_MODEL"))
+	if (paramProvider.exists("REACTION_MODEL_BULK"))
 	{
-		_dynReaction[0] = helper.createDynamicReactionModel(paramProvider.getString("REACTION_MODEL"));
+		_dynReaction[0] = helper.createDynamicReactionModel(paramProvider.getString("REACTION_MODEL_BULK"));
 		if (!_dynReaction[0])
-			throw InvalidParameterException("Unknown dynamic reaction model " + paramProvider.getString("REACTION_MODEL"));
+			throw InvalidParameterException("Unknown dynamic reaction model " + paramProvider.getString("REACTION_MODEL_BULK"));
 
 		if (_dynReaction[0]->usesParamProviderInDiscretizationConfig())
-			paramProvider.pushScope("reaction");
+			paramProvider.pushScope("reaction_bulk");
 
 		reactionConfSuccess = _dynReaction[0]->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nBound, _disc.boundOffset);
 

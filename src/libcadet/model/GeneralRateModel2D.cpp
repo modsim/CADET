@@ -667,9 +667,9 @@ bool GeneralRateModel2D::configureModelDiscretization(IParameterProvider& paramP
 	bool reactionConfSuccess = true;
 
 	_dynReactionBulk = nullptr;
-	if (paramProvider.exists("REACTION_MODEL"))
+	if (paramProvider.exists("REACTION_MODEL_BULK"))
 	{
-		const std::string dynReactName = paramProvider.getString("REACTION_MODEL");
+		const std::string dynReactName = paramProvider.getString("REACTION_MODEL_BULK");
 		_dynReactionBulk = helper.createDynamicReactionModel(dynReactName);
 		if (!_dynReactionBulk)
 			throw InvalidParameterException("Unknown dynamic reaction model " + dynReactName);

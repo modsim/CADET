@@ -67,14 +67,14 @@ public:
 	 * @details See IexchangeModel::configure() for details.
 	 * @param [in] paramProvider IParameterProvider used for reading parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @return @c true if the parameters were read and validated successfully, otherwise @c false
 	 */
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nChannelStates)
+	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nChannel)
 	{
-		_kA.configure("LIN_KA", paramProvider, nComp, nChannelStates);
-		_kD.configure("LIN_KD", paramProvider, nComp, nChannelStates);
-		return validateConfig(nComp, nChannelStates);
+		_kA.configure("LIN_KA", paramProvider, nComp, nChannel);
+		_kD.configure("LIN_KD", paramProvider, nComp, nChannel);
+		return validateConfig(nComp, nChannel);
 	}
 
 	/**
@@ -82,12 +82,12 @@ public:
 	 * @param [in,out] parameters Map in which the parameters are stored
 	 * @param [in] unitOpIdx Index of the unit operation used for registering the parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 */
-	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nChannelStates)
+	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nChannel)
 	{
-		_kA.registerParam("LIN_KA", parameters, unitOpIdx, parTypeIdx, nComp, nChannelStates);
-		_kD.registerParam("LIN_KD", parameters, unitOpIdx, parTypeIdx, nComp, nChannelStates);
+		_kA.registerParam("LIN_KA", parameters, unitOpIdx, parTypeIdx, nComp, nChannel);
+		_kD.registerParam("LIN_KD", parameters, unitOpIdx, parTypeIdx, nComp, nChannel);
 	}
 
 	/**
@@ -95,12 +95,12 @@ public:
 	 * @param [in] numElem Number of elements (total)
 	 * @param [in] numSlices Number of slices / exchange site types
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 */
-	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nChannelStates) \
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nChannel) \
 	{
-		_kA.reserve(numElem, numSlices, nComp, nChannelStates);
-		_kD.reserve(numElem, numSlices, nComp, nChannelStates);
+		_kA.reserve(numElem, numSlices, nComp, nChannel);
+		_kD.reserve(numElem, numSlices, nComp, nChannel);
 	}
 
 	/**
@@ -110,11 +110,11 @@ public:
 	 * @param [in] r Radial coordinate in the bead
 	 * @param [in] secIdx Index of the current section
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @param [in,out] workSpace Memory buffer for updated data
 	 * @return Externally dependent parameter values
 	 */
-	inline ParamsHandle update(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannelStates, LinearBufferAllocator& workSpace) const
+	inline ParamsHandle update(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannel, LinearBufferAllocator& workSpace) const
 	{
 		return &_localParams;
 	}
@@ -126,11 +126,11 @@ public:
 	 * @param [in] r Radial coordinate in the bead
 	 * @param [in] secIdx Index of the current section
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @param [in,out] workSpace Memory buffer for updated data
 	 * @return Time derivatives of externally dependent parameters
 	 */
-	inline std::tuple<ParamsHandle, ParamsHandle> updateTimeDerivative(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannelStates, LinearBufferAllocator& workSpace) const
+	inline std::tuple<ParamsHandle, ParamsHandle> updateTimeDerivative(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannel, LinearBufferAllocator& workSpace) const
 	{
 		return std::make_tuple<ParamsHandle, ParamsHandle>(&_localParams, nullptr);
 	}
@@ -140,10 +140,10 @@ protected:
 	/**
 	 * @brief Validates recently read parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @return @c true if the parameters were validated successfully, otherwise @c false
 	 */
-	inline bool validateConfig(unsigned int nComp, unsigned int const* nChannelStates)
+	inline bool validateConfig(unsigned int nComp, unsigned int const* nChannel)
 	{
 		if ((_kA.size() != _kD.size()) || (_kA.size() < nComp))
 			throw InvalidParameterException("LIN_KA and LIN_KD have to have the same size");
@@ -196,17 +196,17 @@ public:
 	 * @details See IBindingModel::configure() for details.
 	 * @param [in] paramProvider IParameterProvider used for reading parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @return @c true if the parameters were read and validated successfully, otherwise @c false
 	 */
-	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nChannelStates)
+	inline bool configure(IParameterProvider& paramProvider, unsigned int nComp, unsigned int const* nChannel)
 	{
-		_kA.configure("LIN_KA", paramProvider, nComp, nChannelStates);
-		_kD.configure("LIN_KD", paramProvider, nComp, nChannelStates);
+		_kA.configure("LIN_KA", paramProvider, nComp, nChannel);
+		_kD.configure("LIN_KD", paramProvider, nComp, nChannel);
 		
 		// Number of externally dependent parameters (2) needs to be given to ExternalParamHandlerBase::configure()
 		ExternalParamHandlerBase::configure(paramProvider, 2);
-		return validateConfig(nComp, nChannelStates);
+		return validateConfig(nComp, nChannel);
 	}
 
 	/**
@@ -214,12 +214,12 @@ public:
 	 * @param [in,out] parameters Map in which the parameters are stored
 	 * @param [in] unitOpIdx Index of the unit operation used for registering the parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 */
-	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nChannelStates)
+	inline void registerParameters(std::unordered_map<ParameterId, active*>& parameters, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx, unsigned int nComp, unsigned int const* nChannel)
 	{
-		_kA.registerParam("LIN_KA", parameters, unitOpIdx, parTypeIdx, nComp, nChannelStates);
-		_kD.registerParam("LIN_KD", parameters, unitOpIdx, parTypeIdx, nComp, nChannelStates);
+		_kA.registerParam("LIN_KA", parameters, unitOpIdx, parTypeIdx, nComp, nChannel);
+		_kD.registerParam("LIN_KD", parameters, unitOpIdx, parTypeIdx, nComp, nChannel);
 	}
 
 	/**
@@ -227,12 +227,12 @@ public:
 	 * @param [in] numElem Number of elements (total)
 	 * @param [in] numSlices Number of slices / exchange site types
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 */
-	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nChannelStates) \
+	inline void reserve(unsigned int numElem, unsigned int numSlices, unsigned int nComp, unsigned int const* nChannel) \
 	{
-		_kA.reserve(numElem, numSlices, nComp, nChannelStates);
-		_kD.reserve(numElem, numSlices, nComp, nChannelStates);
+		_kA.reserve(numElem, numSlices, nComp, nChannel);
+		_kD.reserve(numElem, numSlices, nComp, nChannel);
 	}
 
 	/**
@@ -243,11 +243,11 @@ public:
 	 * @param [in] r Radial coordinate in the bead
 	 * @param [in] secIdx Index of the current section
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @param [in,out] workSpace Memory buffer for updated data
 	 * @return Externally dependent parameter values
 	 */
-	inline ParamsHandle update(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannelStates, LinearBufferAllocator& workSpace) const
+	inline ParamsHandle update(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannel, LinearBufferAllocator& workSpace) const
 	{
 		// Allocate params_t and buffer for function evaluation
 		BufferedScalar<params_t> localParams = workSpace.scalar<params_t>();
@@ -258,10 +258,10 @@ public:
 
 		// Prepare the buffer for the data and update the data
 		_kA.prepareCache(localParams->kA, workSpace);
-		_kA.update(cadet::util::dataOfLocalVersion(localParams->kA), extFunBuffer[0], nComp, nChannelStates);
+		_kA.update(cadet::util::dataOfLocalVersion(localParams->kA), extFunBuffer[0], nComp, nChannel);
 
 		_kD.prepareCache(localParams->kD, workSpace);
-		_kD.update(cadet::util::dataOfLocalVersion(localParams->kD), extFunBuffer[1], nComp, nChannelStates);
+		_kD.update(cadet::util::dataOfLocalVersion(localParams->kD), extFunBuffer[1], nComp, nChannel);
 
 		return localParams;
 	}
@@ -274,11 +274,11 @@ public:
 	 * @param [in] r Radial coordinate in the bead
 	 * @param [in] secIdx Index of the current section
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @param [in,out] workSpace Memory buffer for updated data
 	 * @return Tuple with externally dependent parameter values and their time derivatives
 	 */
-	inline std::tuple<ParamsHandle, ParamsHandle> updateTimeDerivative(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannelStates, LinearBufferAllocator& workSpace) const
+	inline std::tuple<ParamsHandle, ParamsHandle> updateTimeDerivative(double t, unsigned int secIdx, const ColumnPosition& colPos, unsigned int nComp, unsigned int const* nChannel, LinearBufferAllocator& workSpace) const
 	{
 		// Allocate params_t for parameters and their time derivatives
 		BufferedScalar<params_t> localParams = workSpace.scalar<params_t>();
@@ -294,16 +294,16 @@ public:
 
 		// Prepare the buffer for the data and update the data
 		_kA.prepareCache(localParams->kA, workSpace);
-		_kA.update(cadet::util::dataOfLocalVersion(localParams->kA), extFunBuffer[0], nComp, nChannelStates);
+		_kA.update(cadet::util::dataOfLocalVersion(localParams->kA), extFunBuffer[0], nComp, nChannel);
 
 		_kA.prepareCache(p->kA, workSpace);
-		_kA.updateTimeDerivative(cadet::util::dataOfLocalVersion(p->kA), extFunBuffer[0], extDerivBuffer[0], nComp, nChannelStates);
+		_kA.updateTimeDerivative(cadet::util::dataOfLocalVersion(p->kA), extFunBuffer[0], extDerivBuffer[0], nComp, nChannel);
 
 		_kD.prepareCache(localParams->kD, workSpace);
-		_kD.update(cadet::util::dataOfLocalVersion(localParams->kD), extFunBuffer[1], nComp, nChannelStates);
+		_kD.update(cadet::util::dataOfLocalVersion(localParams->kD), extFunBuffer[1], nComp, nChannel);
 
 		_kD.prepareCache(p->kD, workSpace);
-		_kD.updateTimeDerivative(cadet::util::dataOfLocalVersion(p->kD), extFunBuffer[1], extDerivBuffer[1], nComp, nChannelStates);
+		_kD.updateTimeDerivative(cadet::util::dataOfLocalVersion(p->kD), extFunBuffer[1], extDerivBuffer[1], nComp, nChannel);
 
 		return std::make_tuple<ParamsHandle, ParamsHandle>(std::move(localParams), std::move(p));;
 	}
@@ -313,10 +313,10 @@ public:
 	 * @details Memory size in bytes.
 	 * @param [in] nComp Number of components
 	 * @param [in] totalNumBoundStates Total number of bound states
-	 * @param [in] nChannelStates Array with bound states for each component
+	 * @param [in] nChannel Array with bound states for each component
 	 * @return Memory size in bytes
 	 */
-	inline std::size_t cacheSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nChannelStates) const CADET_NOEXCEPT
+	inline std::size_t cacheSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nChannel) const CADET_NOEXCEPT
 	{
 		// Required buffer memory:
 		//  + params_t object
@@ -326,7 +326,7 @@ public:
 		//  + buffer for parameter time derivatives (memory for _kA data + memory for _kD data)
 		return 2 * sizeof(params_t) + alignof(params_t) 
 			+ 2 * 2 * sizeof(double) + alignof(double) 
-			+ 2 * (_kA.additionalDynamicMemory(nComp, totalNumBoundStates, nChannelStates) + _kD.additionalDynamicMemory(nComp, totalNumBoundStates, nChannelStates));
+			+ 2 * (_kA.additionalDynamicMemory(nComp, totalNumBoundStates, nChannel) + _kD.additionalDynamicMemory(nComp, totalNumBoundStates, nChannel));
 	}
 
 protected:
@@ -334,10 +334,10 @@ protected:
 	/**
 	 * @brief Validates recently read parameters
 	 * @param [in] nComp Number of components
-	 * @param [in] nChannelStates Array with number of bound states for each component
+	 * @param [in] nChannel Array with number of bound states for each component
 	 * @return @c true if the parameters were validated successfully, otherwise @c false
 	 */
-	inline bool validateConfig(unsigned int nComp, unsigned int const* nChannelStates)
+	inline bool validateConfig(unsigned int nComp, unsigned int const* nChannel)
 	{
 		if ((_kA.size() != _kD.size()) || (_kA.size() < nComp))
 			throw InvalidParameterException("LIN_KA and LIN_KD have to have the same size");
@@ -384,8 +384,8 @@ public:
 	{
 		_parameters.clear();
 
-		// Read parameters (k_a and k_d,corss section area)
-		_paramHandler.configure(paramProvider, _nComp, _nChannel); // add cross section area in parameter
+		// Read parameters (k_a and k_d)
+		_paramHandler.configure(paramProvider, _nComp, _nChannel);
 
 		// Register parameters
 		_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nChannel);
@@ -449,9 +449,9 @@ public:
 		return nullptr;
 	}
 
-	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nChannelStates) const CADET_NOEXCEPT
+	virtual unsigned int workspaceSize(unsigned int nComp, unsigned int totalNumBoundStates, unsigned int const* nChannel) const CADET_NOEXCEPT
 	{
-		return _paramHandler.cacheSize(nComp, totalNumBoundStates, nChannelStates);
+		return _paramHandler.cacheSize(nComp, totalNumBoundStates, nChannel);
 	}
 
 	virtual void setExternalFunctions(IExternalFunction** extFuns, unsigned int size) { _paramHandler.setExternalFunctions(extFuns, size); }

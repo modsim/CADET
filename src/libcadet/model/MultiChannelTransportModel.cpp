@@ -449,28 +449,24 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		dynReactionConfSuccess = _dynReactionBulk->configure(paramProvider, _unitOpIdx, ParTypeIndep);
 		paramProvider.popScope();
 	}
-	/*
-	if (!_exchange.empty()){
-
-		const unsigned int maxChannelStates = *std::max_element(_disc.strideBound, _disc.strideBound + _disc.nParType);
-		std::vector<ParameterId> initParams(maxBoundStates); //Q was macht initParams ? 
-
-		_exchange->fillChannelInitialParameters(initParams.data(), _unitOpIdx, type);
-
-		active* const iq = _initQ.data() + _disc.nBoundBeforeType[type];
-		for (unsigned int i = 0; i < _disc.strideBound[type]; ++i){
-			_parameters[initParams[i]] = iq + i;
-		}
-		
-	}
-	*/
-	bool exchangeConfSuccess = true;
-	/* if (!_exchange.empty()){
 	
-		exchangeConfSuccess = _exchange-> configure(paramProvider, _unitOpIdx, type) && bindingConfSuccess;
 
+	if (_exchange[0]){
+
+		std::vector<ParameterId> initParams(_disc.nChannel); //Q was macht initParams ? brauche ich maxBoundStates ?
+		_exchange[0]->fillChannelInitialParameters(initParams.data(), _unitOpIdx);
 	}
-	*/
+		
+
+	// Reconfigure exchange model
+	bool exchangeConfSuccess = true;
+	if (_exchange[0] && paramProvider.exists("exchange") && _exchange[0]->requiresConfiguration()){
+
+		paramProvider.pushScope("exchange");
+		exchangeConfSuccess = _exchange[0]->configure(paramProvider, _unitOpIdx, cadet::ParTypeIndep); // Brauche ich PartypeIndep ?
+		paramProvider.popScope();
+	}
+	
 	return transportSuccess && dynReactionConfSuccess && exchangeConfSuccess;
 }
 

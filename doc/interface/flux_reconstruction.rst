@@ -1,4 +1,4 @@
-.. _flux_restruction_methods:
+.. _flux_reconstruction_methods:
 
 Flux reconstruction methods
 ===========================

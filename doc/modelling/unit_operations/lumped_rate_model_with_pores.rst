@@ -8,6 +8,7 @@ The particle phase :math:`c^p_j` is still there, but no mass transfer happens ex
 Hence, the model equations are given by
 
 .. math::
+    :label: ModelColumnGRM
 
     \begin{aligned}
         \frac{\partial c^\ell_i}{\partial t} &= -u \frac{\partial c^\ell_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^\ell_i}{\partial z^2} - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^\ell_i - c^p_{j,i} \right] + f_{\text{react},i}^\ell\left(c^\ell\right),
@@ -73,12 +74,13 @@ The main assumptions are:
 Consider a hollow (double walled) column with inner column diameter :math:`\mathrm{P}_c>0` and outer diameter :math:`\mathrm{P}>\mathrm{P}_c`, filled with spherical beads of (possibly) multiple types with radius :math:`r_{p,j} \ll L` (see :numref:`ModelGRMColumn`), where :math:`j` is the particle type index. The mass balance in the interstitial column volume is described by
 
 .. math::
+    :label: ModelRadialColumnGRM
 
     \begin{aligned}
         \frac{\partial c^\ell_i}{\partial t} &= -\frac{u}{\rho} \frac{\partial c^\ell_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho} \left( \rho \frac{\partial c^\ell_i}{\partial \rho} \right) - \frac{1}{\beta_c} \sum_{j} d_j \frac{3}{r_{p,j}} k_{f,j,i}\left[ c^\ell_i - c^p_{j,i} \right] + f_{\text{react},i}^\ell\left(c^\ell\right),
     \end{aligned}
 
-The equations are complemented by Eq. :ref:`ModelParticleLRMP` and the Danckwerts boundary conditions :cite:`Danckwerts1953`
+The equations are complemented by Eq. :eq:`ModelParticleLRMP` and the Danckwerts boundary conditions :cite:`Danckwerts1953`
 
 .. math::
 

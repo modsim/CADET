@@ -17,6 +17,7 @@ The phase ratio is denoted by :math:`\beta_t = \varepsilon_t / (1 - \varepsilon_
 The model equations are given by
 
 .. math::
+    :label: ModelColumnLRM
 
     \begin{aligned}
         \frac{\partial c^\ell_i}{\partial t} + \frac{1}{\beta_t} \frac{\partial}{\partial t} \sum_{m_i} c^s_{i,m_i} &= -u \frac{\partial c^\ell_i}{\partial z} + D_{\text{ax},i} \frac{\partial^2 c^\ell_i}{\partial z^2} + f_{\text{react},i}^\ell\left( c^\ell, c^s \right) + \frac{1}{\beta_t} f_{\text{react},i}^s\left( c^\ell, c^s \right),
@@ -73,7 +74,7 @@ The main assumptions are:
 Consider a hollow (double walled) column with inner column diameter :math:`\mathrm{P}_c>0` and outer diameter :math:`\mathrm{P}>\mathrm{P}_c`, filled with spherical beads. The mass balance in the interstitial column volume is described by
 
 .. math::
-    :label: ModelRadialColumn
+    :label: ModelRadialColumnLRM
 
     \begin{aligned}
         \frac{\partial c^\ell_i}{\partial t} + \frac{1}{\beta_t} \frac{\partial}{\partial t} \sum_{m_i} c^s_{i,m_i} &= -\frac{u}{\rho} \frac{\partial c^\ell_i}{\partial \rho} + D_{\text{rad},i} \frac{1}{\rho} \frac{\partial}{\partial \rho}  \left( \rho \frac{\partial c^\ell_i}{\partial \rho} \right) + f_{\text{react},i}^\ell\left( c^\ell, c^s \right) + \frac{1}{\beta_t} f_{\text{react},i}^s\left( c^\ell, c^s \right),

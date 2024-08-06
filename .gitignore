@@ -71,6 +71,8 @@ doc/tex/*.gitinfo
 doc/tex/*.synctex.gz
 doc/tex/*.pdf
 doc/tex/docs/*.aux
+doc/doxyoutput/
+doc/api/
 
 ### Ignore IDE files ###
 .vs/

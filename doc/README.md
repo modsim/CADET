@@ -1,21 +1,44 @@
-## CADET Documentation
+# CADET Documentation
 
+This document provides instructions for building CADET documentation locally and for all releases and branches.
 
-To build the documentation locally, install sphinx and other dependencies by running
+## Prerequisites
 
-```
-pip install -r requirements.txt
+Ensure you have [mamba](https://mamba.readthedocs.io/en/latest/installation.html) installed on your system.
 
-```
+## Building Documentation Locally
 
-Then, in the `doc` folder run:
+1. **Navigate to the `doc` folder**:
 
-`sphinx-build -b html . build` 
+    ```sh
+    cd <root>/doc/
+    ```
 
-The output is in the `build` directory and can be opened with any browser.
+2. **Create and activate the documentation environment**:
+
+    ```sh
+    mamba env create -f ./environment.yml
+    mamba activate cadet-core-docs
+    ```
+
+3. **Build the documentation**:
+
+    ```sh
+    sphinx-build -b html . build
+    ```
+
+    The output is in the `build` directory and can be opened with any browser.
+
+## Building Documentation for All Releases and Branches
 
 To build the documentation for all releases and the master branch, run:
 
-`sphinx-multiversion ./ ./build/`. 
+```sh
+sphinx-multiversion ./ ./build/ -D 'exhale_args.containmentFolder=${sourcedir}/api'
+```
 
-Any changes to the documentation will automatically be pushed to the github-pages repository (https://github.com/cadet/cadet.github.io) using github actions.
+On Windows, use the following command:
+
+```powershell
+sphinx-multiversion ./ ./build/ -D exhale_args.containmentFolder=${sourcedir}/api
+```

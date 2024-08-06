@@ -102,9 +102,10 @@ Please refer to the `list of contributors <https://github.com/modsim/CADET/blob/
     interface/index
     developer_guide/index
     .. examples/index
+    api/library_root
     CADET-Match <https://cadet.github.io/CADET-Match/master/index.html>
     license
     zbibliography
     Legal notice <https://www.fz-juelich.de/portal/EN/Service/LegalNotice/_node.html>
 
-
+.. todolist::

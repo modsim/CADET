@@ -1019,7 +1019,7 @@ int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, 
 	_phaseTransitionModel->flux(_nChannel, _nComp, _nCol, _exchangeMatrix, _crossSections, y, res, typename ParamSens<ParamType>::enabled());
 
 	if (wantJac){
-	_phaseTransitionModel->analyticJacobian(_nChannel, _nComp, _nCol, _exchangeMatrix, reinterpret_cast<const double*>(y), _jacC);
+	_phaseTransitionModel->analyticJacobian(_nChannel, _nComp, _nCol, _exchangeMatrix, reinterpret_cast<const double*>(y), _jacC.row(0));
 	}
 
 	return 0;

@@ -488,7 +488,7 @@ public:
 		return fluxImpl<double, double, double>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
 	}
 	
-	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::CompressedSparseMatrix jac) const
+	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::BandedSparseRowIterator jac) const
 	{
 		return jacobianImpl(nChannel, nComp, nCol, _exchangeMatrix, y, jac);
 	}
@@ -628,7 +628,7 @@ protected:
 
 	
 	//template <typename StateType, typename ResidualType, typename ParamType>
-	inline void jacobianImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, double const* y, linalg::CompressedSparseMatrix jac) const
+	inline void jacobianImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, double const* y, linalg::BandedSparseRowIterator jacBegin) const
 	{
 
 		const unsigned int offsetC = nChannel * nComp;
@@ -660,10 +660,16 @@ protected:
 						// StateType const* const yCur_dest = yColRadDestBlock + comp;
 
 						const active exchange_orig_dest_comp = static_cast<active>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
+
 						if (cadet_likely(exchange_orig_dest_comp > 0.0))
-						{
-							jac.centered(offsetCur_orig, 0) += static_cast<double>(exchange_orig_dest_comp);
-							jac.centered(offsetCur_dest, static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)) -= static_cast<double>(exchange_orig_dest_comp);
+						{	
+							linalg::BandedSparseRowIterator jacorig;
+							jacorig = jacBegin + offsetCur_orig;
+							jacorig[0] += static_cast<double>(exchange_orig_dest_comp);
+
+							linalg::BandedSparseRowIterator jacdest;
+							jacdest = jacBegin + offsetCur_dest;
+							jacdest[static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)] -= static_cast<double>(exchange_orig_dest_comp);
 						}
 					}
 

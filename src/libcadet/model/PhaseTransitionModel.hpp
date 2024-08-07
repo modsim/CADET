@@ -101,7 +101,7 @@ public:
 	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, std::vector<active> crossSections, double const* y, active* res, WithParamSensitivity) const = 0;
 	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, std::vector<active> crossSections, double const* y, double* res, WithoutParamSensitivity) const = 0;
 
-	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::CompressedSparseMatrix jac) const = 0;
+	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::BandedSparseRowIterator jac) const = 0;
 #ifdef ENABLE_DG
 	//virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, int offsetCp, linalg::BandedEigenSparseRowIterator jac, LinearBufferAllocator workSpace) const = 0;
 #endif

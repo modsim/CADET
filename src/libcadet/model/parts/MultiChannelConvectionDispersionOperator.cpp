@@ -940,7 +940,7 @@ const active& MultiChannelConvectionDispersionOperator::axialDispersion(unsigned
  * @param [in] wantJac Determines whether the Jacobian is computed or not
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
-/*
+
 int MultiChannelConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
 {
 	if (wantJac)
@@ -948,15 +948,15 @@ int MultiChannelConvectionDispersionOperator::residual(const IModel& model, doub
 	else
 		return residualImpl<double, double, double, false>(model, t, secIdx, y, yDot, res);
 }
-*/
+
 int MultiChannelConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, active const* y, double const* yDot, active* res, bool wantJac, WithoutParamSensitivity)
 {
 	if (wantJac)
-		return residualImpl<active, active, active, true>(model, t, secIdx, y, yDot, res);
+		return residualImpl<active, active, double, true>(model, t, secIdx, y, yDot, res);
 	else
-		return residualImpl<active, active, active, false>(model, t, secIdx, y, yDot, res);
+		return residualImpl<active, active, double, false>(model, t, secIdx, y, yDot, res);
 }
-/*
+
 int MultiChannelConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, active* res, bool wantJac, WithParamSensitivity)
 {
 	if (wantJac)
@@ -972,7 +972,7 @@ int MultiChannelConvectionDispersionOperator::residual(const IModel& model, doub
 	else
 		return residualImpl<active, active, active, false>(model, t, secIdx, y, yDot, res);
 }
-*/
+
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
 int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, double t, unsigned int secIdx, StateType const* y, double const* yDot, ResidualType* res)
 {
@@ -1016,11 +1016,10 @@ int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, 
 	if (cadet_unlikely(_nChannel <= 1))
 		return 0;
 
-
-	_phaseTransitionModel->flux(_nChannel, _nComp, _nCol, _exchangeMatrix, _crossSections, y, res);
+	_phaseTransitionModel->flux(_nChannel, _nComp, _nCol, _exchangeMatrix, _crossSections, y, res, typename ParamSens<ParamType>::enabled());
 
 	if (wantJac){
-	_phaseTransitionModel->analyticJacobian(_nChannel, _nComp, _nCol, _exchangeMatrix, y, res, _jacC);
+	_phaseTransitionModel->analyticJacobian(_nChannel, _nComp, _nCol, _exchangeMatrix, reinterpret_cast<const double*>(y), _jacC);
 	}
 
 	return 0;

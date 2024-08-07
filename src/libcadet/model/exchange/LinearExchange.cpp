@@ -465,26 +465,32 @@ public:
 	// which just expands to the six implementations below.
 
 	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, 
-		std::vector<active> crossSections, active const* y, active* res) const
+		std::vector<active> crossSections, active const* y, active* res, WithParamSensitivity) const
 	{
-		return fluxImpl( nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
+		return fluxImpl<active,active,active>( nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
 	}
-	/*
+
 	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
-		std::vector<active> crossSections, double const* y, active* res) const
+		std::vector<active> crossSections, active const* y, active* res, WithoutParamSensitivity) const
+	{
+		return fluxImpl<active, active, double>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
+	}
+
+	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
+		std::vector<active> crossSections, double const* y, active* res, WithParamSensitivity) const
 	{
 		return fluxImpl<double, active, active>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
 	}
 
 	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
-		std::vector<active> crossSections, double const* y, double* res) const
+		std::vector<active> crossSections, double const* y, double* res, WithoutParamSensitivity) const
 	{
-		return fluxImpl<double, double, active>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
+		return fluxImpl<double, double, double>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
 	}
-	*/
-	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, active const* y, active* res, linalg::CompressedSparseMatrix jac) const
+	
+	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::CompressedSparseMatrix jac) const
 	{
-		return jacobianImpl(nChannel, nComp, nCol, _exchangeMatrix, y, res, jac);
+		return jacobianImpl(nChannel, nComp, nCol, _exchangeMatrix, y, jac);
 	}
 	/*
 	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, active* res, linalg::BandMatrix::RowIterator jac) const
@@ -568,22 +574,22 @@ protected:
 	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 
-	//template <typename StateType, typename ResidualType, typename ParamType>
-	int fluxImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, std::vector<active> crossSections, active const* y, active* res) const
+	template <typename StateType, typename ResidualType, typename ParamType>
+	int fluxImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, std::vector<active> crossSections, StateType const* y, ResidualType* res) const
 	{
 		const unsigned int offsetC = nChannel * nComp;
-		for (unsigned int col = 0; col < nCol; ++col) {
-
+		for (unsigned int col = 0; col < nCol; ++col)
+		{
 			const unsigned int offsetColBlock = col * nChannel * nComp;
-			active* const resColBlock = res + offsetC + offsetColBlock;
-			active const* const yColBlock = y + offsetC + offsetColBlock;
+			ResidualType* const resColBlock = res + offsetC + offsetColBlock;
+			StateType const* const yColBlock = y + offsetC + offsetColBlock;
 
 			for (unsigned int rad_orig = 0; rad_orig < nChannel; ++rad_orig)
 			{
-				const unsigned int offsetToRadOrigBlock = rad_orig * nComp;
+				const unsigned int offsetToRadOrigBlock = rad_orig * _nComp;
 				const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
-				active* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
-				active const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
+				ResidualType* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
+				StateType const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
 
 				for (unsigned int rad_dest = 0; rad_dest < nChannel; ++rad_dest)
 				{
@@ -592,23 +598,23 @@ protected:
 
 					const unsigned int offsetToRadDestBlock = rad_dest * nComp;
 					const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
-					active* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
+					ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
 					// StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
 
 					for (unsigned int comp = 0; comp < nComp; ++comp)
 					{
 						const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
 						const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
-						active const* const yCur_orig = yColRadOrigBlock + comp;
+						StateType const* const yCur_orig = yColRadOrigBlock + comp;
 						// StateType const* const yCur_dest = yColRadDestBlock + comp;
-						active* const resCur_orig = resColRadOrigBlock + comp;
-						active* const resCur_dest = resColRadDestBlock + comp;
+						ResidualType* const resCur_orig = resColRadOrigBlock + comp;
+						ResidualType* const resCur_dest = resColRadDestBlock + comp;
 
-						const active exchange_orig_dest_comp = static_cast<active>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
+						const ParamType exchange_orig_dest_comp = static_cast<ParamType>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
 						if (cadet_likely(exchange_orig_dest_comp > 0.0))
 						{
 							*resCur_orig += exchange_orig_dest_comp * yCur_orig[0];
-							*resCur_dest -= exchange_orig_dest_comp * yCur_orig[0] * static_cast<active>(crossSections[rad_orig]) / static_cast<active>(crossSections[rad_dest]);
+							*resCur_dest -= exchange_orig_dest_comp * yCur_orig[0] * static_cast<ParamType>(crossSections[rad_orig]) / static_cast<ParamType>(crossSections[rad_dest]);
 						}
 					}
 
@@ -622,22 +628,20 @@ protected:
 
 	
 	//template <typename StateType, typename ResidualType, typename ParamType>
-	inline void jacobianImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, active const* y, active* res, linalg::CompressedSparseMatrix jac) const
+	inline void jacobianImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, double const* y, linalg::CompressedSparseMatrix jac) const
 	{
 
 		const unsigned int offsetC = nChannel * nComp;
 		for (unsigned int col = 0; col < nCol; ++col)
 		{
 			const unsigned int offsetColBlock = col * nChannel * nComp;
-			active* const resColBlock = res + offsetC + offsetColBlock;
-			active const* const yColBlock = y + offsetC + offsetColBlock;
+			double const* const yColBlock = y + offsetC + offsetColBlock;
 
 			for (unsigned int rad_orig = 0; rad_orig < nChannel; ++rad_orig)
 			{
 				const unsigned int offsetToRadOrigBlock = rad_orig * nComp;
 				const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
-				active* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
-				active const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
+				double const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
 
 				for (unsigned int rad_dest = 0; rad_dest < nChannel; ++rad_dest)
 				{
@@ -646,17 +650,14 @@ protected:
 
 					const unsigned int offsetToRadDestBlock = rad_dest * nComp;
 					const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
-					active* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
 					// StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
 
 					for (unsigned int comp = 0; comp < nComp; ++comp)
 					{
 						const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
 						const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
-						active const* const yCur_orig = yColRadOrigBlock + comp;
+						double const* const yCur_orig = yColRadOrigBlock + comp;
 						// StateType const* const yCur_dest = yColRadDestBlock + comp;
-						active* const resCur_orig = resColRadOrigBlock + comp;
-						active* const resCur_dest = resColRadDestBlock + comp;
 
 						const active exchange_orig_dest_comp = static_cast<active>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
 						if (cadet_likely(exchange_orig_dest_comp > 0.0))

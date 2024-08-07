@@ -525,7 +525,7 @@ public:
 	{
 		return fluxImpl<active, active, active>(t, secIdx, colPos, y, yCp, res, workSpace);
 	}
-	/*
+	
 	virtual int flux(double t, unsigned int secIdx, const ColumnPosition& colPos,
 		active const* y, active const* yCp, active* res, LinearBufferAllocator workSpace, WithoutParamSensitivity) const
 	{
@@ -543,7 +543,7 @@ public:
 	{
 		return fluxImpl<double, double, double>(t, secIdx, colPos, y, yCp, res, workSpace);
 	}
-	*/
+	
 	virtual void analyticJacobian(double t, unsigned int secIdx, const ColumnPosition& colPos, double const* y, int offsetCp, linalg::BandMatrix::RowIterator jac, LinearBufferAllocator workSpace) const
 	{
 		jacobianImpl(t, secIdx, colPos, y, offsetCp, jac, workSpace);

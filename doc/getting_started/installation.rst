@@ -13,11 +13,9 @@ If you want to extend or modify CADET (e.g., add a custom binding model), you wi
 
 Install pre-built binaries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-CADET can be installed via conda from the ``conda-forge channel``.
+CADET can be installed via `conda <https://docs.anaconda.com/free/miniconda/>`_ from the ``conda-forge channel``.
 
 ``conda install -c conda-forge cadet``
-
-This requires a working `conda installation <https://docs.anaconda.com/anaconda/install/index.html>`_.
 
 Optionally, use `mamba <https://github.com/mamba-org/mamba>`_ which uses a faster dependency solver than ``conda``.
 
@@ -30,29 +28,29 @@ Install from source
 - :ref:`build_windows`
 - :ref:`build_osx`
 
-.. _cadet_python:
+.. _cadet_process:
 
 Install a frontend
 ------------------
 
-As of now, only a Python frontend is provided.
+CADET provides a Python API, called ``CADET-Python``, which can be used to set the model input according to the Interface specifications section.
+Setting up the model using ``CADET-Python`` can become very tedious, especially for systems, and is outdated now that an actual frontend is available:
 
-Install CADET-Python
+We recommend using the ``CADET-Process`` frontend, which facilitates modeling processes using an object oriented model builder.
+This interface layer provides convenient access to all model parameters in the system.
+It automatically checks validity of the parameter values and sets reasonable default values where possible.
+
+Install CADET-Process
 ^^^^^^^^^^^^^^^^^^^^
 
-The easiest way to create CADET simulations is to use the `CADET-Python <https://github.com/modsim/CADET-python>`_ frontend.
-For this purpose, we recommend installing `Anaconda <https://www.anaconda.com/>`_.
-Anaconda is a high-performance scientific distribution of Python that includes many common packages needed for scientific and engineering work.
-Download the installer from their `website <https://www.anaconda.com/>`_ and run it for the local user.
-
-To install ``CADET-Python``, open an `Anaconda Shell` and execute:
+To install ``CADET-Process``, open an `anaconda shell` or `mamba shell` and execute:
 
 .. code-block:: bash
 
-    pip install cadet-python
+    pip install CADET-Process
 
-If you would also like to use `CADET-Match <https://github.com/modsim/CADET-Match>`_ for parameter estimation, run:
+If you want to use ``CADET-Python``, open an `anaconda shell` or `mamba shell` and execute:
 
 .. code-block:: bash
 
-    pip install cadetmatch
+    pip install CADET-Python 

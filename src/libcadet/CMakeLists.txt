@@ -100,6 +100,7 @@ set(LIBCADET_BINDINGMODEL_SOURCES
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/BiLangmuirLDFBinding.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/HICWaterOnHydrophobicSurfacesBinding.cpp
 	${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/HICConstantWaterActivityBinding.cpp
+	${CMAKE_SOURCE_DIR}/src/libcadet/model/binding/SipsBinding.cpp
 )
 
 # LIBCADET_REACTIONMODEL_SOURCES holds all source files of reaction models
@@ -273,7 +274,7 @@ if (LAPACK_FOUND)
 	add_library(libcadet_static STATIC $<TARGET_OBJECTS:libcadet_object>)
 	set_target_properties(libcadet_static PROPERTIES OUTPUT_NAME cadet_static)
 	target_link_libraries(libcadet_static PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
-	
+
 	# ---------------------------------------------------
 	#   Build the shared library
 	# ---------------------------------------------------
@@ -281,7 +282,7 @@ if (LAPACK_FOUND)
 	add_library(libcadet_shared SHARED $<TARGET_OBJECTS:libcadet_object>)
 	set_target_properties(libcadet_shared PROPERTIES OUTPUT_NAME cadet)
 	target_link_libraries (libcadet_shared PUBLIC CADET::CompileOptions CADET::LibOptions PRIVATE CADET::AD libcadet_nonlinalg_static SUNDIALS::sundials_idas ${SUNDIALS_NVEC_TARGET} ${TBB_TARGET} ${EIGEN_TARGET})
-	
+
 	list(APPEND LIBCADET_TARGETS libcadet_nonlinalg_static libcadet_object libcadet_static libcadet_shared)
 
 	unset(LIB_LAPACK_DEFINE)

@@ -8,7 +8,7 @@ pip install -r requirements.txt
 
 ```
 
-Then, in the `doc` folder run:
+Then, in the `doc` folder, run:
 
 `sphinx-build -b html . build` 
 

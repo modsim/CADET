@@ -29,5 +29,7 @@ cadet::JsonParameterProvider createPulseInjectionColumn(const std::string& uoTyp
 cadet::JsonParameterProvider createLinearBenchmark(bool dynamicBinding, bool nonBinding, const std::string& uoType, const std::string& spatialScheme);
 cadet::JsonParameterProvider createCSTR(unsigned int nComp);
 cadet::JsonParameterProvider createCSTRBenchmark(unsigned int nSec, double endTime, double interval);
+cadet::JsonParameterProvider createCSTRVarPorBenchmark(unsigned int nSec, double endTime, double interval);
+cadet::JsonParameterProvider createCSTRVarPor(unsigned int nComp);
 
 #endif  // CADETTEST_JSONTESTMODELS_HPP_

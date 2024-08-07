@@ -285,6 +285,9 @@ public:
 	 */
 	virtual int writeVolume(double* buffer) const = 0;
 
+	// virtual int writeSolidVolume(double* buffer) const = 0;
+
+
 	/**
 	 * @brief Writes the solution of the inlet at the given port into the provided buffer
 	 * @details Writes all components of the selected port to the provided buffer.

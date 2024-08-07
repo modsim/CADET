@@ -42,14 +42,14 @@ inline void setFlowRateFilter(cadet::JsonParameterProvider& jpp, double filter)
 	jpp.popScope();
 }
 
-inline cadet::JsonParameterProvider createMultiParticleTypesTestCase()
+inline cadet::JsonParameterProvider createMultiParticleTypesTestCaseVarPor()
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(2, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(2, 100.0, 1.0);
 	cadet::test::setNumberOfComponents(jpp, 0, 2);
 	cadet::test::setNumberOfComponents(jpp, 1, 2);
 	cadet::test::setNumberOfComponents(jpp, 2, 2);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
-	cadet::test::addBoundStates(jpp, {1, 1}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 1}, 0.5);
 	cadet::test::addLinearBindingModel(jpp, true, {0.1, 0.2}, {1.0, 0.9});
 	cadet::test::setInitialConditions(jpp, {1.0, 2.0}, {3.0, 4.0}, 6.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
@@ -61,7 +61,7 @@ inline cadet::JsonParameterProvider createMultiParticleTypesTestCase()
 	return jpp;
 }
 
-inline void runSim(cadet::JsonParameterProvider& jpp, std::function<double(double)> solC, std::function<double(double)> solV)
+inline void runSimVarPor(cadet::JsonParameterProvider& jpp, std::function<double(double)> solC, std::function<double(double)> solV)
 {
 	// Run simulation
 	cadet::Driver drv;
@@ -84,7 +84,7 @@ inline void runSim(cadet::JsonParameterProvider& jpp, std::function<double(doubl
 	}
 }
 
-inline void runSim(cadet::JsonParameterProvider& jpp, std::function<double(double)> solC, std::function<double(double)> solQ, std::function<double(double)> solV, double absTol = 4e-5, double relTol = 1e-6)
+inline void runSimVarPor(cadet::JsonParameterProvider& jpp, std::function<double(double)> solC, std::function<double(double)> solQ, std::function<double(double)> solV, double absTol = 4e-5, double relTol = 1e-6)
 {
 	// Run simulation
 	cadet::Driver drv;
@@ -132,9 +132,9 @@ inline void runSensSim(cadet::JsonParameterProvider& jpp, std::function<double(d
 	}
 }
 
-TEST_CASE("CSTR vs analytic solution (V constant) w/o binding model", "[CSTR],[Simulation]")
+TEST_CASE("CSTRVarPor vs analytic solution (V constant) w/o binding model", "[CSTRVarPor],[Simulation]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(3, 119.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(3, 119.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 10.0, 100.0, 119.0});
 	cadet::test::setInitialConditions(jpp, {0.0}, {}, 10.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
@@ -146,7 +146,7 @@ TEST_CASE("CSTR vs analytic solution (V constant) w/o binding model", "[CSTR],[S
 
 	const double temp = 10.0 * (9.0 + 2.0 * std::sqrt(std::exp(1.0)));
 	const double temp2 = 2.0 / 9.0 * (-9.0 - 2.0 * std::sqrt(std::exp(1.0)) + 2 * std::exp(5));
-	runSim(jpp, [=](double t) {
+	runSimVarPor(jpp, [=](double t) {
 			if (t <= 10.0)
 				return -2.0 * std::expm1(-t / 20.0);
 			else if (t <= 100.0)
@@ -159,15 +159,15 @@ TEST_CASE("CSTR vs analytic solution (V constant) w/o binding model", "[CSTR],[S
 	});
 }
 
-TEST_CASE("CSTR vs analytic solution (V increasing) w/o binding model", "[CSTR],[Simulation]")
+TEST_CASE("CSTRVarPor vs analytic solution (V increasing) w/o binding model", "[CSTRVarPor],[Simulation]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
 	cadet::test::setInitialConditions(jpp, {1.0}, {}, 10.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
 	cadet::test::setFlowRates(jpp, 0, 2.0, 1.0, 0.5);
 
-	runSim(jpp, [=](double t) {
+	runSimVarPor(jpp, [=](double t) {
 			return 4.0 * (6000.0 + t * (1200.0 + t * (60.0 + t))) / (3.0 * std::pow(20.0 + t, 3.0));
 		}, 
 		[](double t) {
@@ -175,15 +175,15 @@ TEST_CASE("CSTR vs analytic solution (V increasing) w/o binding model", "[CSTR],
 	});
 }
 
-TEST_CASE("CSTR vs analytic solution (V decreasing) w/o binding model", "[CSTR],[Simulation]")
+TEST_CASE("CSTRVarPor vs analytic solution (V decreasing) w/o binding model", "[CSTRVarPor],[Simulation]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
 	cadet::test::setInitialConditions(jpp, {1.0}, {}, 10.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
 	cadet::test::setFlowRates(jpp, 0, 1.5, 1.5, 0.5);
 
-	runSim(jpp, [=](double t) {
+	runSimVarPor(jpp, [=](double t) {
 			return 1.0 + t * (1.0 / 20.0 - t / 800.0);
 		}, 
 		[](double t) {
@@ -191,18 +191,18 @@ TEST_CASE("CSTR vs analytic solution (V decreasing) w/o binding model", "[CSTR],
 	});
 }
 
-TEST_CASE("CSTR vs analytic solution (V constant) with dynamic linear binding", "[CSTR],[Simulation]")
+TEST_CASE("CSTRVarPor vs analytic solution (V constant) with dynamic linear binding", "[CSTRVarPor],[Simulation]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
-	cadet::test::addBoundStates(jpp, {1}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1}, 1.0);
 	cadet::test::setInitialConditions(jpp, {0.0}, {0.0}, 1.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
 	cadet::test::setFlowRates(jpp, 0, 0.1, 0.1, 0.0);
 	cadet::test::addLinearBindingModel(jpp, true, {0.1}, {10.0});
 
 	const double sqrt2501 = std::sqrt(2501.0);
-	runSim(jpp, [=](double t) {
+	runSimVarPor(jpp, [=](double t) {
 			return 1.0 - std::exp(-5.1 * t) * (2501.0 * std::cosh(sqrt2501 * t / 10.0) + 50.0 * sqrt2501 * std::sinh(sqrt2501 * t / 10.0)) / 2501.0;
 		}, 
 		[=](double t) {
@@ -213,18 +213,18 @@ TEST_CASE("CSTR vs analytic solution (V constant) with dynamic linear binding", 
 	});
 }
 
-TEST_CASE("CSTR vs analytic solution (V constant) with quasi-stationary linear binding", "[CSTR],[Simulation]")
+TEST_CASE("CSTRVarPor vs analytic solution (V constant) with quasi-stationary linear binding", "[CSTRVarPor],[Simulation]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
-	cadet::test::addBoundStates(jpp, {1}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1}, 1.0);
 	cadet::test::setInitialConditions(jpp, {0.0}, {0.0}, 1.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
 	cadet::test::setFlowRates(jpp, 0, 0.1, 0.1, 0.0);
 	cadet::test::addLinearBindingModel(jpp, false, {0.1}, {10.0});
 
 	const double sqrt2501 = std::sqrt(2501.0);
-	runSim(jpp, [=](double t) {
+	runSimVarPor(jpp, [=](double t) {  
 			return -std::expm1(-10.0 / 101.0 * t);
 		}, 
 		[=](double t) {
@@ -235,9 +235,9 @@ TEST_CASE("CSTR vs analytic solution (V constant) with quasi-stationary linear b
 	});
 }
 
-TEST_CASE("CSTR filter flowrate sensitivity vs analytic solution (V constant) w/o binding model", "[CSTR],[Simulation],[AD],[Sensitivity]")
+TEST_CASE("CSTRVarPor filter flowrate sensitivity vs analytic solution (V constant) w/o binding model", "[CSTRVarPor],[Simulation],[AD],[Sensitivity]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(3, 119.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(3, 119.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 10.0, 100.0, 119.0});
 	cadet::test::setInitialConditions(jpp, {0.0}, {}, 10.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
@@ -264,9 +264,9 @@ TEST_CASE("CSTR filter flowrate sensitivity vs analytic solution (V constant) w/
 	});
 }
 
-TEST_CASE("CSTR LIN_COEFF sensitivity vs analytic solution (V constant) w/o binding model", "[CSTR],[Simulation],[AD],[Sensitivity]")
+TEST_CASE("CSTRVarPor LIN_COEFF sensitivity vs analytic solution (V constant) w/o binding model", "[CSTRVarPor],[Simulation],[AD],[Sensitivity]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
 	cadet::test::setInitialConditions(jpp, {0.0}, {}, 10.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 1.0, 0.0, 0.0);
@@ -277,11 +277,11 @@ TEST_CASE("CSTR LIN_COEFF sensitivity vs analytic solution (V constant) w/o bind
 	runSensSim(jpp, [=](double t) { return 2.0 * (20.0 * std::expm1(-t / 20.0) + t); }, [](double t) { return 0.0; }, 2e-5, 6e-7);
 }
 
-TEST_CASE("CSTR initial volume sensitivity vs analytic solution (V constant) w/o binding model", "[CSTR],[Simulation],[Sensitivity]")
+TEST_CASE("CSTRVarPor initial volume sensitivity vs analytic solution (V constant) w/o binding model", "[CSTRVarPor],[Simulation],[Sensitivity]")
 {
 	const double V = 5.0;
 
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(2, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(2, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 50.0, 100.0});
 	cadet::test::setInitialConditions(jpp, {0.0}, {}, V);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
@@ -303,11 +303,11 @@ TEST_CASE("CSTR initial volume sensitivity vs analytic solution (V constant) w/o
 	});
 }
 
-TEST_CASE("CSTR initial condition read and apply correctly", "[CSTR],[InitialConditions]")
+TEST_CASE("CSTRVarPor initial condition read and apply correctly", "[CSTRVarPor],[InitialConditions]]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
-	cadet::test::addBoundStates(jpp, {1}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1}, 0.5);
 	cadet::test::setInitialConditions(jpp, {1.0}, {2.0}, 3.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
 	cadet::test::setFlowRates(jpp, 0, 0.1, 0.1, 0.0);
@@ -389,14 +389,14 @@ TEST_CASE("CSTR initial condition read and apply correctly", "[CSTR],[InitialCon
 	CHECK(vecStateYdot[3] == -10.0);
 }
 
-TEST_CASE("CSTR initial condition behave like standard parameters", "[CSTR],[InitialConditions]")
+TEST_CASE("CSTRVarPor initial condition behave like standard parameters", "[CSTRVarPor],[InitialConditions]")
 {
-	cadet::JsonParameterProvider jpp = createCSTRBenchmark(1, 100.0, 1.0);
+	cadet::JsonParameterProvider jpp = createCSTRVarPorBenchmark(1, 100.0, 1.0);
 	cadet::test::setNumberOfComponents(jpp, 0, 2);
 	cadet::test::setNumberOfComponents(jpp, 1, 2);
 	cadet::test::setNumberOfComponents(jpp, 2, 2);
 	cadet::test::setSectionTimes(jpp, {0.0, 100.0});
-	cadet::test::addBoundStates(jpp, {1, 2}, 0.5);
+	cadet::test::addBoundStatesConstSolidVolume(jpp, {1, 2}, 0.5);
 	cadet::test::addDummyBindingModel(jpp);
 	cadet::test::setInitialConditions(jpp, {1.0, 2.0}, {3.0, 4.0, 5.0}, 6.0);
 	cadet::test::setInletProfile(jpp, 0, 0, 1.0, 0.0, 0.0, 0.0);
@@ -454,20 +454,20 @@ TEST_CASE("CSTR initial condition behave like standard parameters", "[CSTR],[Ini
 	CHECK(vecStateY[7] == -6.0);
 }
 
-TEST_CASE("CSTR one vs two identical particle types match", "[CSTR],[Simulation],[ParticleType]")
+TEST_CASE("CSTRVarPor one vs two identical particle types match", "[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testOneVsTwoIdenticalParticleTypes(jpp, 2e-8, 5e-5);
 }
 
-TEST_CASE("CSTR separate identical particle types match", "[CSTR],[Simulation],[ParticleType]")
+TEST_CASE("CSTRVarPor separate identical particle types match", "[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testSeparateIdenticalParticleTypes(jpp, 1e-15, 1e-15);
 }
 
-TEST_CASE("CSTR linear binding single particle matches particle distribution", "[CSTR],[Simulation],[ParticleType],[CRASH]")
+TEST_CASE("CSTRVarPor linear binding single particle matches particle distribution", "[CRASH],[CSTRVarPor],[Simulation],[ParticleType]")
 {
-	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCase();
+	cadet::JsonParameterProvider jpp = createMultiParticleTypesTestCaseVarPor();
 	cadet::test::particle::testLinearMixedParticleTypes(jpp, 5e-8, 5e-5);
 }

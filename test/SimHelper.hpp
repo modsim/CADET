@@ -108,6 +108,14 @@ namespace test
 	void addBoundStates(cadet::JsonParameterProvider& jpp, const std::vector<int>& nBound, double porosity);
 
 	/**
+	 * @brief Adds bound states to a CSTRVarPor model
+	 * @param [in,out] jpp ParameterProvider
+	 * @param [in] nBound Array with number of bound states for each component
+	 * @param [in] initaial solid volume vsolid
+	 */
+	void addBoundStatesConstSolidVolume(cadet::JsonParameterProvider& jpp, const std::vector<int>& nBound, double vsolid);
+
+	/**
 	 * @brief Adds dummy binding model to a CSTR model
 	 * @param [in,out] jpp ParameterProvider
 	 */

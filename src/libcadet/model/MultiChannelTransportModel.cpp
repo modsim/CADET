@@ -450,7 +450,7 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		paramProvider.popScope();
 	}
 	
-
+	/* Zunkufscode
 	if (_exchange[0]){
 
 		std::vector<ParameterId> initParams(_disc.nChannel); //Q was macht initParams ? brauche ich maxBoundStates ?
@@ -466,8 +466,9 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		exchangeConfSuccess = _exchange[0]->configure(paramProvider, _unitOpIdx, cadet::ParTypeIndep); // Brauche ich PartypeIndep ?
 		paramProvider.popScope();
 	}
-	
-	return transportSuccess && dynReactionConfSuccess && exchangeConfSuccess;
+	*/
+
+	return transportSuccess && dynReactionConfSuccess;
 }
 
 

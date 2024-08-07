@@ -26,6 +26,7 @@
 #include "model/ParameterMultiplexing.hpp"
 #include "SimulationTypes.hpp"
 #include "ConfigurationHelper.hpp"
+#include "model/PhaseTransitionModel.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -146,6 +147,7 @@ protected:
 	unsigned int _nChannel; //!< Number of channels
 	bool _hasDynamicReactions; //!< Determines whether the model has dynamic reactions (only relevant for sparsity pattern)
 
+
 	active _colLength; //!< Column length \f$ L \f$
 	std::vector<active> _crossSections; //!< Cross section area of each compartment
 
@@ -159,6 +161,8 @@ protected:
 	bool _singleVelocity; //!< Determines whether only one velocity for all compartments is given
 
     std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the linear inter-channel transport
+
+	IPhaseTransitionModel* _phaseTransitionModel; //!< Phase transition model
 
 	IParameterParameterDependence* _dispersionDep;
 

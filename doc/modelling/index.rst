@@ -8,5 +8,5 @@ This section gives complete information about the supported unit operations, bin
 .. toctree::
     unit_operations/index
     binding/index
-    reactions
+    reaction/index
     networks

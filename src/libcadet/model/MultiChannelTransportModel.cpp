@@ -411,10 +411,10 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 	bool exchangeConfSuccess = true;
 
 	//_exchange = nullptr
-	std::vector<std::string> exchModelNames = { "NONE" };
+	/*std::vector<std::string> exchModelNames = {"NONE"};
 	if (paramProvider.exists("EXCHANGE_MODEL"))
 		exchModelNames = paramProvider.getStringArray("EXCHANGE_MODEL");
-
+	*/
 
 	bool exchConfSuccess = true;
 	//exchConfSuccess = _exchange->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nChannel , _disc.boundOffset) && bindingConfSuccess; 

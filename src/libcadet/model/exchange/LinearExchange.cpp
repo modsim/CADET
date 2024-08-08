@@ -366,7 +366,7 @@ class LinearExchangeBase : public IPhaseTransitionModel
 {
 public:
 
-	LinearExchangeBase() : _nComp(0), _nChannel(0),_nBound(0) { }
+	LinearExchangeBase() : _nComp(0), _nChannel(0),_nBound(0), _nCol(0) { }
 	virtual ~LinearExchangeBase() CADET_NOEXCEPT { }
 
 	static const char* identifier() { return "a"; }
@@ -374,10 +374,11 @@ public:
 	virtual bool requiresConfiguration() const CADET_NOEXCEPT { return true; }
 	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT { return true; }
 
-	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nChannel, unsigned int const* boundOffset)
+	virtual bool configureModelDiscretization(IParameterProvider& paramProvider, unsigned int nComp, unsigned int nChannel, unsigned int nCol)
 	{
 		_nComp = nComp;
 		_nChannel = nChannel; // nChannel realy int ? -> by not nBoundStates not ?
+		_nCol = nCol;
 
 		return true;
 	}
@@ -565,6 +566,7 @@ protected:
 	int _nComp; //!< Number of components
 	unsigned int const* _nBound; //!< Array with number of bound states for each component
 	unsigned int _nChannel; //!< Total number of bound states
+	unsigned int _nCol; //!< Number of columns
 	std::vector<int> _reactionQuasistationarity; //!< Determines whether each bound state is quasi-stationary (@c true) or not (@c false)
 
 	//ParamHandler_t _paramHandler; //!< Parameters
@@ -586,7 +588,7 @@ protected:
 
 			for (unsigned int rad_orig = 0; rad_orig < nChannel; ++rad_orig)
 			{
-				const unsigned int offsetToRadOrigBlock = rad_orig * _nComp;
+				const unsigned int offsetToRadOrigBlock = rad_orig * nComp;
 				const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
 				ResidualType* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
 				StateType const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;

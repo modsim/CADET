@@ -3,4 +3,5 @@
 Build for OSX
 =============
 
-.. literalinclude:: ../../BUILD-OSX.md
+.. include:: ../../BUILD-OSX.md
+   :parser: myst_parser.sphinx_

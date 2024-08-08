@@ -3,4 +3,5 @@
 Build for MS Windows
 ====================
 
-.. literalinclude:: ../../BUILD-WINDOWS.md
+.. include:: ../../BUILD-WINDOWS.md
+   :parser: myst_parser.sphinx_

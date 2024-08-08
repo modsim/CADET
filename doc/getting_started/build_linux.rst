@@ -3,4 +3,5 @@
 Build for Linux
 ===============
 
-.. literalinclude:: ../../BUILD-LINUX.md
+.. include:: ../../BUILD-LINUX.md
+   :parser: myst_parser.sphinx_

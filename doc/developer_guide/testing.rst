@@ -69,7 +69,8 @@ We recommend using this procedure not only for the tests but also for the public
 The general procedure how to add a reference test is as follows:
 
 **1. Define your model setup in CADET-Database:**
-The easiest way to do this, is to translate your model h5 file to a json file and store it in the cadet-config folder.
+The easiest way to do this, is to clone the `CADET-Database <https://jugit.fz-juelich.de/IBG-1/ModSim/cadet/cadet-database>`_, checkout the core_tests branch and store your model setup file as a json file in the cadet-config folder.
+You can create this json config file by translating the standard CADET h5 file to a json using python, see the utility/h5ToJson.py script for reference.
 Make sure to give your model setup a meaningful and unique name (follow the naming logic of other setups in that folder).
 Note that the return data should only specify the output required for the reference test, i.e. usually the outlet of a single unit.
 

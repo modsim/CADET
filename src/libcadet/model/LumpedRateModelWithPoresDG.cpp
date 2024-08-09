@@ -1071,12 +1071,12 @@ int LumpedRateModelWithPoresDG::residualBulk(double t, unsigned int secIdx, Stat
 
 	for (unsigned int col = 0; col < _disc.nPoints; ++col, y += idxr.strideColNode(), res += idxr.strideColNode())
 	{
-		const ColumnPosition colPos{ (0.5 + static_cast<double>(col)) / static_cast<double>(_disc.nCol), 0.0, 0.0 };
+		const ColumnPosition colPos{ _convDispOp.relativeCoordinate(col), 0.0, 0.0 };
 		_dynReactionBulk->residualLiquidAdd(t, secIdx, colPos, y, res, -1.0, tlmAlloc);
 
 		if (wantJac)
 		{
-			linalg::BandedEigenSparseRowIterator jac(_globalJacDisc, col * idxr.strideColNode());
+			linalg::BandedEigenSparseRowIterator jac(_globalJac, col * idxr.strideColNode());
 			// static_cast should be sufficient here, but this statement is also analyzed when wantJac = false
 			_dynReactionBulk->analyticJacobianLiquidAdd(t, secIdx, colPos, reinterpret_cast<double const*>(y), -1.0, jac, tlmAlloc);
 		}
@@ -1096,7 +1096,7 @@ int LumpedRateModelWithPoresDG::residualParticle(double t, unsigned int parType,
 	// Prepare parameters
 	const ParamType radius = static_cast<ParamType>(_parRadius[parType]);
 
-	// z coordinate (column length normed to 1) of current node - needed in externally dependent adsorption kinetic
+	// Relative position of current node - needed in externally dependent adsorption kinetic
 	const double z = _convDispOp.relativeCoordinate(colNode);
 
 	const parts::cell::CellParameters cellResParams

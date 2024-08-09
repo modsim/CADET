@@ -10,11 +10,6 @@
 //  is available at http://www.gnu.org/licenses/gpl.html
 // =============================================================================
 
-/**
- * @file
- * Defines the convection dispersion transport operator according to the discontinuous Galerkin discretization.
- */
-
 #include "model/parts/DGToolbox.hpp"
 
 using namespace Eigen;
@@ -30,7 +25,6 @@ namespace parts
 
 namespace dgtoolbox
 {
-
 /**
  * @brief computes the Legendre polynomial L_N and q = L_N+1 - L_N-2 and q' at point x
  * @param [in] polyDeg polynomial degree
@@ -39,7 +33,8 @@ namespace dgtoolbox
  * @param [in] q <- q(x) = L_N+1 (x) - L_N-2(x)
  * @param [in] qder <- q'(x) = [L_N+1 (x) - L_N-2(x)]'
  */
-void qAndL(const unsigned int polyDeg, const double x, double& L, double& q, double& qder) {
+void qAndL(const unsigned int polyDeg, const double x, double& L, double& q, double& qder)
+{
 	// auxiliary variables (Legendre polynomials)
 	double L_2 = 1.0;
 	double L_1 = x;
@@ -64,8 +59,8 @@ void qAndL(const unsigned int polyDeg, const double x, double& L, double& q, dou
  * @param [in, out] invWeights Legendre Gauss quadrature weights
  * @param [in] invertWeights specifies if weights should be inverted
  */
-void lglNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& invWeights, bool invertWeights) {
-
+void lglNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& invWeights, bool invertWeights)
+{
 	const double pi = 3.1415926535897932384626434;
 
 	// tolerance and max #iterations for Newton iteration
@@ -124,8 +119,8 @@ void lglNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& invW
  * @param [in, out] legDer Legendre polynomial derivative
  * @param [in] x evaluation point
  */
-void legendrePolynomialAndDerivative(const int polyDeg, double& leg, double& legDer, const double x) {
-
+void legendrePolynomialAndDerivative(const int polyDeg, double& leg, double& legDer, const double x)
+{
 	switch (polyDeg) {
 	case 0:
 		leg = 1.0;
@@ -158,8 +153,8 @@ void legendrePolynomialAndDerivative(const int polyDeg, double& leg, double& leg
  * @param [in, out] weights Legendre Gauss quadrature weights
  * @param [in] invertWeights specifies if weights should be inverted
  */
-void lgNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& weights, bool invertWeights = true) {
-
+void lgNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& weights, bool invertWeights = true)
+{
 	const double pi = 3.1415926535897932384626434;
 
 	// tolerance and max #iterations for Newton iteration
@@ -209,15 +204,14 @@ void lgNodesWeights(const unsigned int polyDeg, VectorXd& nodes, VectorXd& weigh
 	}
 }
 /**
- * @brief evaluates a Lagrange polynomial built on input nodes at a set of points
- * @detail can be used to establish quadrature rules
+ * @brief evaluates the jth Lagrange basis functions at given nodes
  * @param [in] j index of Lagrange basis function
- * @param [in] intNodes interpolation nodes the Lagrange basis is constructed with
- * @param [in] evalNodes nodes the Lagrange basis is evaluated at
+ * @param [in] baseNodes interpolation nodes of Lagrange basis
+ * @param [in] evalNodes evaluation nodes in [-1, 1]
  */
-VectorXd evalLagrangeBasis(const int j, const VectorXd intNodes, const VectorXd evalNodes) {
-
-	const int nIntNodes = intNodes.size();
+VectorXd evalLagrangeBasis(const int j, const VectorXd baseNodes, const VectorXd evalNodes)
+{
+	const int nIntNodes = baseNodes.size();
 	const int nEvalNodes = evalNodes.size();
 	VectorXd evalEll = VectorXd::Zero(nEvalNodes);
 
@@ -226,22 +220,14 @@ VectorXd evalLagrangeBasis(const int j, const VectorXd intNodes, const VectorXd 
 
 	for (int i = 0; i < nIntNodes; i++)
 		if (i != j)
-			denominator *= (intNodes[j] - intNodes[i]);
+			denominator *= (baseNodes[j] - baseNodes[i]);
 
 	for (int k = 0; k < nEvalNodes; k++)
 	{
 		for (int i = 0; i < nIntNodes; i++)
 		{
 			if (i != j)
-			{
-				if (std::abs(evalNodes[k] - intNodes[i]) < std::numeric_limits<double>::epsilon())
-				{
-					nominator = denominator;
-					break;
-				}
-				else
-					nominator *= (evalNodes[k] - intNodes[i]);
-			}
+				nominator *= (evalNodes[k] - baseNodes[i]);
 		}
 		evalEll[k] = nominator / denominator;
 		nominator = 1.0;
@@ -255,8 +241,8 @@ VectorXd evalLagrangeBasis(const int j, const VectorXd intNodes, const VectorXd 
  * @param [in] LGLnodes Legendre Gauss Lobatto nodes
  * @param [in] nLGNodes number of Gauss quadrature nodes
  */
-MatrixXd gaussQuadratureMMatrix(const VectorXd LGLnodes, const int nLGNodes) {
-
+MatrixXd gaussQuadratureMMatrix(const VectorXd LGLnodes, const int nLGNodes)
+{
 	const int Ldegree = nLGNodes - 1; // Legendre polynomial degree
 	const int nLGLnodes = LGLnodes.size();
 
@@ -284,12 +270,12 @@ MatrixXd gaussQuadratureMMatrix(const VectorXd LGLnodes, const int nLGNodes) {
 	return massMatrix;
 }
 /**
- * @brief computation of barycentric weights for fast polynomial evaluation
+ * @brief calculates the barycentric weights for fast polynomial evaluation
  * @param [in] polyDeg polynomial degree
  * @param [in, out] baryWeights vector to store barycentric weights. Must already be initialized with ones!
  */
-VectorXd barycentricWeights(const unsigned int polyDeg, const VectorXd nodes) {
-
+VectorXd barycentricWeights(const unsigned int polyDeg, const VectorXd nodes)
+{
 	VectorXd baryWeights = VectorXd::Ones(polyDeg + 1u);
 
 	for (unsigned int j = 1; j <= polyDeg; j++) {
@@ -305,12 +291,12 @@ VectorXd barycentricWeights(const unsigned int polyDeg, const VectorXd nodes) {
 	return baryWeights;
 }
 /**
- * @brief computation of nodal polynomial derivative matrix
+ * @brief calculates the nodal (lagrange) polynomial derivative matrix
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
-MatrixXd derivativeMatrix(const unsigned int polyDeg, const VectorXd nodes) {
-
+MatrixXd derivativeMatrix(const unsigned int polyDeg, const VectorXd nodes)
+{
 	MatrixXd polyDerM = MatrixXd::Zero(polyDeg + 1u, polyDeg + 1u);
 	VectorXd baryWeights = barycentricWeights(polyDeg, nodes);
 
@@ -328,8 +314,8 @@ MatrixXd derivativeMatrix(const unsigned int polyDeg, const VectorXd nodes) {
 /**
  * @brief factor to normalize Jacobi polynomials
  */
-double orthonFactor(const int polyDeg, double a, double b) {
-
+double orthonFactor(const int polyDeg, double a, double b)
+{
 	double n = static_cast<double> (polyDeg);
 	return std::sqrt(((2.0 * n + a + b + 1.0) * std::tgamma(n + 1.0) * std::tgamma(n + a + b + 1.0))
 		/ (std::pow(2.0, a + b + 1.0) * std::tgamma(n + a + 1.0) * std::tgamma(n + b + 1.0)));
@@ -341,8 +327,8 @@ double orthonFactor(const int polyDeg, double a, double b) {
  * @param [in] a Jacobi polynomial parameter
  * @param [in] b Jacobi polynomial parameter
  */
-MatrixXd jacVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes, const double a, const double b) {
-
+MatrixXd jacVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes, const double a, const double b)
+{
 	const unsigned int nNodes = polyDeg + 1u;
 	MatrixXd V(nNodes, nNodes);
 
@@ -369,8 +355,8 @@ MatrixXd jacVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes, 
 
 	return V;
 }
-double jacPDerivativePreFactor(const unsigned int pIndex, const unsigned int derOrder, const double a, const double b) {
-
+double jacPDerivativePreFactor(const unsigned int pIndex, const unsigned int derOrder, const double a, const double b)
+{
 	double prefac = std::tgamma(a + b + static_cast<double>(pIndex) + 1.0 + static_cast<double>(derOrder)) / (std::pow(2.0, static_cast<double>(derOrder)) * std::tgamma(a + b + static_cast<double>(pIndex) + 1.0));
 
 	return prefac * orthonFactor(pIndex - derOrder, a + static_cast<double>(derOrder), b + static_cast<double>(derOrder)) / orthonFactor(pIndex, a, b);
@@ -380,7 +366,8 @@ double jacPDerivativePreFactor(const unsigned int pIndex, const unsigned int der
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
-MatrixXd legVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes) {
+MatrixXd legVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes)
+{
 	return jacVandermondeMatrix(polyDeg, nodes, 0.0, 0.0);
 }
 /**
@@ -388,8 +375,11 @@ MatrixXd legVandermondeMatrix(const unsigned int polyDeg, const VectorXd nodes) 
  * @detail the mass matrix used to compute integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
+ * @param [in] alpha Jacobi polynomial coefficient
+ * @param [in] beta Jacobi polynomial coefficient
  */
-Eigen::MatrixXd invMMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta) {
+Eigen::MatrixXd invMMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta)
+{
 	return (jacVandermondeMatrix(polyDeg, nodes, alpha, beta) * (jacVandermondeMatrix(polyDeg, nodes, alpha, beta).transpose()));
 }
 /**
@@ -398,7 +388,8 @@ Eigen::MatrixXd invMMatrix(const unsigned int polyDeg, const Eigen::VectorXd nod
  * @param [in] polyDeg polynomial degree
  * @param [in] nodes polynomial interpolation nodes
  */
-Eigen::MatrixXd mMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta) {
+Eigen::MatrixXd mMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta)
+{
 	return invMMatrix(polyDeg, nodes, alpha, beta).inverse();
 }
 /**
@@ -408,8 +399,8 @@ Eigen::MatrixXd mMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes,
  * @param [in] b Jacobi polynomial parameter
  * @param [in] nodes polynomial interpolation nodes
  */
-MatrixXd jacDerVandermondeMatrix(const unsigned int polyDeg, const double a, const double b, const VectorXd nodes) {
-
+MatrixXd jacDerVandermondeMatrix(const unsigned int polyDeg, const double a, const double b, const VectorXd nodes)
+{
 	MatrixXd derVan = MatrixXd::Zero(polyDeg + 1, polyDeg + 1);
 	derVan.block(0, 1, polyDeg + 1, polyDeg) = jacVandermondeMatrix(polyDeg, nodes, a + 1.0, b + 1.0).block(0, 0, polyDeg + 1, polyDeg);
 
@@ -426,9 +417,125 @@ MatrixXd jacDerVandermondeMatrix(const unsigned int polyDeg, const double a, con
  * @param [in] b Jacobi polynomial parameter
  * @param [in] nodes polynomial interpolation nodes
  */
-MatrixXd secondOrderStiffnessMatrix(const unsigned int polyDeg, const double alpha, const double beta, const VectorXd nodes) {
+MatrixXd secondOrderStiffnessMatrix(const unsigned int polyDeg, const double alpha, const double beta, const VectorXd nodes)
+{
 	return derivativeMatrix(polyDeg, nodes).transpose() * mMatrix(polyDeg, nodes, alpha, beta) * derivativeMatrix(polyDeg, nodes);
 }
+/**
+ * @brief calculates the stiffness matrix via transformation to orthonormal Jacobi (modal) basis
+ * @detail exact integration for integrals of the form \int_E \ell_i(\xi) \ell_j(\xi) (1 - \xi)^\alpha (1 + \xi)^\beta d\xi
+ * @param [in] polyDeg polynomial degree
+ * @param [in] nodes polynomial interpolation nodes
+ * @param [in] alpha Jacobi polynomial coefficient
+ * @param [in] beta Jacobi polynomial coefficient
+ */
+Eigen::MatrixXd stiffnessMatrix(const unsigned int polyDeg, const Eigen::VectorXd nodes, const double alpha, const double beta)
+{
+	return mMatrix(polyDeg, nodes, alpha, beta) * derivativeMatrix(polyDeg, nodes);
+}
+/**
+ * @brief estimates if two double numbers are equal
+ * @detail as we consider computational reference elements [-1, 1], the only exceptional cases we have to deal with are near the origin
+ */
+bool almostEqual(double a, double b)
+{
+	if (a == 0.0 || b == 0.0)
+	{
+		if (std::abs(a - b) <= std::numeric_limits<double>::epsilon())
+			return true;
+		else
+			return false;
+	}
+	else
+	{
+		if (std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::abs(a) && std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::abs(b))
+			return true;
+		else
+			return false;
+	}
+}
+/**
+ * @brief calculates the polynomial interpolation matrix between two sets of nodes
+ * @param [in] newNodes set of nodes, the solution is interpolated to
+ * @param [in] oldNodes set of nodes, the solution is interpolated from
+ * @param [in] baryWeights barycentric weights of the polynomial to be interpolated
+ */
+MatrixXd polynomialInterpolationMatrix(const VectorXd newNodes, const VectorXd oldNodes, const VectorXd baryWeights)
+{
+	const unsigned int nNewNodes = newNodes.size();
+	const unsigned int nOldNodes = oldNodes.size();
+	MatrixXd intM = MatrixXd::Zero(nNewNodes, nOldNodes);
+
+	for (unsigned int k = 0; k < nNewNodes; k++)
+	{
+		bool rowHasMatch = false;
+		for (unsigned int j = 0; j < nOldNodes; j++)
+		{
+			if (almostEqual(newNodes[k], oldNodes[j]))
+			{
+				intM(k, j) = 1.0;
+				rowHasMatch = true;
+			}
+			else
+				intM(k, j) = 0.0;
+		}
+
+		if (rowHasMatch)
+			continue;
+
+		double s = 0.0;
+
+		for (unsigned int j = 0; j < nOldNodes; j++)
+		{
+			double t = baryWeights[j] / (newNodes[k] - oldNodes[j]);
+			intM(k, j) = t;
+			s = s + t;
+		}
+		for (unsigned int j = 0; j < nOldNodes; j++)
+		{
+			intM(k, j) /= s;
+		}
+	}
+
+	return intM;
+}
+/**
+ * @brief returns a quadratic lifting matrix
+ * @param [in] size quadratic matrix size
+ */
+MatrixXd liftingMatrixQuadratic(const unsigned int size)
+{
+	MatrixXd liftingMatrix = MatrixXd::Zero(size, size);
+
+	liftingMatrix(0, 0) = -1.0;
+	liftingMatrix(size - 1, size - 1) = 1.0;
+
+	return liftingMatrix;
+}
+/**
+ * @brief returns a (size x 2) lifting matrix
+ * @param [in] rows number of matrix rows
+ */
+MatrixXd liftingMatrix(const unsigned int size)
+{
+	MatrixXd liftingMatrix = MatrixXd::Zero(size, 2);
+
+	liftingMatrix(0, 0) = -1.0;
+	liftingMatrix(size - 1, 1) = 1.0;
+
+	return liftingMatrix;
+}
+
+void writeDGCoordinates(double* coords, const int nElem, const int nNodes, const double* DGnodes, const double length, const double* leftElemBndries)
+{
+	for (unsigned int i = 0; i < nElem; i++) {
+		for (unsigned int j = 0; j < nNodes; j++) {
+			// mapping 
+			coords[i * nNodes + j] = leftElemBndries[i] + 0.5 * (length / nElem) * (1.0 + DGnodes[j]);
+		}
+	}
+}
+
 
 } // namespace dgtoolbox
 } // namespace parts

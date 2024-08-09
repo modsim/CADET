@@ -170,6 +170,14 @@ set (LIBCADET_NONLINALG_SOURCES
 if (ENABLE_DG)
 	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/BandedEigenSparseRowIterator.hpp)
 	list(APPEND LIBCADET_NONLINALG_SOURCES ${CMAKE_SOURCE_DIR}/src/libcadet/linalg/EigenSolverWrapper.cpp)
+	if (ENABLE_2D_MODELS_DG)
+		list (APPEND LIBCADET_SOURCES
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/TwoDimensionalConvectionDispersionOperatorDG.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D-LinearSolver.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D-InitialConditions.cpp
+		)
+	endif()
 endif()
 
 if (ENABLE_2D_MODELS)
@@ -190,6 +198,7 @@ if (ENABLE_2D_MODELS)
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-LinearSolver.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/MultiChannelTransportModel-InitialConditions.cpp
+		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModel2DBuilder.cpp
 	)
 
 	if (NOT SUPERLU_FOUND)
@@ -208,6 +217,14 @@ if (ENABLE_DG)
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithoutPoresDG.cpp
 		${CMAKE_SOURCE_DIR}/src/libcadet/model/GeneralRateModelDG.cpp
 	)
+	if (ENABLE_2D_MODELS)
+		list (APPEND LIBCADET_SOURCES
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/parts/TwoDimensionalConvectionDispersionOperatorDG.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D-LinearSolver.cpp
+			${CMAKE_SOURCE_DIR}/src/libcadet/model/LumpedRateModelWithPoresDG2D-InitialConditions.cpp
+		)
+	endif()
 endif()
 
 # Preprocess binding and reaction models

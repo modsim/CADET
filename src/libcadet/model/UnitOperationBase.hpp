@@ -72,6 +72,7 @@ protected:
 
 	void clearBindingModels() CADET_NOEXCEPT;
 	void clearDynamicReactionModels() CADET_NOEXCEPT;
+	void clearExchangeModels() CADET_NOEXCEPT;	
 	void configureNonlinearSolver(IParameterProvider& paramProvider);
 	void configureNonlinearSolver();
 

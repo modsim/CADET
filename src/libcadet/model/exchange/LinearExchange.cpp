@@ -22,6 +22,8 @@
 #include "SimulationTypes.hpp"
 #include "Memory.hpp"
 #include "model/PhaseTransitionModel.hpp"
+#include "ParamReaderHelper.hpp"
+#include "model/parts/MultiChannelConvectionDispersionOperator.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -369,8 +371,8 @@ public:
 	LinearExchangeBase() : _nComp(0), _nChannel(0),_nBound(0), _nCol(0) { }
 	virtual ~LinearExchangeBase() CADET_NOEXCEPT { }
 
-	static const char* identifier() { return "a"; }
-	virtual const char* name() const CADET_NOEXCEPT { return "a"; }
+	static const char* identifier() { return "LINEAR_EX"; }
+	virtual const char* name() const CADET_NOEXCEPT { return "LINEAR_EX"; }
 	virtual bool requiresConfiguration() const CADET_NOEXCEPT { return true; }
 	virtual bool usesParamProviderInDiscretizationConfig() const CADET_NOEXCEPT { return true; }
 
@@ -383,14 +385,21 @@ public:
 		return true;
 	}
 
-	virtual bool configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx, ParticleTypeIdx parTypeIdx)
+	virtual bool configure(IParameterProvider& paramProvider, UnitOpIdx unitOpIdx)
 	{
 		_parameters.clear();
 
-		// Read parameters (k_a and k_d)
-		//_paramHandler.configure(paramProvider, _nComp, _nBound);
+		// Read parameterreadParameterMatrixs (exchange matrix and cross section)
+		readParameterMatrix(_exchangeMatrix, paramProvider, "EXCHANGE_MATRIX", _nChannel * _nChannel * _nComp, 1); // include parameterPeaderHelp in exchange modul
+		
+		_crossSections = paramProvider.getDoubleArray("CHANNEL_CROSS_SECTION_AREAS");
+		//ad::copyToAd(initCrossSections.data(), _crossSections.data(), _nChannel);
 
-		// Register parameters
+		//paramProvider.getDoubleArray("EXCHANGE_MATRIX");
+		//paramProvider.getDoubleArray("CROSS_SECTION"); //push scrope and pop scope navigation
+
+		// Spaeter
+		// Register parameters 
 		//_paramHandler.registerParameters(_parameters, unitOpIdx, parTypeIdx, _nComp, _nBound);
 
 		return true;
@@ -465,35 +474,45 @@ public:
 	// CADET_BINDINGMODELBASE_BOILERPLATE
 	// which just expands to the six implementations below.
 
-	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, 
-		std::vector<active> crossSections, active const* y, active* res, WithParamSensitivity) const
+	virtual int residual(active const* y, active* res, WithParamSensitivity, bool wantJac, linalg::BandedSparseRowIterator jacBegin) const
 	{
-		return fluxImpl<active,active,active>( nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
+		if (wantJac)
+			return residualImpl<double, active, active, true>(reinterpret_cast<const double*>(y), res, jacBegin);
+		else
+			return residualImpl<active, active, active, false>(y, res, jacBegin);
 	}
 
-	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
-		std::vector<active> crossSections, active const* y, active* res, WithoutParamSensitivity) const
-	{
-		return fluxImpl<active, active, double>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
-	}
-
-	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
-		std::vector<active> crossSections, double const* y, active* res, WithParamSensitivity) const
-	{
-		return fluxImpl<double, active, active>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
-	}
-
-	virtual int flux(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix,
-		std::vector<active> crossSections, double const* y, double* res, WithoutParamSensitivity) const
-	{
-		return fluxImpl<double, double, double>(nChannel, nComp, nCol, exchangeMatrix, crossSections, y, res);
+	virtual int residual(active const* y, active* res, WithoutParamSensitivity, bool wantJac, linalg::BandedSparseRowIterator jacBegin) const
+	{	
+		if (wantJac)
+			return residualImpl<double, active, double, false>(reinterpret_cast<const double*>(y), res, jacBegin);
+		else
+			return residualImpl<active, active, double, false>(y, res, jacBegin);
 	}
 	
+	virtual int residual(double const* y, active* res, WithParamSensitivity, bool wantJac, linalg::BandedSparseRowIterator jacBegin) const
+	{
+		if(wantJac)
+			return residualImpl<double, active, active, true>(y, res, jacBegin);
+		else
+			return residualImpl<double, active, active, false>(y, res, jacBegin);
+	}
+
+	virtual int residual(double const* y, double* res, WithoutParamSensitivity, bool wantJac, linalg::BandedSparseRowIterator jacBegin) const
+	{
+		if (wantJac)
+			return residualImpl<double, double, double, true>(y, res, jacBegin);
+		else
+			return residualImpl<double, double, double, false>(y, res, jacBegin);
+	}
+
+
+	/*
 	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, linalg::BandedSparseRowIterator jac) const
 	{
 		return jacobianImpl(nChannel, nComp, nCol, _exchangeMatrix, y, jac);
 	}
-	/*
+
 	virtual void analyticJacobian(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> _exchangeMatrix, double const* y, active* res, linalg::BandMatrix::RowIterator jac) const
 	{
 		return jacobianImpl<double, active, active>(nChannel, nComp, nCol, _exchangeMatrix, y, res, jac);
@@ -564,11 +583,14 @@ public:
 
 protected:
 	int _nComp; //!< Number of components
-	unsigned int const* _nBound; //!< Array with number of bound states for each component
+	unsigned int const* _nBound = nullptr; //!< Array with number of bound states for each component
 	unsigned int _nChannel; //!< Total number of bound states
 	unsigned int _nCol; //!< Number of columns
 	std::vector<int> _reactionQuasistationarity; //!< Determines whether each bound state is quasi-stationary (@c true) or not (@c false)
 
+	std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the linear inter-channel transport
+	std::vector<double> _crossSections;
+	parts::MultiChannelConvectionDispersionOperator _conDis;
 	//ParamHandler_t _paramHandler; //!< Parameters
 
 	std::unordered_map<ParameterId, active*> _parameters; //!< Map used to translate ParameterIds to actual variables
@@ -576,34 +598,35 @@ protected:
 	virtual bool implementsAnalyticJacobian() const CADET_NOEXCEPT { return true; }
 
 
-	template <typename StateType, typename ResidualType, typename ParamType>
-	int fluxImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, std::vector<active> crossSections, StateType const* y, ResidualType* res) const
-	{
-		const unsigned int offsetC = nChannel * nComp;
-		for (unsigned int col = 0; col < nCol; ++col)
+	template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
+	int residualImpl(StateType const* y, ResidualType* res, linalg::BandedSparseRowIterator jacBegin) const
+	{	
+
+		const unsigned int offsetC = _nChannel * _nComp;
+		for (unsigned int col = 0; col < _nCol; ++col)
 		{
-			const unsigned int offsetColBlock = col * nChannel * nComp;
+			const unsigned int offsetColBlock = col * _nChannel * _nComp;
 			ResidualType* const resColBlock = res + offsetC + offsetColBlock;
 			StateType const* const yColBlock = y + offsetC + offsetColBlock;
 
-			for (unsigned int rad_orig = 0; rad_orig < nChannel; ++rad_orig)
+			for (unsigned int rad_orig = 0; rad_orig < _nChannel; ++rad_orig)
 			{
-				const unsigned int offsetToRadOrigBlock = rad_orig * nComp;
+				const unsigned int offsetToRadOrigBlock = rad_orig * _nComp;
 				const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
 				ResidualType* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
 				StateType const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
 
-				for (unsigned int rad_dest = 0; rad_dest < nChannel; ++rad_dest)
+				for (unsigned int rad_dest = 0; rad_dest < _nChannel; ++rad_dest)
 				{
 					if (rad_orig == rad_dest)
 						continue;
 
-					const unsigned int offsetToRadDestBlock = rad_dest * nComp;
+					const unsigned int offsetToRadDestBlock = rad_dest * _nComp;
 					const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
 					ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
 					// StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
 
-					for (unsigned int comp = 0; comp < nComp; ++comp)
+					for (unsigned int comp = 0; comp < _nComp; ++comp)
 					{
 						const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
 						const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
@@ -612,86 +635,47 @@ protected:
 						ResidualType* const resCur_orig = resColRadOrigBlock + comp;
 						ResidualType* const resCur_dest = resColRadDestBlock + comp;
 
-						const ParamType exchange_orig_dest_comp = static_cast<ParamType>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
+						const ParamType exchange_orig_dest_comp = static_cast<ParamType>(_exchangeMatrix[rad_orig * _nChannel * _nComp + rad_dest * _nComp + comp]);
 						if (cadet_likely(exchange_orig_dest_comp > 0.0))
 						{
 							*resCur_orig += exchange_orig_dest_comp * yCur_orig[0];
-							*resCur_dest -= exchange_orig_dest_comp * yCur_orig[0] * static_cast<ParamType>(crossSections[rad_orig]) / static_cast<ParamType>(crossSections[rad_dest]);
+							*resCur_dest -= exchange_orig_dest_comp * yCur_orig[0] * static_cast<ParamType>(_crossSections[rad_orig]) / static_cast<ParamType>(_crossSections[rad_dest]);
+
+							if (wantJac) {
+
+								linalg::BandedSparseRowIterator jacorig;
+								jacorig = jacBegin + offsetCur_orig;
+								jacorig[0] += static_cast<double>(exchange_orig_dest_comp);
+
+								linalg::BandedSparseRowIterator jacdest;
+								jacdest = jacBegin + offsetCur_dest;
+								jacdest[static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)] -= static_cast<double>(exchange_orig_dest_comp);
+
+							}
+
+
 						}
+
+
 					}
 
 				}
 
 			}
 		}
-
 		return 0;
-	}
-
-	
-	//template <typename StateType, typename ResidualType, typename ParamType>
-	inline void jacobianImpl(unsigned int nChannel, unsigned int nComp, unsigned int nCol, std::vector<active> exchangeMatrix, double const* y, linalg::BandedSparseRowIterator jacBegin) const
-	{
-
-		const unsigned int offsetC = nChannel * nComp;
-		for (unsigned int col = 0; col < nCol; ++col)
-		{
-			const unsigned int offsetColBlock = col * nChannel * nComp;
-			double const* const yColBlock = y + offsetC + offsetColBlock;
-
-			for (unsigned int rad_orig = 0; rad_orig < nChannel; ++rad_orig)
-			{
-				const unsigned int offsetToRadOrigBlock = rad_orig * nComp;
-				const unsigned int offsetColRadOrigBlock = offsetColBlock + offsetToRadOrigBlock;
-				double const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
-
-				for (unsigned int rad_dest = 0; rad_dest < nChannel; ++rad_dest)
-				{
-					if (rad_orig == rad_dest)
-						continue;
-
-					const unsigned int offsetToRadDestBlock = rad_dest * nComp;
-					const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
-					// StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
-
-					for (unsigned int comp = 0; comp < nComp; ++comp)
-					{
-						const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
-						const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
-						double const* const yCur_orig = yColRadOrigBlock + comp;
-						// StateType const* const yCur_dest = yColRadDestBlock + comp;
-
-						const active exchange_orig_dest_comp = static_cast<active>(exchangeMatrix[rad_orig * nChannel * nComp + rad_dest * nComp + comp]);
-
-						if (cadet_likely(exchange_orig_dest_comp > 0.0))
-						{	
-							linalg::BandedSparseRowIterator jacorig;
-							jacorig = jacBegin + offsetCur_orig;
-							jacorig[0] += static_cast<double>(exchange_orig_dest_comp);
-
-							linalg::BandedSparseRowIterator jacdest;
-							jacdest = jacBegin + offsetCur_dest;
-							jacdest[static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)] -= static_cast<double>(exchange_orig_dest_comp);
-						}
-					}
-
-				}
-
-			}
-		}
-
 	}
 };
 
 
-//typedef LinearExchangeBase<LinearParamHandler> LinearExchange;
 // typedef LinearExchangeBase<ExtLinearParamHandler> ExternalLinearExchange;
 
+typedef LinearExchangeBase LinearExchange;
 namespace exchange
 {
-	void registerLinearModel(std::unordered_map<std::string, std::function<model::IPhaseTransitionModel*()>>& exchange)
+	void registerLinearExModel(std::unordered_map<std::string, std::function<model::IPhaseTransitionModel*()>>& exchange)
 	{
-		//exchange[LinearExchange::identifier()] = []() { return new LinearExchange(); };
+		exchange[LinearExchange::identifier()] = []() { return new LinearExchange(); };
 		//exchange[ExternalLinearExchange::identifier()] = []() { return new ExternalLinearExchange(); };
 	}
 }  // namespace exchange

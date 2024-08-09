@@ -204,13 +204,11 @@ protected:
 
 	parts::MultiChannelConvectionDispersionOperator _convDispOp; //!< Convection dispersion operator for interstitial volume transport
 	IDynamicReactionModel* _dynReactionBulk; //!< Dynamic reactions in the bulk volume
-	IPhaseTransitionModel* _phaseTransModel; //!< Phase transition model
+	
+	std::vector<IPhaseTransitionModel*> _exchange; //!< Exchange transition model
+
 
 	linalg::DoubleSparseMatrix _jacInlet; //!< Jacobian inlet DOF block matrix connects inlet DOFs to first bulk cells
-	linalg::CompressedSparseMatrix _jacC; //!< Jacobian
-
-	std::vector<active> _exchangeMatrix; //!< Matrix of exchange coeffs for the linear inter-channel transport
-	std::vector<active> _crossSections; //!< Cross section area of each compartment
 
 
 	bool _analyticJac; //!< Determines whether AD or analytic Jacobians are used

@@ -408,24 +408,23 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 		if (_dynReactionBulk->usesParamProviderInDiscretizationConfig())
 			paramProvider.popScope();
 	}
+
+	
+	clearExchangeModels();
+
+	_exchange.push_back(nullptr);
+
+	_exchange[0] = helper.createExchangeModel("LINEAR_EX");
+
 	bool exchangeConfSuccess = true;
-
-	//_exchange = nullptr
-	/*std::vector<std::string> exchModelNames = {"NONE"};
-	if (paramProvider.exists("EXCHANGE_MODEL"))
-		exchModelNames = paramProvider.getStringArray("EXCHANGE_MODEL");
-	*/
-
-	bool exchConfSuccess = true;
-	//exchConfSuccess = _exchange->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nChannel , _disc.boundOffset) && bindingConfSuccess; 
-	//Q: + i * _disc.nBound + i * _disc.nComp for LRMP
+	exchangeConfSuccess = _exchange[0]->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nChannel, _disc.nCol);
 
 	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nCol, _disc.nChannel, _dynReactionBulk);
 
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
 
-	return transportSuccess && reactionConfSuccess && exchConfSuccess;
+	return transportSuccess && reactionConfSuccess && exchangeConfSuccess;
 }
 
 bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
@@ -457,18 +456,15 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		_exchange[0]->fillChannelInitialParameters(initParams.data(), _unitOpIdx);
 	}
 		
-
+	*/
 	// Reconfigure exchange model
 	bool exchangeConfSuccess = true;
-	if (_exchange[0] && paramProvider.exists("exchange") && _exchange[0]->requiresConfiguration()){
+	
+	exchangeConfSuccess = _exchange[0]->configure(paramProvider, _unitOpIdx);
+	
 
-		paramProvider.pushScope("exchange");
-		exchangeConfSuccess = _exchange[0]->configure(paramProvider, _unitOpIdx, cadet::ParTypeIndep); // Brauche ich PartypeIndep ?
-		paramProvider.popScope();
-	}
-	*/
 
-	return transportSuccess && dynReactionConfSuccess;
+	return transportSuccess && dynReactionConfSuccess && exchangeConfSuccess;
 }
 
 
@@ -736,13 +732,21 @@ int MultiChannelTransportModel::residual(const SimulationTime& simTime, const Co
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
 int MultiChannelTransportModel::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
+
 	// Handle inlet DOFs, which are simply copied to res
 	for (unsigned int i = 0; i < _disc.nComp * _disc.nChannel; ++i)
 	{
 		res[i] = y[i];
 	}
 
+
 	_convDispOp.residual(*this, t, secIdx, y, yDot, res, wantJac, typename ParamSens<ParamType>::enabled());
+	
+	linalg::BandedSparseRowIterator jacbegin = _convDispOp.getJacRowIterator(0);
+	if (_disc.nChannel >= 1) {
+		_exchange[0]->residual(y, res, typename ParamSens<ParamType>::enabled(), wantJac, jacbegin);
+	}
+	
 
 	if (!_dynReactionBulk || (_dynReactionBulk->numReactionsLiquid() == 0))
 		return 0;
@@ -870,7 +874,6 @@ void MultiChannelTransportModel::multiplyWithJacobian(const SimulationTime& simT
  */
 void MultiChannelTransportModel::multiplyWithDerivativeJacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double const* sDot, double* ret)
 {
-	// Add Exchange here
 	_convDispOp.multiplyWithDerivativeJacobian(simTime, sDot, ret);
 
 	// Handle inlet DOFs (all algebraic)

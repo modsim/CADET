@@ -20,6 +20,7 @@
 
 #include "cadet/ModelBuilder.hpp"
 #include "BindingModelFactory.hpp"
+#include "ExchangeModelFactory.hpp"
 #include "ReactionModelFactory.hpp"
 #include "ParameterDependenceFactory.hpp"
 #include "ConfigurationHelper.hpp"
@@ -60,6 +61,7 @@ public:
 
 	virtual IInletProfile* createInletProfile(const std::string& type) const;
 	virtual model::IBindingModel* createBindingModel(const std::string& name) const;
+	virtual model::IPhaseTransitionModel* createExchangeModel(const std::string& name) const;
 	virtual bool isValidBindingModel(const std::string& name) const;
 	virtual model::IDynamicReactionModel* createDynamicReactionModel(const std::string& name) const;
 	virtual bool isValidDynamicReactionModel(const std::string& name) const;
@@ -88,6 +90,7 @@ protected:
 	void registerModel();
 
 	BindingModelFactory _bindingModels; //!< Factory for IBindingModel implementations
+	ExchangeModelFactory _exchangeModels; //!< Factory for IPhaseTransitionModel implementations
 	ReactionModelFactory _reactionModels; //!< Factory for IDynamicReactionModel implementations
 	ParameterDependenceFactory _paramDeps; //!< Factory for IParameterStateDependence implementations
 

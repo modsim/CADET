@@ -255,6 +255,11 @@ namespace cadet
 		return _bindingModels.create(name);
 	}
 
+	model::IPhaseTransitionModel* ModelBuilder::createExchangeModel(const std::string& name) const
+	{
+		return _exchangeModels.create(name);
+	}
+
 	bool ModelBuilder::isValidBindingModel(const std::string& name) const
 	{
 		return _bindingModels.exists(name);

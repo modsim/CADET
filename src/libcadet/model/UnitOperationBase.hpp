@@ -34,6 +34,7 @@ namespace model
 {
 
 class IBindingModel;
+class IPhaseTransitionModel;
 class IDynamicReactionModel;
 
 /**
@@ -71,6 +72,7 @@ protected:
 
 	void clearBindingModels() CADET_NOEXCEPT;
 	void clearDynamicReactionModels() CADET_NOEXCEPT;
+	void clearExchangeModels() CADET_NOEXCEPT;	
 	void configureNonlinearSolver(IParameterProvider& paramProvider);
 	void configureNonlinearSolver();
 
@@ -78,6 +80,7 @@ protected:
 
 	UnitOpIdx _unitOpIdx; //!< Unit operation index
 	std::vector<IBindingModel*> _binding; //!< Binding model
+	std::vector<IPhaseTransitionModel*> _exchange; //!< Exchange model
 	bool _singleBinding; //!< Determines whether only a single binding model is present
 	std::vector<IDynamicReactionModel*> _dynReaction; //!< Dynamic reaction model
 	bool _singleDynReaction; //!< Determines whether only a single dynamic reaction model is present

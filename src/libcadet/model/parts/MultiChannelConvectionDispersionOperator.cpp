@@ -21,6 +21,8 @@
 #include "linalg/CompressedSparseMatrix.hpp"
 #include "model/parts/AxialConvectionDispersionKernel.hpp"
 #include "model/ParameterDependence.hpp"
+#include "model/exchange/LinearExchange.cpp"
+
 
 #ifdef SUPERLU_FOUND
 	#include "linalg/SuperLUSparseMatrix.hpp"
@@ -746,8 +748,7 @@ bool MultiChannelConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IP
 	_colLength = paramProvider.getDouble("COL_LENGTH");
 	const std::vector<double> initCrossSections = paramProvider.getDoubleArray("CHANNEL_CROSS_SECTION_AREAS");
 	ad::copyToAd(initCrossSections.data(), _crossSections.data(), _nChannel);
-	readParameterMatrix(_exchangeMatrix, paramProvider, "EXCHANGE_MATRIX", _nChannel * _nChannel * _nComp, 1);
-
+	readParameterMatrix(_exchangeMatrix, paramProvider, "EXCHANGE_MATRIX", _nChannel * _nChannel * _nComp, 1); // include parameterPeaderHelp in exchange modul
 	// Read section dependent parameters (transport)
 
 	// Read VELOCITY
@@ -829,6 +830,8 @@ bool MultiChannelConvectionDispersionOperator::configure(UnitOpIdx unitOpIdx, IP
 	registerParam3DArray(parameters, _exchangeMatrix, [=](bool multi, unsigned int channelSrc, unsigned int channelDest, unsigned comp) { return makeParamId(hashString("EXCHANGE_MATRIX"), unitOpIdx, multi ? comp : CompIndep, channelDest, channelSrc, ReactionIndep, SectionIndep); }, _nComp, _nChannel);
 
 	setSparsityPattern();
+
+	_phaseTransitionModel = new LinearExchangeBase();
 
 	return true;
 }
@@ -936,6 +939,9 @@ const active& MultiChannelConvectionDispersionOperator::axialDispersion(unsigned
  * @param [in] wantJac Determines whether the Jacobian is computed or not
  * @return @c 0 on success, @c -1 on non-recoverable error, and @c +1 on recoverable error
  */
+
+
+
 int MultiChannelConvectionDispersionOperator::residual(const IModel& model, double t, unsigned int secIdx, double const* y, double const* yDot, double* res, bool wantJac, WithoutParamSensitivity)
 {
 	if (wantJac)
@@ -1006,9 +1012,14 @@ int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, 
 			convdisp::residualKernelAxial<StateType, ResidualType, ParamType, linalg::BandedSparseRowIterator, false>(SimulationTime{t, secIdx}, y, yDot, res, _jacC.row(i * _nComp), fp);
 	}
 
+	
+
 	// Handle inter-channel transport
-	if (cadet_unlikely(_nChannel <= 1))
+	if (cadet_unlikely(_nChannel <= 1)) {
 		return 0;
+	}
+	/*
+	linalg::BandedSparseRowIterator jacBegin = _jacC.row(0);
 
 	const unsigned int offsetC = _nChannel * _nComp;
 	for (unsigned int col = 0; col < _nCol; ++col)
@@ -1024,24 +1035,24 @@ int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, 
 			ResidualType* const resColRadOrigBlock = resColBlock + offsetToRadOrigBlock;
 			StateType const* const yColRadOrigBlock = yColBlock + offsetToRadOrigBlock;
 
-            for (unsigned int rad_dest = 0; rad_dest < _nChannel; ++rad_dest)
-            {
+			for (unsigned int rad_dest = 0; rad_dest < _nChannel; ++rad_dest)
+			{
 				if (rad_orig == rad_dest)
 					continue;
 
-                const unsigned int offsetToRadDestBlock = rad_dest * _nComp;
-                const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
-                ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
-                // StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
+				const unsigned int offsetToRadDestBlock = rad_dest * _nComp;
+				const unsigned int offsetColRadDestBlock = offsetColBlock + offsetToRadDestBlock;
+				ResidualType* const resColRadDestBlock = resColBlock + offsetToRadDestBlock;
+				// StateType const* const yColRadDestBlock = yColBlock + offsetToRadDestBlock;
 
-                for (unsigned int comp = 0; comp < _nComp; ++comp)
-                {
-                    const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
-                    const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
-                    StateType const* const yCur_orig = yColRadOrigBlock + comp;
-                    // StateType const* const yCur_dest = yColRadDestBlock + comp;
-                    ResidualType* const resCur_orig = resColRadOrigBlock + comp;
-                    ResidualType* const resCur_dest = resColRadDestBlock + comp;
+				for (unsigned int comp = 0; comp < _nComp; ++comp)
+				{
+					const unsigned int offsetCur_orig = offsetColRadOrigBlock + comp;
+					const unsigned int offsetCur_dest = offsetColRadDestBlock + comp;
+					StateType const* const yCur_orig = yColRadOrigBlock + comp;
+					// StateType const* const yCur_dest = yColRadDestBlock + comp;
+					ResidualType* const resCur_orig = resColRadOrigBlock + comp;
+					ResidualType* const resCur_dest = resColRadDestBlock + comp;
 
 					const ParamType exchange_orig_dest_comp = static_cast<ParamType>(_exchangeMatrix[rad_orig * _nChannel * _nComp + rad_dest * _nComp + comp]);
 					if (cadet_likely(exchange_orig_dest_comp > 0.0))
@@ -1049,19 +1060,24 @@ int MultiChannelConvectionDispersionOperator::residualImpl(const IModel& model, 
 						*resCur_orig += exchange_orig_dest_comp * yCur_orig[0];
 						*resCur_dest -= exchange_orig_dest_comp * yCur_orig[0] * static_cast<ParamType>(_crossSections[rad_orig]) / static_cast<ParamType>(_crossSections[rad_dest]);
 
-						if (wantJac)
-						{
-							_jacC.centered(offsetCur_orig, 0) += static_cast<double>(exchange_orig_dest_comp);
-							_jacC.centered(offsetCur_dest, static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)) -= static_cast<double>(exchange_orig_dest_comp);
+						if (wantJac) {
+
+							linalg::BandedSparseRowIterator jacorig;
+							jacorig = jacBegin + offsetCur_orig;
+							jacorig[0] += static_cast<double>(exchange_orig_dest_comp);
+
+							linalg::BandedSparseRowIterator jacdest;
+							jacdest = jacBegin + offsetCur_dest;
+							jacdest[static_cast<int>(offsetCur_orig) - static_cast<int>(offsetCur_dest)] -= static_cast<double>(exchange_orig_dest_comp);
 						}
 					}
-                }
 
-            }
+				}
 
+			}
 		}
 	}
-
+	*/
 	return 0;
 }
 
@@ -1080,6 +1096,7 @@ void MultiChannelConvectionDispersionOperator::setSparsityPattern()
 	for (unsigned int i = 0; i < _nChannel; ++i)
 		cadet::model::parts::convdisp::sparsityPatternAxial(pattern.row(i * _nComp), _nComp, _nCol, _nComp * _nChannel, static_cast<double>(_curVelocity[i]), _weno);
 
+	// auslagern zum exchange
 	if (_nChannel > 1)
 	{
 		for (unsigned int col = 0; col < _nCol; ++col)

@@ -26,6 +26,7 @@ namespace
 
 		virtual cadet::IInletProfile* createInletProfile(const std::string& type) const { return nullptr; }
 		virtual cadet::model::IBindingModel* createBindingModel(const std::string& name) const { return nullptr; }
+		virtual cadet::model::IPhaseTransitionModel* createExchangeModel(const std::string& name) const { return nullptr; }
 		virtual bool isValidBindingModel(const std::string& name) const { return false; }
 		virtual cadet::IExternalFunction* createExternalFunction(const std::string& type) const { return nullptr; }
 		virtual cadet::model::IDynamicReactionModel* createDynamicReactionModel(const std::string& name) const { return nullptr; }

@@ -18,6 +18,7 @@
 #include "cadet/SolutionRecorder.hpp"
 #include "ConfigurationHelper.hpp"
 #include "model/ReactionModel.hpp"
+#include "model/PhaseTransitionModel.hpp"
 #include "SimulationTypes.hpp"
 
 #include "Stencil.hpp"
@@ -408,12 +409,22 @@ bool MultiChannelTransportModel::configureModelDiscretization(IParameterProvider
 			paramProvider.popScope();
 	}
 
+	
+	clearExchangeModels();
+
+	_exchange.push_back(nullptr);
+
+	_exchange[0] = helper.createExchangeModel("LINEAR_EX");
+
+	bool exchangeConfSuccess = true;
+	exchangeConfSuccess = _exchange[0]->configureModelDiscretization(paramProvider, _disc.nComp, _disc.nChannel, _disc.nCol);
+
 	const bool transportSuccess = _convDispOp.configureModelDiscretization(paramProvider, helper, _disc.nComp, _disc.nCol, _disc.nChannel, _dynReactionBulk);
 
 	// Setup the memory for tempState based on state vector
 	_tempState = new double[numDofs()];
 
-	return transportSuccess && reactionConfSuccess;
+	return transportSuccess && reactionConfSuccess && exchangeConfSuccess;
 }
 
 bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
@@ -437,14 +448,31 @@ bool MultiChannelTransportModel::configure(IParameterProvider& paramProvider)
 		dynReactionConfSuccess = _dynReactionBulk->configure(paramProvider, _unitOpIdx, ParTypeIndep);
 		paramProvider.popScope();
 	}
+	
+	/* Zunkufscode
+	if (_exchange[0]){
 
-	return transportSuccess && dynReactionConfSuccess;
+		std::vector<ParameterId> initParams(_disc.nChannel); //Q was macht initParams ? brauche ich maxBoundStates ?
+		_exchange[0]->fillChannelInitialParameters(initParams.data(), _unitOpIdx);
+	}
+		
+	*/
+	// Reconfigure exchange model
+	bool exchangeConfSuccess = true;
+	
+	exchangeConfSuccess = _exchange[0]->configure(paramProvider, _unitOpIdx);
+	
+
+
+	return transportSuccess && dynReactionConfSuccess && exchangeConfSuccess;
 }
 
 
 unsigned int MultiChannelTransportModel::threadLocalMemorySize() const CADET_NOEXCEPT
 {
 	LinearMemorySizer lms;
+
+	//Add exchange memory
 
 	// Memory for residualImpl()
 	if (_dynReactionBulk && _dynReactionBulk->requiresWorkspace())
@@ -578,7 +606,7 @@ int MultiChannelTransportModel::residual(const SimulationTime& simTime, const Co
 	// Evaluate residual do not compute Jacobian or parameter sensitivities
 	return residualImpl<double, double, double, false>(simTime.t, simTime.secIdx, simState.vecStateY, simState.vecStateYdot, res, threadLocalMem);
 }
-
+//Q Do we need different types of residual calculation ?
 int MultiChannelTransportModel::jacobian(const SimulationTime& simTime, const ConstSimulationState& simState, double* const res, const AdJacobianParams& adJac, util::ThreadLocalStorage& threadLocalMem)
 {
 	BENCH_SCOPE(_timerResidual);
@@ -704,13 +732,21 @@ int MultiChannelTransportModel::residual(const SimulationTime& simTime, const Co
 template <typename StateType, typename ResidualType, typename ParamType, bool wantJac>
 int MultiChannelTransportModel::residualImpl(double t, unsigned int secIdx, StateType const* const y, double const* const yDot, ResidualType* const res, util::ThreadLocalStorage& threadLocalMem)
 {
+
 	// Handle inlet DOFs, which are simply copied to res
 	for (unsigned int i = 0; i < _disc.nComp * _disc.nChannel; ++i)
 	{
 		res[i] = y[i];
 	}
 
+
 	_convDispOp.residual(*this, t, secIdx, y, yDot, res, wantJac, typename ParamSens<ParamType>::enabled());
+	
+	linalg::BandedSparseRowIterator jacbegin = _convDispOp.getJacRowIterator(0);
+	if (_disc.nChannel >= 1) {
+		_exchange[0]->residual(y, res, typename ParamSens<ParamType>::enabled(), wantJac, jacbegin);
+	}
+	
 
 	if (!_dynReactionBulk || (_dynReactionBulk->numReactionsLiquid() == 0))
 		return 0;
@@ -846,6 +882,7 @@ void MultiChannelTransportModel::multiplyWithDerivativeJacobian(const Simulation
 
 void MultiChannelTransportModel::setExternalFunctions(IExternalFunction** extFuns, unsigned int size)
 {
+	// Add exchange here
 }
 
 unsigned int MultiChannelTransportModel::localOutletComponentIndex(unsigned int port) const CADET_NOEXCEPT

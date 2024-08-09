@@ -75,6 +75,16 @@ void UnitOperationBase::clearBindingModels() CADET_NOEXCEPT
 	_binding.clear();
 }
 
+void UnitOperationBase::clearExchangeModels() CADET_NOEXCEPT
+{
+	
+	for (IPhaseTransitionModel* bm : _exchange){
+			delete bm;
+	}
+
+	_exchange.clear();
+}
+
 void UnitOperationBase::clearDynamicReactionModels() CADET_NOEXCEPT
 {
 	if (_singleDynReaction)

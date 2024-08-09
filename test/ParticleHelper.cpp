@@ -35,12 +35,20 @@ namespace
 	template <typename T>
 	void replicateData(std::vector<T>& data, unsigned int nTimes)
 	{
+        std::vector<T> newData;
+        newData.reserve(data.size() * nTimes);
+        for (unsigned int i = 0; i < nTimes; ++i){
+           newData.insert(newData.end(), data.begin(), data.end());
+        }
+        data = std::move(newData);
+
+		/*AB this crashed for some test cases
 		data.reserve(data.size() * nTimes);
 		const typename std::vector<T>::iterator itEnd = data.end();
 		for (unsigned int i = 0; i < nTimes - 1; ++i)
 		{
 			data.insert(data.end(), data.begin(), itEnd);
-		}
+		}*/
 	}
 
 	void replicateFieldDataDouble(cadet::JsonParameterProvider& jpp, const std::string& field, const std::vector<double>& factors)
